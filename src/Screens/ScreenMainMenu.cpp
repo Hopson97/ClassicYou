@@ -5,6 +5,7 @@
 #include <imgui.h>
 
 #include "../Util/ImGuiExtras.h"
+#include "ScreenEditGame.h"
 #include "ScreenPlaying.h"
 
 ScreenMainMenu::ScreenMainMenu(ScreenManager& screens)
@@ -20,30 +21,65 @@ bool ScreenMainMenu::on_init()
 void ScreenMainMenu::on_render(bool show_debug)
 {
 
-    ImVec2 window_size(window().getSize().x / 4,
-                       window().getSize().y / 2);
+    ImVec2 window_size(window().getSize().x / 4.0f, window().getSize().y / 2.0f);
     ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
-    ImGui::SetNextWindowPos({window_size.x + window_size.x * 4 / 8.0f, window_size.y / 2},
+    ImGui::SetNextWindowPos({window_size.x + window_size.x * 4.0f / 8.0f, window_size.y / 2.0f},
                             ImGuiCond_Always);
     if (ImGui ::Begin("M A I N   M E N U", nullptr,
                       ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
-                          ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize))
+                          ImGuiWindowFlags_NoCollapse))
     {
         ImGui::Text("ClassicYou");
         ImGui::Separator();
 
-        if (ImGui::CustomButton("New Game"))
+        switch (current_menu_)
         {
-            p_screen_manager_->push_screen(std::make_unique<ScreenPlaying>(*p_screen_manager_));
+            case ScreenMainMenu::Menu::MainMenu:
+                main_menu();
+                break;
+
+            case ScreenMainMenu::Menu::CreateMenu:
+                create_game_menu();
+                break;
+
+            default:
+                break;
         }
-        if (ImGui::CustomButton("Load Game"))
-        {
-            p_screen_manager_->push_screen(std::make_unique<ScreenPlaying>(*p_screen_manager_));
-        }
-        if (ImGui::CustomButton("Exit Game"))
-        {
-            p_screen_manager_->pop_screen();
-        }
-        ImGui::End();
+    }
+    ImGui::End();
+}
+
+void ScreenMainMenu::main_menu()
+{
+
+    if (ImGui::CustomButton("Create Game"))
+    {
+        current_menu_ = Menu::CreateMenu;
+    }
+    if (ImGui::CustomButton("Quick Create Game"))
+    {
+        p_screen_manager_->push_screen(std::make_unique<ScreenEditGame>(*p_screen_manager_));
+    }
+    if (ImGui::CustomButton("Play"))
+    {
+        // p_screen_manager_->push_screen(std::make_unique<ScreenPlaying>(*p_screen_manager_));
+
+    }
+    if (ImGui::CustomButton("Exit"))
+    {
+        p_screen_manager_->pop_screen();
+    }
+}
+
+void ScreenMainMenu::create_game_menu()
+{
+    if (ImGui::CustomButton("Begin Creating"))
+    {
+        p_screen_manager_->push_screen(std::make_unique<ScreenEditGame>(*p_screen_manager_));
+        current_menu_ = Menu::CreateMenu;
+    }
+    if (ImGui::CustomButton("Back"))
+    {
+        current_menu_ = Menu::MainMenu;
     }
 }

@@ -155,6 +155,7 @@
     <ClCompile Include="deps\glad\glad.c" />
     <ClCompile Include="deps\imgui_sfml\imgui-SFML.cpp" />
     <ClCompile Include="deps\imgui_sfml\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="src\Editor\DrawingPad.cpp" />
     <ClCompile Include="src\Graphics\CameraController.cpp" />
     <ClCompile Include="src\Graphics\Camera.cpp" />
     <ClCompile Include="src\Graphics\ShadowMap.cpp" />
@@ -163,6 +164,7 @@
     <ClCompile Include="src\Graphics\OpenGL\GLUtils.cpp" />
     <ClCompile Include="src\Graphics\Skybox.cpp" />
     <ClCompile Include="src\Screens\Screen.cpp" />
+    <ClCompile Include="src\Screens\ScreenEditGame.cpp" />
     <ClCompile Include="src\Screens\ScreenMainMenu.cpp" />
     <ClCompile Include="src\Screens\ScreenPlaying.cpp" />
     <ClCompile Include="src\Util\ImGuiExtras.cpp" />
@@ -183,6 +185,8 @@
     <None Include="assets\shaders\Empty.glsl" />
     <None Include="assets\shaders\GUIFragment.glsl" />
     <None Include="assets\shaders\GUIVertex.glsl" />
+    <None Include="assets\shaders\Scene\Scene2DFragment.glsl" />
+    <None Include="assets\shaders\Scene\Scene2DVertex.glsl" />
     <None Include="assets\shaders\Scene\SceneInstanceVertex.glsl" />
     <None Include="assets\shaders\Scene\SceneFragment.glsl" />
     <None Include="assets\shaders\Scene\SceneSimpleFragment.glsl" />
@@ -205,6 +209,8 @@
     <ClInclude Include="deps\imgui_sfml\imgui-SFML_export.h" />
     <ClInclude Include="deps\imgui_sfml\imgui_impl_opengl3.h" />
     <ClInclude Include="deps\imgui_sfml\imgui_inc.h" />
+    <ClInclude Include="src\Editor\DrawingPad.h" />
+    <ClInclude Include="src\Editor\EditConstants.h" />
     <ClInclude Include="src\Graphics\CameraController.h" />
     <ClInclude Include="src\Graphics\Camera.h" />
     <ClInclude Include="src\Graphics\ShadowMap.h" />
@@ -215,6 +221,7 @@
     <ClInclude Include="src\Graphics\OpenGL\GLUtils.h" />
     <ClInclude Include="src\Graphics\Skybox.h" />
     <ClInclude Include="src\Screens\Screen.h" />
+    <ClInclude Include="src\Screens\ScreenEditGame.h" />
     <ClInclude Include="src\Screens\ScreenMainMenu.h" />
     <ClInclude Include="src\Screens\ScreenPlaying.h" />
     <ClInclude Include="src\Util\ImGuiExtras.h" />

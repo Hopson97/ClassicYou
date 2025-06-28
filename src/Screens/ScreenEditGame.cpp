@@ -1,4 +1,4 @@
-#include "ScreenPlaying.h"
+#include "ScreenEditGame.h"
 
 #include <imgui.h>
 
@@ -7,7 +7,7 @@
 #include "../Util/Keyboard.h"
 #include "../Util/Util.h"
 
-ScreenPlaying::ScreenPlaying(ScreenManager& screens)
+ScreenEditGame::ScreenEditGame(ScreenManager& screens)
     : Screen(screens)
     , perspective_camera_(CameraConfig{
           .type = CameraType::Perspective,
@@ -22,13 +22,19 @@ ScreenPlaying::ScreenPlaying(ScreenManager& screens)
           .near = 0.5f,
           .far = 1000.0f,
       })
+    , drawing_pad_({window().getSize().x, window().getSize().y})
 {
     p_active_camera_ = &perspective_camera_;
 }
 
-bool ScreenPlaying::on_init()
+bool ScreenEditGame::on_init()
 {
     window().setMouseCursorVisible(false);
+
+    if (!drawing_pad_.init())
+    {
+        return false;
+    }
 
     // -----------------------
     // ==== Load textures ====
@@ -72,7 +78,7 @@ bool ScreenPlaying::on_init()
     return true;
 }
 
-void ScreenPlaying::on_event(const sf::Event& e)
+void ScreenEditGame::on_event(const sf::Event& e)
 {
     if (auto key = e.getIf<sf::Event::KeyReleased>())
     {
@@ -98,17 +104,18 @@ void ScreenPlaying::on_event(const sf::Event& e)
     }
 }
 
-void ScreenPlaying::on_update(const Keyboard& keyboard, sf::Time dt)
+void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
 {
     free_camera_controller(keyboard, *p_active_camera_, dt, camera_keybinds_, window(),
                            rotation_locked_);
+    drawing_pad_.update(keyboard, dt);
 }
 
-void ScreenPlaying::on_fixed_update(sf::Time dt)
+void ScreenEditGame::on_fixed_update(sf::Time dt)
 {
 }
 
-void ScreenPlaying::on_render(bool show_debug)
+void ScreenEditGame::on_render(bool show_debug)
 {
     if (game_paused_)
     {
@@ -137,14 +144,18 @@ void ScreenPlaying::on_render(bool show_debug)
     matrices_ssbo_.buffer_sub_data(0, p_active_camera_->get_projection_matrix());
     matrices_ssbo_.buffer_sub_data(sizeof(glm::mat4), p_active_camera_->get_view_matrix());
 
-    scene_shader_.bind();
-    render_scene(scene_shader_);
+    // scene_shader_.bind();
+    // render_scene(scene_shader_);
+
+    gl::disable(gl::Capability::DepthTest);
+
+    drawing_pad_.display();
 
     // Ensure GUI etc are rendered using fill
     gl::polygon_mode(gl::Face::FrontAndBack, gl::PolygonMode::Fill);
 }
 
-void ScreenPlaying::pause_menu()
+void ScreenEditGame::pause_menu()
 {
     ImVec2 window_size(p_screen_manager_->get_window().getSize().x / 4.0f,
                        p_screen_manager_->get_window().getSize().y / 2.0f);
@@ -167,7 +178,7 @@ void ScreenPlaying::pause_menu()
     }
 }
 
-void ScreenPlaying::render_scene(gl::Shader& shader)
+void ScreenEditGame::render_scene(gl::Shader& shader)
 {
     // Set up the capabilities/ render states
     gl::enable(gl::Capability::DepthTest);

@@ -7,7 +7,7 @@ class ScreenMainMenu final : public Screen
     enum class Menu
     {
         MainMenu,
-        SettingsMenu,
+        CreateMenu,
     };
 
   public:
@@ -17,4 +17,8 @@ class ScreenMainMenu final : public Screen
     void on_render(bool show_debug) override;
 
   private:
+    void main_menu();
+    void create_game_menu();
+
+    Menu current_menu_ = Menu::MainMenu;
 };

@@ -32,8 +32,8 @@ namespace gl
         glBindVertexArray(id);
     }
 
-    VertexArrayObject::AttributeBuilder VertexArrayObject::add_vertex_buffer(const BufferObject& vbo,
-                                                                           GLsizei stride)
+    VertexArrayObject::AttributeBuilder
+    VertexArrayObject::add_vertex_buffer(const BufferObject& vbo, GLsizei stride)
     {
         glVertexArrayVertexBuffer(id, vbo_count_, vbo.id, 0, stride);
         return {id, attribs_, vbo_count_++};
@@ -44,6 +44,7 @@ namespace gl
         GLResource::destroy();
         GLResource::create();
         attribs_ = 0;
+        vbo_count_ = 0;
     }
 
     VertexArrayObject::AttributeBuilder::AttributeBuilder(GLuint& id, GLuint& attribs,
@@ -55,10 +56,11 @@ namespace gl
     }
 
     VertexArrayObject::AttributeBuilder&
-    VertexArrayObject::AttributeBuilder::add_instance_attribute(
-        GLint size, GLenum type, GLuint offset, GLuint divisor, int count)
+    VertexArrayObject::AttributeBuilder::add_instance_attribute(GLint size, GLenum type,
+                                                                GLuint offset, GLuint divisor,
+                                                                int count)
     {
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < 4; i++)
         {
             glEnableVertexArrayAttrib(vao_, *p_attribs_);
             glVertexArrayAttribFormat(vao_, *p_attribs_, size, type, GL_FALSE, offset * i);
@@ -70,8 +72,7 @@ namespace gl
     }
 
     VertexArrayObject::AttributeBuilder&
-    VertexArrayObject::AttributeBuilder::add_attribute(GLint size, GLenum type,
-                                                                          GLuint offset)
+    VertexArrayObject::AttributeBuilder::add_attribute(GLint size, GLenum type, GLuint offset)
     {
         glEnableVertexArrayAttrib(vao_, *p_attribs_);
         glVertexArrayAttribFormat(vao_, *p_attribs_, size, type, GL_FALSE, offset);

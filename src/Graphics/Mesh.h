@@ -76,6 +76,7 @@ bool Mesh<Vertex>::buffer()
     {
         return false;
     }
+
     vao_.reset();
     vbo_.reset();
     ebo_.reset();
@@ -88,6 +89,7 @@ bool Mesh<Vertex>::buffer()
     // Upload the data to the GPU and set up the attributes
     vbo_.buffer_data(vertices);
     Vertex::build_attribs(vao_, vbo_);
+    return true;
 }
 
 template <typename Vertex>

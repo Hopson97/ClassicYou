@@ -43,7 +43,7 @@ int main()
         std::println(std::cerr, "Failed to initialise OpenGL - Is OpenGL linked correctly?");
         return EXIT_FAILURE;
     }
-    glClearColor(50.0f / 255.0f, 205.0f / 255.0f, 250.0f / 255.0f, 0);
+    glClearColor(0, 35.0f / 255.0f, 70.0f / 255.0f, 255.0f);
     glViewport(0, 0, window.getSize().x, window.getSize().y);
     gl::enable_debugging();
 
