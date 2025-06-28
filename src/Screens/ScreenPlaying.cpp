@@ -72,9 +72,9 @@ bool ScreenPlaying::on_init()
     return true;
 }
 
-void ScreenPlaying::on_event(const sf::Event& e)
+void ScreenPlaying::on_event(const sf::Event& event)
 {
-    if (auto key = e.getIf<sf::Event::KeyReleased>())
+    if (auto key = event.getIf<sf::Event::KeyReleased>())
     {
         switch (key->code)
         {

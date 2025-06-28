@@ -7,7 +7,22 @@ in VS_OUT {
     vec4 colour;
 } fs_in;
 
+uniform sampler2D diffuse;
+uniform bool use_texture;
+
 void main() 
 {
-    out_colour = fs_in.colour;
+    if (use_texture) 
+    {
+        out_colour = texture(diffuse, fs_in.texture_coord);
+    }
+    else 
+    {
+        out_colour = fs_in.colour;
+    }
+
+    if (out_colour.a < 0.1) 
+    {
+        discard;
+    }
 }

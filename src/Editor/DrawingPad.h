@@ -5,17 +5,13 @@
 #include "../Graphics/Camera.h"
 #include "../Graphics/CameraController.h"
 #include "../Graphics/Mesh.h"
+#include "../Graphics/OpenGL/Texture.h"
 #include "../Graphics/OpenGL/Shader.h"
-
-// The world size in tiles
-constexpr auto WORLD_SIZE = 32;
-constexpr auto TILE_SIZE = 32;
-constexpr auto HALF_TILE_SIZE = TILE_SIZE / 2;
 
 class DrawingPad
 {
   public:
-    DrawingPad(glm::vec2 size);
+    DrawingPad(glm::vec2 size, const glm::ivec2& selected_node);
 
     bool init();
     void update(const Keyboard& keyboard, sf::Time dt);
@@ -39,4 +35,8 @@ class DrawingPad
 
     Camera camera_;
     CameraKeybinds keybinds_2d_;
+
+    const glm::ivec2& selected_node_;
+    gl::Texture2D selection_texture_;
+    Mesh2D selection_mesh_;
 };

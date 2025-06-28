@@ -14,7 +14,7 @@
 
 namespace
 {
-    void handle_event(const sf::Event& event, sf::Window& window, bool& show_debug_info,
+    void handle_event(const sf::Event& eventvent, sf::Window& window, bool& show_debug_info,
                       bool& close_requested);
 } // namespace
 

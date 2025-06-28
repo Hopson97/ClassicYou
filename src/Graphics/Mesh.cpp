@@ -39,13 +39,14 @@ void InstanceBatch::update()
 Mesh3D generate_quad_mesh(float w, float h)
 {
     Mesh3D mesh;
-    mesh.vertices = {{{w, h, 0.0f}, {0.0f, 1.0f}, {0, 0, 1}},
-                     {{0, h, 0.0f}, {1.0f, 1.0f}, {0, 0, 1}},
-                     {{0, 0, 0.0f}, {1.0f, 0.0f}, {0, 0, 1}},
-                     {{w, 0, 0.0f}, {0.0f, 0.0f}, {0, 0, 1}}
 
+    mesh.vertices = {
+        // positions                // tex coords   // normal           // color
+        {{0.0f, 0.0f, 0.0f},        {0.0f, 0.0f},  {0.0f, 0.0f, 1.0f}, glm::vec4{1.0f}},
+        {{w,    0.0f, 0.0f},        {1.0f, 0.0f},  {0.0f, 0.0f, 1.0f}, glm::vec4{1.0f}},
+        {{w,    h,    0.0f},        {1.0f, 1.0f},  {0.0f, 0.0f, 1.0f}, glm::vec4{1.0f}},
+        {{0.0f, h,    0.0f},        {0.0f, 1.0f},  {0.0f, 0.0f, 1.0f}, glm::vec4{1.0f}}
     };
-
     mesh.indices = {0, 1, 2, 2, 3, 0};
 
     return mesh;

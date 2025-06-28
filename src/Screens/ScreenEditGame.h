@@ -15,7 +15,7 @@ class ScreenEditGame final : public Screen
     ScreenEditGame(ScreenManager& screens);
 
     bool on_init() override;
-    void on_event(const sf::Event& e) override;
+    void on_event(const sf::Event& event) override;
     void on_update(const Keyboard& keyboard, sf::Time dt) override;
     void on_fixed_update(sf::Time dt) override;
     void on_render(bool show_debug) override;
@@ -33,14 +33,19 @@ class ScreenEditGame final : public Screen
     gl::BufferObject matrices_ssbo_;
     gl::Shader scene_shader_;
 
-    Mesh3D terrain_mesh_ = generate_terrain_mesh(64, 64);
-    gl::Texture2D grass_material_;
+    Mesh3D selection_mesh_ = generate_quad_mesh(0.25, 0.25);
 
     DrawingPad drawing_pad_;
 
-    bool rotation_locked_ = false;
+    bool rotation_locked_ = true;
     bool game_paused_ = false;
     Settings settings_;
+
+    struct EditorState
+    {
+        glm::ivec2 node_hovered;
+    };
+    EditorState editor_state_;
 
     CameraKeybinds camera_keybinds_;
 };

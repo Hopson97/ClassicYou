@@ -9,7 +9,7 @@ class Keyboard final
 {
   public:
     Keyboard();
-    void update(const sf::Event& e);
+    void update(const sf::Event& event);
     [[nodiscard]] bool is_key_down(sf::Keyboard::Key key) const;
 
     void reset();

@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Screen.h"
-#include "../Graphics/CameraController.h"
 #include "../Graphics/Camera.h"
-#include "../Graphics/OpenGL/Texture.h"
-#include "../Settings.h"
+#include "../Graphics/CameraController.h"
 #include "../Graphics/Mesh.h"
 #include "../Graphics/OpenGL/BufferObject.h"
+#include "../Graphics/OpenGL/Texture.h"
+#include "../Settings.h"
+#include "Screen.h"
 
 class ScreenPlaying final : public Screen
 {
@@ -22,7 +22,7 @@ class ScreenPlaying final : public Screen
     ScreenPlaying(ScreenManager& screens);
 
     bool on_init() override;
-    void on_event(const sf::Event& e) override;
+    void on_event(const sf::Event& event) override;
     void on_update(const Keyboard& keyboard, sf::Time dt) override;
     void on_fixed_update(sf::Time dt) override;
     void on_render(bool show_debug) override;
@@ -51,7 +51,5 @@ class ScreenPlaying final : public Screen
     bool rotation_locked_ = false;
     Settings settings_;
 
-
     CameraKeybinds camera_keybinds_;
-
 };

@@ -6,9 +6,9 @@ in VS_OUT {
     vec2 texture_coord;
 } fs_in;
 
-uniform sampler2D texture_Colour;
+uniform sampler2D texture_colour;
 
 void main()
 {
-    out_colour = texture(texture_Colour, fs_in.texture_coord);
+    out_colour = texture(texture_colour, fs_in.texture_coord);
 }
