@@ -4,6 +4,8 @@
 
 #include <SFML/Graphics/Image.hpp>
 
+#include "../Editor/EditConstants.h"
+
 const InstanceBatch& InstanceBatch::bind() const
 {
     mesh.bind();
@@ -210,5 +212,71 @@ Mesh3D generate_terrain_mesh(int size, int edgeVertices)
         }
     }
 
+    return mesh;
+}
+
+Mesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to)
+{
+    // Begin
+    auto b = glm::vec3{from.x, 0, from.y} / static_cast<float>(TILE_SIZE);
+
+    // End
+    auto e = glm::vec3{to.x, 0, to.y} / static_cast<float>(TILE_SIZE);
+
+    Mesh3D mesh;
+    auto ox = 0.0f;
+    auto oz = 0.0f;
+    auto ob = 0.0f;
+    auto h = 1.0f;
+
+    const auto length = glm::length(b - e);
+
+    mesh.vertices = {
+        // Front
+        {{b.x + ox, ob, b.z + oz}, {0.0f, ob}, {0, 0, 1}},
+        {{b.x + ox, h, b.z + oz}, {0.0, h}, {0, 0, 1}},
+        {{e.x + ox, h, e.z + oz}, {length, h}, {0, 0, 1}},
+        {{e.x + ox, ob, e.z + oz}, {length, ob}, {0, 0, 1}},
+
+        // Back
+        {{b.x - ox, ob, b.z - oz}, {0.0f, ob}, {0, 0, 1}},
+        {{b.x - ox, h, b.z - oz}, {0.0, h}, {0, 0, 1}},
+        {{e.x - ox, h, e.z - oz}, {length, h}, {0, 0, 1}},
+        {{e.x - ox, ob, e.z - oz}, {length, ob}, {0, 0, 1}},
+
+    };
+
+    mesh.indices = {// Front
+                    0, 1, 2, 2, 3, 0,
+                    // Back
+                    6, 5, 4, 4, 7, 6};
+
+    return mesh;
+}
+
+Mesh3D generate_grid_mesh(int width, int height)
+{
+    Mesh3D mesh;
+    auto create_line = [&](const glm::vec3& begin, const glm::vec3& end)
+    {
+        mesh.vertices.push_back({.position = begin, .colour = {1, 1, 1, 1}});
+        mesh.vertices.push_back({.position = end, .colour = {1, 1, 1, 1}});
+
+        mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
+        mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
+    };
+
+    // Tiny offset prevents platforms/floors clipping with the grid
+    auto y = -0.01f;
+
+    for (int x = 0; x <= width; x++)
+    {
+        create_line({x, y, 0}, {x, y, width});
+    }
+
+    for (int z = 0; z <= height; z++)
+    {
+        create_line({0, y, z}, {height, y, z});
+    }
     return mesh;
 }

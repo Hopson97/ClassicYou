@@ -1,5 +1,6 @@
 #include "DrawingPad.h"
 
+#include "../Graphics/OpenGL/GLUtils.h"
 #include <glad/glad.h>
 #include <imgui.h>
 
@@ -88,12 +89,7 @@ void DrawingPad::render_line(glm::vec2 from, glm::vec2 to, const glm::vec4& colo
     }
 
     auto& mesh = line_meshes_.find(thickness)->second;
-
-    mesh.vertices.push_back(Vertex2D{.position = from, .colour = colour});
-    mesh.vertices.push_back(Vertex2D{.position = to, .colour = colour});
-
-    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
-    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
+    add_line_to_mesh(mesh, from, to, colour);
 }
 
 void DrawingPad::update(const Keyboard& keyboard, sf::Time dt)
@@ -108,20 +104,23 @@ const Camera& DrawingPad::get_camera() const
 
 void DrawingPad::display()
 {
-    auto p = camera_.transform.position;
+    // For 2D rendering, depth testing is not required
+    gl::disable(gl::Capability::DepthTest);
 
-    camera_.gui("2D Camera");
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
-    {
-        // camera_.transform.position.y += 1.0f;
-    }
-
+    // Update the shaders
     shader_.bind();
     shader_.set_uniform("projection_matrix", camera_.get_projection_matrix());
     shader_.set_uniform("view_matrix", camera_.get_view_matrix());
     shader_.set_uniform("model_matrix", create_model_matrix({}));
 
-    
+    // Render the background grid
+    glLineWidth(1);
+    grid_mesh_.sub_grid.bind().draw_elements(GL_LINES);
+
+    glLineWidth(1);
+    grid_mesh_.main_grid.bind().draw_elements(GL_LINES);
+
+    // Render lines (walls) of various thickenss
     for (auto& [thickness, mesh] : line_meshes_)
     {
         glLineWidth(thickness);
@@ -130,12 +129,4 @@ void DrawingPad::display()
         mesh.vertices.clear();
         mesh.indices.clear();
     }
-    
-
-    // Render the background grid
-    glLineWidth(1);
-    grid_mesh_.sub_grid.bind().draw_elements(GL_LINES);
-
-    glLineWidth(1);
-    grid_mesh_.main_grid.bind().draw_elements(GL_LINES);
 }

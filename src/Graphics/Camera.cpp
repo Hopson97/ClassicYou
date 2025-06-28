@@ -80,6 +80,12 @@ float Camera::aspect() const
     return aspect_;
 }
 
+void Camera::set_type(CameraType type)
+{
+    config_.type = type;
+    set_projection();
+}
+
 void Camera::set_projection()
 {
     if (config_.type == CameraType::Perspective)

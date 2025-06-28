@@ -9,22 +9,16 @@
 
 ScreenEditGame::ScreenEditGame(ScreenManager& screens)
     : Screen(screens)
-    , perspective_camera_(CameraConfig{
+    , camera_(CameraConfig{
           .type = CameraType::Perspective,
-          .viewport_size = {window().getSize().x, window().getSize().y},
+          .viewport_size = {window().getSize().x / 2, window().getSize().y},
           .near = 0.1f,
           .far = 1000.0f,
           .fov = 90.0f,
       })
-    , ortho_camera_(CameraConfig{
-          .type = CameraType::OrthographicWorld,
-          .viewport_size = {window().getSize().x, window().getSize().y},
-          .near = 0.5f,
-          .far = 1000.0f,
-      })
-    , drawing_pad_({window().getSize().x, window().getSize().y})
+    , drawing_pad_({window().getSize().x / 2, window().getSize().y})
 {
-    p_active_camera_ = &perspective_camera_;
+
 }
 
 bool ScreenEditGame::on_init()
@@ -47,7 +41,7 @@ bool ScreenEditGame::on_init()
     // ---------------------------
     // ==== Buffer thr meshes ====
     // ---------------------------
-    terrain_mesh_.buffer();
+    grid_mesh_.buffer();
 
     // ----------------------------
     // ==== Load scene shaders ====
@@ -71,9 +65,8 @@ bool ScreenEditGame::on_init()
     // -----------------------------------
     // ==== Entity Transform Creation ====
     // -----------------------------------
-    perspective_camera_.transform = {.position = {3.0f, 4.0f, 16.0f},
-                                     .rotation = {4.0f, 300.0f, 0.0f}};
-    ortho_camera_.transform = {.position = {6, 20, 5}, .rotation = {333.4f, 45.0f, 0.0f}};
+    camera_.transform = {.position = {WORLD_SIZE / 2, 7, WORLD_SIZE + 1},
+                         .rotation = {-40, 270.0f, 0.0f}};
 
     return true;
 }
@@ -106,7 +99,7 @@ void ScreenEditGame::on_event(const sf::Event& e)
 
 void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
 {
-    free_camera_controller(keyboard, *p_active_camera_, dt, camera_keybinds_, window(),
+    free_camera_controller(keyboard, camera_, dt, camera_keybinds_, window(),
                            rotation_locked_);
     drawing_pad_.update(keyboard, dt);
 }
@@ -121,38 +114,45 @@ void ScreenEditGame::on_render(bool show_debug)
     {
         pause_menu();
     }
-
     if (show_debug)
     {
-        p_active_camera_->gui("Camera");
-
-        if (ImGui::Begin("Camera"))
-        {
-            if (ImGui::Button("Use Perspective"))
-            {
-                p_active_camera_ = &perspective_camera_;
-            }
-            if (ImGui::Button("Use Ortho"))
-            {
-                p_active_camera_ = &ortho_camera_;
-            }
-        }
-        ImGui::End();
+        debug_gui();
     }
 
-    // Update the shader buffers
-    matrices_ssbo_.buffer_sub_data(0, p_active_camera_->get_projection_matrix());
-    matrices_ssbo_.buffer_sub_data(sizeof(glm::mat4), p_active_camera_->get_view_matrix());
-
-    // scene_shader_.bind();
-    // render_scene(scene_shader_);
-
-    gl::disable(gl::Capability::DepthTest);
-
+    // Render the drawing pad to the left side
+    glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
     drawing_pad_.display();
+
+    // Render the actual scene
+    // Update the shader buffers
+    matrices_ssbo_.buffer_sub_data(0, camera_.get_projection_matrix());
+    matrices_ssbo_.buffer_sub_data(sizeof(glm::mat4), camera_.get_view_matrix());
+
+    glViewport(window().getSize().x / 2, 0, window().getSize().x / 2, window().getSize().y);
+    scene_shader_.bind();
+    render_scene(scene_shader_);
+
 
     // Ensure GUI etc are rendered using fill
     gl::polygon_mode(gl::Face::FrontAndBack, gl::PolygonMode::Fill);
+}
+
+
+
+void ScreenEditGame::render_scene(gl::Shader& shader)
+{
+    // Set up the capabilities/ render states
+    shader.bind();
+    gl::enable(gl::Capability::DepthTest);
+    gl::enable(gl::Capability::CullFace);
+    gl::cull_face(gl::Face::Back);
+    gl::polygon_mode(gl::Face::FrontAndBack,
+                     settings_.wireframe ? gl::PolygonMode::Line : gl::PolygonMode::Fill);
+
+    // Draw terrain
+    shader.set_uniform("model_matrix", create_model_matrix({}));
+    shader.set_uniform("use_texture", false);
+    grid_mesh_.bind().draw_elements(GL_LINES);
 }
 
 void ScreenEditGame::pause_menu()
@@ -178,18 +178,20 @@ void ScreenEditGame::pause_menu()
     }
 }
 
-void ScreenEditGame::render_scene(gl::Shader& shader)
+void ScreenEditGame::debug_gui()
 {
-    // Set up the capabilities/ render states
-    gl::enable(gl::Capability::DepthTest);
-    // gl::enable(gl::Capability::CullFace);
-    gl::cull_face(gl::Face::Back);
-    gl::polygon_mode(gl::Face::FrontAndBack,
-                     settings_.wireframe ? gl::PolygonMode::Line : gl::PolygonMode::Fill);
+    camera_.gui("Camera");
 
-    // Draw terrain
-    grass_material_.bind(0);
-    shader.set_uniform("model_matrix", create_model_matrix({.position = {-5, 0, -5}}));
-    terrain_mesh_.bind();
-    terrain_mesh_.draw_elements();
+    if (ImGui::Begin("Camera Kind"))
+    {
+        if (ImGui::Button("Perspective"))
+        {
+            camera_.set_type(CameraType::Perspective);
+        }
+        if (ImGui::Button("Orthographic"))
+        {
+            camera_.set_type(CameraType::OrthographicWorld);
+        }
+    }
+    ImGui::End();
 }

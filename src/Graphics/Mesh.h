@@ -12,13 +12,15 @@ struct Vertex
     glm::vec3 position{0.0f};
     glm::vec2 texture_coord{0.0f};
     glm::vec3 normal{0.0f};
+    glm::vec4 colour{0.0f};
 
     static void build_attribs(gl::VertexArrayObject& vao, gl::BufferObject& vbo)
     {
         vao.add_vertex_buffer(vbo, sizeof(Vertex))
             .add_attribute(3, GL_FLOAT, offsetof(Vertex, position))
             .add_attribute(2, GL_FLOAT, offsetof(Vertex, texture_coord))
-            .add_attribute(3, GL_FLOAT, offsetof(Vertex, normal));
+            .add_attribute(3, GL_FLOAT, offsetof(Vertex, normal))
+            .add_attribute(4, GL_FLOAT, offsetof(Vertex, colour));
     }
 };
 
@@ -154,3 +156,6 @@ using Mesh2D = Mesh<Vertex2D>;
 [[nodiscard]] Mesh3D generate_cube_mesh(const glm::vec3& size, bool repeat_texture = false);
 [[nodiscard]] Mesh3D generate_centered_cube_mesh(const glm::vec3& size);
 [[nodiscard]] Mesh3D generate_terrain_mesh(int size, int edgeVertices);
+
+[[nodiscard]] Mesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to);
+[[nodiscard]] Mesh3D generate_grid_mesh(int width, int height);

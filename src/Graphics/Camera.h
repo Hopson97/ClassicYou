@@ -49,6 +49,8 @@ struct Camera
     float fov() const;
     float aspect() const;
 
+    void set_type(CameraType type);
+
   private:
     void set_projection();
 
