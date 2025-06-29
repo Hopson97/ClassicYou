@@ -156,6 +156,7 @@
     <ClCompile Include="deps\imgui_sfml\imgui-SFML.cpp" />
     <ClCompile Include="deps\imgui_sfml\imgui_impl_opengl3.cpp" />
     <ClCompile Include="src\Editor\DrawingPad.cpp" />
+    <ClCompile Include="src\Editor\Tool.cpp" />
     <ClCompile Include="src\Graphics\CameraController.cpp" />
     <ClCompile Include="src\Graphics\Camera.cpp" />
     <ClCompile Include="src\Graphics\ShadowMap.cpp" />
@@ -211,6 +212,7 @@
     <ClInclude Include="deps\imgui_sfml\imgui_inc.h" />
     <ClInclude Include="src\Editor\DrawingPad.h" />
     <ClInclude Include="src\Editor\EditConstants.h" />
+    <ClInclude Include="src\Editor\Tool.h" />
     <ClInclude Include="src\Graphics\CameraController.h" />
     <ClInclude Include="src\Graphics\Camera.h" />
     <ClInclude Include="src\Graphics\ShadowMap.h" />

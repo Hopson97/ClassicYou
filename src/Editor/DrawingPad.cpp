@@ -102,9 +102,12 @@ void DrawingPad::render_line(glm::vec2 from, glm::vec2 to, const glm::vec4& colo
     {
         line_meshes_.emplace(thickness, Mesh2D{});
     }
-
     auto& mesh = line_meshes_.find(thickness)->second;
-    add_line_to_mesh(mesh, from, to, colour);
+    mesh.vertices.push_back(Vertex2D{.position = from, .colour = colour});
+    mesh.vertices.push_back(Vertex2D{.position = to, .colour = colour});
+
+    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
+    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
 }
 
 void DrawingPad::update(const Keyboard& keyboard, sf::Time dt)
@@ -142,11 +145,10 @@ void DrawingPad::display()
     {
         glLineWidth(thickness);
         mesh.update();
+        mesh.bind().draw_elements(GL_LINES);
         mesh.vertices.clear();
         mesh.indices.clear();
     }
-
-    // shader_.set_uniform("use_texture", true);
 
     // Reder the selected quad
     shader_.set_uniform("use_texture", true);

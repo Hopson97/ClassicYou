@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Editor/DrawingPad.h"
+#include "../Editor/EditConstants.h"
 #include "../Graphics/Camera.h"
 #include "../Graphics/CameraController.h"
 #include "../Graphics/Mesh.h"
@@ -8,6 +9,7 @@
 #include "../Graphics/OpenGL/Texture.h"
 #include "../Settings.h"
 #include "Screen.h"
+#include "../Editor/Tool.h"
 
 class ScreenEditGame final : public Screen
 {
@@ -28,7 +30,7 @@ class ScreenEditGame final : public Screen
 
     Camera camera_;
 
-    Mesh3D grid_mesh_ = generate_grid_mesh(64, 64);
+    Mesh3D grid_mesh_ = generate_grid_mesh(WORLD_SIZE, WORLD_SIZE);
 
     gl::BufferObject matrices_ssbo_;
     gl::Shader scene_shader_;
@@ -48,4 +50,8 @@ class ScreenEditGame final : public Screen
     EditorState editor_state_;
 
     CameraKeybinds camera_keybinds_;
+
+    gl::Texture2DArray texture_;
+    gl::Texture2D texture_old_;
+    CreateWallTool tool_;
 };

@@ -46,6 +46,32 @@ bool ScreenEditGame::on_init()
     // -----------------------
     // ==== Load textures ====
     // -----------------------
+    // Load textures
+    texture_.create(16, 32,
+                    {
+                        .min_filter = gl::TextureMinFilter::Nearest,
+                        .mag_filter = gl::TextureMagFilter::Nearest,
+                        .wrap_s = gl::TextureWrap::Repeat,
+                        .wrap_t = gl::TextureWrap::Repeat,
+                    });
+    auto [loaded, brick_id] =
+        texture_.add_texture_from_file("assets/textures/RedBricks.png", 4, false, false);
+    if (!loaded)
+    {
+        return false;
+    }
+
+    if (!texture_old_.load_from_file("assets/textures/RedBricks.png", 4, false, false,
+                                     {
+                                         .min_filter = gl::TextureMinFilter::Nearest,
+                                         .mag_filter = gl::TextureMagFilter::Nearest,
+                                         .wrap_s = gl::TextureWrap::Repeat,
+                                         .wrap_t = gl::TextureWrap::Repeat,
+                                     }))
+    {
+        return false;
+    }
+    std::cout << brick_id << std::endl;
 
     // ---------------------------
     // ==== Buffer thr meshes ====
@@ -110,10 +136,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
         editor_state_.node_hovered =
             map_pixel_to_tile({mouse->position.x, mouse->position.y}, drawing_pad_.get_camera());
     }
-    else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
-    {
-        editor_state_.node_hovered = map_pixel_to_tile({mouse->position.x, mouse->position.y});
-    }
+    tool_.on_event(event, editor_state_.node_hovered);
 }
 
 void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
@@ -139,11 +162,12 @@ void ScreenEditGame::on_render(bool show_debug)
 
     // Render the drawing pad to the left side
     glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
+    tool_.render_preview_2d(drawing_pad_);
+
+    // Finalise 2d rendering
     drawing_pad_.display();
 
     // Render the actual scene
-    glViewport(window().getSize().x / 2, 0, window().getSize().x / 2, window().getSize().y);
-
     // Update the shader buffers
     matrices_ssbo_.buffer_sub_data(0, camera_.get_projection_matrix());
     matrices_ssbo_.buffer_sub_data(sizeof(glm::mat4), camera_.get_view_matrix());
@@ -172,14 +196,19 @@ void ScreenEditGame::render_scene(gl::Shader& shader)
     grid_mesh_.bind().draw_elements(GL_LINES);
 
     // Draw the selection node
-    shader.set_uniform("model_matrix",
-                       create_model_matrix({
-                           .position = {editor_state_.node_hovered.x , 0,
-                                        editor_state_.node_hovered.y },
-                           .rotation = {-90, 0, 0},
-                       }));
+    shader.set_uniform("model_matrix", create_model_matrix({
+                                           .position = {editor_state_.node_hovered.x / TILE_SIZE, 0,
+                                                        editor_state_.node_hovered.y / TILE_SIZE},
+                                           .rotation = {-90, 0, 0},
+                                       }));
     shader.set_uniform("use_texture", false);
     selection_mesh_.bind().draw_elements();
+
+    // Draw preview wall
+    texture_old_.bind(0);
+    shader.set_uniform("use_texture", true);
+    shader.set_uniform("model_matrix", create_model_matrix({}));
+    tool_.render_preview();
 }
 
 void ScreenEditGame::pause_menu()
