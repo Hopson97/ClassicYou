@@ -10,13 +10,16 @@
 
 namespace
 {
-    glm::ivec2 map_pixel_to_tile(glm::vec2 point)
+    glm::ivec2 map_pixel_to_tile(glm::vec2 point, const Camera& camera)
     {
         // TODO handle camera zooming
         auto scale = HALF_TILE_SIZE;
-        auto x = std::round((point.x) / scale) * scale;
-        auto y = std::round((point.y) / scale) * scale;
-        return {x, y};
+
+        auto& transform = camera.transform.position;
+        return {
+            std::round((point.x + transform.x) / scale) * scale,
+            std::round((point.y + transform.y) / scale) * scale,
+        };
     }
 } // namespace
 
@@ -104,7 +107,8 @@ void ScreenEditGame::on_event(const sf::Event& event)
     }
     else if (auto mouse = event.getIf<sf::Event::MouseMoved>())
     {
-        editor_state_.node_hovered = map_pixel_to_tile({mouse->position.x, mouse->position.y});
+        editor_state_.node_hovered =
+            map_pixel_to_tile({mouse->position.x, mouse->position.y}, drawing_pad_.get_camera());
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
@@ -138,6 +142,8 @@ void ScreenEditGame::on_render(bool show_debug)
     drawing_pad_.display();
 
     // Render the actual scene
+    glViewport(window().getSize().x / 2, 0, window().getSize().x / 2, window().getSize().y);
+
     // Update the shader buffers
     matrices_ssbo_.buffer_sub_data(0, camera_.get_projection_matrix());
     matrices_ssbo_.buffer_sub_data(sizeof(glm::mat4), camera_.get_view_matrix());
@@ -168,8 +174,8 @@ void ScreenEditGame::render_scene(gl::Shader& shader)
     // Draw the selection node
     shader.set_uniform("model_matrix",
                        create_model_matrix({
-                           .position = {editor_state_.node_hovered.x / TILE_SIZE - 0.125, 0,
-                                        editor_state_.node_hovered.y / TILE_SIZE - 0.125},
+                           .position = {editor_state_.node_hovered.x , 0,
+                                        editor_state_.node_hovered.y },
                            .rotation = {-90, 0, 0},
                        }));
     shader.set_uniform("use_texture", false);

@@ -225,10 +225,12 @@ Mesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to)
     auto e = glm::vec3{to.x, 0, to.y} / static_cast<float>(TILE_SIZE);
 
     Mesh3D mesh;
+
+    // Offset x, y, bottom (TODO: Top)
     auto ox = 0.0f;
     auto oz = 0.0f;
     auto ob = 0.0f;
-    auto h = 1.0f;
+    auto h = 2.0f; // wall heights are 2m
 
     const auto length = glm::length(b - e);
 
@@ -258,7 +260,7 @@ Mesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to)
 Mesh3D generate_grid_mesh(int width, int height)
 {
     Mesh3D mesh;
-    auto create_line = [&](const glm::vec3& begin, const glm::vec3& end)
+    auto create_line = [&](const glm::vec3& begin, const glm::vec3& end, glm::vec4 colour)
     {
         mesh.vertices.push_back({.position = begin, .colour = {1, 1, 1, 1}});
         mesh.vertices.push_back({.position = end, .colour = {1, 1, 1, 1}});
@@ -272,12 +274,13 @@ Mesh3D generate_grid_mesh(int width, int height)
 
     for (int x = 0; x <= width; x++)
     {
-        create_line({x, y, 0}, {x, y, width});
+        create_line({x, y, 0}, {x, y, width}, SUB_GRID_COLOUR);
     }
 
     for (int z = 0; z <= height; z++)
     {
-        create_line({0, y, z}, {height, y, z});
+        create_line({0, y, z}, {height, y, z}, SUB_GRID_COLOUR);
     }
+
     return mesh;
 }

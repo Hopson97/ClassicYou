@@ -8,10 +8,7 @@
 
 namespace
 {
-    constexpr glm::vec4 rgb_to_normalised(const glm::vec3& rgb)
-    {
-        return glm::vec4(rgb / 255.0f, 1.0f);
-    }
+
 
     void add_line_to_mesh(Mesh2D& mesh, glm::vec2 from, glm::vec2 to, const glm::vec4& colour)
     {
@@ -57,37 +54,35 @@ bool DrawingPad::init()
         return false;
     }
 
-    auto main_colour = rgb_to_normalised({69, 103, 137});
-    auto sub_colour = rgb_to_normalised({18, 52, 86});
-    for (int x = 0; x <= WORLD_SIZE; x++)
+    // Create the "sub" grid
+    for (int x = 0; x <= WORLD_SIZE - 1; x++)
     {
         add_line_to_mesh(grid_mesh_.sub_grid, {TILE_SIZE * x + HALF_TILE_SIZE, 0},
-                         {TILE_SIZE * x + HALF_TILE_SIZE, TILE_SIZE * WORLD_SIZE}, sub_colour);
+                         {TILE_SIZE * x + HALF_TILE_SIZE, TILE_SIZE * WORLD_SIZE}, SUB_GRID_COLOUR);
     }
-    for (int y = 0; y <= WORLD_SIZE; y++)
+    for (int y = 0; y <= WORLD_SIZE - 1; y++)
     {
         add_line_to_mesh(grid_mesh_.sub_grid, {0, TILE_SIZE * y + HALF_TILE_SIZE},
-                         {TILE_SIZE * WORLD_SIZE, TILE_SIZE * y + HALF_TILE_SIZE}, sub_colour);
+                         {TILE_SIZE * WORLD_SIZE, TILE_SIZE * y + HALF_TILE_SIZE}, SUB_GRID_COLOUR);
     }
 
-    // Render the main grid
+    // Create the main grid
     for (int x = 0; x <= WORLD_SIZE; x++)
     {
         add_line_to_mesh(grid_mesh_.main_grid, {TILE_SIZE * x, 0},
-                         {TILE_SIZE * x, TILE_SIZE * WORLD_SIZE}, main_colour);
+                         {TILE_SIZE * x, TILE_SIZE * WORLD_SIZE}, MAIN_GRID_COLOUR);
     }
 
     for (int y = 0; y <= WORLD_SIZE; y++)
     {
         add_line_to_mesh(grid_mesh_.main_grid, {0, TILE_SIZE * y},
-                         {TILE_SIZE * WORLD_SIZE, TILE_SIZE * y}, main_colour);
+                         {TILE_SIZE * WORLD_SIZE, TILE_SIZE * y}, MAIN_GRID_COLOUR);
     }
-
     grid_mesh_.sub_grid.buffer();
     grid_mesh_.main_grid.buffer();
 
-    //
 
+    // Create the mesh for displaying whatever node is being selected
     selection_mesh_.vertices = {
         {.position = {0.0f, 0.0f}, .texture_coord = {0.0f, 0.0f}, .colour = glm::vec4(1.0f)},
         {.position = {0.0f, 8.0f}, .texture_coord = {0.0f, 1.0f}, .colour = glm::vec4(1.0f)},
@@ -147,7 +142,6 @@ void DrawingPad::display()
     {
         glLineWidth(thickness);
         mesh.update();
-        mesh.bind().draw_elements(GL_LINES);
         mesh.vertices.clear();
         mesh.indices.clear();
     }
