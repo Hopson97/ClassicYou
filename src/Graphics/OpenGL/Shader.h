@@ -20,6 +20,8 @@ namespace gl
         Compute = GL_COMPUTE_SHADER,
     };
 
+    using ReplaceWord = std::pair<std::string, std::string>;
+
     /**
      * @brief Utility to add #include support to GLSL
      */
@@ -41,6 +43,16 @@ namespace gl
         Shader& operator=(Shader&& other) noexcept = delete;
         Shader& operator=(const Shader& other) = delete;
         ~Shader();
+
+         /**
+         * @brief Add a word that should be replaced within the shaders when this is used.
+         *
+         * @param file_path The path to the shader file.
+         * @param shader_type The type of shader to load (vertex, fragment, etc.).
+         * @return true if the shader stage was loaded and compiled successfully.
+         * @return false if there was an error loading or compiling the shader.
+         */
+        void add_replace_word(ReplaceWord&& word);
 
         /**
          * @brief Load a shader stage from a file and compile it.
@@ -95,5 +107,7 @@ namespace gl
         std::unordered_map<std::string, GLint> uniform_locations_;
         std::vector<GLuint> stages_;
         GLuint program_ = 0;
+
+        std::vector<ReplaceWord> replace_words_;
     };
 } // namespace gl

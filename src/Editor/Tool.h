@@ -24,7 +24,7 @@ class CreateWallTool : public ITool
     void render_preview_2d(DrawingPad& drawing_pad) override;
 
   private:
-    Mesh3D wall_preview_;
+    WorldGeometryMesh3D wall_preview_;
     glm::vec2 start_{0.0f};
     glm::vec2 end_{0.0f};
     bool active_dragging_ = false;

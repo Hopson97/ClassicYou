@@ -12,14 +12,14 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node)
             active_dragging_ = true;
             start_ = node;
             end_ = node;
-            wall_preview_ = generate_wall_mesh(start_, end_);
+            wall_preview_ = generate_wall_mesh(start_, end_, 1);
             wall_preview_.buffer();
         }
     }
     else if (event.is<sf::Event::MouseMoved>())
     {
         end_ = node;
-        wall_preview_ = generate_wall_mesh(start_, end_);
+        wall_preview_ = generate_wall_mesh(start_, end_, 1);
         wall_preview_.buffer();
     }
     else if (event.is<sf::Event::MouseButtonReleased>())

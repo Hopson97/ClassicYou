@@ -6,32 +6,6 @@
 
 #include "../Editor/EditConstants.h"
 
-const InstanceBatch& InstanceBatch::bind() const
-{
-    mesh.bind();
-    return *this;
-}
-
-void InstanceBatch::buffer()
-{
-    mesh.buffer();
-    transform_vbo_.reset();
-    transform_vbo_.buffer_data(transforms);
-    mesh.vao()
-        .add_vertex_buffer(transform_vbo_, sizeof(glm::mat4))
-        .add_instance_attribute(4, GL_FLOAT, sizeof(glm::vec4), 1, 4);
-}
-
-void InstanceBatch::draw_elements(GLenum draw_mode) const
-{
-    glDrawElementsInstanced(draw_mode, mesh.indices_count(), GL_UNSIGNED_INT, nullptr,
-                            transforms.size());
-}
-
-void InstanceBatch::update()
-{
-}
-
 // -----------------------------------
 // ==== MESH GENERATION FUNCTIONS ====
 // -----------------------------------
@@ -40,13 +14,11 @@ Mesh3D generate_quad_mesh(float w, float h)
 {
     Mesh3D mesh;
 
-    mesh.vertices = {
-        // positions                // tex coords   // normal           // color
-        {{0.0f, 0.0f, 0.0f},        {0.0f, 0.0f},  {0.0f, 0.0f, 1.0f}, glm::vec4{1.0f}},
-        {{w,    0.0f, 0.0f},        {1.0f, 0.0f},  {0.0f, 0.0f, 1.0f}, glm::vec4{1.0f}},
-        {{w,    h,    0.0f},        {1.0f, 1.0f},  {0.0f, 0.0f, 1.0f}, glm::vec4{1.0f}},
-        {{0.0f, h,    0.0f},        {0.0f, 1.0f},  {0.0f, 0.0f, 1.0f}, glm::vec4{1.0f}}
-    };
+    mesh.vertices = {// positions                // tex coords   // normal           // color
+                     {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, glm::vec4{1.0f}},
+                     {{w, 0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, glm::vec4{1.0f}},
+                     {{w, h, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, glm::vec4{1.0f}},
+                     {{0.0f, h, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, glm::vec4{1.0f}}};
     mesh.indices = {0, 1, 2, 2, 3, 0};
 
     return mesh;
@@ -216,7 +188,7 @@ Mesh3D generate_terrain_mesh(int size, int edgeVertices)
     return mesh;
 }
 
-Mesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to)
+WorldGeometryMesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to, GLuint texture_id)
 {
     // Begin
     auto b = glm::vec3{from.x, 0, from.y} / static_cast<float>(TILE_SIZE);
@@ -224,7 +196,7 @@ Mesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to)
     // End
     auto e = glm::vec3{to.x, 0, to.y} / static_cast<float>(TILE_SIZE);
 
-    Mesh3D mesh;
+    WorldGeometryMesh3D mesh;
 
     // Offset x, y, bottom (TODO: Top)
     auto ox = 0.0f;
@@ -234,18 +206,20 @@ Mesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to)
 
     const auto length = glm::length(b - e);
 
+    GLfloat tex = static_cast<float>(texture_id);
+
     mesh.vertices = {
         // Front
-        {{b.x + ox, ob, b.z + oz}, {0.0f, ob}, {0, 0, 1}},
-        {{b.x + ox, h, b.z + oz}, {0.0, h}, {0, 0, 1}},
-        {{e.x + ox, h, e.z + oz}, {length, h}, {0, 0, 1}},
-        {{e.x + ox, ob, e.z + oz}, {length, ob}, {0, 0, 1}},
+        {{b.x + ox, ob, b.z + oz}, {0.0f, ob, tex}, {0, 0, 1}},
+        {{b.x + ox, h, b.z + oz}, {0.0, h, tex}, {0, 0, 1}},
+        {{e.x + ox, h, e.z + oz}, {length, h, tex}, {0, 0, 1}},
+        {{e.x + ox, ob, e.z + oz}, {length, ob, tex}, {0, 0, 1}},
 
         // Back
-        {{b.x - ox, ob, b.z - oz}, {0.0f, ob}, {0, 0, 1}},
-        {{b.x - ox, h, b.z - oz}, {0.0, h}, {0, 0, 1}},
-        {{e.x - ox, h, e.z - oz}, {length, h}, {0, 0, 1}},
-        {{e.x - ox, ob, e.z - oz}, {length, ob}, {0, 0, 1}},
+        {{b.x - ox, ob, b.z - oz}, {0.0f, ob, tex}, {0, 0, 1}},
+        {{b.x - ox, h, b.z - oz}, {0.0, h, tex}, {0, 0, 1}},
+        {{e.x - ox, h, e.z - oz}, {length, h, tex}, {0, 0, 1}},
+        {{e.x - ox, ob, e.z - oz}, {length, ob, tex}, {0, 0, 1}},
 
     };
 

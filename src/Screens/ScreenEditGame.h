@@ -2,6 +2,7 @@
 
 #include "../Editor/DrawingPad.h"
 #include "../Editor/EditConstants.h"
+#include "../Editor/Tool.h"
 #include "../Graphics/Camera.h"
 #include "../Graphics/CameraController.h"
 #include "../Graphics/Mesh.h"
@@ -9,7 +10,6 @@
 #include "../Graphics/OpenGL/Texture.h"
 #include "../Settings.h"
 #include "Screen.h"
-#include "../Editor/Tool.h"
 
 class ScreenEditGame final : public Screen
 {
@@ -34,6 +34,7 @@ class ScreenEditGame final : public Screen
 
     gl::BufferObject matrices_ssbo_;
     gl::Shader scene_shader_;
+    gl::Shader world_geometry_shader_;
 
     Mesh3D selection_mesh_ = generate_quad_mesh(0.25, 0.25);
 

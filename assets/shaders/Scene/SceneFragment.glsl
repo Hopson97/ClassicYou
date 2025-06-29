@@ -3,13 +3,13 @@
 layout(location = 0) out vec4 out_colour;
 
 in VS_OUT {
-    vec2 texture_coord;
+    TEX_COORD_LENGTH texture_coord;
     vec3 normal;
     vec3 fragment_coord;
     vec4 colour;
 } fs_in;
 
-uniform sampler2D diffuse;
+uniform SAMPLER_TYPE diffuse;
 uniform bool use_texture;
 
 void main() 

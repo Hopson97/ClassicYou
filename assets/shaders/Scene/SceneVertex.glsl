@@ -1,12 +1,12 @@
 #version 450 core
 
 layout(location = 0) in vec3 in_position;
-layout(location = 1) in vec2 in_texture_coord;
+layout(location = 1) in TEX_COORD_LENGTH in_texture_coord;
 layout(location = 2) in vec3 in_normal;
 layout(location = 3) in vec4 in_colour;
 
 out VS_OUT {
-    vec2 texture_coord;
+    TEX_COORD_LENGTH texture_coord;
     vec3 normal;
     vec3 fragment_coord;
     vec4 colour;

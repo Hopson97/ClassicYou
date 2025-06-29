@@ -61,6 +61,13 @@ bool ScreenEditGame::on_init()
         return false;
     }
 
+    auto [loaded2, brick_id2] =
+        texture_.add_texture_from_file("assets/textures/GreyBricks.png", 4, false, false);
+    if (!loaded2)
+    {
+        return false;
+    }
+
     if (!texture_old_.load_from_file("assets/textures/RedBricks.png", 4, false, false,
                                      {
                                          .min_filter = gl::TextureMinFilter::Nearest,
@@ -71,7 +78,7 @@ bool ScreenEditGame::on_init()
     {
         return false;
     }
-    std::cout << brick_id << std::endl;
+    std::cout << brick_id2 << std::endl;
 
     // ---------------------------
     // ==== Buffer thr meshes ====
@@ -82,6 +89,9 @@ bool ScreenEditGame::on_init()
     // ----------------------------
     // ==== Load scene shaders ====
     // ----------------------------
+    // Load the shader for the basic parts of a scene
+    scene_shader_.add_replace_word({"TEX_COORD_LENGTH", "vec2"});
+    scene_shader_.add_replace_word({"SAMPLER_TYPE", "sampler2D"});
     if (!scene_shader_.load_stage("assets/shaders/Scene/SceneVertex.glsl",
                                   gl::ShaderType::Vertex) ||
         !scene_shader_.load_stage("assets/shaders/Scene/SceneFragment.glsl",
@@ -91,6 +101,20 @@ bool ScreenEditGame::on_init()
         return false;
     }
     scene_shader_.set_uniform("diffuse", 0);
+
+    // Load the shader for world geometry. This is a seperate shader
+    // as it needs to use 3D texture coords to work with GL_TEXTURE_2D_ARRAY
+    world_geometry_shader_.add_replace_word({"TEX_COORD_LENGTH", "vec3"});
+    world_geometry_shader_.add_replace_word({"SAMPLER_TYPE", "sampler2DArray"});
+    if (!world_geometry_shader_.load_stage("assets/shaders/Scene/SceneVertex.glsl",
+                                           gl::ShaderType::Vertex) ||
+        !world_geometry_shader_.load_stage("assets/shaders/Scene/SceneFragment.glsl",
+                                           gl::ShaderType::Fragment) ||
+        !world_geometry_shader_.link_shaders())
+    {
+        return false;
+    }
+    world_geometry_shader_.set_uniform("diffuse", 0);
 
     // -------------------------
     // ==== Set up the SSBO ====
@@ -178,6 +202,13 @@ void ScreenEditGame::on_render(bool show_debug)
 
     // Ensure GUI etc are rendered using fill
     gl::polygon_mode(gl::Face::FrontAndBack, gl::PolygonMode::Fill);
+
+    // Draw preview wall
+    world_geometry_shader_.bind();
+    texture_.bind(0);
+    world_geometry_shader_.set_uniform("use_texture", true);
+    world_geometry_shader_.set_uniform("model_matrix", create_model_matrix({}));
+    tool_.render_preview();
 }
 
 void ScreenEditGame::render_scene(gl::Shader& shader)
@@ -203,12 +234,6 @@ void ScreenEditGame::render_scene(gl::Shader& shader)
                                        }));
     shader.set_uniform("use_texture", false);
     selection_mesh_.bind().draw_elements();
-
-    // Draw preview wall
-    texture_old_.bind(0);
-    shader.set_uniform("use_texture", true);
-    shader.set_uniform("model_matrix", create_model_matrix({}));
-    tool_.render_preview();
 }
 
 void ScreenEditGame::pause_menu()

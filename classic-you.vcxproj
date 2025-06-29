@@ -188,7 +188,6 @@
     <None Include="assets\shaders\GUIVertex.glsl" />
     <None Include="assets\shaders\Scene\Scene2DFragment.glsl" />
     <None Include="assets\shaders\Scene\Scene2DVertex.glsl" />
-    <None Include="assets\shaders\Scene\SceneInstanceVertex.glsl" />
     <None Include="assets\shaders\Scene\SceneFragment.glsl" />
     <None Include="assets\shaders\Scene\SceneSimpleFragment.glsl" />
     <None Include="assets\shaders\ScreenFragment.glsl" />

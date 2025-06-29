@@ -7,20 +7,35 @@
 
 #include "OpenGL/VertexArrayObject.h"
 
-struct Vertex
+/**
+ * @brief A vertex structure for 3D meshes
+ *
+ * @tparam TextureCoordType The type of texture coordinates used in the vertex - e.g., glm::vec2 or
+ * glm::vec3.
+ */
+template <typename TextureCoordType>
+struct Vertex3D
 {
+    using T = TextureCoordType;
+
     glm::vec3 position{0.0f};
-    glm::vec2 texture_coord{0.0f};
+    TextureCoordType texture_coord{0.0f};
     glm::vec3 normal{0.0f};
     glm::vec4 colour{0.0f};
 
-    static void build_attribs(gl::VertexArrayObject& vao, gl::BufferObject& vbo)
+    /**
+     * @brief Builds the vertex attributes for the given VertexArrayObject and BufferObject.
+     *
+     * @param vao The VertexArrayObject to which the attributes will be added.
+     * @param vbo The BufferObject containing the vertex data.
+     */
+    static constexpr void build_attribs(gl::VertexArrayObject& vao, gl::BufferObject& vbo)
     {
-        vao.add_vertex_buffer(vbo, sizeof(Vertex))
-            .add_attribute(3, GL_FLOAT, offsetof(Vertex, position))
-            .add_attribute(2, GL_FLOAT, offsetof(Vertex, texture_coord))
-            .add_attribute(3, GL_FLOAT, offsetof(Vertex, normal))
-            .add_attribute(4, GL_FLOAT, offsetof(Vertex, colour));
+        vao.add_vertex_buffer(vbo, sizeof(Vertex3D))
+            .add_attribute(3, GL_FLOAT, offsetof(Vertex3D, position))
+            .add_attribute(T::length(), GL_FLOAT, offsetof(Vertex3D, texture_coord))
+            .add_attribute(3, GL_FLOAT, offsetof(Vertex3D, normal))
+            .add_attribute(4, GL_FLOAT, offsetof(Vertex3D, colour));
     }
 };
 
@@ -134,22 +149,24 @@ void Mesh<Vertex>::draw_elements(GLenum draw_mode) const
     glDrawElements(draw_mode, indices_, GL_UNSIGNED_INT, nullptr);
 }
 
-struct InstanceBatch
-{
-    const InstanceBatch& bind() const;
-    void buffer();
-    void draw_elements(GLenum draw_mode = GL_TRIANGLES) const;
-    void update();
+/**
+ * @brief Type aliases for commonly used vertex types and meshes.
+ *
+ */
 
-    int count = 0;
+/// @brief 3D vertex with 2D texture coordinates.
+using Vertex = Vertex3D<glm::vec2>;
 
-    Mesh<Vertex> mesh;
-    std::vector<glm::mat4> transforms;
+/// @brief 3D vertex with 3D texture coordinates.
+using VertexWorldGeometry = Vertex3D<glm::vec3>;
 
-    gl::BufferObject transform_vbo_;
-};
-
+/// @brief Mesh for 3D objects using Vertex (aka 2d texture coords)
 using Mesh3D = Mesh<Vertex>;
+
+/// @brief Mesh for 3D objects using VertexWorldGeometry (aka 3d texture coords)
+using WorldGeometryMesh3D = Mesh<VertexWorldGeometry>;
+
+/// @brief
 using Mesh2D = Mesh<Vertex2D>;
 
 [[nodiscard]] Mesh3D generate_quad_mesh(float w, float h);
@@ -157,5 +174,6 @@ using Mesh2D = Mesh<Vertex2D>;
 [[nodiscard]] Mesh3D generate_centered_cube_mesh(const glm::vec3& size);
 [[nodiscard]] Mesh3D generate_terrain_mesh(int size, int edgeVertices);
 
-[[nodiscard]] Mesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to);
+[[nodiscard]] WorldGeometryMesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to,
+                                                     GLuint texture_id);
 [[nodiscard]] Mesh3D generate_grid_mesh(int width, int height);

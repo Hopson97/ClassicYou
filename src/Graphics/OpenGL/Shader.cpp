@@ -159,6 +159,11 @@ namespace gl
         glDeleteProgram(program_);
     }
 
+    void Shader::add_replace_word(ReplaceWord&& word)
+    {
+        replace_words_.push_back(std::move(word));
+    }
+
     bool Shader::load_stage(const std::filesystem::path& file_path, ShaderType shader_type)
     {
         // Load the files into strings and verify
@@ -167,6 +172,17 @@ namespace gl
         if (!source)
         {
             return false;
+        }
+
+        // Replace words
+        for (auto& [from, to] : replace_words_)
+        {
+            size_t pos = 0;
+            while ((pos = source->find(from, pos)) != std::string::npos)
+            {
+                source->replace(pos, from.length(), to);
+                pos += to.length();
+            }
         }
 
         if (source->length() == 0)
@@ -219,6 +235,9 @@ namespace gl
         }
         stages_.clear();
         stages_.shrink_to_fit();
+
+        replace_words_.clear();
+        replace_words_.shrink_to_fit();
 
         return true;
     }
