@@ -10,6 +10,13 @@
 
 namespace
 {
+    // Replace std::unordered_map with std::array for constexpr compatibility
+    constexpr std::array<std::pair<const char*, const char*>, 3> TEXTURES = {
+        std::make_pair("Red Bricks", "assets/textures/RedBricks.png"),
+        std::make_pair("Grey Bricks", "assets/textures/GreyBricks.png"),
+        std::make_pair("Bars", "assets/textures/Bars.png"),
+    };
+
     glm::ivec2 map_pixel_to_tile(glm::vec2 point, const Camera& camera)
     {
         // TODO handle camera zooming
@@ -47,38 +54,15 @@ bool ScreenEditGame::on_init()
     // ==== Load textures ====
     // -----------------------
     // Load textures
-    texture_.create(16, 32,
-                    {
-                        .min_filter = gl::TextureMinFilter::Nearest,
-                        .mag_filter = gl::TextureMagFilter::Nearest,
-                        .wrap_s = gl::TextureWrap::Repeat,
-                        .wrap_t = gl::TextureWrap::Repeat,
-                    });
-    auto [loaded, brick_id] =
-        texture_.add_texture_from_file("assets/textures/RedBricks.png", 4, false, false);
-    if (!loaded)
-    {
-        return false;
-    }
+    texture_.create(16, 32, gl::TEXTURE_PARAMS_NEAREST);
 
-    auto [loaded2, brick_id2] =
-        texture_.add_texture_from_file("assets/textures/GreyBricks.png", 4, false, false);
-    if (!loaded2)
+    for (auto& texture : TEXTURES)
     {
-        return false;
+        if (!level_texures_.register_texture(texture.first, texture.second, texture_))
+        {
+            return false;
+        }
     }
-
-    if (!texture_old_.load_from_file("assets/textures/RedBricks.png", 4, false, false,
-                                     {
-                                         .min_filter = gl::TextureMinFilter::Nearest,
-                                         .mag_filter = gl::TextureMagFilter::Nearest,
-                                         .wrap_s = gl::TextureWrap::Repeat,
-                                         .wrap_t = gl::TextureWrap::Repeat,
-                                     }))
-    {
-        return false;
-    }
-    std::cout << brick_id2 << std::endl;
 
     // ---------------------------
     // ==== Buffer thr meshes ====
@@ -200,15 +184,15 @@ void ScreenEditGame::on_render(bool show_debug)
     scene_shader_.bind();
     render_scene(scene_shader_);
 
-    // Ensure GUI etc are rendered using fill
-    gl::polygon_mode(gl::Face::FrontAndBack, gl::PolygonMode::Fill);
-
     // Draw preview wall
     world_geometry_shader_.bind();
     texture_.bind(0);
     world_geometry_shader_.set_uniform("use_texture", true);
     world_geometry_shader_.set_uniform("model_matrix", create_model_matrix({}));
     tool_.render_preview();
+
+    // Ensure GUI etc are rendered using fill
+    gl::polygon_mode(gl::Face::FrontAndBack, gl::PolygonMode::Fill);
 }
 
 void ScreenEditGame::render_scene(gl::Shader& shader)
@@ -216,7 +200,7 @@ void ScreenEditGame::render_scene(gl::Shader& shader)
     // Set up the capabilities/ render states
     shader.bind();
     gl::enable(gl::Capability::DepthTest);
-    gl::disable(gl::Capability::CullFace);
+    gl::enable(gl::Capability::CullFace);
     gl::cull_face(gl::Face::Back);
     gl::polygon_mode(gl::Face::FrontAndBack,
                      settings_.wireframe ? gl::PolygonMode::Line : gl::PolygonMode::Fill);
@@ -234,6 +218,30 @@ void ScreenEditGame::render_scene(gl::Shader& shader)
                                        }));
     shader.set_uniform("use_texture", false);
     selection_mesh_.bind().draw_elements();
+
+    // Display texture_map as clickable images
+    if (ImGui::Begin("Texture Layers"))
+    {
+        // Assuming you have: std::unordered_map<std::string, GLuint> texture_map;
+        // and texture_ is your GL_TEXTURE_2D_ARRAY
+        constexpr float image_size = 64.0f;
+        int id = 0;
+        for (const auto& [name, texture] : level_texures_.texture_2d_map)
+        {
+            ImGui::PushID(id++);
+            ImGui::SameLine();
+            if (ImGui::ImageButton(name.c_str(), static_cast<ImTextureID>(texture.id), {32, 32}))
+            {
+                std::println("Texture clicked: {}", name);
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("%s", name.c_str());
+            }
+            ImGui::PopID();
+        }
+        ImGui::End();
+    }
 }
 
 void ScreenEditGame::pause_menu()

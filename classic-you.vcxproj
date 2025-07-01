@@ -212,6 +212,7 @@
     <ClInclude Include="src\Editor\DrawingPad.h" />
     <ClInclude Include="src\Editor\EditConstants.h" />
     <ClInclude Include="src\Editor\Tool.h" />
+    <ClInclude Include="src\Editor\WorldGeometry.h" />
     <ClInclude Include="src\Graphics\CameraController.h" />
     <ClInclude Include="src\Graphics\Camera.h" />
     <ClInclude Include="src\Graphics\ShadowMap.h" />

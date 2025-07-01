@@ -188,7 +188,8 @@ Mesh3D generate_terrain_mesh(int size, int edgeVertices)
     return mesh;
 }
 
-WorldGeometryMesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to, GLuint texture_id)
+WorldGeometryMesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to, GLuint texture_id_1,
+                                       GLuint texture_id_2)
 {
     // Begin
     auto b = glm::vec3{from.x, 0, from.y} / static_cast<float>(TILE_SIZE);
@@ -206,20 +207,21 @@ WorldGeometryMesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to, GLuint text
 
     const auto length = glm::length(b - e);
 
-    GLfloat tex = static_cast<float>(texture_id);
+    GLfloat tex1 = static_cast<float>(texture_id_1);
+    GLfloat tex2 = static_cast<float>(texture_id_2);
 
     mesh.vertices = {
         // Front
-        {{b.x + ox, ob, b.z + oz}, {0.0f, ob, tex}, {0, 0, 1}},
-        {{b.x + ox, h, b.z + oz}, {0.0, h, tex}, {0, 0, 1}},
-        {{e.x + ox, h, e.z + oz}, {length, h, tex}, {0, 0, 1}},
-        {{e.x + ox, ob, e.z + oz}, {length, ob, tex}, {0, 0, 1}},
+        {{b.x + ox, ob, b.z + oz}, {0.0f, ob, tex1}, {0, 0, 1}},
+        {{b.x + ox, h, b.z + oz}, {0.0, h, tex1}, {0, 0, 1}},
+        {{e.x + ox, h, e.z + oz}, {length, h, tex1}, {0, 0, 1}},
+        {{e.x + ox, ob, e.z + oz}, {length, ob, tex1}, {0, 0, 1}},
 
         // Back
-        {{b.x - ox, ob, b.z - oz}, {0.0f, ob, tex}, {0, 0, 1}},
-        {{b.x - ox, h, b.z - oz}, {0.0, h, tex}, {0, 0, 1}},
-        {{e.x - ox, h, e.z - oz}, {length, h, tex}, {0, 0, 1}},
-        {{e.x - ox, ob, e.z - oz}, {length, ob, tex}, {0, 0, 1}},
+        {{b.x - ox, ob, b.z - oz}, {0.0f, ob, tex2}, {0, 0, 1}},
+        {{b.x - ox, h, b.z - oz}, {0.0, h, tex2}, {0, 0, 1}},
+        {{e.x - ox, h, e.z - oz}, {length, h, tex2}, {0, 0, 1}},
+        {{e.x - ox, ob, e.z - oz}, {length, ob, tex2}, {0, 0, 1}},
 
     };
 

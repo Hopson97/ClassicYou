@@ -5,6 +5,7 @@
 #include "../Graphics/Mesh.h"
 
 class DrawingPad;
+class LevelTextures;
 
 class ITool
 {
@@ -17,13 +18,15 @@ class ITool
 class CreateWallTool : public ITool
 {
   public:
-    // CreateWallTool();
-
     void on_event(sf::Event event, glm::vec2 node) override;
     void render_preview() override;
     void render_preview_2d(DrawingPad& drawing_pad) override;
 
+
+
   private:
+    const LevelTextures* p_level_textures_;
+
     WorldGeometryMesh3D wall_preview_;
     glm::vec2 start_{0.0f};
     glm::vec2 end_{0.0f};

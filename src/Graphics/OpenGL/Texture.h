@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <print>
 #include <string_view>
 #include <unordered_map>
 
@@ -87,6 +88,14 @@ namespace gl
         .wrap_t = TextureWrap::Repeat,
         .wrap_r = TextureWrap::Repeat,
     };
+
+    constexpr TextureParameters TEXTURE_PARAMS_NEAREST = {
+        .min_filter = gl::TextureMinFilter::Nearest,
+        .mag_filter = gl::TextureMagFilter::Nearest,
+        .wrap_s = gl::TextureWrap::Repeat,
+        .wrap_t = gl::TextureWrap::Repeat,
+        .wrap_r = TextureWrap::Repeat,
+    };
     // clang-format off
 
     struct TextureResource
@@ -99,8 +108,8 @@ namespace gl
         TextureResource           (const TextureResource& other) = delete;  
         TextureResource& operator=(const TextureResource& other) = delete;  
 
-        TextureResource& operator=(TextureResource&& other) noexcept { id = other.id;  other.id = 0; return *this; }   
-        TextureResource (TextureResource&& other) noexcept : id  (other.id){ other.id = 0; }   
+        TextureResource& operator=(TextureResource&& other) noexcept { id = other.id;  other.id = 0; return *this; std::println("MVOED TEXTURE!! {}" ,id);}   
+        TextureResource (TextureResource&& other) noexcept : id  (other.id){ other.id = 0; std::println("MVOED TEXTURE!! {}" ,id); }   
 
         void bind(GLuint unit) const { assert(id); glBindTextureUnit(unit, id); }
         // clang-format on

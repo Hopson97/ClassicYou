@@ -175,5 +175,5 @@ using Mesh2D = Mesh<Vertex2D>;
 [[nodiscard]] Mesh3D generate_terrain_mesh(int size, int edgeVertices);
 
 [[nodiscard]] WorldGeometryMesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to,
-                                                     GLuint texture_id);
+                                                     GLuint texture_id_1, GLuint texture_id_2);
 [[nodiscard]] Mesh3D generate_grid_mesh(int width, int height);
