@@ -1,66 +1,17 @@
 #pragma once
 
-#include <unordered_map>
 
 #include "../Editor/DrawingPad.h"
 #include "../Editor/EditConstants.h"
+#include "../Editor/LevelTextures.h"
+#include "../Editor/EditorLevel.h"
 #include "../Editor/Tool.h"
 #include "../Graphics/Camera.h"
 #include "../Graphics/CameraController.h"
 #include "../Graphics/Mesh.h"
 #include "../Graphics/OpenGL/BufferObject.h"
-#include "../Graphics/OpenGL/Texture.h"
 #include "../Settings.h"
 #include "Screen.h"
-
-class LevelTextures
-{
-  public:
-    bool register_texture(const std::string& name, const std::filesystem::path& texture_file_path,
-                          gl::Texture2DArray& textures)
-    {
-        if (texture_map.find(name) != texture_map.end())
-        {
-            return true;
-        }
-
-        // Load the texture from disk - todo maybe load the image once and use for both?
-        auto [loaded, id] = textures.add_texture_from_file(texture_file_path, 4, false, false);
-        if (loaded)
-        {
-            texture_map.emplace(name, id);
-
-            // Also load the "TEXTURE_2D" for GUIs
-            gl::Texture2D texture;
-            if (!texture.load_from_file(texture_file_path, 4, false, false,
-                                        gl::TEXTURE_PARAMS_NEAREST))
-            {
-                return false;
-            }
-
-            texture_2d_map.emplace(name, std::move(texture));
-            return true;
-        }
-
-        return false;
-    }
-
-    GLfloat get_texture(const std::string& name)
-    {
-        auto itr = texture_map.find(name);
-        if (itr == texture_map.end())
-        {
-            return -1.0f;
-        }
-        return itr->second;
-    }
-
-    // For use in rendering 3D objects, this maps a name the "layer" within a GL_TEXTURE_2D_ARRAY
-    std::unordered_map<std::string, GLuint> texture_map;
-
-    // For use in rendering ImGUI, this maps the name to a 2D texture
-    std::unordered_map<std::string, gl::Texture2D> texture_2d_map;
-};
 
 class ScreenEditGame final : public Screen
 {
@@ -95,15 +46,15 @@ class ScreenEditGame final : public Screen
     bool game_paused_ = false;
     Settings settings_;
 
-    struct EditorState
-    {
-        glm::ivec2 node_hovered;
-    };
     EditorState editor_state_;
 
     CameraKeybinds camera_keybinds_;
 
     LevelTextures level_texures_;
     gl::Texture2DArray texture_;
+
+    EditorLevel level_;
+
+   
     CreateWallTool tool_;
 };

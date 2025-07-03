@@ -11,10 +11,11 @@
 namespace
 {
     // Replace std::unordered_map with std::array for constexpr compatibility
-    constexpr std::array<std::pair<const char*, const char*>, 3> TEXTURES = {
+    constexpr std::array<std::pair<const char*, const char*>, 4> TEXTURES = {
         std::make_pair("Red Bricks", "assets/textures/RedBricks.png"),
         std::make_pair("Grey Bricks", "assets/textures/GreyBricks.png"),
         std::make_pair("Bars", "assets/textures/Bars.png"),
+        std::make_pair("ChainFence", "assets/textures/ChainFence.png"),
     };
 
     glm::ivec2 map_pixel_to_tile(glm::vec2 point, const Camera& camera)
@@ -40,6 +41,7 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens)
           .fov = 90.0f,
       })
     , drawing_pad_({window().getSize().x / 2, window().getSize().y}, editor_state_.node_hovered)
+    , tool_(level_)
 {
 }
 
@@ -144,7 +146,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
         editor_state_.node_hovered =
             map_pixel_to_tile({mouse->position.x, mouse->position.y}, drawing_pad_.get_camera());
     }
-    tool_.on_event(event, editor_state_.node_hovered);
+    tool_.on_event(event, editor_state_.node_hovered, editor_state_);
 }
 
 void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
@@ -172,6 +174,12 @@ void ScreenEditGame::on_render(bool show_debug)
     glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
     tool_.render_preview_2d(drawing_pad_);
 
+    for (auto& wall : level_.walls)
+    {
+        drawing_pad_.render_line(wall.first.parameters.start, wall.first.parameters.end,
+                                 glm::vec4{1.0f}, 2);
+    }
+
     // Finalise 2d rendering
     drawing_pad_.display();
 
@@ -191,8 +199,22 @@ void ScreenEditGame::on_render(bool show_debug)
     world_geometry_shader_.set_uniform("model_matrix", create_model_matrix({}));
     tool_.render_preview();
 
+    // Draw level
+    for (auto& wall : level_.walls)
+    {
+        wall.second.bind().draw_elements();
+    }
+
     // Ensure GUI etc are rendered using fill
     gl::polygon_mode(gl::Face::FrontAndBack, gl::PolygonMode::Fill);
+
+    if (editor_state_.p_active_object_)
+    {
+        if (editor_state_.p_active_object_->property_gui(editor_state_, level_texures_))
+        {
+            std::cout << "Properties updated for active object.\n";
+        }
+    }
 }
 
 void ScreenEditGame::render_scene(gl::Shader& shader)
@@ -210,6 +232,8 @@ void ScreenEditGame::render_scene(gl::Shader& shader)
     shader.set_uniform("use_texture", false);
     grid_mesh_.bind().draw_elements(GL_LINES);
 
+    // Draw level
+
     // Draw the selection node
     shader.set_uniform("model_matrix", create_model_matrix({
                                            .position = {editor_state_.node_hovered.x / TILE_SIZE, 0,
@@ -218,30 +242,6 @@ void ScreenEditGame::render_scene(gl::Shader& shader)
                                        }));
     shader.set_uniform("use_texture", false);
     selection_mesh_.bind().draw_elements();
-
-    // Display texture_map as clickable images
-    if (ImGui::Begin("Texture Layers"))
-    {
-        // Assuming you have: std::unordered_map<std::string, GLuint> texture_map;
-        // and texture_ is your GL_TEXTURE_2D_ARRAY
-        constexpr float image_size = 64.0f;
-        int id = 0;
-        for (const auto& [name, texture] : level_texures_.texture_2d_map)
-        {
-            ImGui::PushID(id++);
-            ImGui::SameLine();
-            if (ImGui::ImageButton(name.c_str(), static_cast<ImTextureID>(texture.id), {32, 32}))
-            {
-                std::println("Texture clicked: {}", name);
-            }
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::SetTooltip("%s", name.c_str());
-            }
-            ImGui::PopID();
-        }
-        ImGui::End();
-    }
 }
 
 void ScreenEditGame::pause_menu()
