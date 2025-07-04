@@ -56,7 +56,8 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens)
             wall_meshes_.push_back(std::move(level_mesh));
         });
 
-    property_editor_.on_property_update.push_back([&](auto& wall)
+    property_editor_.on_property_update.push_back(
+        [&](auto& wall)
         {
             for (auto& wall_mesh : wall_meshes_)
             {
@@ -67,7 +68,6 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens)
                                                        wall.props.texture_side_2.value);
                     new_mesh.buffer();
                     wall_mesh.mesh = std::move(new_mesh);
-                    
                 }
             }
         });
@@ -174,6 +174,22 @@ void ScreenEditGame::on_event(const sf::Event& event)
         editor_state_.node_hovered =
             map_pixel_to_tile({mouse->position.x, mouse->position.y}, drawing_pad_.get_camera());
     }
+    else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
+    {
+        if (mouse->button == sf::Mouse::Button::Right)
+        {
+            for (auto& wall : level_.walls)
+            {
+                if (wall.try_select_2d(map_pixel_to_tile({mouse->position.x, mouse->position.y},
+                                                         drawing_pad_.get_camera())))
+                {
+                    editor_state_.p_active_object_ = &wall;
+                    break;
+                }
+            }
+        }
+    }
+
     tool_.on_event(event, editor_state_.node_hovered, editor_state_);
 }
 
@@ -204,7 +220,11 @@ void ScreenEditGame::on_render(bool show_debug)
 
     for (auto& wall : level_.walls)
     {
-        drawing_pad_.render_line(wall.parameters.start, wall.parameters.end, glm::vec4{1.0f}, 2);
+        auto is_selected = editor_state_.p_active_object_ &&
+                           editor_state_.p_active_object_->object_id == wall.object_id;
+        auto colour = is_selected ? Colour::RED : Colour::WHITE;
+        auto thickness = is_selected ? 3 : 2;
+        drawing_pad_.render_line(wall.parameters.start, wall.parameters.end, colour, thickness);
     }
 
     // Finalise 2d rendering

@@ -1,7 +1,8 @@
 #include "Tool.h"
 
-#include "DrawingPad.h"
+#include <imgui.h>
 
+#include "DrawingPad.h"
 #include "EditorLevel.h"
 
 CreateWallTool::CreateWallTool(EditorLevel& level)
@@ -15,7 +16,7 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
 
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {
-        if (mouse->button == sf::Mouse::Button::Left)
+        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
 
             active_dragging_ = true;
@@ -33,12 +34,19 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
                                            default_props.texture_side_2.value);
         wall_preview_.buffer();
     }
-    else if (event.is<sf::Event::MouseButtonReleased>())
+    else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
-        active_dragging_ = false;
-        if (glm::length(start_ - end_) > 0.25f)
+        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
-            state.p_active_object_ = &p_level_->add_wall({.start = start_, .end = end_});
+            active_dragging_ = false;
+            if (glm::length(start_ - end_) > 0.25f)
+            {
+                state.p_active_object_ = &p_level_->add_wall({.start = start_, .end = end_});
+            }
+            else
+            {
+                state.p_active_object_ = nullptr;
+            }
         }
     }
 }

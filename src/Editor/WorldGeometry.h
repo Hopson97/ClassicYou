@@ -18,6 +18,10 @@ struct LevelObject
 
     virtual bool property_gui(EditorState& state, PropertyEditor& editor,
                               const LevelTextures& textures) = 0;
+
+    /// Function that is called when right-clicking the 2D view.
+    /// Returns true if the object was clicked.
+    virtual bool try_select_2d(const glm::vec2& point) = 0;
 };
 
 struct WallProps
@@ -45,6 +49,8 @@ struct Wall : public LevelObject
 
     bool property_gui(EditorState& state, PropertyEditor& editor,
                       const LevelTextures& textures) override;
+
+    bool try_select_2d(const glm::vec2& point) override;
 };
 
 struct EditorState
@@ -53,7 +59,7 @@ struct EditorState
 
     WallProps wall_default = {
         .texture_side_1 = {0},
-        .texture_side_2 = {3},
+        .texture_side_2 = {0},
     };
 
     LevelObject* p_active_object_ = nullptr;

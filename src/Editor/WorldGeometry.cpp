@@ -4,6 +4,8 @@
 
 #include <imgui.h>
 
+#include "../Util/Maths.h"
+
 #include "LevelTextures.h"
 
 bool Wall::property_gui(EditorState& state, PropertyEditor& editor, const LevelTextures& textures)
@@ -33,4 +35,9 @@ bool Wall::property_gui(EditorState& state, PropertyEditor& editor, const LevelT
         }
     }
     return true;
+}
+
+bool Wall::try_select_2d(const glm::vec2& point)
+{
+    return  distance_to_line(point, {parameters.start, parameters.end}) < 15;
 }

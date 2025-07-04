@@ -61,3 +61,29 @@ glm::vec3 backward_vector_flat(const glm::vec3& rotation)
 {
     return -forward_vector_flat(rotation);
 }
+
+float distance_to_line(const glm::vec2& point, const Line& line)
+{
+    glm::vec2 vect;
+
+    auto length = glm::distance2(line.start, line.end);
+    if (length == 0)
+    {
+        return 1234.0f;
+    }
+
+    // Consider the line extline.ending the segment, parameterized as v + t (w - v).
+    // Find projection of point p onto the line.
+    // It falls where t = [(p-v) . (w-v)] / |w-v|^2
+    auto t = ((point.x - line.start.x) * (line.end.x - line.start.x) +
+              (point.y - line.start.y) * (line.end.y - line.start.y)) /
+             length;
+
+    // Clamp to handle points that fall outside of the line
+    t = glm::clamp(t, 0.0f, 1.0f);
+
+    auto dist = glm::distance2(point, {line.start.x + t * (line.end.x - line.start.x),
+                                       line.start.y + t * (line.end.y - line.start.y)});
+
+    return glm::sqrt(dist);
+}
