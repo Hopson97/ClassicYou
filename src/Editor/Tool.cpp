@@ -38,11 +38,7 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
         active_dragging_ = false;
         if (glm::length(start_ - end_) > 0.25f)
         {
-            state.p_active_object_ = &p_level_->add_wall({
-                WallParmeters{.start = start_, .end = end_},
-                WallProps{.texture_side_1 = default_props.texture_side_1.value,
-                          .texture_side_2 = default_props.texture_side_2.value},
-            });
+            state.p_active_object_ = &p_level_->add_wall({.start = start_, .end = end_});
         }
     }
 }

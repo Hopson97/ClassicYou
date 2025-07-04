@@ -157,6 +157,7 @@
     <ClCompile Include="deps\imgui_sfml\imgui_impl_opengl3.cpp" />
     <ClCompile Include="src\Editor\DrawingPad.cpp" />
     <ClCompile Include="src\Editor\EditorLevel.cpp" />
+    <ClCompile Include="src\Editor\ObjectProperties.cpp" />
     <ClCompile Include="src\Editor\Tool.cpp" />
     <ClCompile Include="src\Editor\WorldGeometry.cpp" />
     <ClCompile Include="src\Graphics\CameraController.cpp" />
@@ -215,6 +216,7 @@
     <ClInclude Include="src\Editor\EditConstants.h" />
     <ClInclude Include="src\Editor\EditorLevel.h" />
     <ClInclude Include="src\Editor\LevelTextures.h" />
+    <ClInclude Include="src\Editor\ObjectProperties.h" />
     <ClInclude Include="src\Editor\Tool.h" />
     <ClInclude Include="src\Editor\WorldGeometry.h" />
     <ClInclude Include="src\Graphics\CameraController.h" />

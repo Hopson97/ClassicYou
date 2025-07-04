@@ -1,10 +1,9 @@
 #pragma once
 
-
 #include "../Editor/DrawingPad.h"
 #include "../Editor/EditConstants.h"
-#include "../Editor/LevelTextures.h"
 #include "../Editor/EditorLevel.h"
+#include "../Editor/LevelTextures.h"
 #include "../Editor/Tool.h"
 #include "../Graphics/Camera.h"
 #include "../Graphics/CameraController.h"
@@ -55,6 +54,15 @@ class ScreenEditGame final : public Screen
 
     EditorLevel level_;
 
-   
     CreateWallTool tool_;
+
+    // TEMP PLEASE
+    PropertyEditor property_editor_;
+
+    struct LevelMesh
+    {
+        int id;
+        WorldGeometryMesh3D mesh;
+    };
+    std::vector<LevelMesh> wall_meshes_;
 };

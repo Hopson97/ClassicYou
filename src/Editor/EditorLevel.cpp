@@ -2,20 +2,38 @@
 
 #include <print>
 
-Wall& EditorLevel::add_wall(const Wall& wall)
+
+EditorLevel::EditorLevel(const EditorState& state)
+    : p_editor_state_(&state)
 {
-    auto wall_mesh =
-        generate_wall_mesh(wall.parameters.start, wall.parameters.end,
-                           wall.props.texture_side_1.value, wall.props.texture_side_2.value);
+}
 
-    // Ensure the Wall object is copyable or movable
-    auto& itr = walls.emplace_back(wall, std::move(wall_mesh));
-    itr.second.buffer();
 
-    std::print("Added wall: start=({}, {}), end=({}, {}), texture1={}, texture2={}\n",
-               wall.parameters.start.x, wall.parameters.start.y, wall.parameters.end.x,
-               wall.parameters.end.y, wall.props.texture_side_1.value,
-               wall.props.texture_side_2.value);
+Wall& EditorLevel::add_wall(const WallParameters& paramters)
+{
+    //auto wall = std::make_unique<Wall>(current_id_++);
+    //wall->parameters = paramters;
+    //wall->props = p_editor_state_->wall_default;
 
-    return itr.first;
+    //auto& object = *level_objects.emplace_back(std::move(wall));
+    //for (auto& callback : on_create_object_)
+    //{
+    //    callback(object);
+    //}
+
+    Wall wall{current_id_++};
+    wall.parameters = paramters;
+    wall.props = p_editor_state_->wall_default;
+
+    for (auto& callback : on_create_wall_)
+    {
+        callback(wall);
+    }
+    return walls.emplace_back(wall);
+
+}
+
+void EditorLevel::on_add_object(std::function<void(Wall& object)> callback)
+{
+    on_create_wall_.push_back(callback);
 }

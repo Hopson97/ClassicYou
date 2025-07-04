@@ -10,7 +10,6 @@
 
 namespace
 {
-    // Replace std::unordered_map with std::array for constexpr compatibility
     constexpr std::array<std::pair<const char*, const char*>, 4> TEXTURES = {
         std::make_pair("Red Bricks", "assets/textures/RedBricks.png"),
         std::make_pair("Grey Bricks", "assets/textures/GreyBricks.png"),
@@ -42,7 +41,36 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens)
       })
     , drawing_pad_({window().getSize().x / 2, window().getSize().y}, editor_state_.node_hovered)
     , tool_(level_)
+    , level_(editor_state_)
 {
+    level_.on_add_object(
+        [&](Wall& wall)
+        {
+            LevelMesh level_mesh = {
+                .id = wall.object_id,
+                .mesh = generate_wall_mesh(wall.parameters.start, wall.parameters.end,
+                                           wall.props.texture_side_1.value,
+                                           wall.props.texture_side_2.value),
+            };
+            level_mesh.mesh.buffer();
+            wall_meshes_.push_back(std::move(level_mesh));
+        });
+
+    property_editor_.on_property_update.push_back([&](auto& wall)
+        {
+            for (auto& wall_mesh : wall_meshes_)
+            {
+                if (wall_mesh.id == wall.object_id)
+                {
+                    auto new_mesh = generate_wall_mesh(wall.parameters.start, wall.parameters.end,
+                                                       wall.props.texture_side_1.value,
+                                                       wall.props.texture_side_2.value);
+                    new_mesh.buffer();
+                    wall_mesh.mesh = std::move(new_mesh);
+                    
+                }
+            }
+        });
 }
 
 bool ScreenEditGame::on_init()
@@ -176,8 +204,7 @@ void ScreenEditGame::on_render(bool show_debug)
 
     for (auto& wall : level_.walls)
     {
-        drawing_pad_.render_line(wall.first.parameters.start, wall.first.parameters.end,
-                                 glm::vec4{1.0f}, 2);
+        drawing_pad_.render_line(wall.parameters.start, wall.parameters.end, glm::vec4{1.0f}, 2);
     }
 
     // Finalise 2d rendering
@@ -199,10 +226,10 @@ void ScreenEditGame::on_render(bool show_debug)
     world_geometry_shader_.set_uniform("model_matrix", create_model_matrix({}));
     tool_.render_preview();
 
-    // Draw level
-    for (auto& wall : level_.walls)
+    //// Draw level
+    for (auto& wall : wall_meshes_)
     {
-        wall.second.bind().draw_elements();
+        wall.mesh.bind().draw_elements();
     }
 
     // Ensure GUI etc are rendered using fill
@@ -210,10 +237,8 @@ void ScreenEditGame::on_render(bool show_debug)
 
     if (editor_state_.p_active_object_)
     {
-        if (editor_state_.p_active_object_->property_gui(editor_state_, level_texures_))
-        {
-            std::cout << "Properties updated for active object.\n";
-        }
+        editor_state_.p_active_object_->property_gui(editor_state_, property_editor_,
+                                                     level_texures_);
     }
 }
 
