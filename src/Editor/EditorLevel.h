@@ -6,22 +6,33 @@
 #include "../Editor/WorldGeometry.h"
 #include "../Graphics/Mesh.h"
 
-struct EditorLevel
+class EditorLevel
 {
   public:
     std::vector<Wall> walls;
+
+    struct LevelMesh
+    {
+        int id;
+        WorldGeometryMesh3D mesh;
+    };
 
   public:
     EditorLevel(const EditorState& state);
 
     Wall& add_wall(const WallParameters& paramters);
 
-    //void on_add_object(std::function<void(LevelObject& object)> callback);
+    void update_object(const Wall& wall);
+    void remove_object(std::size_t id);
+
+    // void on_add_object(std::function<void(LevelObject& object)> callback);
     void on_add_object(std::function<void(Wall& wall)> callback);
 
-    int current_id_ = 0;
+    void render();
 
   private:
+    std::vector<LevelMesh> wall_meshes_;
+    int current_id_ = 0;
     const EditorState* p_editor_state_;
 
     std::vector<std::function<void(LevelObject& object)>> on_create_object_;

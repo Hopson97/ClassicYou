@@ -6,13 +6,13 @@
 
 class DrawingPad;
 class LevelTextures;
-struct EditorLevel;
 struct EditorState;
+class ActionManager;
 
 class ITool
 {
   public:
-    virtual void on_event(sf::Event event, glm::vec2 node, EditorState& state) = 0;
+    virtual void on_event(sf::Event event, glm::vec2 node, EditorState& state, ActionManager& actions) = 0;
     virtual void render_preview() = 0;
     virtual void render_preview_2d(DrawingPad& drawing_pad) = 0;
 };
@@ -20,9 +20,8 @@ class ITool
 class CreateWallTool : public ITool
 {
   public:
-    CreateWallTool(EditorLevel& level);
-
-    void on_event(sf::Event event, glm::vec2 node, EditorState& state) override;
+    void on_event(sf::Event event, glm::vec2 node, EditorState& state,
+                  ActionManager& actions) override;
     void render_preview() override;
     void render_preview_2d(DrawingPad& drawing_pad) override;
 
@@ -31,6 +30,4 @@ class CreateWallTool : public ITool
     glm::vec2 start_{0.0f};
     glm::vec2 end_{0.0f};
     bool active_dragging_ = false;
-
-    EditorLevel* p_level_ = nullptr;
 };

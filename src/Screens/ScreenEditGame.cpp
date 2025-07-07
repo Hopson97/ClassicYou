@@ -40,37 +40,16 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens)
           .fov = 90.0f,
       })
     , drawing_pad_({window().getSize().x / 2, window().getSize().y}, editor_state_.node_hovered)
-    , tool_(level_)
     , level_(editor_state_)
+    , action_manager_(editor_state_, level_)
 {
     level_.on_add_object(
         [&](Wall& wall)
         {
-            LevelMesh level_mesh = {
-                .id = wall.object_id,
-                .mesh = generate_wall_mesh(wall.parameters.start, wall.parameters.end,
-                                           wall.props.texture_side_1.value,
-                                           wall.props.texture_side_2.value),
-            };
-            level_mesh.mesh.buffer();
-            wall_meshes_.push_back(std::move(level_mesh));
+
         });
 
-    property_editor_.on_property_update.push_back(
-        [&](auto& wall)
-        {
-            for (auto& wall_mesh : wall_meshes_)
-            {
-                if (wall_mesh.id == wall.object_id)
-                {
-                    auto new_mesh = generate_wall_mesh(wall.parameters.start, wall.parameters.end,
-                                                       wall.props.texture_side_1.value,
-                                                       wall.props.texture_side_2.value);
-                    new_mesh.buffer();
-                    wall_mesh.mesh = std::move(new_mesh);
-                }
-            }
-        });
+    property_editor_.on_property_update.push_back([&](auto& wall) { level_.update_object(wall); });
 }
 
 bool ScreenEditGame::on_init()
@@ -190,7 +169,9 @@ void ScreenEditGame::on_event(const sf::Event& event)
         }
     }
 
-    tool_.on_event(event, editor_state_.node_hovered, editor_state_);
+    tool_.on_event(event, editor_state_.node_hovered, editor_state_, action_manager_);
+
+    action_manager_.execute_pending();
 }
 
 void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
@@ -246,11 +227,7 @@ void ScreenEditGame::on_render(bool show_debug)
     world_geometry_shader_.set_uniform("model_matrix", create_model_matrix({}));
     tool_.render_preview();
 
-    //// Draw level
-    for (auto& wall : wall_meshes_)
-    {
-        wall.mesh.bind().draw_elements();
-    }
+    level_.render();
 
     // Ensure GUI etc are rendered using fill
     gl::polygon_mode(gl::Face::FrontAndBack, gl::PolygonMode::Fill);
@@ -260,6 +237,29 @@ void ScreenEditGame::on_render(bool show_debug)
         editor_state_.p_active_object_->property_gui(editor_state_, property_editor_,
                                                      level_texures_);
     }
+
+
+
+    // clang-format off
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("New")) {  }
+            if (ImGui::MenuItem("Open...")) {  }
+            if (ImGui::MenuItem("Save")) {  }
+            if (ImGui::MenuItem("Exit")) { p_screen_manager_->pop_screen(); }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Edit"))
+        {
+            if (ImGui::MenuItem("Undo")) { action_manager_.undo_action(); }
+            if (ImGui::MenuItem("Redo")) { action_manager_.redo_action(); }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+    // clang-format on
 }
 
 void ScreenEditGame::render_scene(gl::Shader& shader)

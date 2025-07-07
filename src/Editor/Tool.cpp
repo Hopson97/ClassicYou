@@ -3,14 +3,11 @@
 #include <imgui.h>
 
 #include "DrawingPad.h"
-#include "EditorLevel.h"
+#include "WorldGeometry.h"
+#include "Actions.h"
 
-CreateWallTool::CreateWallTool(EditorLevel& level)
-    : p_level_(&level)
-{
-}
-
-void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& state)
+void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
+                              ActionManager& actions)
 {
     const auto& default_props = state.wall_default;
 
@@ -41,7 +38,8 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
             active_dragging_ = false;
             if (glm::length(start_ - end_) > 0.25f)
             {
-                state.p_active_object_ = &p_level_->add_wall({.start = start_, .end = end_});
+                actions.push_action(
+                    std::make_unique<AddWallAction>(WallParameters{.start = start_, .end = end_}));
             }
             else
             {

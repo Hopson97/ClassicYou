@@ -14,7 +14,7 @@ struct LevelObject
     {
     }
 
-    const int object_id = 0;
+     int object_id = 0;
 
     virtual bool property_gui(EditorState& state, PropertyEditor& editor,
                               const LevelTextures& textures) = 0;

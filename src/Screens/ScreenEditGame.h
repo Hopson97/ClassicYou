@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Editor/Actions.h"
 #include "../Editor/DrawingPad.h"
 #include "../Editor/EditConstants.h"
 #include "../Editor/EditorLevel.h"
@@ -36,6 +37,7 @@ class ScreenEditGame final : public Screen
     gl::BufferObject matrices_ssbo_;
     gl::Shader scene_shader_;
     gl::Shader world_geometry_shader_;
+    CameraKeybinds camera_keybinds_;
 
     Mesh3D selection_mesh_ = generate_quad_mesh(0.25, 0.25);
 
@@ -47,22 +49,11 @@ class ScreenEditGame final : public Screen
 
     EditorState editor_state_;
 
-    CameraKeybinds camera_keybinds_;
-
     LevelTextures level_texures_;
     gl::Texture2DArray texture_;
 
     EditorLevel level_;
-
     CreateWallTool tool_;
-
-    // TEMP PLEASE
     PropertyEditor property_editor_;
-
-    struct LevelMesh
-    {
-        int id;
-        WorldGeometryMesh3D mesh;
-    };
-    std::vector<LevelMesh> wall_meshes_;
+    ActionManager action_manager_;
 };

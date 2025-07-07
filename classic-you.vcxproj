@@ -155,6 +155,7 @@
     <ClCompile Include="deps\glad\glad.c" />
     <ClCompile Include="deps\imgui_sfml\imgui-SFML.cpp" />
     <ClCompile Include="deps\imgui_sfml\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="src\Editor\Actions.cpp" />
     <ClCompile Include="src\Editor\DrawingPad.cpp" />
     <ClCompile Include="src\Editor\EditorLevel.cpp" />
     <ClCompile Include="src\Editor\ObjectProperties.cpp" />
@@ -212,6 +213,7 @@
     <ClInclude Include="deps\imgui_sfml\imgui-SFML_export.h" />
     <ClInclude Include="deps\imgui_sfml\imgui_impl_opengl3.h" />
     <ClInclude Include="deps\imgui_sfml\imgui_inc.h" />
+    <ClInclude Include="src\Editor\Actions.h" />
     <ClInclude Include="src\Editor\DrawingPad.h" />
     <ClInclude Include="src\Editor\EditConstants.h" />
     <ClInclude Include="src\Editor\EditorLevel.h" />
