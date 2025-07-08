@@ -5,8 +5,8 @@
 #include "../Graphics/Camera.h"
 #include "../Graphics/CameraController.h"
 #include "../Graphics/Mesh.h"
-#include "../Graphics/OpenGL/Texture.h"
 #include "../Graphics/OpenGL/Shader.h"
+#include "../Graphics/OpenGL/Texture.h"
 
 class DrawingPad
 {
@@ -30,8 +30,7 @@ class DrawingPad
     {
         Mesh2D sub_grid;
         Mesh2D main_grid;
-    };
-    GridMesh grid_mesh_;
+    } grid_mesh_;
 
     Camera camera_;
     CameraKeybinds keybinds_2d_;

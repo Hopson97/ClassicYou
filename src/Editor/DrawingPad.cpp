@@ -102,12 +102,7 @@ void DrawingPad::render_line(glm::vec2 from, glm::vec2 to, const glm::vec4& colo
     {
         line_meshes_.emplace(thickness, Mesh2D{});
     }
-    auto& mesh = line_meshes_.find(thickness)->second;
-    mesh.vertices.push_back(Vertex2D{.position = from, .colour = colour});
-    mesh.vertices.push_back(Vertex2D{.position = to, .colour = colour});
-
-    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
-    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
+    add_line_to_mesh(line_meshes_.find(thickness)->second, from, to, colour);
 }
 
 void DrawingPad::update(const Keyboard& keyboard, sf::Time dt)
@@ -136,8 +131,6 @@ void DrawingPad::display()
     // Render the background grid
     glLineWidth(1);
     grid_mesh_.sub_grid.bind().draw_elements(GL_LINES);
-
-    glLineWidth(1);
     grid_mesh_.main_grid.bind().draw_elements(GL_LINES);
 
     // Render lines (walls) of various thickenss
@@ -149,6 +142,8 @@ void DrawingPad::display()
         mesh.vertices.clear();
         mesh.indices.clear();
     }
+    line_meshes_.clear();
+
 
     // Reder the selected quad
     shader_.set_uniform("use_texture", true);

@@ -1,16 +1,17 @@
 #include "EditorLevel.h"
 
-#include <print>
+#include "DrawingPad.h"
+#include "EditConstants.h"
 
 EditorLevel::EditorLevel(const EditorState& state)
     : p_editor_state_(&state)
 {
 }
 
-Wall& EditorLevel::add_wall(const WallParameters& paramters)
+Wall& EditorLevel::add_wall(const WallParameters& parameters)
 {
     // auto wall = std::make_unique<Wall>(current_id_++);
-    // wall->parameters = paramters;
+    // wall->parameters = parameters;
     // wall->props = p_editor_state_->wall_default;
 
     // auto& object = *level_objects.emplace_back(std::move(wall));
@@ -20,7 +21,7 @@ Wall& EditorLevel::add_wall(const WallParameters& paramters)
     // }
 
     Wall wall{current_id_++};
-    wall.parameters = paramters;
+    wall.parameters = parameters;
     wall.props = p_editor_state_->wall_default;
 
     LevelMesh level_mesh = {
@@ -36,7 +37,7 @@ Wall& EditorLevel::add_wall(const WallParameters& paramters)
     {
         callback(wall);
     }
-    return walls.emplace_back(wall);
+    return walls_.emplace_back(wall);
 }
 
 void EditorLevel::update_object(const Wall& wall)
@@ -56,9 +57,8 @@ void EditorLevel::update_object(const Wall& wall)
 
 void EditorLevel::remove_object(std::size_t id)
 {
-
     std::erase_if(wall_meshes_, [id](const LevelMesh& mesh) { return mesh.id == id; });
-    std::erase_if(walls, [id](const Wall& wall) { return wall.object_id == id; });
+    std::erase_if(walls_, [id](const Wall& wall) { return wall.object_id == id; });
 }
 
 void EditorLevel::on_add_object(std::function<void(Wall& object)> callback)
@@ -72,4 +72,31 @@ void EditorLevel::render()
     {
         wall.mesh.bind().draw_elements();
     }
+}
+
+void EditorLevel::render_2d(DrawingPad& drawing_pad)
+{
+
+    for (auto& wall : walls_)
+    {
+        auto is_selected = p_editor_state_->p_active_object_ &&
+                           p_editor_state_->p_active_object_->object_id == wall.object_id;
+
+        auto colour = is_selected ? Colour::RED : Colour::WHITE;
+        auto thickness = is_selected ? 3 : 2;
+
+        drawing_pad.render_line(wall.parameters.start, wall.parameters.end, colour, thickness);
+    }
+}
+
+LevelObject* EditorLevel::try_select(glm::vec2 selection_tile)
+{
+    for (auto& wall : walls_)
+    {
+        if (wall.try_select_2d(selection_tile))
+        {
+            return &wall;
+        }
+    }
+    return nullptr;
 }

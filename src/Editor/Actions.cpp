@@ -1,7 +1,10 @@
 #include "Actions.h"
 
 #include "EditorLevel.h"
+#include <imgui.h>
 
+
+#include "EditorLevel.h"
 
 ActionManager::ActionManager(EditorState& state, EditorLevel& level)
     : p_state_(&state)
@@ -37,13 +40,33 @@ void ActionManager::execute_pending()
     if (pending_action_)
     {
         pending_action_->execute(*p_state_, *p_level_);
+
+        if (action_index_ < action_stack_.size())
+        {
+            action_stack_.resize(action_index_);
+        }
         action_stack_.push_back(std::move(pending_action_));
         action_index_ = action_stack_.size();
     }
 }
 
-AddWallAction::AddWallAction(
-                             const WallParameters params)
+void ActionManager::display_action_history()
+{
+    if (ImGui::Begin("History"))
+    {
+        int i = 0;
+        for (auto& item : action_stack_)
+        {
+            ImGui::Text("#%d:", i++);
+            ImGui::SameLine();
+            item->display_as_gui();
+            ImGui::Separator();
+        }
+    }
+    ImGui::End();
+}
+
+AddWallAction::AddWallAction(const WallParameters& params)
     : params_(params)
 {
 }
@@ -61,5 +84,14 @@ void AddWallAction::undo(EditorState& state, EditorLevel& level)
 {
     state.p_active_object_ = nullptr;
     level.remove_object(id_);
+}
+
+void AddWallAction::display_as_gui()
+{
+    ImGui::Text("Add Wall");
+    ImGui::Text("Props:\n Texture 1/2: %d/%d", props_.texture_side_1, props_.texture_side_2);
+
+    ImGui::Text("Params:\n Start position: (%.2f, %.2f)\n End Position: (%.2f, %.2f)",
+                params_.start.x, params_.start.y, params_.end.x, params_.end.y);
 }
 

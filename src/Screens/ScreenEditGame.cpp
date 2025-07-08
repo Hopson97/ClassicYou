@@ -157,15 +157,8 @@ void ScreenEditGame::on_event(const sf::Event& event)
     {
         if (mouse->button == sf::Mouse::Button::Right)
         {
-            for (auto& wall : level_.walls)
-            {
-                if (wall.try_select_2d(map_pixel_to_tile({mouse->position.x, mouse->position.y},
-                                                         drawing_pad_.get_camera())))
-                {
-                    editor_state_.p_active_object_ = &wall;
-                    break;
-                }
-            }
+            editor_state_.p_active_object_ = level_.try_select(map_pixel_to_tile(
+                {mouse->position.x, mouse->position.y}, drawing_pad_.get_camera()));
         }
     }
 
@@ -197,16 +190,9 @@ void ScreenEditGame::on_render(bool show_debug)
 
     // Render the drawing pad to the left side
     glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
-    tool_.render_preview_2d(drawing_pad_);
 
-    for (auto& wall : level_.walls)
-    {
-        auto is_selected = editor_state_.p_active_object_ &&
-                           editor_state_.p_active_object_->object_id == wall.object_id;
-        auto colour = is_selected ? Colour::RED : Colour::WHITE;
-        auto thickness = is_selected ? 3 : 2;
-        drawing_pad_.render_line(wall.parameters.start, wall.parameters.end, colour, thickness);
-    }
+    tool_.render_preview_2d(drawing_pad_);
+    level_.render_2d(drawing_pad_);
 
     // Finalise 2d rendering
     drawing_pad_.display();
@@ -238,8 +224,6 @@ void ScreenEditGame::on_render(bool show_debug)
                                                      level_texures_);
     }
 
-
-
     // clang-format off
     if (ImGui::BeginMainMenuBar())
     {
@@ -260,6 +244,8 @@ void ScreenEditGame::on_render(bool show_debug)
         ImGui::EndMainMenuBar();
     }
     // clang-format on
+
+    action_manager_.display_action_history();
 }
 
 void ScreenEditGame::render_scene(gl::Shader& shader)

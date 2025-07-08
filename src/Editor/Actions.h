@@ -11,15 +11,19 @@ class Action
   public:
     virtual void execute(EditorState& state, EditorLevel& level) = 0;
     virtual void undo(EditorState& state, EditorLevel& level) = 0;
+
+    virtual void display_as_gui() = 0;
 };
 
 class AddWallAction final : public Action
 {
   public:
-    AddWallAction(const WallParameters params);
+    AddWallAction(const WallParameters& params);
 
-    void execute(EditorState& state, EditorLevel& level);
-    void undo(EditorState& state, EditorLevel& level);
+    void execute(EditorState& state, EditorLevel& level) override;
+    void undo(EditorState& state, EditorLevel& level) override;
+
+    void display_as_gui() override;
 
   private:
     const WallParameters params_;
@@ -38,6 +42,8 @@ class ActionManager
     void redo_action();
 
     void execute_pending();
+
+    void display_action_history();
 
   private:
     EditorState* p_state_ = nullptr;
