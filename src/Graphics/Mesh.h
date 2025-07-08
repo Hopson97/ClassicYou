@@ -120,8 +120,8 @@ bool Mesh<Vertex>::update()
     // Ensure the indices count being updated matches what is currently in the buffer
     if (indices_ != static_cast<GLuint>(indices.size()))
     {
-        std::println("Indides mis-match. Current: {} - New: {}\nRecreating mesh...", indices_,
-                     indices.size());
+        // std::println("Indices mis-match. Current: {} - New: {}\nRecreating mesh...", indices_,
+        //              indices.size());
         has_buffered_ = false;
     }
 

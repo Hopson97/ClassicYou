@@ -54,6 +54,5 @@ class ScreenEditGame final : public Screen
 
     EditorLevel level_;
     CreateWallTool tool_;
-    PropertyEditor property_editor_;
     ActionManager action_manager_;
 };

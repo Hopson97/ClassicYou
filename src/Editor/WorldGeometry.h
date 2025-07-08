@@ -1,11 +1,15 @@
 #pragma once
 
-#include "ObjectProperties.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
+#include <variant>
+
+#include "ObjectProperties.h"
+
 class LevelTextures;
 struct EditorState;
+class ActionManager;
 
 struct LevelObject
 {
@@ -14,10 +18,10 @@ struct LevelObject
     {
     }
 
-     int object_id = 0;
+    int object_id = 0;
 
-    virtual bool property_gui(EditorState& state, PropertyEditor& editor,
-                              const LevelTextures& textures) = 0;
+    virtual bool property_gui(EditorState& state, const LevelTextures& textures,
+                              ActionManager& action_manager) = 0;
 
     /// Function that is called when right-clicking the 2D view.
     /// Returns true if the object was clicked.
@@ -47,8 +51,8 @@ struct Wall : public LevelObject
     WallParameters parameters;
     WallProps props = {{0}};
 
-    bool property_gui(EditorState& state, PropertyEditor& editor,
-                      const LevelTextures& textures) override;
+    bool property_gui(EditorState& state, const LevelTextures& textures,
+                      ActionManager& action_manager) override;
 
     bool try_select_2d(const glm::vec2& point) override;
 };

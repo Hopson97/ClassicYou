@@ -4,21 +4,15 @@
 
 #include "LevelTextures.h"
 
-
-//void TextureUpdateGUI::on_select(std::function<void(int, GLuint)>&& callback)
-//{
-//    on_texture_select_callbacks_.push_back(callback);
-//}
-
-bool PropertyEditor::display_texture_gui(const char* title, TextureProp& current_texure,
-                                         const LevelTextures& textures)
+int display_texture_gui(const char* title, const TextureProp& current_texure,
+                        const LevelTextures& textures)
 {
-    bool update = false;
+    int new_texture = -1;
     ImGui::Text("%s", title);
-    int id = 0;
+    int imgui_id = 0;
     for (const auto& [name, texture] : textures.texture_2d_map)
     {
-        ImGui::PushID(id++);
+        ImGui::PushID(imgui_id++);
 
         ImGui::SameLine();
         std::string button_id = name + "###" + title;
@@ -35,12 +29,9 @@ bool PropertyEditor::display_texture_gui(const char* title, TextureProp& current
         {
             if (auto texture_id = textures.get_texture(name))
             {
-                current_texure.value = *texture_id;
-                update = true;
+                new_texture = *texture_id;
                 std::println("Texture clicked: {}", name);
-
             }
-
         }
 
         if (auto texture_id = textures.get_texture(name))
@@ -57,5 +48,5 @@ bool PropertyEditor::display_texture_gui(const char* title, TextureProp& current
         }
         ImGui::PopID();
     }
-    return update;
+    return new_texture;
 }

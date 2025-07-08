@@ -2,12 +2,7 @@
 
 #include <glad/glad.h>
 
-#include <functional>
-#include <vector>
-
 class LevelTextures;
-
-struct Wall;
 
 enum class PropType
 {
@@ -23,10 +18,5 @@ struct Prop
 
 using TextureProp = Prop<PropType::Texture, GLuint>;
 
-struct PropertyEditor
-{
-    bool display_texture_gui(const char* title, TextureProp& current_texure,
-                             const LevelTextures& textures);
-
-    std::vector<std::function<void(const Wall& wall)>> on_property_update;
-};
+int display_texture_gui(const char* title, const TextureProp& current_texure,
+                        const LevelTextures& textures);

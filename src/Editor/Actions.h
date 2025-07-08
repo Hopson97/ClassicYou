@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <memory>
 
 #include "WorldGeometry.h"
@@ -32,6 +33,23 @@ class AddWallAction final : public Action
     int id_ = -1;
 };
 
+// TODO Maybe the props should be a defined dict rather a class such that multiple classes do not
+// need to be created for every object
+class UpdateWallAction final : public Action
+{
+  public:
+    UpdateWallAction(const Wall& old_wall, const Wall& new_wall);
+
+    void execute(EditorState& state, EditorLevel& level) override;
+    void undo(EditorState& state, EditorLevel& level) override;
+
+    void display_as_gui() override;
+
+  private:
+    const Wall old_;
+    const Wall new_;
+};
+
 class ActionManager
 {
   public:
@@ -41,8 +59,6 @@ class ActionManager
     void undo_action();
     void redo_action();
 
-    void execute_pending();
-
     void display_action_history();
 
   private:
@@ -50,6 +66,5 @@ class ActionManager
     EditorLevel* p_level_ = nullptr;
 
     std::vector<std::unique_ptr<Action>> action_stack_;
-    std::unique_ptr<Action> pending_action_;
     size_t action_index_ = 0;
 };

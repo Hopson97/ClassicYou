@@ -10,16 +10,6 @@ EditorLevel::EditorLevel(const EditorState& state)
 
 Wall& EditorLevel::add_wall(const WallParameters& parameters)
 {
-    // auto wall = std::make_unique<Wall>(current_id_++);
-    // wall->parameters = parameters;
-    // wall->props = p_editor_state_->wall_default;
-
-    // auto& object = *level_objects.emplace_back(std::move(wall));
-    // for (auto& callback : on_create_object_)
-    //{
-    //     callback(object);
-    // }
-
     Wall wall{current_id_++};
     wall.parameters = parameters;
     wall.props = p_editor_state_->wall_default;
@@ -33,15 +23,20 @@ Wall& EditorLevel::add_wall(const WallParameters& parameters)
     level_mesh.mesh.buffer();
     wall_meshes_.push_back(std::move(level_mesh));
 
-    for (auto& callback : on_create_wall_)
-    {
-        callback(wall);
-    }
     return walls_.emplace_back(wall);
 }
 
 void EditorLevel::update_object(const Wall& wall)
 {
+    for (auto& w : walls_)
+    {
+        if (w.object_id == wall.object_id)
+        {
+            w = wall;
+            break;
+        }
+    }
+
     for (auto& wall_mesh : wall_meshes_)
     {
         if (wall_mesh.id == wall.object_id)
@@ -61,11 +56,6 @@ void EditorLevel::remove_object(std::size_t id)
     std::erase_if(walls_, [id](const Wall& wall) { return wall.object_id == id; });
 }
 
-void EditorLevel::on_add_object(std::function<void(Wall& object)> callback)
-{
-    on_create_wall_.push_back(callback);
-}
-
 void EditorLevel::render()
 {
     for (auto& wall : wall_meshes_)
@@ -76,7 +66,6 @@ void EditorLevel::render()
 
 void EditorLevel::render_2d(DrawingPad& drawing_pad)
 {
-
     for (auto& wall : walls_)
     {
         auto is_selected = p_editor_state_->p_active_object_ &&
@@ -95,7 +84,12 @@ LevelObject* EditorLevel::try_select(glm::vec2 selection_tile)
     {
         if (wall.try_select_2d(selection_tile))
         {
-            return &wall;
+            // Allow selecting objects that may be overlapping
+            if (!p_editor_state_->p_active_object_ ||
+                p_editor_state_->p_active_object_->object_id != wall.object_id)
+            {
+                return &wall;
+            }
         }
     }
     return nullptr;

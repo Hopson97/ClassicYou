@@ -1,8 +1,6 @@
 #include "Actions.h"
 
-#include "EditorLevel.h"
 #include <imgui.h>
-
 
 #include "EditorLevel.h"
 
@@ -14,7 +12,13 @@ ActionManager::ActionManager(EditorState& state, EditorLevel& level)
 
 void ActionManager::push_action(std::unique_ptr<Action> action)
 {
-    pending_action_ = std::move(action);
+    action->execute(*p_state_, *p_level_);
+    if (action_index_ < action_stack_.size())
+    {
+        action_stack_.resize(action_index_);
+    }
+    action_stack_.push_back(std::move(action));
+    action_index_ = action_stack_.size();
 }
 
 void ActionManager::undo_action()
@@ -32,21 +36,6 @@ void ActionManager::redo_action()
     {
         action_stack_.at(action_index_)->execute(*p_state_, *p_level_);
         action_index_ += 1;
-    }
-}
-
-void ActionManager::execute_pending()
-{
-    if (pending_action_)
-    {
-        pending_action_->execute(*p_state_, *p_level_);
-
-        if (action_index_ < action_stack_.size())
-        {
-            action_stack_.resize(action_index_);
-        }
-        action_stack_.push_back(std::move(pending_action_));
-        action_index_ = action_stack_.size();
     }
 }
 
@@ -95,3 +84,32 @@ void AddWallAction::display_as_gui()
                 params_.start.x, params_.start.y, params_.end.x, params_.end.y);
 }
 
+UpdateWallAction::UpdateWallAction(const Wall& old_wall, const Wall& new_wall)
+    : old_(old_wall)
+    , new_(new_wall)
+{
+}
+
+void UpdateWallAction::execute(EditorState& state, EditorLevel& level)
+{
+    level.update_object(new_);
+}
+
+void UpdateWallAction::undo(EditorState& state, EditorLevel& level)
+{
+    level.update_object(old_);
+}
+
+void UpdateWallAction::display_as_gui()
+{
+    ImGui::Text("Update Wall");
+    ImGui::Text("Props:\n From Texture 1/2: %d/%d\n To Texture 1/2: %d/%d",
+                old_.props.texture_side_1, old_.props.texture_side_2, new_.props.texture_side_1,
+                new_.props.texture_side_2);
+
+    // ImGui::Text("Params:\n From Start position: (%.2f, %.2f)\n End Position: (%.2f, %.2f)\n To "
+    //             "Start position: (%.2f, %.2f)\n End Position: (%.2f, %.2f)",
+    //             old_.parameters.start.x, old_.parameters.start.y, old_.parameters.end.x,
+    //             old_.parameters.end.y, new_.parameters.start.x, new_.parameters.start.y,
+    //             new_.parameters.end.x, new_.parameters.end.y);
+}

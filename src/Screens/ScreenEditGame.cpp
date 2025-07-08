@@ -43,13 +43,6 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens)
     , level_(editor_state_)
     , action_manager_(editor_state_, level_)
 {
-    level_.on_add_object(
-        [&](Wall& wall)
-        {
-
-        });
-
-    property_editor_.on_property_update.push_back([&](auto& wall) { level_.update_object(wall); });
 }
 
 bool ScreenEditGame::on_init()
@@ -163,8 +156,6 @@ void ScreenEditGame::on_event(const sf::Event& event)
     }
 
     tool_.on_event(event, editor_state_.node_hovered, editor_state_, action_manager_);
-
-    action_manager_.execute_pending();
 }
 
 void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
@@ -220,8 +211,8 @@ void ScreenEditGame::on_render(bool show_debug)
 
     if (editor_state_.p_active_object_)
     {
-        editor_state_.p_active_object_->property_gui(editor_state_, property_editor_,
-                                                     level_texures_);
+        editor_state_.p_active_object_->property_gui(editor_state_, level_texures_,
+                                                     action_manager_);
     }
 
     // clang-format off
