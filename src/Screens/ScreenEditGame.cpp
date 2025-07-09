@@ -40,7 +40,6 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens)
           .fov = 90.0f,
       })
     , drawing_pad_({window().getSize().x / 2, window().getSize().y}, editor_state_.node_hovered)
-    , level_(editor_state_)
     , action_manager_(editor_state_, level_)
 {
 }
@@ -172,8 +171,10 @@ void ScreenEditGame::on_event(const sf::Event& event)
     {
         if (mouse->button == sf::Mouse::Button::Right)
         {
-            editor_state_.p_active_object_ = level_.try_select(map_pixel_to_tile(
-                {mouse->position.x, mouse->position.y}, drawing_pad_.get_camera()));
+            editor_state_.p_active_object_ =
+                level_.try_select(map_pixel_to_tile({mouse->position.x, mouse->position.y},
+                                                    drawing_pad_.get_camera()),
+                                  editor_state_.p_active_object_);
         }
     }
 
@@ -205,7 +206,7 @@ void ScreenEditGame::on_render(bool show_debug)
     glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
 
     tool_.render_preview_2d(drawing_pad_);
-    level_.render_2d(drawing_pad_);
+    level_.render_2d(drawing_pad_, editor_state_.p_active_object_);
 
     // Finalise 2d rendering
     drawing_pad_.display();
@@ -272,6 +273,7 @@ void ScreenEditGame::render_scene(gl::Shader& shader)
                      settings_.wireframe ? gl::PolygonMode::Line : gl::PolygonMode::Fill);
 
     // Draw grid
+    glLineWidth(2);
     shader.set_uniform("model_matrix", create_model_matrix({}));
     shader.set_uniform("use_texture", false);
     grid_mesh_.bind().draw_elements(GL_LINES);
@@ -279,11 +281,11 @@ void ScreenEditGame::render_scene(gl::Shader& shader)
     // Draw level
 
     // Draw the selection node
-    shader.set_uniform("model_matrix", create_model_matrix({
-                                           .position = {editor_state_.node_hovered.x / TILE_SIZE, 0,
-                                                        editor_state_.node_hovered.y / TILE_SIZE},
-                                           .rotation = {-90, 0, 0},
-                                       }));
+    shader.set_uniform(
+        "model_matrix",
+        create_model_matrix({.position = {editor_state_.node_hovered.x / TILE_SIZE, 0,
+                                          editor_state_.node_hovered.y / TILE_SIZE},
+                             .rotation = {-90, 0, 0}}));
     shader.set_uniform("use_texture", false);
     selection_mesh_.bind().draw_elements();
 }

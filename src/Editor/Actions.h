@@ -36,8 +36,11 @@ class AddWallAction final : public Action
   private:
     const WallParameters params_;
 
-    WallProps props_;
+    WallProps props_{{0}};
     int id_ = -1;
+
+    // Flag for when re-doing this action, it uses the stored props rather than the default
+    bool executed_ = false;
 };
 
 // TODO Maybe the props should be a defined dict rather a class such that multiple classes do not

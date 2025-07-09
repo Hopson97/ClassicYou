@@ -19,9 +19,8 @@ class EditorLevel
     };
 
   public:
-    EditorLevel(const EditorState& state);
-
-    Wall& add_wall(const WallParameters& parameters);
+    Wall& add_wall(const WallParameters& parameters, const WallProps& props);
+    Wall& add_wall(const Wall& wall);
 
     void update_object(const Wall& wall);
     void remove_object(std::size_t id);
@@ -40,7 +39,7 @@ class EditorLevel
      *
      * @param drawing_pad The drawing pad to render the level on.
      */
-    void render_2d(DrawingPad& drawing_pad);
+    void render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object);
 
     /**
      * @brief Try to select a level object at the given tile position.
@@ -48,11 +47,10 @@ class EditorLevel
      * @param selection_tile The tile position to select an object at.
      * @return LevelObject* if an object is found at the given tile, otherwise nullptr.
      */
-    LevelObject* try_select(glm::vec2 selection_tile);
+    LevelObject* try_select(glm::vec2 selection_tile, const LevelObject* p_active_object);
 
   private:
     std::vector<Wall> walls_;
     std::vector<LevelMesh> wall_meshes_;
     int current_id_ = 0;
-    const EditorState* p_editor_state_;
 };

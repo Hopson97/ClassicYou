@@ -1,7 +1,7 @@
 #include "Actions.h"
 
-#include <print>
 #include <imgui.h>
+#include <print>
 
 #include "EditorLevel.h"
 
@@ -24,7 +24,6 @@ void ActionManager::push_action(std::unique_ptr<Action> action)
     auto [title, body] = moved_action->to_string();
     std::println("Execute: {}\n{}\n\n Index {} ", title, body, action_index_);
     std::println("=======================================================");
-
 }
 
 void ActionManager::undo_action()
@@ -90,11 +89,24 @@ AddWallAction::AddWallAction(const WallParameters& params)
 
 void AddWallAction::execute(EditorState& state, EditorLevel& level)
 {
-    auto& wall = level.add_wall(params_);
-    id_ = wall.object_id;
-    props_ = state.wall_default;
 
-    state.p_active_object_ = &wall;
+    // When redoing the action, this prevents using the default for this object type
+    if (!executed_)
+    {
+        props_ = state.wall_default;
+
+        auto& wall = level.add_wall(params_, props_);
+        id_ = wall.object_id;
+
+        executed_ = true;
+        state.p_active_object_ = &wall;
+    }
+    else
+    {
+        auto& wall = level.add_wall(params_, props_);
+        level.set_object_id(wall.object_id, id_);
+        state.p_active_object_ = &wall;
+    }
 }
 
 void AddWallAction::undo(EditorState& state, EditorLevel& level)
@@ -159,7 +171,7 @@ void DeleteObjectAction::execute(EditorState& state, EditorLevel& level)
 
 void DeleteObjectAction::undo(EditorState& state, EditorLevel& level)
 {
-    auto& new_wall = level.add_wall(wall.parameters);
+    auto& new_wall = level.add_wall(wall.parameters, wall.props);
     new_wall.props = wall.props;
 
     state.p_active_object_ = &new_wall;
