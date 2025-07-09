@@ -2,10 +2,17 @@
 
 #include <vector>
 #include <memory>
+#include <string>
 
 #include "WorldGeometry.h"
 
 class EditorLevel;
+
+struct ActionStrings
+{
+    std::string title;
+    std::string body;
+};
 
 class Action
 {
@@ -13,7 +20,7 @@ class Action
     virtual void execute(EditorState& state, EditorLevel& level) = 0;
     virtual void undo(EditorState& state, EditorLevel& level) = 0;
 
-    virtual void display_as_gui() = 0;
+    virtual ActionStrings to_string() const = 0;
 };
 
 class AddWallAction final : public Action
@@ -24,7 +31,7 @@ class AddWallAction final : public Action
     void execute(EditorState& state, EditorLevel& level) override;
     void undo(EditorState& state, EditorLevel& level) override;
 
-    void display_as_gui() override;
+    ActionStrings to_string() const override;
 
   private:
     const WallParameters params_;
@@ -43,11 +50,27 @@ class UpdateWallAction final : public Action
     void execute(EditorState& state, EditorLevel& level) override;
     void undo(EditorState& state, EditorLevel& level) override;
 
-    void display_as_gui() override;
+    ActionStrings to_string() const override;
 
   private:
     const Wall old_;
     const Wall new_;
+};
+
+
+class DeleteObjectAction final : public Action
+{
+  public:
+    DeleteObjectAction(const Wall& object);
+
+    void execute(EditorState& state, EditorLevel& level) override;
+    void undo(EditorState& state, EditorLevel& level) override;
+
+    ActionStrings to_string() const override;
+
+  private:
+    Wall wall;
+
 };
 
 class ActionManager

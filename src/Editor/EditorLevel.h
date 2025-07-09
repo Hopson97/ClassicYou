@@ -8,11 +8,13 @@
 
 class DrawingPad;
 
+using ObjectId = std::int32_t;
+
 class EditorLevel
 {
     struct LevelMesh
     {
-        int id;
+        ObjectId id;
         WorldGeometryMesh3D mesh;
     };
 
@@ -23,6 +25,8 @@ class EditorLevel
 
     void update_object(const Wall& wall);
     void remove_object(std::size_t id);
+
+    void set_object_id(ObjectId current_id, ObjectId new_id);
 
     /**
      * @brief Render the level in 3D.

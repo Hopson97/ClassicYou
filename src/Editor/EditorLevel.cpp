@@ -56,6 +56,26 @@ void EditorLevel::remove_object(std::size_t id)
     std::erase_if(walls_, [id](const Wall& wall) { return wall.object_id == id; });
 }
 
+void EditorLevel::set_object_id(ObjectId current_id, ObjectId new_id)
+{
+    for (auto& wall : walls_)
+    {
+        if (wall.object_id == current_id)
+        {
+            wall.object_id = new_id;
+            break;
+        }
+    }
+    for (auto& wall_mesh : wall_meshes_)
+    {
+        if (wall_mesh.id == current_id)
+        {
+            wall_mesh.id = new_id;
+            break;
+        }
+    }
+}
+
 void EditorLevel::render()
 {
     for (auto& wall : wall_meshes_)

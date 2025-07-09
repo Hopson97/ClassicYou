@@ -137,6 +137,28 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 window().setMouseCursorVisible(game_paused_);
                 break;
 
+            case sf::Keyboard::Key::Delete:
+                if (editor_state_.p_active_object_)
+                {
+                    action_manager_.push_action(std::make_unique<DeleteObjectAction>(
+                        *dynamic_cast<Wall*>(editor_state_.p_active_object_)));
+                }
+                break;
+
+            case sf::Keyboard::Key::Z:
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))
+                {
+                    action_manager_.undo_action();
+                }
+                break;
+
+            case sf::Keyboard::Key::Y:
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))
+                {
+                    action_manager_.redo_action();
+                }
+                break;
+
             default:
                 break;
         }
@@ -228,8 +250,8 @@ void ScreenEditGame::on_render(bool show_debug)
         }
         if (ImGui::BeginMenu("Edit"))
         {
-            if (ImGui::MenuItem("Undo")) { action_manager_.undo_action(); }
-            if (ImGui::MenuItem("Redo")) { action_manager_.redo_action(); }
+            if (ImGui::MenuItem("Undo (CTRL + Z)")) { action_manager_.undo_action(); }
+            if (ImGui::MenuItem("Redo (CTRL + Y)")) { action_manager_.redo_action(); }
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
