@@ -1,48 +1,47 @@
 #include "EditorLevel.h"
 
+#include "../Util/Maths.h"
 #include "DrawingPad.h"
 #include "EditConstants.h"
 
-Wall& EditorLevel::add_wall(const WallParameters& parameters, const WallProps& props)
+LevelObjectV2& EditorLevel::add_object(const LevelObjectV2& object)
 {
-    Wall wall{current_id_++};
-    wall.parameters = parameters;
-    wall.props = props;
+    LevelObjectV2 new_object{current_id_++};
+    new_object.object_type = object.object_type;
 
     LevelMesh level_mesh = {
-        .id = wall.object_id,
-        .mesh = generate_wall_mesh(wall.parameters.start, wall.parameters.end,
-                                   wall.props.texture_front, wall.props.texture_back),
+        .id = new_object.object_id,
+        .mesh = object_to_geometry(object),
     };
     level_mesh.mesh.buffer();
-    wall_meshes_.push_back(std::move(level_mesh));
+    level_meshes_.push_back(std::move(level_mesh));
 
-    return walls_.emplace_back(wall);
+    std::println("Added object with id: {}", new_object.object_id);
+    return level_objects_.emplace_back(new_object);
 }
 
-void EditorLevel::update_object(const Wall& wall)
+void EditorLevel::update_object(const LevelObjectV2& object)
 {
-    std::println("Updating wall with id: {}", wall.object_id);
-    for (auto& w : walls_)
+    std::println("Updating object with id: {}", object.object_id);
+    for (auto& w : level_objects_)
     {
-        std::println("Checking wall with id: {}", w.object_id);
-        if (w.object_id == wall.object_id)
+        std::println("Checking object with id: {}", w.object_id);
+        if (w.object_id == object.object_id)
         {
-            std::println("Found wall with id: {}", w.object_id);
-            w = wall;
+            std::println("Found object with id: {}", w.object_id);
+            w = object;
             break;
         }
     }
 
-    std::println("Updating wall mesh for id: {}", wall.object_id);
-    for (auto& wall_mesh : wall_meshes_)
+    std::println("Updating mesh for id: {}", object.object_id);
+    for (auto& wall_mesh : level_meshes_)
     {
-        std::println("Checking wall mesh with id: {}", wall_mesh.id);
-        if (wall_mesh.id == wall.object_id)
+        std::println("Checking object mesh with id: {}", wall_mesh.id);
+        if (wall_mesh.id == object.object_id)
         {
-            std::println("Found wall mesh with id: {}", wall_mesh.id);
-            auto new_mesh = generate_wall_mesh(wall.parameters.start, wall.parameters.end,
-                                               wall.props.texture_front, wall.props.texture_back);
+            std::println("Found object mesh with id: {}", wall_mesh.id);
+            auto new_mesh = object_to_geometry(object);
             new_mesh.buffer();
             wall_mesh.mesh = std::move(new_mesh);
         }
@@ -51,25 +50,29 @@ void EditorLevel::update_object(const Wall& wall)
 
 void EditorLevel::remove_object(std::size_t id)
 {
-    std::erase_if(wall_meshes_, [id](const LevelMesh& mesh) { return mesh.id == id; });
-    std::erase_if(walls_, [id](const Wall& wall) { return wall.object_id == id; });
+    std::println("Removing object with id: {}", id);
+    std::erase_if(level_meshes_, [id](const LevelMesh& mesh) { return mesh.id == id; });
+    std::erase_if(level_objects_,
+                  [id](const LevelObjectV2& object) { return object.object_id == id; });
 }
 
 void EditorLevel::set_object_id(ObjectId current_id, ObjectId new_id)
 {
-    for (auto& wall : walls_)
+    for (auto& object : level_objects_)
     {
-        std::println("Trying to set object id: {} -> {}", current_id, new_id);
+        if (object.object_id == current_id)
         {
-            wall.object_id = new_id;
+            std::println("Updating object id from {} to {}", current_id, new_id);
+            object.object_id = new_id;
             break;
         }
     }
-    for (auto& wall_mesh : wall_meshes_)
+    for (auto& mesh : level_meshes_)
     {
-        if (wall_mesh.id == current_id)
+        if (mesh.id == current_id)
         {
-            wall_mesh.id = new_id;
+            std::println("Updating mesh id from {} to {}", current_id, new_id);
+            mesh.id = new_id;
             break;
         }
     }
@@ -77,37 +80,46 @@ void EditorLevel::set_object_id(ObjectId current_id, ObjectId new_id)
 
 void EditorLevel::render()
 {
-    for (auto& wall : wall_meshes_)
+    for (auto& object : level_meshes_)
     {
-        wall.mesh.bind().draw_elements();
+        object.mesh.bind().draw_elements();
     }
 }
 
-void EditorLevel::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object)
+void EditorLevel::render_2d(DrawingPad& drawing_pad, const LevelObjectV2* p_active_object)
 {
-    for (auto& wall : walls_)
+    for (auto& object : level_objects_)
     {
-        auto is_selected = p_active_object && p_active_object->object_id == wall.object_id;
-
-        auto colour = is_selected ? Colour::RED : Colour::WHITE;
-        auto thickness = is_selected ? 3 : 2;
-
-        drawing_pad.render_line(wall.parameters.start, wall.parameters.end, colour, thickness);
-    }
-}
-
-LevelObject* EditorLevel::try_select(glm::vec2 selection_tile, const LevelObject* p_active_object)
-{
-    for (auto& wall : walls_)
-    {
-        if (wall.try_select_2d(selection_tile))
+        if (auto wall = std::get_if<WallObject>(&object.object_type))
         {
-            // Allow selecting objects that may be overlapping
-            if (!p_active_object || p_active_object->object_id != wall.object_id)
-            {
-                return &wall;
-            }
+            auto is_selected = p_active_object && p_active_object->object_id == object.object_id;
+
+            auto colour = is_selected ? Colour::RED : Colour::WHITE;
+            auto thickness = is_selected ? 3 : 2;
+
+            drawing_pad.render_line(wall->parameters.start, wall->parameters.end, colour,
+                                    thickness);
         }
     }
-    return nullptr;
+}
+
+LevelObjectV2* EditorLevel::try_select(glm::vec2 selection_tile,
+                                       const LevelObjectV2* p_active_object)
+{
+    for (auto& object : level_objects_)
+    {
+        if (auto wall = std::get_if<WallObject>(&object.object_type))
+        {
+            const auto& params = wall->parameters;
+            if (distance_to_line(selection_tile, {params.start, params.end}) < 15)
+            {
+                // Allow selecting objects that may be overlapping
+                if (!p_active_object || p_active_object->object_id != object.object_id)
+                {
+                    return &object;
+                }
+            }
+        }
+        return nullptr;
+    }
 }

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <vector>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "WorldGeometry.h"
 
@@ -23,10 +23,62 @@ class Action
     virtual ActionStrings to_string() const = 0;
 };
 
-class AddWallAction final : public Action
+//class AddWallAction final : public Action
+//{
+//  public:
+//    AddWallAction(const WallParameters& params);
+//
+//    void execute(EditorState& state, EditorLevel& level) override;
+//    void undo(EditorState& state, EditorLevel& level) override;
+//
+//    ActionStrings to_string() const override;
+//
+//  private:
+//    const WallParameters params_;
+//
+//    WallProps props_{{0}};
+//    int id_ = -1;
+//
+//    // Flag for when re-doing this action, it uses the stored props rather than the default
+//    bool executed_ = false;
+//};
+
+
+// TODO Maybe the props should be a defined dict rather a class such that multiple classes do not
+// need to be created for every object
+//class UpdateWallAction final : public Action
+//{
+//  public:
+//    UpdateWallAction(const Wall& old_wall, const Wall& new_wall);
+//
+//    void execute(EditorState& state, EditorLevel& level) override;
+//    void undo(EditorState& state, EditorLevel& level) override;
+//
+//    ActionStrings to_string() const override;
+//
+//  private:
+//    const Wall old_;
+//    const Wall new_;
+//};
+//
+//class DeleteObjectAction final : public Action
+//{
+//  public:
+//    DeleteObjectAction(const Wall& object);
+//
+//    void execute(EditorState& state, EditorLevel& level) override;
+//    void undo(EditorState& state, EditorLevel& level) override;
+//
+//    ActionStrings to_string() const override;
+//
+//  private:
+//    Wall wall;
+//};
+
+class AddObjectAction final : public Action
 {
   public:
-    AddWallAction(const WallParameters& params);
+    AddObjectAction(const LevelObjectV2& object);
 
     void execute(EditorState& state, EditorLevel& level) override;
     void undo(EditorState& state, EditorLevel& level) override;
@@ -34,47 +86,16 @@ class AddWallAction final : public Action
     ActionStrings to_string() const override;
 
   private:
-    const WallParameters params_;
-
-    WallProps props_{{0}};
+    LevelObjectV2 object_;
     int id_ = -1;
 
     // Flag for when re-doing this action, it uses the stored props rather than the default
     bool executed_ = false;
 };
 
-// TODO Maybe the props should be a defined dict rather a class such that multiple classes do not
-// need to be created for every object
-class UpdateWallAction final : public Action
-{
-  public:
-    UpdateWallAction(const Wall& old_wall, const Wall& new_wall);
-
-    void execute(EditorState& state, EditorLevel& level) override;
-    void undo(EditorState& state, EditorLevel& level) override;
-
-    ActionStrings to_string() const override;
-
-  private:
-    const Wall old_;
-    const Wall new_;
-};
 
 
-class DeleteObjectAction final : public Action
-{
-  public:
-    DeleteObjectAction(const Wall& object);
 
-    void execute(EditorState& state, EditorLevel& level) override;
-    void undo(EditorState& state, EditorLevel& level) override;
-
-    ActionStrings to_string() const override;
-
-  private:
-    Wall wall;
-
-};
 
 class ActionManager
 {

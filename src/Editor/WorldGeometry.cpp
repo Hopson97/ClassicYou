@@ -44,7 +44,7 @@ bool Wall::property_gui(EditorState& state, const LevelTextures& textures,
     {
         Wall new_wall = *this;
         new_wall.props = new_props;
-        action_manager.push_action(std::make_unique<UpdateWallAction>(*this, new_wall));
+        // action_manager.push_action(std::make_unique<UpdateWallAction>(*this, new_wall));
     }
 
     return true;

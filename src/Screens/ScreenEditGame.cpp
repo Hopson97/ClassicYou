@@ -139,8 +139,8 @@ void ScreenEditGame::on_event(const sf::Event& event)
             case sf::Keyboard::Key::Delete:
                 if (editor_state_.p_active_object_)
                 {
-                    action_manager_.push_action(std::make_unique<DeleteObjectAction>(
-                        *dynamic_cast<Wall*>(editor_state_.p_active_object_)));
+                   // action_manager_.push_action(std::make_unique<DeleteObjectAction>(
+                  //      *dynamic_cast<Wall*>(editor_state_.p_active_object_)));
                 }
                 break;
 
@@ -234,8 +234,8 @@ void ScreenEditGame::on_render(bool show_debug)
 
     if (editor_state_.p_active_object_)
     {
-        editor_state_.p_active_object_->property_gui(editor_state_, level_textures_,
-                                                     action_manager_);
+        //editor_state_.p_active_object_->property_gui(editor_state_, level_textures_,
+      //                                               action_manager_);
     }
 
     // clang-format off

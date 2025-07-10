@@ -38,8 +38,9 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
             active_dragging_ = false;
             if (glm::length(start_ - end_) > 0.25f)
             {
+
                 actions.push_action(
-                    std::make_unique<AddWallAction>(WallParameters{.start = start_, .end = end_}));
+                    std::make_unique<AddObjectAction>(WallObject{.parameters = {.start = start_, .end = end_}}));
             }
             else
             {

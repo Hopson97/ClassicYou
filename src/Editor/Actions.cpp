@@ -81,108 +81,150 @@ void ActionManager::display_action_history()
     }
     ImGui::End();
 }
+//
+//AddWallAction::AddWallAction(const WallParameters& params)
+//    : params_(params)
+//{
+//}
+//
+//void AddWallAction::execute(EditorState& state, EditorLevel& level)
+//{
+//
+//    // When redoing the action, this prevents using the default for this object type
+//    if (!executed_)
+//    {
+//        props_ = state.wall_default;
+//
+//        auto& wall = level.add_wall(params_, props_);
+//        id_ = wall.object_id;
+//
+//        executed_ = true;
+//        state.p_active_object_ = &wall;
+//    }
+//    else
+//    {
+//        auto& wall = level.add_wall(params_, props_);
+//        level.set_object_id(wall.object_id, id_);
+//        state.p_active_object_ = &wall;
+//    }
+//}
+//
+//void AddWallAction::undo(EditorState& state, EditorLevel& level)
+//{
+//    state.p_active_object_ = nullptr;
+//    level.remove_object(id_);
+//}
+//
+//ActionStrings AddWallAction::to_string() const
+//{
+//    return {
+//        .title = "Add Wall",
+//        .body = std::format("Props:\n  From Texture 1/2: {} {}\nParams:\n "
+//                            "  Start position: ({:.2f}, {:.2f}) - End Position: ({:.2f}, {:.2f})",
+//                            props_.texture_front, props_.texture_back, params_.start.x,
+//                            params_.start.y, params_.end.x, params_.end.y),
+//    };
+//}
+//
+//UpdateWallAction::UpdateWallAction(const Wall& old_wall, const Wall& new_wall)
+//    : old_(old_wall)
+//    , new_(new_wall)
+//{
+//}
+//
+//void UpdateWallAction::execute(EditorState& state, EditorLevel& level)
+//{
+//    level.update_object(new_);
+//}
+//
+//void UpdateWallAction::undo(EditorState& state, EditorLevel& level)
+//{
+//    level.update_object(old_);
+//}
+//
+//ActionStrings UpdateWallAction::to_string() const
+//{
+//    return {
+//        .title = "Update Wall",
+//        .body = std::format(
+//            "Props:\n From Texture 1/2: {} {}\n To Texture 1/2: {} {}\nParams:\n "
+//            "From Start position: ({:.2f}, {:.2f})\n End Position: ({:.2f}, {:.2f})\n To Start "
+//            "position: ({:.2f}, {:.2f})\n End Position: ({:.2f}, {:.2f})",
+//            old_.props.texture_front, old_.props.texture_back, new_.props.texture_front,
+//            new_.props.texture_back, old_.parameters.start.x, old_.parameters.start.y,
+//            old_.parameters.end.x, old_.parameters.end.y, new_.parameters.start.x,
+//            new_.parameters.start.y, new_.parameters.end.x, new_.parameters.end.y),
+//    };
+//}
+//
+//DeleteObjectAction::DeleteObjectAction(const Wall& object)
+//    : wall(object)
+//{
+//}
+//
+//void DeleteObjectAction::execute(EditorState& state, EditorLevel& level)
+//{
+//    state.p_active_object_ = nullptr;
+//    level.remove_object(wall.object_id);
+//}
+//
+//void DeleteObjectAction::undo(EditorState& state, EditorLevel& level)
+//{
+//    auto& new_wall = level.add_wall(wall.parameters, wall.props);
+//    new_wall.props = wall.props;
+//
+//    state.p_active_object_ = &new_wall;
+//
+//    level.set_object_id(new_wall.object_id, wall.object_id);
+//    wall = new_wall;
+//}
+//
+//ActionStrings DeleteObjectAction::to_string() const
+//{
+//    return {
+//        .title = "Delete Wall",
+//        .body = std::format("Deleted wall with ID: {} ", wall.object_id),
+//    };
+//}
 
-AddWallAction::AddWallAction(const WallParameters& params)
-    : params_(params)
+AddObjectAction::AddObjectAction(const LevelObjectV2& object)
+    : object_(object)
 {
 }
 
-void AddWallAction::execute(EditorState& state, EditorLevel& level)
+void AddObjectAction::execute(EditorState& state, EditorLevel& level)
 {
 
     // When redoing the action, this prevents using the default for this object type
     if (!executed_)
     {
-        props_ = state.wall_default;
+        if (auto props = std::get_if<WallObject>(&object_.object_type))
+        {
+            props->properties = state.wall_default;
+        }
+        
 
-        auto& wall = level.add_wall(params_, props_);
-        id_ = wall.object_id;
+        auto& level_object = level.add_object(object_);
+        id_ = level_object.object_id;
 
         executed_ = true;
-        state.p_active_object_ = &wall;
+        state.p_active_object_ = &level_object;
     }
     else
     {
-        auto& wall = level.add_wall(params_, props_);
-        level.set_object_id(wall.object_id, id_);
-        state.p_active_object_ = &wall;
+        auto& level_object = level.add_object(object_);
+        level.set_object_id(level_object.object_id, id_);
+        state.p_active_object_ = &level_object;
     }
 }
 
-void AddWallAction::undo(EditorState& state, EditorLevel& level)
+void AddObjectAction::undo(EditorState& state, EditorLevel& level)
 {
     state.p_active_object_ = nullptr;
     level.remove_object(id_);
 }
 
-ActionStrings AddWallAction::to_string() const
+ActionStrings AddObjectAction::to_string() const
 {
-    return {
-        .title = "Add Wall",
-        .body = std::format("Props:\n  From Texture 1/2: {} {}\nParams:\n "
-                            "  Start position: ({:.2f}, {:.2f}) - End Position: ({:.2f}, {:.2f})",
-                            props_.texture_front, props_.texture_back, params_.start.x,
-                            params_.start.y, params_.end.x, params_.end.y),
-    };
-}
-
-UpdateWallAction::UpdateWallAction(const Wall& old_wall, const Wall& new_wall)
-    : old_(old_wall)
-    , new_(new_wall)
-{
-}
-
-void UpdateWallAction::execute(EditorState& state, EditorLevel& level)
-{
-    level.update_object(new_);
-}
-
-void UpdateWallAction::undo(EditorState& state, EditorLevel& level)
-{
-    level.update_object(old_);
-}
-
-ActionStrings UpdateWallAction::to_string() const
-{
-    return {
-        .title = "Update Wall",
-        .body = std::format(
-            "Props:\n From Texture 1/2: {} {}\n To Texture 1/2: {} {}\nParams:\n "
-            "From Start position: ({:.2f}, {:.2f})\n End Position: ({:.2f}, {:.2f})\n To Start "
-            "position: ({:.2f}, {:.2f})\n End Position: ({:.2f}, {:.2f})",
-            old_.props.texture_front, old_.props.texture_back, new_.props.texture_front,
-            new_.props.texture_back, old_.parameters.start.x, old_.parameters.start.y,
-            old_.parameters.end.x, old_.parameters.end.y, new_.parameters.start.x,
-            new_.parameters.start.y, new_.parameters.end.x, new_.parameters.end.y),
-    };
-}
-
-DeleteObjectAction::DeleteObjectAction(const Wall& object)
-    : wall(object)
-{
-}
-
-void DeleteObjectAction::execute(EditorState& state, EditorLevel& level)
-{
-    state.p_active_object_ = nullptr;
-    level.remove_object(wall.object_id);
-}
-
-void DeleteObjectAction::undo(EditorState& state, EditorLevel& level)
-{
-    auto& new_wall = level.add_wall(wall.parameters, wall.props);
-    new_wall.props = wall.props;
-
-    state.p_active_object_ = &new_wall;
-
-    level.set_object_id(new_wall.object_id, wall.object_id);
-    wall = new_wall;
-}
-
-ActionStrings DeleteObjectAction::to_string() const
-{
-    return {
-        .title = "Delete Wall",
-        .body = std::format("Deleted wall with ID: {} ", wall.object_id),
-    };
+    return {.title = "Add Object", .body = object_to_string(object_)};
 }
