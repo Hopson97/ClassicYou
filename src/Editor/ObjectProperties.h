@@ -9,14 +9,7 @@ enum class PropType
     Texture
 };
 
-template <PropType Type, typename Value>
-struct Prop
-{
-    static constexpr PropType type = Type;
-    Value value;
-};
+using TextureProp = int;
 
-using TextureProp = Prop<PropType::Texture, GLuint>;
-
-int display_texture_gui(const char* title, const TextureProp& current_texure,
+int display_texture_gui(const char* title, TextureProp current_texture,
                         const LevelTextures& textures);

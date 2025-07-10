@@ -59,7 +59,7 @@ bool ScreenEditGame::on_init()
 
     for (auto& texture : TEXTURES)
     {
-        if (!level_texures_.register_texture(texture.first, texture.second, texture_))
+        if (!level_textures_.register_texture(texture.first, texture.second, texture_))
         {
             return false;
         }
@@ -234,7 +234,7 @@ void ScreenEditGame::on_render(bool show_debug)
 
     if (editor_state_.p_active_object_)
     {
-        editor_state_.p_active_object_->property_gui(editor_state_, level_texures_,
+        editor_state_.p_active_object_->property_gui(editor_state_, level_textures_,
                                                      action_manager_);
     }
 

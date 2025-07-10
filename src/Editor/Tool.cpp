@@ -2,9 +2,9 @@
 
 #include <imgui.h>
 
+#include "Actions.h"
 #include "DrawingPad.h"
 #include "WorldGeometry.h"
-#include "Actions.h"
 
 void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
                               ActionManager& actions)
@@ -19,16 +19,16 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
             active_dragging_ = true;
             start_ = node;
             end_ = node;
-            wall_preview_ = generate_wall_mesh(start_, end_, default_props.texture_side_1.value,
-                                               default_props.texture_side_2.value);
+            wall_preview_ = generate_wall_mesh(start_, end_, default_props.texture_front,
+                                               default_props.texture_back);
             wall_preview_.buffer();
         }
     }
     else if (event.is<sf::Event::MouseMoved>())
     {
         end_ = node;
-        wall_preview_ = generate_wall_mesh(start_, end_, default_props.texture_side_1.value,
-                                           default_props.texture_side_2.value);
+        wall_preview_ = generate_wall_mesh(start_, end_, default_props.texture_front,
+                                           default_props.texture_back);
         wall_preview_.buffer();
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())

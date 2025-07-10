@@ -121,8 +121,8 @@ ActionStrings AddWallAction::to_string() const
         .title = "Add Wall",
         .body = std::format("Props:\n  From Texture 1/2: {} {}\nParams:\n "
                             "  Start position: ({:.2f}, {:.2f}) - End Position: ({:.2f}, {:.2f})",
-                            props_.texture_side_1.value, props_.texture_side_2.value,
-                            params_.start.x, params_.start.y, params_.end.x, params_.end.y),
+                            props_.texture_front, props_.texture_back, params_.start.x,
+                            params_.start.y, params_.end.x, params_.end.y),
     };
 }
 
@@ -150,11 +150,10 @@ ActionStrings UpdateWallAction::to_string() const
             "Props:\n From Texture 1/2: {} {}\n To Texture 1/2: {} {}\nParams:\n "
             "From Start position: ({:.2f}, {:.2f})\n End Position: ({:.2f}, {:.2f})\n To Start "
             "position: ({:.2f}, {:.2f})\n End Position: ({:.2f}, {:.2f})",
-            old_.props.texture_side_1.value, old_.props.texture_side_2.value,
-            new_.props.texture_side_1.value, new_.props.texture_side_2.value,
-            old_.parameters.start.x, old_.parameters.start.y, old_.parameters.end.x,
-            old_.parameters.end.y, new_.parameters.start.x, new_.parameters.start.y,
-            new_.parameters.end.x, new_.parameters.end.y),
+            old_.props.texture_front, old_.props.texture_back, new_.props.texture_front,
+            new_.props.texture_back, old_.parameters.start.x, old_.parameters.start.y,
+            old_.parameters.end.x, old_.parameters.end.y, new_.parameters.start.x,
+            new_.parameters.start.y, new_.parameters.end.x, new_.parameters.end.y),
     };
 }
 

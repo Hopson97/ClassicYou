@@ -11,9 +11,8 @@ Wall& EditorLevel::add_wall(const WallParameters& parameters, const WallProps& p
 
     LevelMesh level_mesh = {
         .id = wall.object_id,
-        .mesh =
-            generate_wall_mesh(wall.parameters.start, wall.parameters.end,
-                               wall.props.texture_side_1.value, wall.props.texture_side_2.value),
+        .mesh = generate_wall_mesh(wall.parameters.start, wall.parameters.end,
+                                   wall.props.texture_front, wall.props.texture_back),
     };
     level_mesh.mesh.buffer();
     wall_meshes_.push_back(std::move(level_mesh));
@@ -43,8 +42,7 @@ void EditorLevel::update_object(const Wall& wall)
         {
             std::println("Found wall mesh with id: {}", wall_mesh.id);
             auto new_mesh = generate_wall_mesh(wall.parameters.start, wall.parameters.end,
-                                               wall.props.texture_side_1.value,
-                                               wall.props.texture_side_2.value);
+                                               wall.props.texture_front, wall.props.texture_back);
             new_mesh.buffer();
             wall_mesh.mesh = std::move(new_mesh);
         }

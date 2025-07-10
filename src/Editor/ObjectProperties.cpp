@@ -4,7 +4,7 @@
 
 #include "LevelTextures.h"
 
-int display_texture_gui(const char* title, const TextureProp& current_texure,
+int display_texture_gui(const char* title, TextureProp current_texture,
                         const LevelTextures& textures)
 {
     int new_texture = -1;
@@ -16,7 +16,7 @@ int display_texture_gui(const char* title, const TextureProp& current_texure,
 
         ImGui::SameLine();
         std::string button_id = name + "###" + title;
-        auto old_texture = current_texure.value;
+        auto old_texture = current_texture;
         if (auto texture_id = textures.get_texture(name))
         {
             if (texture_id == old_texture)

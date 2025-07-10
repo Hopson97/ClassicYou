@@ -49,7 +49,7 @@ class ScreenEditGame final : public Screen
 
     EditorState editor_state_;
 
-    LevelTextures level_texures_;
+    LevelTextures level_textures_;
     gl::Texture2DArray texture_;
 
     EditorLevel level_;

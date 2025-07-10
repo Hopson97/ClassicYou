@@ -30,8 +30,8 @@ struct LevelObject
 
 struct WallProps
 {
-    TextureProp texture_side_1;
-    TextureProp texture_side_2;
+    TextureProp texture_front;
+    TextureProp texture_back;
 };
 
 struct WallParameters
@@ -62,8 +62,8 @@ struct EditorState
     glm::ivec2 node_hovered{0};
 
     WallProps wall_default = {
-        .texture_side_1 = {0},
-        .texture_side_2 = {0},
+        .texture_front = {0},
+        .texture_back = {0},
     };
 
     LevelObject* p_active_object_ = nullptr;
