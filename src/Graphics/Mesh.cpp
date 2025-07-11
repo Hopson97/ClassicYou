@@ -188,8 +188,8 @@ Mesh3D generate_terrain_mesh(int size, int edgeVertices)
     return mesh;
 }
 
-WorldGeometryMesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to, GLuint texture_id_1,
-                                       GLuint texture_id_2)
+LevelObjectsMesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to, GLuint texture_id_1,
+                                      GLuint texture_id_2)
 {
     // Begin
     auto b = glm::vec3{from.x, 0, from.y} / static_cast<float>(TILE_SIZE);
@@ -197,7 +197,7 @@ WorldGeometryMesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to, GLuint text
     // End
     auto e = glm::vec3{to.x, 0, to.y} / static_cast<float>(TILE_SIZE);
 
-    WorldGeometryMesh3D mesh;
+    LevelObjectsMesh3D mesh;
 
     // Offset x, y, bottom (TODO: Top)
     auto ox = 0.0f;

@@ -96,7 +96,8 @@ bool DrawingPad::init()
     return true;
 }
 
-void DrawingPad::render_line(glm::vec2 from, glm::vec2 to, const glm::vec4& colour, int thickness)
+void DrawingPad::render_line(glm::vec2 from, glm::vec2 to, const glm::vec4& colour,
+                             GLfloat thickness)
 {
     if (line_meshes_.find(thickness) == line_meshes_.end())
     {

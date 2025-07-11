@@ -82,12 +82,12 @@ void ActionManager::display_action_history()
     ImGui::End();
 }
 //
-//AddWallAction::AddWallAction(const WallParameters& params)
+// AddWallAction::AddWallAction(const WallParameters& params)
 //    : params_(params)
 //{
 //}
 //
-//void AddWallAction::execute(EditorState& state, EditorLevel& level)
+// void AddWallAction::execute(EditorState& state, EditorLevel& level)
 //{
 //
 //    // When redoing the action, this prevents using the default for this object type
@@ -109,13 +109,13 @@ void ActionManager::display_action_history()
 //    }
 //}
 //
-//void AddWallAction::undo(EditorState& state, EditorLevel& level)
+// void AddWallAction::undo(EditorState& state, EditorLevel& level)
 //{
 //    state.p_active_object_ = nullptr;
 //    level.remove_object(id_);
 //}
 //
-//ActionStrings AddWallAction::to_string() const
+// ActionStrings AddWallAction::to_string() const
 //{
 //    return {
 //        .title = "Add Wall",
@@ -126,23 +126,23 @@ void ActionManager::display_action_history()
 //    };
 //}
 //
-//UpdateWallAction::UpdateWallAction(const Wall& old_wall, const Wall& new_wall)
+// UpdateWallAction::UpdateWallAction(const Wall& old_wall, const Wall& new_wall)
 //    : old_(old_wall)
 //    , new_(new_wall)
 //{
 //}
 //
-//void UpdateWallAction::execute(EditorState& state, EditorLevel& level)
+// void UpdateWallAction::execute(EditorState& state, EditorLevel& level)
 //{
 //    level.update_object(new_);
 //}
 //
-//void UpdateWallAction::undo(EditorState& state, EditorLevel& level)
+// void UpdateWallAction::undo(EditorState& state, EditorLevel& level)
 //{
 //    level.update_object(old_);
 //}
 //
-//ActionStrings UpdateWallAction::to_string() const
+// ActionStrings UpdateWallAction::to_string() const
 //{
 //    return {
 //        .title = "Update Wall",
@@ -157,18 +157,18 @@ void ActionManager::display_action_history()
 //    };
 //}
 //
-//DeleteObjectAction::DeleteObjectAction(const Wall& object)
+// DeleteObjectAction::DeleteObjectAction(const Wall& object)
 //    : wall(object)
 //{
 //}
 //
-//void DeleteObjectAction::execute(EditorState& state, EditorLevel& level)
+// void DeleteObjectAction::execute(EditorState& state, EditorLevel& level)
 //{
 //    state.p_active_object_ = nullptr;
 //    level.remove_object(wall.object_id);
 //}
 //
-//void DeleteObjectAction::undo(EditorState& state, EditorLevel& level)
+// void DeleteObjectAction::undo(EditorState& state, EditorLevel& level)
 //{
 //    auto& new_wall = level.add_wall(wall.parameters, wall.props);
 //    new_wall.props = wall.props;
@@ -179,7 +179,7 @@ void ActionManager::display_action_history()
 //    wall = new_wall;
 //}
 //
-//ActionStrings DeleteObjectAction::to_string() const
+// ActionStrings DeleteObjectAction::to_string() const
 //{
 //    return {
 //        .title = "Delete Wall",
@@ -202,7 +202,6 @@ void AddObjectAction::execute(EditorState& state, EditorLevel& level)
         {
             props->properties = state.wall_default;
         }
-        
 
         auto& level_object = level.add_object(object_);
         id_ = level_object.object_id;
@@ -226,5 +225,34 @@ void AddObjectAction::undo(EditorState& state, EditorLevel& level)
 
 ActionStrings AddObjectAction::to_string() const
 {
-    return {.title = "Add Object", .body = object_to_string(object_)};
+    return {
+        .title = "Add Object",
+        .body = object_to_string(object_),
+    };
+}
+
+UpdateObjectAction::UpdateObjectAction(const LevelObjectV2& old_object,
+                                       const LevelObjectV2& new_object)
+    : old_object_(old_object)
+    , new_object_(new_object)
+{
+}
+
+void UpdateObjectAction::execute(EditorState& state, EditorLevel& level)
+{
+    level.update_object(new_object_);
+}
+
+void UpdateObjectAction::undo(EditorState& state, EditorLevel& level)
+{
+    level.update_object(old_object_);
+}
+
+ActionStrings UpdateObjectAction::to_string() const
+{
+    return {
+        .title = "Update Object",
+        .body = std::format("From: {}\nTo: {}", object_to_string(old_object_),
+                            object_to_string(new_object_)),
+    };
 }

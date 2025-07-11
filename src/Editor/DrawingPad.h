@@ -16,7 +16,7 @@ class DrawingPad
     bool init();
     void update(const Keyboard& keyboard, sf::Time dt);
 
-    void render_line(glm::vec2 from, glm::vec2 to, const glm::vec4& colour, int thickness);
+    void render_line(glm::vec2 from, glm::vec2 to, const glm::vec4& colour, GLfloat thickness);
 
     void display();
 
@@ -24,7 +24,7 @@ class DrawingPad
 
   private:
     gl::Shader shader_;
-    std::unordered_map<GLuint, Mesh2D> line_meshes_;
+    std::unordered_map<GLfloat, Mesh2D> line_meshes_;
 
     struct GridMesh
     {

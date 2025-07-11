@@ -3,7 +3,7 @@
 #include <functional>
 #include <memory>
 
-#include "../Editor/WorldGeometry.h"
+#include "../Editor/LevelObjects.h"
 #include "../Graphics/Mesh.h"
 
 class DrawingPad;
@@ -15,7 +15,7 @@ class EditorLevel
     struct LevelMesh
     {
         ObjectId id;
-        WorldGeometryMesh3D mesh;
+        LevelObjectsMesh3D mesh;
     };
 
   public:

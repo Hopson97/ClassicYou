@@ -160,7 +160,7 @@
     <ClCompile Include="src\Editor\EditorLevel.cpp" />
     <ClCompile Include="src\Editor\ObjectProperties.cpp" />
     <ClCompile Include="src\Editor\Tool.cpp" />
-    <ClCompile Include="src\Editor\WorldGeometry.cpp" />
+    <ClCompile Include="src\Editor\LevelObjects.cpp" />
     <ClCompile Include="src\Graphics\CameraController.cpp" />
     <ClCompile Include="src\Graphics\Camera.cpp" />
     <ClCompile Include="src\Graphics\ShadowMap.cpp" />
@@ -220,7 +220,7 @@
     <ClInclude Include="src\Editor\LevelTextures.h" />
     <ClInclude Include="src\Editor\ObjectProperties.h" />
     <ClInclude Include="src\Editor\Tool.h" />
-    <ClInclude Include="src\Editor\WorldGeometry.h" />
+    <ClInclude Include="src\Editor\LevelObjects.h" />
     <ClInclude Include="src\Graphics\CameraController.h" />
     <ClInclude Include="src\Graphics\Camera.h" />
     <ClInclude Include="src\Graphics\ShadowMap.h" />
@@ -257,7 +257,7 @@
   <ItemGroup>
     <Image Include="assets\textures\crate_specular.png" />
     <Image Include="assets\textures\debug.png" />
-    <Image Include="assets\textures\grass.png" />
+    <Image Include="assets\textures\Grass.png" />
     <Image Include="assets\textures\grass_specular.png" />
     <Image Include="assets\textures\person.png" />
     <Image Include="assets\textures\person_specular.png" />

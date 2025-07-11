@@ -10,11 +10,14 @@
 
 namespace
 {
-    constexpr std::array<std::pair<const char*, const char*>, 4> TEXTURES = {
+    constexpr std::array<std::pair<const char*, const char*>, 7> TEXTURES = {
         std::make_pair("Red Bricks", "assets/textures/RedBricks.png"),
         std::make_pair("Grey Bricks", "assets/textures/GreyBricks.png"),
         std::make_pair("Bars", "assets/textures/Bars.png"),
         std::make_pair("ChainFence", "assets/textures/ChainFence.png"),
+        std::make_pair("Grass", "assets/textures/Grass.png"),
+        std::make_pair("Dirt", "assets/textures/Dirt.png"),
+        std::make_pair("Glass", "assets/textures/Glass.png"),
     };
 
     glm::ivec2 map_pixel_to_tile(glm::vec2 point, const Camera& camera)
@@ -139,8 +142,8 @@ void ScreenEditGame::on_event(const sf::Event& event)
             case sf::Keyboard::Key::Delete:
                 if (editor_state_.p_active_object_)
                 {
-                   // action_manager_.push_action(std::make_unique<DeleteObjectAction>(
-                  //      *dynamic_cast<Wall*>(editor_state_.p_active_object_)));
+                    // action_manager_.push_action(std::make_unique<DeleteObjectAction>(
+                    //      *dynamic_cast<Wall*>(editor_state_.p_active_object_)));
                 }
                 break;
 
@@ -234,8 +237,8 @@ void ScreenEditGame::on_render(bool show_debug)
 
     if (editor_state_.p_active_object_)
     {
-        //editor_state_.p_active_object_->property_gui(editor_state_, level_textures_,
-      //                                               action_manager_);
+        editor_state_.p_active_object_->property_gui(editor_state_, level_textures_,
+                                                     action_manager_);
     }
 
     // clang-format off
