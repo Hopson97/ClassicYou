@@ -8,8 +8,6 @@
 
 namespace
 {
-
-
     void add_line_to_mesh(Mesh2D& mesh, glm::vec2 from, glm::vec2 to, const glm::vec4& colour)
     {
         mesh.vertices.push_back(Vertex2D{.position = from, .colour = colour});
@@ -81,7 +79,6 @@ bool DrawingPad::init()
     grid_mesh_.sub_grid.buffer();
     grid_mesh_.main_grid.buffer();
 
-
     // Create the mesh for displaying whatever node is being selected
     selection_mesh_.vertices = {
         {.position = {0.0f, 0.0f}, .texture_coord = {0.0f, 0.0f}, .colour = glm::vec4(1.0f)},
@@ -94,6 +91,25 @@ bool DrawingPad::init()
     selection_mesh_.buffer();
 
     return true;
+}
+
+void DrawingPad::render_quad(glm::vec2 position, glm::vec2 size, const glm::vec4& colour)
+{
+    // TODO Actually render a quad
+    float thickness = 2.0f;
+    if (line_meshes_.find(thickness) == line_meshes_.end())
+    {
+        line_meshes_.emplace(2, Mesh2D{});
+    }
+
+    auto& mesh = line_meshes_.find(thickness)->second;
+
+    add_line_to_mesh(mesh, {position.x, position.y}, {position.x + size.x, position.y}, colour);
+    add_line_to_mesh(mesh, {position.x + size.x, position.y},
+                     {position.x + size.x, position.y + size.y}, colour);
+    add_line_to_mesh(mesh, {position.x + size.x, position.y + size.y},
+                     {position.x, position.y + size.y}, colour);
+    add_line_to_mesh(mesh, {position.x, position.y + size.y}, {position.x, position.y}, colour);
 }
 
 void DrawingPad::render_line(glm::vec2 from, glm::vec2 to, const glm::vec4& colour,
@@ -120,6 +136,7 @@ void DrawingPad::display()
 {
     // For 2D rendering, depth testing is not required
     gl::disable(gl::Capability::DepthTest);
+    gl::disable(gl::Capability::CullFace);
     gl::cull_face(gl::Face::Back);
 
     // Update the shaders
@@ -144,7 +161,6 @@ void DrawingPad::display()
         mesh.indices.clear();
     }
     line_meshes_.clear();
-
 
     // Reder the selected quad
     shader_.set_uniform("use_texture", true);

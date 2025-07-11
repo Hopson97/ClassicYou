@@ -53,6 +53,6 @@ class ScreenEditGame final : public Screen
     gl::Texture2DArray texture_;
 
     EditorLevel level_;
-    CreateWallTool tool_;
+    std::unique_ptr<ITool> tool_;
     ActionManager action_manager_;
 };

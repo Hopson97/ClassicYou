@@ -16,6 +16,7 @@ class DrawingPad
     bool init();
     void update(const Keyboard& keyboard, sf::Time dt);
 
+    void render_quad(glm::vec2 position, glm::vec2 size, const glm::vec4& colour);
     void render_line(glm::vec2 from, glm::vec2 to, const glm::vec4& colour, GLfloat thickness);
 
     void display();

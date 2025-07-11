@@ -4,9 +4,9 @@
 #include "DrawingPad.h"
 #include "EditConstants.h"
 
-LevelObjectV2& EditorLevel::add_object(const LevelObjectV2& object)
+LevelObject& EditorLevel::add_object(const LevelObject& object)
 {
-    LevelObjectV2 new_object = object;
+    LevelObject new_object = object;
     new_object.object_id = current_id_++;
 
     LevelMesh level_mesh = {
@@ -15,13 +15,10 @@ LevelObjectV2& EditorLevel::add_object(const LevelObjectV2& object)
     };
     level_mesh.mesh.buffer();
     level_meshes_.push_back(std::move(level_mesh));
-
-    std::println("Added object with id: {} and {}", new_object.object_id,
-                 object_to_string(new_object));
     return level_objects_.emplace_back(new_object);
 }
 
-void EditorLevel::update_object(const LevelObjectV2& object)
+void EditorLevel::update_object(const LevelObject& object)
 {
     for (auto& w : level_objects_)
     {
@@ -47,7 +44,7 @@ void EditorLevel::remove_object(std::size_t id)
 {
     std::erase_if(level_meshes_, [id](const LevelMesh& mesh) { return mesh.id == id; });
     std::erase_if(level_objects_,
-                  [id](const LevelObjectV2& object) { return object.object_id == id; });
+                  [id](const LevelObject& object) { return object.object_id == id; });
 }
 
 void EditorLevel::set_object_id(ObjectId current_id, ObjectId new_id)
@@ -78,7 +75,7 @@ void EditorLevel::render()
     }
 }
 
-void EditorLevel::render_2d(DrawingPad& drawing_pad, const LevelObjectV2* p_active_object)
+void EditorLevel::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object)
 {
     for (auto& object : level_objects_)
     {
@@ -92,23 +89,45 @@ void EditorLevel::render_2d(DrawingPad& drawing_pad, const LevelObjectV2* p_acti
             drawing_pad.render_line(wall->parameters.start, wall->parameters.end, colour,
                                     thickness);
         }
+        else if (auto platform = std::get_if<PlatformObject>(&object.object_type))
+        {
+            auto is_selected = p_active_object && p_active_object->object_id == object.object_id;
+
+            auto colour = is_selected ? Colour::RED : Colour::WHITE;
+
+            drawing_pad.render_quad(platform->parameters.position,
+                {platform->properties.width * TILE_SIZE, platform->properties.depth * TILE_SIZE},
+                colour);
+
+        }
     }
 }
 
-LevelObjectV2* EditorLevel::try_select(glm::vec2 selection_tile,
-                                       const LevelObjectV2* p_active_object)
+LevelObject* EditorLevel::try_select(glm::vec2 selection_tile, const LevelObject* p_active_object)
 {
-    std::println("Trying to select object at tile: ({}, {}) with {} objects currently stored",
-                 selection_tile.x, selection_tile.y, level_objects_.size());
-
     for (auto& object : level_objects_)
     {
-        std::println("Checking object with id: {}", object.object_id);
         if (auto wall = std::get_if<WallObject>(&object.object_type))
         {
-            std::println("Checking wall with id: {}", object.object_id);
             const auto& params = wall->parameters;
             if (distance_to_line(selection_tile, {params.start, params.end}) < 15)
+            {
+                // Allow selecting objects that may be overlapping
+                if (!p_active_object || p_active_object->object_id != object.object_id)
+                {
+                    return &object;
+                }
+            }
+        }
+        else if (auto platform = std::get_if<PlatformObject>(&object.object_type))
+        {
+            const auto& params = platform->parameters;
+            const auto& props = platform->properties;
+
+            if (selection_tile.x >= params.position.x &&
+                selection_tile.x <= params.position.x + props.width * TILE_SIZE &&
+                selection_tile.y >= params.position.y &&
+                selection_tile.y <= params.position.y + props.depth * TILE_SIZE)
             {
                 // Allow selecting objects that may be overlapping
                 if (!p_active_object || p_active_object->object_id != object.object_id)

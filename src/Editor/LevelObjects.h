@@ -12,6 +12,9 @@ class LevelTextures;
 struct EditorState;
 class ActionManager;
 
+// =======================================
+//      Wall Object Types
+// =======================================
 struct WallProps
 {
     TextureProp texture_front{0};
@@ -24,9 +27,30 @@ struct WallParameters
     glm::vec2 end{0};
 };
 
+// =======================================
+//      Platform Object Types
+// =======================================
+struct PlatformProps
+{
+    TextureProp texture_top;
+    TextureProp texture_bottom;
+    float width = 1;
+    float depth = 1;
+    float base = 0;
+};
+
+struct PlatformParameters
+{
+    glm::vec2 position{0};
+};
+
+// =======================================
+//     Object Type Template
+// =======================================
 template <typename Properties, typename Parameters>
 struct ObjectType
 {
+
     using PropertiesType = Properties;
     using ParametersType = Parameters;
 
@@ -35,53 +59,28 @@ struct ObjectType
 };
 
 using WallObject = ObjectType<WallProps, WallParameters>;
+using PlatformObject = ObjectType<PlatformProps, PlatformParameters>;
 
-struct LevelObjectV2
+struct LevelObject
 {
     template <typename Properties, typename Parameters>
-    LevelObjectV2(const ObjectType<Properties, Parameters>& object)
+    LevelObject(const ObjectType<Properties, Parameters>& object)
         : object_type(object)
     {
     }
 
-    LevelObjectV2(int object_id)
+    LevelObject(int object_id)
         : object_id(object_id)
     {
     }
 
     int object_id = 0;
 
-    std::variant<WallObject> object_type;
+    std::variant<WallObject, PlatformObject> object_type;
 
     void property_gui(EditorState& state, const LevelTextures& textures,
                       ActionManager& action_manager);
 };
-
-inline LevelObjectsMesh3D object_to_geometry(const LevelObjectV2& object)
-{
-    if (auto wall = std::get_if<WallObject>(&object.object_type))
-    {
-        return generate_wall_mesh(wall->parameters.start, wall->parameters.end,
-                                  wall->properties.texture_back, wall->properties.texture_back);
-    }
-
-    throw std::runtime_error("Must implement getting geometry for all types!");
-}
-
-inline std::string object_to_string(const LevelObjectV2& object)
-{
-    if (auto wall = std::get_if<WallObject>(&object.object_type))
-    {
-        return
-
-            std::format("Props:\n  From Texture 1/2: {} {}\nParameters:\n "
-                        "  Start position: ({:.2f}, {:.2f}) - End Position: ({:.2f}, {:.2f})",
-                        wall->properties.texture_front, wall->properties.texture_back,
-                        wall->parameters.start.x, wall->parameters.start.y, wall->parameters.end.x,
-                        wall->parameters.end.y);
-    }
-    return "";
-}
 
 struct EditorState
 {
@@ -92,5 +91,19 @@ struct EditorState
         .texture_back = 0,
     };
 
-    LevelObjectV2* p_active_object_ = nullptr;
+    PlatformProps platform_default = {
+        .texture_top = 0,
+        .texture_bottom = 0,
+        .width = 1,
+        .depth = 1,
+        .base = 0,
+    };
+
+    LevelObject* p_active_object_ = nullptr;
 };
+
+LevelObjectsMesh3D object_to_geometry(const LevelObject& object);
+std::string object_to_string(const LevelObject& object);
+
+[[nodiscard]] LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall);
+[[nodiscard]] LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform);

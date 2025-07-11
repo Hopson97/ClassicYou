@@ -49,6 +49,7 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens)
 
 bool ScreenEditGame::on_init()
 {
+    tool_ = std::make_unique<CreateWallTool>();
     if (!drawing_pad_.init())
     {
         return false;
@@ -181,7 +182,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
         }
     }
 
-    tool_.on_event(event, editor_state_.node_hovered, editor_state_, action_manager_);
+    tool_->on_event(event, editor_state_.node_hovered, editor_state_, action_manager_);
 }
 
 void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
@@ -208,7 +209,7 @@ void ScreenEditGame::on_render(bool show_debug)
     // Render the drawing pad to the left side
     glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
 
-    tool_.render_preview_2d(drawing_pad_);
+    tool_->render_preview_2d(drawing_pad_);
     level_.render_2d(drawing_pad_, editor_state_.p_active_object_);
 
     // Finalise 2d rendering
@@ -228,7 +229,7 @@ void ScreenEditGame::on_render(bool show_debug)
     texture_.bind(0);
     world_geometry_shader_.set_uniform("use_texture", true);
     world_geometry_shader_.set_uniform("model_matrix", create_model_matrix({}));
-    tool_.render_preview();
+    tool_->render_preview();
 
     level_.render();
 
@@ -261,6 +262,19 @@ void ScreenEditGame::on_render(bool show_debug)
         ImGui::EndMainMenuBar();
     }
     // clang-format on
+
+    if (ImGui ::Begin("Tool"))
+    {
+        if (ImGui::Button("Wall"))
+        {
+            tool_ = std::make_unique<CreateWallTool>();
+        }
+        if (ImGui::Button("Platform"))
+        {
+            tool_ = std::make_unique<CreatePlatformTool>();
+        }
+        ImGui::End();
+    }
 
     action_manager_.display_action_history();
 }

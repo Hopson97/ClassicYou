@@ -73,6 +73,11 @@ class Mesh
         return indices_;
     }
 
+    bool has_buffered() const
+    {
+        return has_buffered_;
+    }
+
   public:
     std::vector<Vertex> vertices;
     std::vector<GLuint> indices;
@@ -106,6 +111,7 @@ bool Mesh<Vertex>::buffer()
     // Upload the data to the GPU and set up the attributes
     vbo_.buffer_data(vertices);
     Vertex::build_attribs(vao_, vbo_);
+    has_buffered_ = true;
     return true;
 }
 
@@ -120,8 +126,6 @@ bool Mesh<Vertex>::update()
     // Ensure the indices count being updated matches what is currently in the buffer
     if (indices_ != static_cast<GLuint>(indices.size()))
     {
-        // std::println("Indices mis-match. Current: {} - New: {}\nRecreating mesh...", indices_,
-        //              indices.size());
         has_buffered_ = false;
     }
 
@@ -173,7 +177,4 @@ using Mesh2D = Mesh<Vertex2D>;
 [[nodiscard]] Mesh3D generate_cube_mesh(const glm::vec3& size, bool repeat_texture = false);
 [[nodiscard]] Mesh3D generate_centered_cube_mesh(const glm::vec3& size);
 [[nodiscard]] Mesh3D generate_terrain_mesh(int size, int edgeVertices);
-
-[[nodiscard]] LevelObjectsMesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to,
-                                                    GLuint texture_id_1, GLuint texture_id_2);
 [[nodiscard]] Mesh3D generate_grid_mesh(int width, int height);

@@ -24,42 +24,6 @@ class Action
     virtual ActionStrings to_string() const = 0;
 };
 
-// class AddWallAction final : public Action
-//{
-//   public:
-//     AddWallAction(const WallParameters& params);
-//
-//     void execute(EditorState& state, EditorLevel& level) override;
-//     void undo(EditorState& state, EditorLevel& level) override;
-//
-//     ActionStrings to_string() const override;
-//
-//   private:
-//     const WallParameters params_;
-//
-//     WallProps props_{{0}};
-//     int id_ = -1;
-//
-//     // Flag for when re-doing this action, it uses the stored props rather than the default
-//     bool executed_ = false;
-// };
-
-// TODO Maybe the props should be a defined dict rather a class such that multiple classes do not
-// need to be created for every object
-// class UpdateWallAction final : public Action
-//{
-//  public:
-//    UpdateWallAction(const Wall& old_wall, const Wall& new_wall);
-//
-//    void execute(EditorState& state, EditorLevel& level) override;
-//    void undo(EditorState& state, EditorLevel& level) override;
-//
-//    ActionStrings to_string() const override;
-//
-//  private:
-//    const Wall old_;
-//    const Wall new_;
-//};
 //
 // class DeleteObjectAction final : public Action
 //{
@@ -78,7 +42,7 @@ class Action
 class AddObjectAction final : public Action
 {
   public:
-    AddObjectAction(const LevelObjectV2& object);
+    AddObjectAction(const LevelObject& object);
 
     void execute(EditorState& state, EditorLevel& level) override;
     void undo(EditorState& state, EditorLevel& level) override;
@@ -86,7 +50,7 @@ class AddObjectAction final : public Action
     ActionStrings to_string() const override;
 
   private:
-    LevelObjectV2 object_;
+    LevelObject object_;
     int id_ = -1;
 
     // Flag for when re-doing this action, it uses the stored props rather than the default
@@ -96,7 +60,7 @@ class AddObjectAction final : public Action
 class UpdateObjectAction final : public Action
 {
   public:
-    UpdateObjectAction(const LevelObjectV2& old_object, const LevelObjectV2& new_object);
+    UpdateObjectAction(const LevelObject& old_object, const LevelObject& new_object);
 
     void execute(EditorState& state, EditorLevel& level) override;
     void undo(EditorState& state, EditorLevel& level) override;
@@ -104,8 +68,8 @@ class UpdateObjectAction final : public Action
     ActionStrings to_string() const override;
 
   private:
-    const LevelObjectV2 old_object_;
-    const LevelObjectV2 new_object_;
+    const LevelObject old_object_;
+    const LevelObject new_object_;
 };
 
 class ActionManager

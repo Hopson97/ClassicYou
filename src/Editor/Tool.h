@@ -32,3 +32,16 @@ class CreateWallTool : public ITool
     glm::vec2 end_{0.0f};
     bool active_dragging_ = false;
 };
+
+class CreatePlatformTool : public ITool
+{
+  public:
+    void on_event(sf::Event event, glm::vec2 node, EditorState& state,
+                  ActionManager& actions) override;
+    void render_preview() override;
+    void render_preview_2d(DrawingPad& drawing_pad) override;
+
+  private:
+    LevelObjectsMesh3D platform_preview_;
+    glm::vec2 tile_{0.0f};
+};
