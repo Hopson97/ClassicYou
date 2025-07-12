@@ -147,10 +147,7 @@ void AddObjectAction::undo(EditorState& state, EditorLevel& level)
 
 ActionStrings AddObjectAction::to_string() const
 {
-    return {
-        .title = "Add Object",
-        .body = object_to_string(object_),
-    };
+    return {.title = "Add Object", .body = object_.to_string()};
 }
 
 UpdateObjectAction::UpdateObjectAction(const LevelObject& old_object, const LevelObject& new_object)
@@ -173,7 +170,6 @@ ActionStrings UpdateObjectAction::to_string() const
 {
     return {
         .title = "Update Object",
-        .body = std::format("From: {}\nTo: {}", object_to_string(old_object_),
-                            object_to_string(new_object_)),
+        .body = std::format("From: {}\nTo: {}", old_object_.to_string(), new_object_.to_string()),
     };
 }

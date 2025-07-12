@@ -179,6 +179,11 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 level_.try_select(map_pixel_to_tile({mouse->position.x, mouse->position.y},
                                                     drawing_pad_.get_camera()),
                                   editor_state_.p_active_object_);
+
+            if (auto wall = std::get_if<WallObject>(&editor_state_.p_active_object_->object_type))
+            {
+                // TODO edit wall function here to resize walls!
+            }
         }
     }
 

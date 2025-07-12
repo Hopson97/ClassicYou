@@ -11,6 +11,7 @@
 class LevelTextures;
 struct EditorState;
 class ActionManager;
+class DrawingPad;
 
 // =======================================
 //      Wall Object Types
@@ -19,6 +20,8 @@ struct WallProps
 {
     TextureProp texture_front{0};
     TextureProp texture_back{0};
+    float base_height;
+    float wall_height;
 };
 
 struct WallParameters
@@ -80,6 +83,12 @@ struct LevelObject
 
     void property_gui(EditorState& state, const LevelTextures& textures,
                       ActionManager& action_manager);
+
+    [[nodiscard]] LevelObjectsMesh3D to_geometry() const;
+    [[nodiscard]] std::string to_string() const;
+
+    void render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object);
+    bool try_select_2d(glm::vec2 selection_tile, const LevelObject* p_active_object);
 };
 
 struct EditorState
@@ -89,6 +98,8 @@ struct EditorState
     WallProps wall_default = {
         .texture_front = 0,
         .texture_back = 0,
+        .base_height = 0,
+        .wall_height = 2,
     };
 
     PlatformProps platform_default = {
@@ -101,9 +112,6 @@ struct EditorState
 
     LevelObject* p_active_object_ = nullptr;
 };
-
-LevelObjectsMesh3D object_to_geometry(const LevelObject& object);
-std::string object_to_string(const LevelObject& object);
 
 [[nodiscard]] LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall);
 [[nodiscard]] LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform);
