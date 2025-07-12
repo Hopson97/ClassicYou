@@ -18,21 +18,21 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
         {
 
             active_dragging_ = true;
-            start_ = node;
-            end_ = node;
+            wall_line_.start = node;
+            wall_line_.end = node;
             wall_preview_ = generate_wall_mesh({
                 .properties = state.wall_default,
-                .parameters = {.start = start_, .end = end_},
+                .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
             });
             wall_preview_.buffer();
         }
     }
     else if (event.is<sf::Event::MouseMoved>())
     {
-        end_ = node;
+        wall_line_.end = node;
         wall_preview_ = generate_wall_mesh({
             .properties = state.wall_default,
-            .parameters = {.start = start_, .end = end_},
+            .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
         });
         wall_preview_.buffer();
     }
@@ -41,12 +41,12 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
             active_dragging_ = false;
-            if (glm::length(start_ - end_) > 0.25f)
+            if (glm::length(wall_line_.start - wall_line_.end) > 0.25f)
             {
 
                 actions.push_action(std::make_unique<AddObjectAction>(LevelObject{WallObject{
                     .properties = state.wall_default,
-                    .parameters = {.start = start_, .end = end_},
+                    .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
                 }}));
             }
             else
@@ -69,8 +69,13 @@ void CreateWallTool::render_preview_2d(DrawingPad& drawing_pad)
 {
     if (active_dragging_)
     {
-        drawing_pad.render_line(start_, end_, {1, 0, 0, 1}, 4);
+        drawing_pad.render_line(wall_line_.start, wall_line_.end, {1, 0, 0, 1}, 4);
     }
+}
+
+CreatePlatformTool::CreatePlatformTool(const PlatformProps& platform_default)
+    : p_platform_default_(&platform_default)
+{
 }
 
 void CreatePlatformTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
@@ -108,5 +113,110 @@ void CreatePlatformTool::render_preview()
 void CreatePlatformTool::render_preview_2d(DrawingPad& drawing_pad)
 {
     // TODO Pass in the default here
-    drawing_pad.render_quad({tile_.x, tile_.y}, {TILE_SIZE, TILE_SIZE}, {1, 0, 0, 1});
+    drawing_pad.render_quad(
+        tile_, {TILE_SIZE * p_platform_default_->width, TILE_SIZE * p_platform_default_->depth},
+        Colour::RED);
+}
+
+UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall)
+    : object_(object)
+    , wall_{wall}
+{
+}
+
+void UpdateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
+                              ActionManager& actions)
+{
+    const float MIN_DISTANCE = 32.0f;
+
+    if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
+    {
+        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
+        {
+            if (glm::distance(node, wall_.parameters.line.start) < MIN_DISTANCE)
+            {
+                active_dragging_ = true;
+                target_ = DragTarget::Start;
+            }
+            else if (glm::distance(node, wall_.parameters.line.end) < MIN_DISTANCE)
+            {
+                active_dragging_ = true;
+                target_ = DragTarget::End;
+            }
+
+            if (active_dragging_)
+            {
+                wall_line_.start = wall_.parameters.line.start;
+                wall_line_.end = wall_.parameters.line.end;
+
+                wall_preview_ = generate_wall_mesh(wall_);
+                wall_preview_.buffer();
+            }
+        }
+    }
+    else if (event.is<sf::Event::MouseMoved>())
+    {
+        if (active_dragging_)
+        {
+
+            switch (target_)
+            {
+                case UpdateWallTool::DragTarget::Start:
+                    wall_line_.start = node;
+                    break;
+
+                case UpdateWallTool::DragTarget::End:
+                    wall_line_.end = node;
+                    break;
+                default:
+                    break;
+            }
+
+            wall_preview_ = generate_wall_mesh({
+                .properties = wall_.properties,
+                .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
+            });
+            wall_preview_.buffer();
+        }
+    }
+    else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
+    {
+        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left &&
+            active_dragging_)
+        {
+            auto new_object = object_;
+            auto& new_wall = std::get<WallObject>(new_object.object_type);
+            new_wall.parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}};
+
+            actions.push_action(std::make_unique<UpdateObjectAction>(object_, new_object));
+
+            object_ = new_object;
+            wall_ = new_wall;
+
+            active_dragging_ = false;
+        }
+    }
+}
+
+void UpdateWallTool::render_preview()
+{
+    if (wall_preview_.has_buffered() && active_dragging_)
+    {
+        wall_preview_.bind().draw_elements();
+    }
+}
+
+void UpdateWallTool::render_preview_2d(DrawingPad& drawing_pad)
+{
+    constexpr static glm::vec2 OFFSET{8, 8};
+    drawing_pad.render_quad(wall_.parameters.line.start - OFFSET, glm::vec2{16.0f}, Colour::RED);
+    drawing_pad.render_quad(wall_.parameters.line.end - OFFSET, glm::vec2{16.0f}, Colour::RED);
+
+    if (active_dragging_)
+    {
+        drawing_pad.render_line(wall_line_.start, wall_line_.end, {1, 0.5, 0.5, 0.75}, 4);
+
+        drawing_pad.render_quad(wall_line_.start - OFFSET, glm::vec2{16.0f}, Colour::RED);
+        drawing_pad.render_quad(wall_line_.end - OFFSET, glm::vec2{16.0f}, Colour::RED);
+    }
 }

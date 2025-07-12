@@ -75,7 +75,6 @@ void LevelObject::property_gui(EditorState& state, const LevelTextures& textures
                                ActionManager& action_manager)
 {
 
-    ImGui::ShowDemoWindow();
     if (ImGui::Begin("Properties"))
     {
         ImGui::Separator();
@@ -115,8 +114,8 @@ std::string LevelObject::to_string() const
                            "  Start position: ({:.2f}, {:.2f}) - End Position: ({:.2f}, {:.2f})",
                            wall->properties.texture_front, wall->properties.texture_back,
                            wall->properties.base_height, wall->properties.wall_height,
-                           wall->parameters.start.x, wall->parameters.start.y,
-                           wall->parameters.end.x, wall->parameters.end.y);
+                           wall->parameters.line.start.x, wall->parameters.line.start.y,
+                           wall->parameters.line.end.x, wall->parameters.line.end.y);
     }
     else if (auto platform = std::get_if<PlatformObject>(&object_type))
     {
@@ -141,7 +140,7 @@ void LevelObject::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active
     {
         auto thickness = is_selected ? 3.0f : 2.0f;
 
-        drawing_pad.render_line(wall->parameters.start, wall->parameters.end, colour, thickness);
+        drawing_pad.render_line(wall->parameters.line.start, wall->parameters.line.end, colour, thickness);
     }
     else if (auto platform = std::get_if<PlatformObject>(&object_type))
     {
@@ -157,7 +156,7 @@ bool LevelObject::try_select_2d(glm::vec2 selection_tile, const LevelObject* p_a
     if (auto wall = std::get_if<WallObject>(&object_type))
     {
         const auto& params = wall->parameters;
-        if (distance_to_line(selection_tile, {params.start, params.end}) < 15)
+        if (distance_to_line(selection_tile, {params.line.start, params.line.end}) < 15)
         {
             // Allow selecting objects that may be overlapping
             if (!p_active_object || p_active_object->object_id != object_id)
@@ -191,10 +190,10 @@ LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall)
     const auto& params = wall.parameters;
     const auto& props = wall.properties;
     // Begin
-    auto b = glm::vec3{params.start.x, 0, params.start.y} / static_cast<float>(TILE_SIZE);
+    auto b = glm::vec3{params.line.start.x, 0, params.line.start.y} / static_cast<float>(TILE_SIZE);
 
     // End
-    auto e = glm::vec3{params.end.x, 0, params.end.y} / static_cast<float>(TILE_SIZE);
+    auto e = glm::vec3{params.line.end.x, 0, params.line.end.y} / static_cast<float>(TILE_SIZE);
 
     // Offset x, y, bottom (TODO: Top)
     auto ox = 0.0f;

@@ -3,6 +3,8 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
+#include "../Util/Maths.h"
+
 class LevelTextures;
 
 using TextureProp = int;
@@ -20,8 +22,7 @@ struct WallProps
 
 struct WallParameters
 {
-    glm::vec2 start{0};
-    glm::vec2 end{0};
+    Line line;
 };
 
 inline bool operator==(const WallProps& lhs, const WallProps& rhs)

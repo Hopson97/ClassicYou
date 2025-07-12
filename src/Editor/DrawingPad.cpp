@@ -122,6 +122,7 @@ void DrawingPad::render_line(glm::vec2 from, glm::vec2 to, const glm::vec4& colo
     add_line_to_mesh(line_meshes_.find(thickness)->second, from, to, colour);
 }
 
+
 void DrawingPad::update(const Keyboard& keyboard, sf::Time dt)
 {
     free_camera_controller_2d(keyboard, camera_, dt, keybinds_2d_);

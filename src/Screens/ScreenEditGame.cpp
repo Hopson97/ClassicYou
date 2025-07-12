@@ -152,6 +152,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))
                 {
                     action_manager_.undo_action();
+                    tool_ = std::make_unique<CreateWallTool>();
                 }
                 break;
 
@@ -159,6 +160,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))
                 {
                     action_manager_.redo_action();
+                    tool_ = std::make_unique<CreateWallTool>();
                 }
                 break;
 
@@ -182,12 +184,16 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
             if (editor_state_.p_active_object_)
             {
-
                 if (auto wall =
                         std::get_if<WallObject>(&editor_state_.p_active_object_->object_type))
                 {
-                    // TODO edit wall function here to resize walls!
+                    tool_ = std::make_unique<UpdateWallTool>(*editor_state_.p_active_object_, *wall);
                 }
+
+            }
+            else
+            {
+                tool_ = std::make_unique<CreateWallTool>();
             }
         }
     }
@@ -281,7 +287,7 @@ void ScreenEditGame::on_render(bool show_debug)
         }
         if (ImGui::Button("Platform"))
         {
-            tool_ = std::make_unique<CreatePlatformTool>();
+            tool_ = std::make_unique<CreatePlatformTool>(editor_state_.platform_default);
         }
         ImGui::End();
     }

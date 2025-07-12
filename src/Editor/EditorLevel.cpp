@@ -10,7 +10,8 @@ LevelObject& EditorLevel::add_object(const LevelObject& object)
     new_object.object_id = current_id_++;
 
     LevelMesh level_mesh = {
-        .id = new_object.object_id, .mesh = object.to_geometry(),
+        .id = new_object.object_id,
+        .mesh = object.to_geometry(),
     };
     level_mesh.mesh.buffer();
     level_meshes_.push_back(std::move(level_mesh));
@@ -21,8 +22,10 @@ void EditorLevel::update_object(const LevelObject& object)
 {
     for (auto& w : level_objects_)
     {
+        std::println("Updating object: {} -> {}", w.object_id, object.object_id);
         if (w.object_id == object.object_id)
         {
+            std::println("Found object ID: {}", w.object_id);
             w = object;
             break;
         }
@@ -30,13 +33,18 @@ void EditorLevel::update_object(const LevelObject& object)
 
     for (auto& wall_mesh : level_meshes_)
     {
+        std::println("Updating mesh: {} -> {}", wall_mesh.id, object.object_id);
         if (wall_mesh.id == object.object_id)
         {
+            std::println("Found mesh for object ID: {}", wall_mesh.id);
             auto new_mesh = object.to_geometry();
             new_mesh.buffer();
             wall_mesh.mesh = std::move(new_mesh);
+            break;
         }
     }
+    std::println("Size of level objects: {}", level_objects_.size());
+    std::println("Size of level meshes: {}", level_meshes_.size());
 }
 
 void EditorLevel::remove_object(std::size_t id)

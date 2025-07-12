@@ -86,10 +86,6 @@ void ActionManager::display_action_history()
     ImGui::End();
 }
 
-
-
-
-
 AddObjectAction::AddObjectAction(const LevelObject& object)
     : object_(object)
 {
@@ -131,6 +127,8 @@ UpdateObjectAction::UpdateObjectAction(const LevelObject& old_object, const Leve
     : old_object_(old_object)
     , new_object_(new_object)
 {
+    std::println("UpdateObjectAction created: {} -> {}", old_object_.object_id,
+                 new_object_.object_id);
 }
 
 void UpdateObjectAction::execute(EditorState& state, EditorLevel& level)
@@ -156,7 +154,7 @@ DeleteObjectAction::DeleteObjectAction(const LevelObject& object)
 {
 }
 
- void DeleteObjectAction::execute(EditorState& state, EditorLevel& level)
+void DeleteObjectAction::execute(EditorState& state, EditorLevel& level)
 {
     state.p_active_object_ = nullptr;
     level.remove_object(object_.object_id);
@@ -166,7 +164,7 @@ void DeleteObjectAction::undo(EditorState& state, EditorLevel& level)
 {
     auto& new_object = level.add_object(object_);
 
-    //new_object.p = object_.props;
+    // new_object.p = object_.props;
 
     state.p_active_object_ = &new_object;
 
