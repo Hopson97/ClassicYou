@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "LevelObjects.h"
+#include "LevelObject.h"
 
 class EditorLevel;
 
@@ -24,8 +24,7 @@ class Action
     virtual ActionStrings to_string() const = 0;
 };
 
-
- class DeleteObjectAction final : public Action
+class DeleteObjectAction final : public Action
 {
   public:
     DeleteObjectAction(const LevelObject& object);

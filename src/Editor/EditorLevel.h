@@ -3,7 +3,7 @@
 #include <functional>
 #include <memory>
 
-#include "../Editor/LevelObjects.h"
+#include "../Editor/LevelObject.h"
 #include "../Graphics/Mesh.h"
 
 class DrawingPad;

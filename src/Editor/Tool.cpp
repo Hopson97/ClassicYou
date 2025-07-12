@@ -5,7 +5,7 @@
 #include "Actions.h"
 #include "DrawingPad.h"
 #include "EditConstants.h"
-#include "LevelObjects.h"
+#include "LevelObject.h"
 
 void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
                               ActionManager& actions)

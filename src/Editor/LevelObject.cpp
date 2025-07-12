@@ -1,4 +1,4 @@
-#include "LevelObjects.h"
+#include "LevelObject.h"
 
 #include <print>
 
@@ -10,88 +10,10 @@
 #include "DrawingPad.h"
 #include "EditConstants.h"
 #include "LevelTextures.h"
+#include "EditorGUI.h"
 
 namespace
 {
-    struct ShouldUpdate
-    {
-        bool value = false;
-        bool action = false;
-    };
-
-    template <typename T>
-    using GUIFunction = std::pair<ShouldUpdate, typename T::PropertiesType> (*)(
-        const LevelTextures& textures, const T& object);
-
-    std::pair<ShouldUpdate, WallProps> wall_gui(const LevelTextures& textures,
-                                                const WallObject& wall)
-    {
-        bool update = false;
-        WallProps new_props = wall.properties;
-
-        auto texture_front =
-            display_texture_gui("Front Texture", wall.properties.texture_front, textures);
-        if (texture_front >= 0)
-        {
-            new_props.texture_front = texture_front;
-            update = true;
-        }
-
-        auto texture_back =
-            display_texture_gui("Back Texture", wall.properties.texture_back, textures);
-        if (texture_back >= 0)
-        {
-            new_props.texture_back = texture_back;
-            update = true;
-        }
-
-        update |= ImGui::SliderFloatStepped("Base Height", new_props.base_height, 0.0f, 1.8f, 0.2f);
-        update |= ImGui::SliderFloatStepped("Wall Height", new_props.wall_height, 0.2f,
-                                            2.0f - new_props.base_height, 0.2f);
-
-        return {
-            ShouldUpdate{
-                .value = update,
-                .action = !sf::Mouse::isButtonPressed(sf::Mouse::Button::Left),
-            },
-            new_props,
-        };
-    }
-
-    std::pair<ShouldUpdate, PlatformProps> platform_gui(const LevelTextures& textures,
-                                                        const PlatformObject& platform)
-    {
-        bool update = false;
-        PlatformProps new_props = platform.properties;
-
-        auto texture_top =
-            display_texture_gui("Top Texture", platform.properties.texture_top, textures);
-        if (texture_top >= 0)
-        {
-            new_props.texture_top = texture_top;
-            update = true;
-        }
-
-        auto texture_bottom =
-            display_texture_gui("Bottom Texture", platform.properties.texture_bottom, textures);
-        if (texture_bottom >= 0)
-        {
-            new_props.texture_bottom = texture_bottom;
-            update = true;
-        }
-
-        update |= ImGui::SliderFloatStepped("Width", new_props.width, 0.5f, 100.0f, 0.5f);
-        update |= ImGui::SliderFloatStepped("Depth", new_props.depth, 0.5f, 100.0f, 0.5f);
-        update |= ImGui::SliderFloatStepped("Base Height", new_props.base, 0.0f, 2.0f, 0.2f);
-
-        return {
-            ShouldUpdate{
-                .value = update && platform.properties != new_props,
-                .action = !sf::Mouse::isButtonPressed(sf::Mouse::Button::Left),
-            },
-            new_props,
-        };
-    }
 
     template <typename T>
     void property_gui(GUIFunction<T> function, EditorState& state, const LevelTextures& textures,
