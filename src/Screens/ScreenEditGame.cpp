@@ -10,11 +10,14 @@
 
 namespace
 {
-    // Replace std::unordered_map with std::array for constexpr compatibility
-    constexpr std::array<std::pair<const char*, const char*>, 3> TEXTURES = {
+    constexpr std::array<std::pair<const char*, const char*>, 7> TEXTURES = {
         std::make_pair("Red Bricks", "assets/textures/RedBricks.png"),
         std::make_pair("Grey Bricks", "assets/textures/GreyBricks.png"),
         std::make_pair("Bars", "assets/textures/Bars.png"),
+        std::make_pair("ChainFence", "assets/textures/ChainFence.png"),
+        std::make_pair("Grass", "assets/textures/Grass.png"),
+        std::make_pair("Dirt", "assets/textures/Dirt.png"),
+        std::make_pair("Glass", "assets/textures/Glass.png"),
     };
 
     glm::ivec2 map_pixel_to_tile(glm::vec2 point, const Camera& camera)
@@ -40,11 +43,13 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens)
           .fov = 90.0f,
       })
     , drawing_pad_({window().getSize().x / 2, window().getSize().y}, editor_state_.node_hovered)
+    , action_manager_(editor_state_, level_)
 {
 }
 
 bool ScreenEditGame::on_init()
 {
+    tool_ = std::make_unique<CreateWallTool>();
     if (!drawing_pad_.init())
     {
         return false;
@@ -58,7 +63,7 @@ bool ScreenEditGame::on_init()
 
     for (auto& texture : TEXTURES)
     {
-        if (!level_texures_.register_texture(texture.first, texture.second, texture_))
+        if (!level_textures_.register_texture(texture.first, texture.second, texture_))
         {
             return false;
         }
@@ -135,6 +140,28 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 window().setMouseCursorVisible(game_paused_);
                 break;
 
+            case sf::Keyboard::Key::Delete:
+                if (editor_state_.p_active_object_)
+                {
+                    action_manager_.push_action(
+                        std::make_unique<DeleteObjectAction>(*editor_state_.p_active_object_));
+                }
+                break;
+
+            case sf::Keyboard::Key::Z:
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))
+                {
+                    action_manager_.undo_action();
+                }
+                break;
+
+            case sf::Keyboard::Key::Y:
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))
+                {
+                    action_manager_.redo_action();
+                }
+                break;
+
             default:
                 break;
         }
@@ -144,7 +171,28 @@ void ScreenEditGame::on_event(const sf::Event& event)
         editor_state_.node_hovered =
             map_pixel_to_tile({mouse->position.x, mouse->position.y}, drawing_pad_.get_camera());
     }
-    tool_.on_event(event, editor_state_.node_hovered);
+    else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
+    {
+        if (mouse->button == sf::Mouse::Button::Right)
+        {
+            editor_state_.p_active_object_ =
+                level_.try_select(map_pixel_to_tile({mouse->position.x, mouse->position.y},
+                                                    drawing_pad_.get_camera()),
+                                  editor_state_.p_active_object_);
+
+            if (editor_state_.p_active_object_)
+            {
+
+                if (auto wall =
+                        std::get_if<WallObject>(&editor_state_.p_active_object_->object_type))
+                {
+                    // TODO edit wall function here to resize walls!
+                }
+            }
+        }
+    }
+
+    tool_->on_event(event, editor_state_.node_hovered, editor_state_, action_manager_);
 }
 
 void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
@@ -170,7 +218,9 @@ void ScreenEditGame::on_render(bool show_debug)
 
     // Render the drawing pad to the left side
     glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
-    tool_.render_preview_2d(drawing_pad_);
+
+    tool_->render_preview_2d(drawing_pad_);
+    level_.render_2d(drawing_pad_, editor_state_.p_active_object_);
 
     // Finalise 2d rendering
     drawing_pad_.display();
@@ -189,10 +239,54 @@ void ScreenEditGame::on_render(bool show_debug)
     texture_.bind(0);
     world_geometry_shader_.set_uniform("use_texture", true);
     world_geometry_shader_.set_uniform("model_matrix", create_model_matrix({}));
-    tool_.render_preview();
+    tool_->render_preview();
+
+    level_.render();
 
     // Ensure GUI etc are rendered using fill
     gl::polygon_mode(gl::Face::FrontAndBack, gl::PolygonMode::Fill);
+
+    if (editor_state_.p_active_object_)
+    {
+        editor_state_.p_active_object_->property_gui(editor_state_, level_textures_,
+                                                     action_manager_);
+    }
+
+    // clang-format off
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("New")) {  }
+            if (ImGui::MenuItem("Open...")) {  }
+            if (ImGui::MenuItem("Save")) {  }
+            if (ImGui::MenuItem("Exit")) { p_screen_manager_->pop_screen(); }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Edit"))
+        {
+            if (ImGui::MenuItem("Undo (CTRL + Z)")) { action_manager_.undo_action(); }
+            if (ImGui::MenuItem("Redo (CTRL + Y)")) { action_manager_.redo_action(); }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+    // clang-format on
+
+    if (ImGui ::Begin("Tool"))
+    {
+        if (ImGui::Button("Wall"))
+        {
+            tool_ = std::make_unique<CreateWallTool>();
+        }
+        if (ImGui::Button("Platform"))
+        {
+            tool_ = std::make_unique<CreatePlatformTool>();
+        }
+        ImGui::End();
+    }
+
+    action_manager_.display_action_history();
 }
 
 void ScreenEditGame::render_scene(gl::Shader& shader)
@@ -206,42 +300,21 @@ void ScreenEditGame::render_scene(gl::Shader& shader)
                      settings_.wireframe ? gl::PolygonMode::Line : gl::PolygonMode::Fill);
 
     // Draw grid
+    glLineWidth(2);
     shader.set_uniform("model_matrix", create_model_matrix({}));
     shader.set_uniform("use_texture", false);
     grid_mesh_.bind().draw_elements(GL_LINES);
 
+    // Draw level
+
     // Draw the selection node
-    shader.set_uniform("model_matrix", create_model_matrix({
-                                           .position = {editor_state_.node_hovered.x / TILE_SIZE, 0,
-                                                        editor_state_.node_hovered.y / TILE_SIZE},
-                                           .rotation = {-90, 0, 0},
-                                       }));
+    shader.set_uniform(
+        "model_matrix",
+        create_model_matrix({.position = {editor_state_.node_hovered.x / TILE_SIZE, 0,
+                                          editor_state_.node_hovered.y / TILE_SIZE},
+                             .rotation = {-90, 0, 0}}));
     shader.set_uniform("use_texture", false);
     selection_mesh_.bind().draw_elements();
-
-    // Display texture_map as clickable images
-    if (ImGui::Begin("Texture Layers"))
-    {
-        // Assuming you have: std::unordered_map<std::string, GLuint> texture_map;
-        // and texture_ is your GL_TEXTURE_2D_ARRAY
-        constexpr float image_size = 64.0f;
-        int id = 0;
-        for (const auto& [name, texture] : level_texures_.texture_2d_map)
-        {
-            ImGui::PushID(id++);
-            ImGui::SameLine();
-            if (ImGui::ImageButton(name.c_str(), static_cast<ImTextureID>(texture.id), {32, 32}))
-            {
-                std::println("Texture clicked: {}", name);
-            }
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::SetTooltip("%s", name.c_str());
-            }
-            ImGui::PopID();
-        }
-        ImGui::End();
-    }
 }
 
 void ScreenEditGame::pause_menu()

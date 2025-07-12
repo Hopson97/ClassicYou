@@ -13,3 +13,9 @@ constexpr auto HALF_TILE_SIZE = TILE_SIZE / 2;
 
 constexpr auto MAIN_GRID_COLOUR = rgb_to_normalised({69, 103, 137});
 constexpr auto SUB_GRID_COLOUR = rgb_to_normalised({18, 52, 86});
+
+namespace Colour
+{
+    constexpr auto RED = glm::vec4{1.0f, 0.0f, 0.0f, 1.0f};
+    constexpr auto WHITE = glm::vec4{1.0f};
+}

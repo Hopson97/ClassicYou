@@ -188,50 +188,6 @@ Mesh3D generate_terrain_mesh(int size, int edgeVertices)
     return mesh;
 }
 
-WorldGeometryMesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to, GLuint texture_id_1,
-                                       GLuint texture_id_2)
-{
-    // Begin
-    auto b = glm::vec3{from.x, 0, from.y} / static_cast<float>(TILE_SIZE);
-
-    // End
-    auto e = glm::vec3{to.x, 0, to.y} / static_cast<float>(TILE_SIZE);
-
-    WorldGeometryMesh3D mesh;
-
-    // Offset x, y, bottom (TODO: Top)
-    auto ox = 0.0f;
-    auto oz = 0.0f;
-    auto ob = 0.0f;
-    auto h = 2.0f; // wall heights are 2m
-
-    const auto length = glm::length(b - e);
-
-    GLfloat tex1 = static_cast<float>(texture_id_1);
-    GLfloat tex2 = static_cast<float>(texture_id_2);
-
-    mesh.vertices = {
-        // Front
-        {{b.x + ox, ob, b.z + oz}, {0.0f, ob, tex1}, {0, 0, 1}},
-        {{b.x + ox, h, b.z + oz}, {0.0, h, tex1}, {0, 0, 1}},
-        {{e.x + ox, h, e.z + oz}, {length, h, tex1}, {0, 0, 1}},
-        {{e.x + ox, ob, e.z + oz}, {length, ob, tex1}, {0, 0, 1}},
-
-        // Back
-        {{b.x - ox, ob, b.z - oz}, {0.0f, ob, tex2}, {0, 0, 1}},
-        {{b.x - ox, h, b.z - oz}, {0.0, h, tex2}, {0, 0, 1}},
-        {{e.x - ox, h, e.z - oz}, {length, h, tex2}, {0, 0, 1}},
-        {{e.x - ox, ob, e.z - oz}, {length, ob, tex2}, {0, 0, 1}},
-
-    };
-
-    mesh.indices = {// Front
-                    0, 1, 2, 2, 3, 0,
-                    // Back
-                    6, 5, 4, 4, 7, 6};
-
-    return mesh;
-}
 
 Mesh3D generate_grid_mesh(int width, int height)
 {

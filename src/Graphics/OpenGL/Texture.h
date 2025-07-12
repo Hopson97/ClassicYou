@@ -108,8 +108,8 @@ namespace gl
         TextureResource           (const TextureResource& other) = delete;  
         TextureResource& operator=(const TextureResource& other) = delete;  
 
-        TextureResource& operator=(TextureResource&& other) noexcept { id = other.id;  other.id = 0; return *this; std::println("MVOED TEXTURE!! {}" ,id);}   
-        TextureResource (TextureResource&& other) noexcept : id  (other.id){ other.id = 0; std::println("MVOED TEXTURE!! {}" ,id); }   
+        TextureResource& operator=(TextureResource&& other) noexcept { id = other.id;  other.id = 0; return *this; }   
+        TextureResource (TextureResource&& other) noexcept : id  (other.id){ other.id = 0; }   
 
         void bind(GLuint unit) const { assert(id); glBindTextureUnit(unit, id); }
         // clang-format on

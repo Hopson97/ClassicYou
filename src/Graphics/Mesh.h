@@ -73,6 +73,11 @@ class Mesh
         return indices_;
     }
 
+    bool has_buffered() const
+    {
+        return has_buffered_;
+    }
+
   public:
     std::vector<Vertex> vertices;
     std::vector<GLuint> indices;
@@ -106,6 +111,7 @@ bool Mesh<Vertex>::buffer()
     // Upload the data to the GPU and set up the attributes
     vbo_.buffer_data(vertices);
     Vertex::build_attribs(vao_, vbo_);
+    has_buffered_ = true;
     return true;
 }
 
@@ -120,8 +126,6 @@ bool Mesh<Vertex>::update()
     // Ensure the indices count being updated matches what is currently in the buffer
     if (indices_ != static_cast<GLuint>(indices.size()))
     {
-        std::println("Indides mis-match. Current: {} - New: {}\nRecreating mesh...", indices_,
-                     indices.size());
         has_buffered_ = false;
     }
 
@@ -158,13 +162,13 @@ void Mesh<Vertex>::draw_elements(GLenum draw_mode) const
 using Vertex = Vertex3D<glm::vec2>;
 
 /// @brief 3D vertex with 3D texture coordinates.
-using VertexWorldGeometry = Vertex3D<glm::vec3>;
+using VertexLevelObjects = Vertex3D<glm::vec3>;
 
 /// @brief Mesh for 3D objects using Vertex (aka 2d texture coords)
 using Mesh3D = Mesh<Vertex>;
 
-/// @brief Mesh for 3D objects using VertexWorldGeometry (aka 3d texture coords)
-using WorldGeometryMesh3D = Mesh<VertexWorldGeometry>;
+/// @brief Mesh for 3D objects using VertexLevelObjects (aka 3d texture coords)
+using LevelObjectsMesh3D = Mesh<VertexLevelObjects>;
 
 /// @brief
 using Mesh2D = Mesh<Vertex2D>;
@@ -173,7 +177,4 @@ using Mesh2D = Mesh<Vertex2D>;
 [[nodiscard]] Mesh3D generate_cube_mesh(const glm::vec3& size, bool repeat_texture = false);
 [[nodiscard]] Mesh3D generate_centered_cube_mesh(const glm::vec3& size);
 [[nodiscard]] Mesh3D generate_terrain_mesh(int size, int edgeVertices);
-
-[[nodiscard]] WorldGeometryMesh3D generate_wall_mesh(glm::vec2 from, glm::vec2 to,
-                                                     GLuint texture_id_1, GLuint texture_id_2);
 [[nodiscard]] Mesh3D generate_grid_mesh(int width, int height);

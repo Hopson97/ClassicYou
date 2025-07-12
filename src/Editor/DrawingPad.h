@@ -5,8 +5,8 @@
 #include "../Graphics/Camera.h"
 #include "../Graphics/CameraController.h"
 #include "../Graphics/Mesh.h"
-#include "../Graphics/OpenGL/Texture.h"
 #include "../Graphics/OpenGL/Shader.h"
+#include "../Graphics/OpenGL/Texture.h"
 
 class DrawingPad
 {
@@ -16,7 +16,8 @@ class DrawingPad
     bool init();
     void update(const Keyboard& keyboard, sf::Time dt);
 
-    void render_line(glm::vec2 from, glm::vec2 to, const glm::vec4& colour, int thickness);
+    void render_quad(glm::vec2 position, glm::vec2 size, const glm::vec4& colour);
+    void render_line(glm::vec2 from, glm::vec2 to, const glm::vec4& colour, GLfloat thickness);
 
     void display();
 
@@ -24,14 +25,13 @@ class DrawingPad
 
   private:
     gl::Shader shader_;
-    std::unordered_map<GLuint, Mesh2D> line_meshes_;
+    std::unordered_map<GLfloat, Mesh2D> line_meshes_;
 
     struct GridMesh
     {
         Mesh2D sub_grid;
         Mesh2D main_grid;
-    };
-    GridMesh grid_mesh_;
+    } grid_mesh_;
 
     Camera camera_;
     CameraKeybinds keybinds_2d_;

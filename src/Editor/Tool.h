@@ -6,11 +6,16 @@
 
 class DrawingPad;
 class LevelTextures;
+struct EditorState;
+class ActionManager;
 
 class ITool
 {
   public:
-    virtual void on_event(sf::Event event, glm::vec2 node) = 0;
+    virtual ~ITool() = default;
+
+    virtual void on_event(sf::Event event, glm::vec2 node, EditorState& state,
+                          ActionManager& actions) = 0;
     virtual void render_preview() = 0;
     virtual void render_preview_2d(DrawingPad& drawing_pad) = 0;
 };
@@ -18,17 +23,27 @@ class ITool
 class CreateWallTool : public ITool
 {
   public:
-    void on_event(sf::Event event, glm::vec2 node) override;
+    void on_event(sf::Event event, glm::vec2 node, EditorState& state,
+                  ActionManager& actions) override;
     void render_preview() override;
     void render_preview_2d(DrawingPad& drawing_pad) override;
 
-
-
   private:
-    const LevelTextures* p_level_textures_;
-
-    WorldGeometryMesh3D wall_preview_;
+    LevelObjectsMesh3D wall_preview_;
     glm::vec2 start_{0.0f};
     glm::vec2 end_{0.0f};
     bool active_dragging_ = false;
+};
+
+class CreatePlatformTool : public ITool
+{
+  public:
+    void on_event(sf::Event event, glm::vec2 node, EditorState& state,
+                  ActionManager& actions) override;
+    void render_preview() override;
+    void render_preview_2d(DrawingPad& drawing_pad) override;
+
+  private:
+    LevelObjectsMesh3D platform_preview_;
+    glm::vec2 tile_{0.0f};
 };

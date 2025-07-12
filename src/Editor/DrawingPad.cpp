@@ -8,8 +8,6 @@
 
 namespace
 {
-
-
     void add_line_to_mesh(Mesh2D& mesh, glm::vec2 from, glm::vec2 to, const glm::vec4& colour)
     {
         mesh.vertices.push_back(Vertex2D{.position = from, .colour = colour});
@@ -81,7 +79,6 @@ bool DrawingPad::init()
     grid_mesh_.sub_grid.buffer();
     grid_mesh_.main_grid.buffer();
 
-
     // Create the mesh for displaying whatever node is being selected
     selection_mesh_.vertices = {
         {.position = {0.0f, 0.0f}, .texture_coord = {0.0f, 0.0f}, .colour = glm::vec4(1.0f)},
@@ -96,18 +93,33 @@ bool DrawingPad::init()
     return true;
 }
 
-void DrawingPad::render_line(glm::vec2 from, glm::vec2 to, const glm::vec4& colour, int thickness)
+void DrawingPad::render_quad(glm::vec2 position, glm::vec2 size, const glm::vec4& colour)
+{
+    // TODO Actually render a quad
+    float thickness = 2.0f;
+    if (line_meshes_.find(thickness) == line_meshes_.end())
+    {
+        line_meshes_.emplace(2, Mesh2D{});
+    }
+
+    auto& mesh = line_meshes_.find(thickness)->second;
+
+    add_line_to_mesh(mesh, {position.x, position.y}, {position.x + size.x, position.y}, colour);
+    add_line_to_mesh(mesh, {position.x + size.x, position.y},
+                     {position.x + size.x, position.y + size.y}, colour);
+    add_line_to_mesh(mesh, {position.x + size.x, position.y + size.y},
+                     {position.x, position.y + size.y}, colour);
+    add_line_to_mesh(mesh, {position.x, position.y + size.y}, {position.x, position.y}, colour);
+}
+
+void DrawingPad::render_line(glm::vec2 from, glm::vec2 to, const glm::vec4& colour,
+                             GLfloat thickness)
 {
     if (line_meshes_.find(thickness) == line_meshes_.end())
     {
         line_meshes_.emplace(thickness, Mesh2D{});
     }
-    auto& mesh = line_meshes_.find(thickness)->second;
-    mesh.vertices.push_back(Vertex2D{.position = from, .colour = colour});
-    mesh.vertices.push_back(Vertex2D{.position = to, .colour = colour});
-
-    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
-    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
+    add_line_to_mesh(line_meshes_.find(thickness)->second, from, to, colour);
 }
 
 void DrawingPad::update(const Keyboard& keyboard, sf::Time dt)
@@ -124,6 +136,7 @@ void DrawingPad::display()
 {
     // For 2D rendering, depth testing is not required
     gl::disable(gl::Capability::DepthTest);
+    gl::disable(gl::Capability::CullFace);
     gl::cull_face(gl::Face::Back);
 
     // Update the shaders
@@ -136,8 +149,6 @@ void DrawingPad::display()
     // Render the background grid
     glLineWidth(1);
     grid_mesh_.sub_grid.bind().draw_elements(GL_LINES);
-
-    glLineWidth(1);
     grid_mesh_.main_grid.bind().draw_elements(GL_LINES);
 
     // Render lines (walls) of various thickenss
@@ -149,6 +160,7 @@ void DrawingPad::display()
         mesh.vertices.clear();
         mesh.indices.clear();
     }
+    line_meshes_.clear();
 
     // Reder the selected quad
     shader_.set_uniform("use_texture", true);
