@@ -4,6 +4,7 @@
 
 #include <imgui.h>
 
+#include "../Util/ImGuiExtras.h"
 #include "../Util/Maths.h"
 #include "Actions.h"
 #include "DrawingPad.h"
@@ -12,125 +13,138 @@
 
 namespace
 {
-    template <typename T>
-    using GUIFunction = std::pair<bool, typename T::PropertiesType> (*)(
-        EditorState& state, const LevelTextures& textures, const T& object);
-
-    std::pair<bool, WallProps> wall_gui(EditorState& state, const LevelTextures& textures,
-                                        const WallObject& wall)
+    struct ShouldUpdate
     {
-        ImGui::ShowDemoWindow();
+        bool value = false;
+        bool action = false;
+    };
+
+    template <typename T>
+    using GUIFunction = std::pair<ShouldUpdate, typename T::PropertiesType> (*)(
+        const LevelTextures& textures, const T& object);
+
+    std::pair<ShouldUpdate, WallProps> wall_gui(const LevelTextures& textures,
+                                                const WallObject& wall)
+    {
         bool update = false;
         WallProps new_props = wall.properties;
-        if (ImGui::Begin("Properties"))
+
+        auto texture_front =
+            display_texture_gui("Front Texture", wall.properties.texture_front, textures);
+        if (texture_front >= 0)
         {
-            ImGui::Separator();
-
-            auto texture_front =
-                display_texture_gui("Side 1", wall.properties.texture_front, textures);
-            if (texture_front >= 0)
-            {
-                new_props.texture_front = texture_front;
-                update = true;
-            }
-
-            auto texture_back =
-                display_texture_gui("Side 2", wall.properties.texture_back, textures);
-            if (texture_back >= 0)
-            {
-                new_props.texture_back = texture_back;
-                update = true;
-            }
-
-            ImGui::Separator();
-            if (ImGui::Button("Set As Default"))
-            {
-                state.wall_default.texture_front = wall.properties.texture_front;
-                state.wall_default.texture_back = wall.properties.texture_back;
-            }
-
-            if (ImGui::SliderFloat("Base", &new_props.base_height, 0.2f, 1.8f, "%.2f"))
-            {
-                new_props.base_height =
-                    round(new_props.base_height * 5.0f) / 5.0f; 
-                update = true;
-            }
-            if (ImGui::SliderFloat("Height", &new_props.wall_height, 0.2f, 2.0f, "%.2f"))
-            {
-                new_props.wall_height =
-                    round(new_props.wall_height * 5.0f) / 5.0f; 
-                update = true;
-            }
-
+            new_props.texture_front = texture_front;
+            update = true;
         }
-        ImGui::End();
 
-        return {update, new_props};
+        auto texture_back =
+            display_texture_gui("Back Texture", wall.properties.texture_back, textures);
+        if (texture_back >= 0)
+        {
+            new_props.texture_back = texture_back;
+            update = true;
+        }
+
+        update |= ImGui::SliderFloatStepped("Base Height", new_props.base_height, 0.0f, 1.8f, 0.2f);
+        update |= ImGui::SliderFloatStepped("Wall Height", new_props.wall_height, 0.2f,
+                                            2.0f - new_props.base_height, 0.2f);
+
+        return {
+            ShouldUpdate{
+                .value = update,
+                .action = !sf::Mouse::isButtonPressed(sf::Mouse::Button::Left),
+            },
+            new_props,
+        };
     }
 
-    std::pair<bool, PlatformProps> platform_gui(EditorState& state, const LevelTextures& textures,
-                                                const PlatformObject& platform)
+    std::pair<ShouldUpdate, PlatformProps> platform_gui(const LevelTextures& textures,
+                                                        const PlatformObject& platform)
     {
         bool update = false;
         PlatformProps new_props = platform.properties;
-        if (ImGui::Begin("Properties"))
+
+        auto texture_top =
+            display_texture_gui("Top Texture", platform.properties.texture_top, textures);
+        if (texture_top >= 0)
         {
-            ImGui::Separator();
-
-            auto texture_top =
-                display_texture_gui("Top Texture", platform.properties.texture_top, textures);
-            if (texture_top >= 0)
-            {
-                new_props.texture_top = texture_top;
-                update = true;
-            }
-
-            auto texture_bottom =
-                display_texture_gui("Bottom Texture", platform.properties.texture_bottom, textures);
-            if (texture_bottom >= 0)
-            {
-                new_props.texture_bottom = texture_bottom;
-                update = true;
-            }
-
-            if (ImGui::SliderFloat("Width", &new_props.width, 0.5f, 100.0f, "%.2f"))
-            {
-                new_props.width = round(new_props.width * 2.0f) / 2.0f; 
-                update = true;
-            }
-            if (ImGui::SliderFloat("Depth", &new_props.depth, 0.5f, 100.0f, "%.2f"))
-            {
-                new_props.depth = round(new_props.depth * 2.0f) / 2.0f; 
-                update = true;
-            }
-            if (ImGui::SliderFloat("Base Height", &new_props.base, 0.0f, 2.0f, "%.1f"))
-            {
-                new_props.base = round(new_props.base * 5.0f) / 5.0f; 
-                update = true;
-            }
-
-            ImGui::Separator();
-            if (ImGui::Button("Set As Default"))
-            {
-                state.platform_default = platform.properties;
-            }
+            new_props.texture_top = texture_top;
+            update = true;
         }
-        ImGui::End();
 
-        return {update, new_props};
+        auto texture_bottom =
+            display_texture_gui("Bottom Texture", platform.properties.texture_bottom, textures);
+        if (texture_bottom >= 0)
+        {
+            new_props.texture_bottom = texture_bottom;
+            update = true;
+        }
+
+        update |= ImGui::SliderFloatStepped("Width", new_props.width, 0.5f, 100.0f, 0.5f);
+        update |= ImGui::SliderFloatStepped("Depth", new_props.depth, 0.5f, 100.0f, 0.5f);
+        update |= ImGui::SliderFloatStepped("Base Height", new_props.base, 0.0f, 2.0f, 0.2f);
+
+        return {
+            ShouldUpdate{
+                .value = update && platform.properties != new_props,
+                .action = !sf::Mouse::isButtonPressed(sf::Mouse::Button::Left),
+            },
+            new_props,
+        };
     }
 
     template <typename T>
     void property_gui(GUIFunction<T> function, EditorState& state, const LevelTextures& textures,
-                      ActionManager& action_manager, const T& object)
+                      ActionManager& action_manager, const T& object, LevelObject& current,
+                      typename T::PropertiesType& object_default)
     {
-        auto [update, new_props] = function(state, textures, object);
-        if (update)
-        {
-            LevelObject new_object = object;
+        // Caching the object is a work-around due to an ImGui limitation that when the mouse is
+        // held on a slider element, it will continuously trigger that input, returning true. This
+        // means that when the object gets updated, it creates many events - even if nothing has
+        // changed.
+        // This also means that storing the history can be incorrect.
+        //
+        // For example, sliding the wall height from 0.2m to 0.8m creates 10s of updates for every
+        // incremental change. The history should only store the main update though, 0.2 -> 0.8m
+        // However as many events get created, it means ,without caching, the uodate would be stored
+        // as 0.8m -> 0.8m
+        //
+        // So by caching the object the first time the slider is clicked, it means the correct
+        // history can be stored, meaning undo/redo functionality actually works.
+        static auto cached_object = current;
 
+        // Was the last update one where the mouse was released - storing it in the
+        // ActionManagerHistory>
+        static auto last_store_action = false;
+
+        auto [update, new_props] = function(textures, object);
+        if (update.value)
+        {
+            // If the last update was when the user released the mouse, it means this is a new input
+            // event to a property editor element
+            // This means the object state must be cached at this point
+            if (last_store_action && !update.action)
+            {
+                std::println("Cached object with id: {}", cached_object.object_id);
+                cached_object = current;
+            }
+            LevelObject new_object = current;
             std::get<T>(new_object.object_type).properties = new_props;
-            action_manager.push_action(std::make_unique<UpdateObjectAction>(object, new_object));
+
+            // When the mouse is released (so update.action is true), the cached object should be
+            // used to update the object.
+            // Otherwise, the non-cached version can be used
+            action_manager.push_action(std::make_unique<UpdateObjectAction>(
+                                           update.action ? cached_object : current, new_object),
+                                       update.action);
+
+            last_store_action = update.action;
+        }
+
+        ImGui::Separator();
+        if (ImGui::Button("Set As Default"))
+        {
+            object_default = object.properties;
         }
     }
 } // namespace
@@ -139,14 +153,22 @@ void LevelObject::property_gui(EditorState& state, const LevelTextures& textures
                                ActionManager& action_manager)
 {
 
-    if (auto wall = std::get_if<WallObject>(&object_type))
+    ImGui::ShowDemoWindow();
+    if (ImGui::Begin("Properties"))
     {
-        ::property_gui<WallObject>(&wall_gui, state, textures, action_manager, *wall);
+        ImGui::Separator();
+        if (auto wall = std::get_if<WallObject>(&object_type))
+        {
+            ::property_gui<WallObject>(&wall_gui, state, textures, action_manager, *wall, *this,
+                                       state.wall_default);
+        }
+        if (auto platform = std::get_if<PlatformObject>(&object_type))
+        {
+            ::property_gui<PlatformObject>(&platform_gui, state, textures, action_manager,
+                                           *platform, *this, state.platform_default);
+        }
     }
-    if (auto platform = std::get_if<PlatformObject>(&object_type))
-    {
-        ::property_gui<PlatformObject>(&platform_gui, state, textures, action_manager, *platform);
-    }
+    ImGui::End();
 }
 
 LevelObjectsMesh3D LevelObject::to_geometry() const
@@ -167,20 +189,23 @@ std::string LevelObject::to_string() const
 {
     if (auto wall = std::get_if<WallObject>(&object_type))
     {
-        return std::format("Props:\n  From Texture 1/2: {} {}\nParameters:\n "
+        return std::format("Props:\n Texture 1/2: {} {}: \n Base: {}\n Height: {}\nParameters:\n "
                            "  Start position: ({:.2f}, {:.2f}) - End Position: ({:.2f}, {:.2f})",
                            wall->properties.texture_front, wall->properties.texture_back,
+                           wall->properties.base_height, wall->properties.wall_height,
                            wall->parameters.start.x, wall->parameters.start.y,
                            wall->parameters.end.x, wall->parameters.end.y);
     }
     else if (auto platform = std::get_if<PlatformObject>(&object_type))
     {
-        return std::format("Props:\n  Texture Top: {}\n  Texture Bottom: {}\n  Width: {}\n  Depth: "
-                           "{}\nParameters:\n "
-                           "  Position: ({:.2f}, {:.2f})",
+        return std::format("Props:\n Texture Top: {}\n Texture Bottom: {}\n Width: {}\n Depth: "
+                           "{} \n Height: {}\n"
+                           "Parameters:\n "
+                           " Position: ({:.2f}, {:.2f})",
                            platform->properties.texture_top, platform->properties.texture_bottom,
                            platform->properties.width, platform->properties.depth,
-                           platform->parameters.position.x, platform->parameters.position.y);
+                           platform->properties.base, platform->parameters.position.x,
+                           platform->parameters.position.y);
     }
     return "";
 }
@@ -253,7 +278,7 @@ LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall)
     auto ox = 0.0f;
     auto oz = 0.0f;
     auto ob = props.base_height;
-    auto h = props.wall_height;
+    auto h = std::min(ob + props.wall_height, 2.0f);
 
     const auto length = glm::length(b - e);
 

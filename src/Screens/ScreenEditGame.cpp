@@ -143,8 +143,8 @@ void ScreenEditGame::on_event(const sf::Event& event)
             case sf::Keyboard::Key::Delete:
                 if (editor_state_.p_active_object_)
                 {
-                    // action_manager_.push_action(std::make_unique<DeleteObjectAction>(
-                    //      *dynamic_cast<Wall*>(editor_state_.p_active_object_)));
+                    action_manager_.push_action(
+                        std::make_unique<DeleteObjectAction>(*editor_state_.p_active_object_));
                 }
                 break;
 
@@ -180,9 +180,14 @@ void ScreenEditGame::on_event(const sf::Event& event)
                                                     drawing_pad_.get_camera()),
                                   editor_state_.p_active_object_);
 
-            if (auto wall = std::get_if<WallObject>(&editor_state_.p_active_object_->object_type))
+            if (editor_state_.p_active_object_)
             {
-                // TODO edit wall function here to resize walls!
+
+                if (auto wall =
+                        std::get_if<WallObject>(&editor_state_.p_active_object_->object_type))
+                {
+                    // TODO edit wall function here to resize walls!
+                }
             }
         }
     }

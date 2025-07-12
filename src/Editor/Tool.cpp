@@ -4,8 +4,8 @@
 
 #include "Actions.h"
 #include "DrawingPad.h"
-#include "LevelObjects.h"
 #include "EditConstants.h"
+#include "LevelObjects.h"
 
 void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
                               ActionManager& actions)
@@ -44,10 +44,10 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
             if (glm::length(start_ - end_) > 0.25f)
             {
 
-                actions.push_action(std::make_unique<AddObjectAction>(WallObject{
+                actions.push_action(std::make_unique<AddObjectAction>(LevelObject{WallObject{
                     .properties = state.wall_default,
                     .parameters = {.start = start_, .end = end_},
-                }));
+                }}));
             }
             else
             {
@@ -80,10 +80,10 @@ void CreatePlatformTool::on_event(sf::Event event, glm::vec2 node, EditorState& 
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
-            actions.push_action(std::make_unique<AddObjectAction>(PlatformObject{
+            actions.push_action(std::make_unique<AddObjectAction>(LevelObject{PlatformObject{
                 .properties = state.platform_default,
                 .parameters = {.position = node},
-            }));
+            }}));
         }
     }
     else if (event.is<sf::Event::MouseMoved>())

@@ -11,19 +11,23 @@ ActionManager::ActionManager(EditorState& state, EditorLevel& level)
 {
 }
 
-void ActionManager::push_action(std::unique_ptr<Action> action)
+void ActionManager::push_action(std::unique_ptr<Action> action, bool store_action)
 {
     action->execute(*p_state_, *p_level_);
-    if (action_index_ < action_stack_.size())
+    if (store_action)
     {
-        action_stack_.resize(action_index_);
-    }
-    auto& moved_action = action_stack_.emplace_back(std::move(action));
-    action_index_ = action_stack_.size();
 
-    auto [title, body] = moved_action->to_string();
-    std::println("Execute: {}\n{}\n\n Index {} ", title, body, action_index_);
-    std::println("=======================================================");
+        if (action_index_ < action_stack_.size())
+        {
+            action_stack_.resize(action_index_);
+        }
+        auto& moved_action = action_stack_.emplace_back(std::move(action));
+        action_index_ = action_stack_.size();
+
+        auto [title, body] = moved_action->to_string();
+        std::println("Execute: {}\n{}\n\n Index {} ", title, body, action_index_);
+        std::println("=======================================================");
+    }
 }
 
 void ActionManager::undo_action()
@@ -82,36 +86,9 @@ void ActionManager::display_action_history()
     ImGui::End();
 }
 
-//
-// DeleteObjectAction::DeleteObjectAction(const Wall& object)
-//    : wall(object)
-//{
-//}
-//
-// void DeleteObjectAction::execute(EditorState& state, EditorLevel& level)
-//{
-//    state.p_active_object_ = nullptr;
-//    level.remove_object(wall.object_id);
-//}
-//
-// void DeleteObjectAction::undo(EditorState& state, EditorLevel& level)
-//{
-//    auto& new_wall = level.add_wall(wall.parameters, wall.props);
-//    new_wall.props = wall.props;
-//
-//    state.p_active_object_ = &new_wall;
-//
-//    level.set_object_id(new_wall.object_id, wall.object_id);
-//    wall = new_wall;
-//}
-//
-// ActionStrings DeleteObjectAction::to_string() const
-//{
-//    return {
-//        .title = "Delete Wall",
-//        .body = std::format("Deleted wall with ID: {} ", wall.object_id),
-//    };
-//}
+
+
+
 
 AddObjectAction::AddObjectAction(const LevelObject& object)
     : object_(object)
@@ -171,5 +148,36 @@ ActionStrings UpdateObjectAction::to_string() const
     return {
         .title = "Update Object",
         .body = std::format("From: {}\nTo: {}", old_object_.to_string(), new_object_.to_string()),
+    };
+}
+
+DeleteObjectAction::DeleteObjectAction(const LevelObject& object)
+    : object_(object)
+{
+}
+
+ void DeleteObjectAction::execute(EditorState& state, EditorLevel& level)
+{
+    state.p_active_object_ = nullptr;
+    level.remove_object(object_.object_id);
+}
+
+void DeleteObjectAction::undo(EditorState& state, EditorLevel& level)
+{
+    auto& new_object = level.add_object(object_);
+
+    //new_object.p = object_.props;
+
+    state.p_active_object_ = &new_object;
+
+    level.set_object_id(new_object.object_id, object_.object_id);
+    object_ = new_object;
+}
+
+ActionStrings DeleteObjectAction::to_string() const
+{
+    return {
+        .title = "Delete Wall",
+        .body = std::format("Deleted wall with ID: {} ", object_.object_id),
     };
 }

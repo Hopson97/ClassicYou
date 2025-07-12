@@ -20,8 +20,8 @@ struct WallProps
 {
     TextureProp texture_front{0};
     TextureProp texture_back{0};
-    float base_height;
-    float wall_height;
+    float base_height{0};
+    float wall_height{2};
 };
 
 struct WallParameters
@@ -29,6 +29,17 @@ struct WallParameters
     glm::vec2 start{0};
     glm::vec2 end{0};
 };
+
+inline bool operator==(const WallProps& lhs, const WallProps& rhs)
+{
+    return lhs.texture_front == rhs.texture_front && lhs.texture_back == rhs.texture_back &&
+           lhs.base_height == rhs.base_height && lhs.wall_height == rhs.wall_height;
+}
+
+inline bool operator!=(const WallProps& lhs, const WallProps& rhs)
+{
+    return !(lhs == rhs);
+}
 
 // =======================================
 //      Platform Object Types
@@ -41,6 +52,17 @@ struct PlatformProps
     float depth = 1;
     float base = 0;
 };
+
+inline bool operator==(const PlatformProps& lhs, const PlatformProps& rhs)
+{
+    return lhs.texture_top == rhs.texture_top && lhs.texture_bottom == rhs.texture_bottom &&
+           lhs.width == rhs.width && lhs.depth == rhs.depth && lhs.base == rhs.base;
+}
+
+inline bool operator!=(const PlatformProps& lhs, const PlatformProps& rhs)
+{
+    return !(lhs == rhs);
+}
 
 struct PlatformParameters
 {
@@ -67,12 +89,12 @@ using PlatformObject = ObjectType<PlatformProps, PlatformParameters>;
 struct LevelObject
 {
     template <typename Properties, typename Parameters>
-    LevelObject(const ObjectType<Properties, Parameters>& object)
+    explicit LevelObject(const ObjectType<Properties, Parameters>& object)
         : object_type(object)
     {
     }
 
-    LevelObject(int object_id)
+    explicit LevelObject(int object_id)
         : object_id(object_id)
     {
     }

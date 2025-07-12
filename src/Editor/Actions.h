@@ -24,20 +24,20 @@ class Action
     virtual ActionStrings to_string() const = 0;
 };
 
-//
-// class DeleteObjectAction final : public Action
-//{
-//  public:
-//    DeleteObjectAction(const Wall& object);
-//
-//    void execute(EditorState& state, EditorLevel& level) override;
-//    void undo(EditorState& state, EditorLevel& level) override;
-//
-//    ActionStrings to_string() const override;
-//
-//  private:
-//    Wall wall;
-//};
+
+ class DeleteObjectAction final : public Action
+{
+  public:
+    DeleteObjectAction(const LevelObject& object);
+
+    void execute(EditorState& state, EditorLevel& level) override;
+    void undo(EditorState& state, EditorLevel& level) override;
+
+    ActionStrings to_string() const override;
+
+  private:
+    LevelObject object_;
+};
 
 class AddObjectAction final : public Action
 {
@@ -77,7 +77,7 @@ class ActionManager
   public:
     ActionManager(EditorState& state, EditorLevel& level);
 
-    void push_action(std::unique_ptr<Action> action);
+    void push_action(std::unique_ptr<Action> action, bool store_action = true);
     void undo_action();
     void redo_action();
 

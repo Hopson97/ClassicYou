@@ -12,6 +12,8 @@ class ActionManager;
 class ITool
 {
   public:
+    virtual ~ITool() = default;
+
     virtual void on_event(sf::Event event, glm::vec2 node, EditorState& state,
                           ActionManager& actions) = 0;
     virtual void render_preview() = 0;
