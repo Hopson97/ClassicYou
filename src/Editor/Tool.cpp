@@ -65,7 +65,8 @@ void CreateWallTool::render_preview()
     }
 }
 
-void CreateWallTool::render_preview_2d(DrawingPad& drawing_pad)
+void CreateWallTool::render_preview_2d(DrawingPad& drawing_pad,
+                                       [[maybe_unused]] const EditorState& state)
 {
     if (active_dragging_)
     {
@@ -110,12 +111,21 @@ void CreatePlatformTool::render_preview()
     }
 }
 
-void CreatePlatformTool::render_preview_2d(DrawingPad& drawing_pad)
+void CreatePlatformTool::render_preview_2d(DrawingPad& drawing_pad, const EditorState& state)
 {
     // TODO Pass in the default here
-    drawing_pad.render_quad(
-        tile_, {TILE_SIZE * p_platform_default_->width, TILE_SIZE * p_platform_default_->depth},
-        Colour::RED);
+    if (state.platform_default.style == PlatformStyle::Quad)
+    {
+        drawing_pad.render_quad(
+            tile_, {TILE_SIZE * p_platform_default_->width, TILE_SIZE * p_platform_default_->depth},
+            Colour::RED);
+    }
+    else if (state.platform_default.style == PlatformStyle::Diamond)
+    {
+        drawing_pad.render_diamond(
+            tile_, {TILE_SIZE * p_platform_default_->width, TILE_SIZE * p_platform_default_->depth},
+            Colour::RED);
+    }
 }
 
 UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall)
@@ -206,7 +216,8 @@ void UpdateWallTool::render_preview()
     }
 }
 
-void UpdateWallTool::render_preview_2d(DrawingPad& drawing_pad)
+void UpdateWallTool::render_preview_2d(DrawingPad& drawing_pad,
+                                       [[maybe_unused]] const EditorState& state)
 {
     constexpr static glm::vec2 OFFSET{8, 8};
     drawing_pad.render_quad(wall_.parameters.line.start - OFFSET, glm::vec2{16.0f}, Colour::RED);

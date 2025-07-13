@@ -127,17 +127,8 @@ void ScreenEditGame::on_event(const sf::Event& event)
         switch (key->code)
         {
             case sf::Keyboard::Key::L:
-                if (!game_paused_)
-                {
-                    rotation_locked_ = !rotation_locked_;
-                    window().setMouseCursorVisible(rotation_locked_);
-                }
-                break;
-
-            case sf::Keyboard::Key::Tab:
-                game_paused_ = !game_paused_;
-                rotation_locked_ = game_paused_;
-                window().setMouseCursorVisible(game_paused_);
+                rotation_locked_ = !rotation_locked_;
+                window().setMouseCursorVisible(rotation_locked_);
                 break;
 
             case sf::Keyboard::Key::Delete:
@@ -187,9 +178,13 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 if (auto wall =
                         std::get_if<WallObject>(&editor_state_.p_active_object_->object_type))
                 {
-                    tool_ = std::make_unique<UpdateWallTool>(*editor_state_.p_active_object_, *wall);
+                    tool_ =
+                        std::make_unique<UpdateWallTool>(*editor_state_.p_active_object_, *wall);
                 }
-
+                else
+                {
+                    tool_ = std::make_unique<CreateWallTool>();
+                }
             }
             else
             {
@@ -213,10 +208,6 @@ void ScreenEditGame::on_fixed_update(sf::Time dt)
 
 void ScreenEditGame::on_render(bool show_debug)
 {
-    if (game_paused_)
-    {
-        pause_menu();
-    }
     if (show_debug)
     {
         debug_gui();
@@ -225,7 +216,7 @@ void ScreenEditGame::on_render(bool show_debug)
     // Render the drawing pad to the left side
     glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
 
-    tool_->render_preview_2d(drawing_pad_);
+    tool_->render_preview_2d(drawing_pad_, editor_state_);
     level_.render_2d(drawing_pad_, editor_state_.p_active_object_);
 
     // Finalise 2d rendering
@@ -247,50 +238,12 @@ void ScreenEditGame::on_render(bool show_debug)
     world_geometry_shader_.set_uniform("model_matrix", create_model_matrix({}));
     tool_->render_preview();
 
-    level_.render();
+    level_.render(world_geometry_shader_, editor_state_.p_active_object_);
 
     // Ensure GUI etc are rendered using fill
     gl::polygon_mode(gl::Face::FrontAndBack, gl::PolygonMode::Fill);
 
-    if (editor_state_.p_active_object_)
-    {
-        editor_state_.p_active_object_->property_gui(editor_state_, level_textures_,
-                                                     action_manager_);
-    }
-
-    // clang-format off
-    if (ImGui::BeginMainMenuBar())
-    {
-        if (ImGui::BeginMenu("File"))
-        {
-            if (ImGui::MenuItem("New")) {  }
-            if (ImGui::MenuItem("Open...")) {  }
-            if (ImGui::MenuItem("Save")) {  }
-            if (ImGui::MenuItem("Exit")) { p_screen_manager_->pop_screen(); }
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Edit"))
-        {
-            if (ImGui::MenuItem("Undo (CTRL + Z)")) { action_manager_.undo_action(); }
-            if (ImGui::MenuItem("Redo (CTRL + Y)")) { action_manager_.redo_action(); }
-            ImGui::EndMenu();
-        }
-        ImGui::EndMainMenuBar();
-    }
-    // clang-format on
-
-    if (ImGui ::Begin("Tool"))
-    {
-        if (ImGui::Button("Wall"))
-        {
-            tool_ = std::make_unique<CreateWallTool>();
-        }
-        if (ImGui::Button("Platform"))
-        {
-            tool_ = std::make_unique<CreatePlatformTool>(editor_state_.platform_default);
-        }
-        ImGui::End();
-    }
+    render_editor_ui();
 
     action_manager_.display_action_history();
 }
@@ -323,27 +276,51 @@ void ScreenEditGame::render_scene(gl::Shader& shader)
     selection_mesh_.bind().draw_elements();
 }
 
-void ScreenEditGame::pause_menu()
+void ScreenEditGame::render_editor_ui()
 {
-    ImVec2 window_size(p_screen_manager_->get_window().getSize().x / 4.0f,
-                       p_screen_manager_->get_window().getSize().y / 2.0f);
-    ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
-    ImGui::SetNextWindowPos({window_size.x + window_size.x * 4 / 8.0f, window_size.y / 2},
-                            ImGuiCond_Always);
-    if (ImGui ::Begin("Paused", nullptr,
-                      ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
-                          ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize))
+
+    // clang-format off
+    if (ImGui::BeginMainMenuBar())
     {
-        if (ImGui::CustomButton("Resume"))
+        if (ImGui::BeginMenu("File"))
         {
-            game_paused_ = false;
+            if (ImGui::MenuItem("New")) {  }
+            if (ImGui::MenuItem("Open...")) {  }
+            if (ImGui::MenuItem("Save")) {  }
+            if (ImGui::MenuItem("Exit")) { p_screen_manager_->pop_screen(); }
+            ImGui::EndMenu();
         }
-        if (ImGui::CustomButton("Exit"))
+        if (ImGui::BeginMenu("Edit"))
         {
-            p_screen_manager_->pop_screen();
+            if (ImGui::MenuItem("Undo (CTRL + Z)")) { action_manager_.undo_action(); }
+            if (ImGui::MenuItem("Redo (CTRL + Y)")) { action_manager_.redo_action(); }
+            ImGui::EndMenu();
         }
-        ImGui::End();
+        ImGui::EndMainMenuBar();
     }
+    // clang-format on
+
+    if (ImGui ::Begin("Editor"))
+    {
+        ImGui::Text("Tools");
+        if (ImGui::Button("Wall"))
+        {
+            tool_ = std::make_unique<CreateWallTool>();
+        }
+        if (ImGui::Button("Platform"))
+        {
+            tool_ = std::make_unique<CreatePlatformTool>(editor_state_.platform_default);
+        }
+
+        ImGui::Separator();
+
+        if (editor_state_.p_active_object_)
+        {
+            editor_state_.p_active_object_->property_gui(editor_state_, level_textures_,
+                                                         action_manager_);
+        }
+    }
+    ImGui::End();
 }
 
 void ScreenEditGame::debug_gui()

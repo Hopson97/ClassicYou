@@ -3,9 +3,8 @@
 #include <SFML/Window/Event.hpp>
 
 #include "../Graphics/Mesh.h"
-#include "LevelObject.h"
 #include "../Util/Maths.h"
-
+#include "LevelObject.h"
 
 class DrawingPad;
 class LevelTextures;
@@ -20,7 +19,7 @@ class ITool
     virtual void on_event(sf::Event event, glm::vec2 node, EditorState& state,
                           ActionManager& actions) = 0;
     virtual void render_preview() = 0;
-    virtual void render_preview_2d(DrawingPad& drawing_pad) = 0;
+    virtual void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) = 0;
 };
 
 class CreateWallTool : public ITool
@@ -29,7 +28,7 @@ class CreateWallTool : public ITool
     void on_event(sf::Event event, glm::vec2 node, EditorState& state,
                   ActionManager& actions) override;
     void render_preview() override;
-    void render_preview_2d(DrawingPad& drawing_pad) override;
+    void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) override;
 
   private:
     LevelObjectsMesh3D wall_preview_;
@@ -44,7 +43,7 @@ class UpdateWallTool : public ITool
     void on_event(sf::Event event, glm::vec2 node, EditorState& state,
                   ActionManager& actions) override;
     void render_preview() override;
-    void render_preview_2d(DrawingPad& drawing_pad) override;
+    void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) override;
 
   private:
     LevelObjectsMesh3D wall_preview_;
@@ -70,7 +69,7 @@ class CreatePlatformTool : public ITool
     void on_event(sf::Event event, glm::vec2 node, EditorState& state,
                   ActionManager& actions) override;
     void render_preview() override;
-    void render_preview_2d(DrawingPad& drawing_pad) override;
+    void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) override;
 
   private:
     const PlatformProps* p_platform_default_;

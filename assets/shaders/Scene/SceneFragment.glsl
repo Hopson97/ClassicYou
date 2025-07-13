@@ -12,11 +12,19 @@ in VS_OUT {
 uniform SAMPLER_TYPE diffuse;
 uniform bool use_texture;
 
+uniform bool selected;
+
 void main() 
 {
+    out_colour = fs_in.colour;
     if (use_texture) 
     {
-        out_colour = texture(diffuse, fs_in.texture_coord);
+        out_colour *= texture(diffuse, fs_in.texture_coord);
+
+        if (selected)
+        {
+           out_colour += vec4(0.25, 0.25, 0.25, 0.1);
+        }
     }
     else 
     {

@@ -25,7 +25,7 @@ class ScreenEditGame final : public Screen
     void on_render(bool show_debug) override;
 
   private:
-    void pause_menu();
+    void render_editor_ui();
     void debug_gui();
 
     void render_scene(gl::Shader& shader);
@@ -44,7 +44,6 @@ class ScreenEditGame final : public Screen
     DrawingPad drawing_pad_;
 
     bool rotation_locked_ = true;
-    bool game_paused_ = false;
     Settings settings_;
 
     EditorState editor_state_;

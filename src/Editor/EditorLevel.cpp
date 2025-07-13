@@ -22,10 +22,8 @@ void EditorLevel::update_object(const LevelObject& object)
 {
     for (auto& w : level_objects_)
     {
-        std::println("Updating object: {} -> {}", w.object_id, object.object_id);
         if (w.object_id == object.object_id)
         {
-            std::println("Found object ID: {}", w.object_id);
             w = object;
             break;
         }
@@ -33,18 +31,14 @@ void EditorLevel::update_object(const LevelObject& object)
 
     for (auto& wall_mesh : level_meshes_)
     {
-        std::println("Updating mesh: {} -> {}", wall_mesh.id, object.object_id);
         if (wall_mesh.id == object.object_id)
         {
-            std::println("Found mesh for object ID: {}", wall_mesh.id);
             auto new_mesh = object.to_geometry();
             new_mesh.buffer();
             wall_mesh.mesh = std::move(new_mesh);
             break;
         }
     }
-    std::println("Size of level objects: {}", level_objects_.size());
-    std::println("Size of level meshes: {}", level_meshes_.size());
 }
 
 void EditorLevel::remove_object(std::size_t id)
@@ -74,11 +68,24 @@ void EditorLevel::set_object_id(ObjectId current_id, ObjectId new_id)
     }
 }
 
-void EditorLevel::render()
+void EditorLevel::render(gl::Shader& scene_shader, const LevelObject* p_active_object)
 {
+    bool rendered_selected = false;
+    scene_shader.set_uniform("selected", false);
     for (auto& object : level_meshes_)
     {
-        object.mesh.bind().draw_elements();
+        // Swtich prevents setting the uniform needlessly many times
+        if (!rendered_selected && p_active_object && object.id == p_active_object->object_id)
+        {
+            rendered_selected = true;
+            scene_shader.set_uniform("selected", true);
+            object.mesh.bind().draw_elements();
+            scene_shader.set_uniform("selected", false);
+        }
+        else
+        {
+            object.mesh.bind().draw_elements();
+        }
     }
 }
 

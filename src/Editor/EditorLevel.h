@@ -5,6 +5,7 @@
 
 #include "../Editor/LevelObject.h"
 #include "../Graphics/Mesh.h"
+#include "../Graphics/OpenGL/Shader.h"
 
 class DrawingPad;
 
@@ -31,7 +32,7 @@ class EditorLevel
      * @brief Render the level in 3D.
      * Assumes the camera, shader, and other OpenGL states are set up correctly.
      */
-    void render();
+    void render(gl::Shader& scene_shader, const LevelObject* p_active_object);
 
     /**
      * @brief Render the level in 2D using the given drawing pad.

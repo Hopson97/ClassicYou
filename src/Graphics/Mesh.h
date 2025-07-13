@@ -21,7 +21,7 @@ struct Vertex3D
     glm::vec3 position{0.0f};
     TextureCoordType texture_coord{0.0f};
     glm::vec3 normal{0.0f};
-    glm::vec4 colour{0.0f};
+    glm::vec4 colour{1.0f};
 
     /**
      * @brief Builds the vertex attributes for the given VertexArrayObject and BufferObject.

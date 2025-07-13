@@ -159,6 +159,7 @@
     <ClCompile Include="src\Editor\DrawingPad.cpp" />
     <ClCompile Include="src\Editor\EditorGUI.cpp" />
     <ClCompile Include="src\Editor\EditorLevel.cpp" />
+    <ClCompile Include="src\Editor\LevelObjectGeometry.cpp" />
     <ClCompile Include="src\Editor\Tool.cpp" />
     <ClCompile Include="src\Editor\LevelObject.cpp" />
     <ClCompile Include="src\Graphics\CameraController.cpp" />

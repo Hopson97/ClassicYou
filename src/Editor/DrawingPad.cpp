@@ -99,7 +99,7 @@ void DrawingPad::render_quad(glm::vec2 position, glm::vec2 size, const glm::vec4
     float thickness = 2.0f;
     if (line_meshes_.find(thickness) == line_meshes_.end())
     {
-        line_meshes_.emplace(2, Mesh2D{});
+        line_meshes_.emplace(thickness, Mesh2D{});
     }
 
     auto& mesh = line_meshes_.find(thickness)->second;
@@ -112,6 +112,27 @@ void DrawingPad::render_quad(glm::vec2 position, glm::vec2 size, const glm::vec4
     add_line_to_mesh(mesh, {position.x, position.y + size.y}, {position.x, position.y}, colour);
 }
 
+void DrawingPad::render_diamond(glm::vec2 position, glm::vec2 size, const glm::vec4& colour)
+{
+    // TODO Actually render a diamond
+    float thickness = 2.0f;
+    if (line_meshes_.find(thickness) == line_meshes_.end())
+    {
+        line_meshes_.emplace(thickness, Mesh2D{});
+    }
+
+    auto& mesh = line_meshes_.find(thickness)->second;
+
+    add_line_to_mesh(mesh, {position.x + size.x / 2, position.y},
+                     {position.x + size.x, position.y + size.y / 2}, colour);
+    add_line_to_mesh(mesh, {position.x + size.x, position.y + size.y / 2},
+                     {position.x + size.x / 2, position.y + size.y}, colour);
+    add_line_to_mesh(mesh, {position.x + size.x / 2, position.y + size.y},
+                     {position.x, position.y + size.y / 2}, colour);
+    add_line_to_mesh(mesh, {position.x, position.y + size.y / 2},
+                     {position.x + size.x / 2, position.y}, colour);
+}
+
 void DrawingPad::render_line(glm::vec2 from, glm::vec2 to, const glm::vec4& colour,
                              GLfloat thickness)
 {
@@ -121,7 +142,6 @@ void DrawingPad::render_line(glm::vec2 from, glm::vec2 to, const glm::vec4& colo
     }
     add_line_to_mesh(line_meshes_.find(thickness)->second, from, to, colour);
 }
-
 
 void DrawingPad::update(const Keyboard& keyboard, sf::Time dt)
 {

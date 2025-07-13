@@ -18,6 +18,7 @@ class DrawingPad
 
     void render_quad(glm::vec2 position, glm::vec2 size, const glm::vec4& colour);
     void render_line(glm::vec2 from, glm::vec2 to, const glm::vec4& colour, GLfloat thickness);
+    void render_diamond(glm::vec2 position, glm::vec2 size, const glm::vec4& colour);
 
     void display();
 

@@ -39,6 +39,13 @@ inline bool operator!=(const WallProps& lhs, const WallProps& rhs)
 // =======================================
 //      Platform Object Types
 // =======================================
+enum class PlatformStyle
+{
+    Quad,
+    // Triagle,
+    Diamond
+};
+
 struct PlatformProps
 {
     TextureProp texture_top;
@@ -46,12 +53,17 @@ struct PlatformProps
     float width = 1;
     float depth = 1;
     float base = 0;
+
+    PlatformStyle style = PlatformStyle::Quad;
+    // int direction = 0;
 };
 
 inline bool operator==(const PlatformProps& lhs, const PlatformProps& rhs)
 {
     return lhs.texture_top == rhs.texture_top && lhs.texture_bottom == rhs.texture_bottom &&
-           lhs.width == rhs.width && lhs.depth == rhs.depth && lhs.base == rhs.base;
+           lhs.width == rhs.width && lhs.depth == rhs.depth && lhs.base == rhs.base &&
+           lhs.style == rhs.style;
+    // &&lhs.direction == rhs.direction;
 }
 
 inline bool operator!=(const PlatformProps& lhs, const PlatformProps& rhs)
@@ -63,4 +75,3 @@ struct PlatformParameters
 {
     glm::vec2 position{0};
 };
-

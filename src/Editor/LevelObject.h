@@ -81,5 +81,6 @@ struct EditorState
     LevelObject* p_active_object_ = nullptr;
 };
 
+// Note: These are defined in LevelObjectGeometry.cpp
 [[nodiscard]] LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall);
 [[nodiscard]] LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform);
