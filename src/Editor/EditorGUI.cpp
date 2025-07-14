@@ -181,7 +181,7 @@ std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& texture
     slider(result, "Depth", new_props.depth, 0.5f, 100.0f, 0.5f);
 
     // Multiplied by 2 when mesh is created
-    slider(result, "Base Height", new_props.base, 0.0f, 1.0f, 0.1f);
+    slider(result, "Base Height", new_props.base, 0.0f, 0.9f, 0.1f);
 
     return {
         check_prop_updated(result, platform.properties, new_props),

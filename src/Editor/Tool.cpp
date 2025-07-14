@@ -10,8 +10,6 @@
 void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
                               ActionManager& actions)
 {
-    const auto& default_props = state.wall_default;
-
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
@@ -74,59 +72,11 @@ void CreateWallTool::render_preview_2d(DrawingPad& drawing_pad,
     }
 }
 
-CreatePlatformTool::CreatePlatformTool(const PlatformProps& platform_default)
-    : p_platform_default_(&platform_default)
+ToolType CreateWallTool::get_tool_type() const
 {
+    return ToolType::CreateWall;
 }
 
-void CreatePlatformTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
-                                  ActionManager& actions)
-{
-    if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
-    {
-        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
-        {
-            actions.push_action(std::make_unique<AddObjectAction>(LevelObject{PlatformObject{
-                .properties = state.platform_default,
-                .parameters = {.position = node},
-            }}));
-        }
-    }
-    else if (event.is<sf::Event::MouseMoved>())
-    {
-        platform_preview_ = generate_platform_mesh({
-            .properties = state.platform_default,
-            .parameters = {.position = node},
-        });
-        platform_preview_.buffer();
-        tile_ = node;
-    }
-}
-
-void CreatePlatformTool::render_preview()
-{
-    if (platform_preview_.has_buffered())
-    {
-        platform_preview_.bind().draw_elements();
-    }
-}
-
-void CreatePlatformTool::render_preview_2d(DrawingPad& drawing_pad, const EditorState& state)
-{
-    // TODO Pass in the default here
-    if (state.platform_default.style == PlatformStyle::Quad)
-    {
-        drawing_pad.render_quad(
-            tile_, {TILE_SIZE * p_platform_default_->width, TILE_SIZE * p_platform_default_->depth},
-            Colour::RED);
-    }
-    else if (state.platform_default.style == PlatformStyle::Diamond)
-    {
-        drawing_pad.render_diamond(
-            tile_, {TILE_SIZE * p_platform_default_->width, TILE_SIZE * p_platform_default_->depth},
-            Colour::RED);
-    }
-}
 
 UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall)
     : object_(object)
@@ -230,4 +180,69 @@ void UpdateWallTool::render_preview_2d(DrawingPad& drawing_pad,
         drawing_pad.render_quad(wall_line_.start - OFFSET, glm::vec2{16.0f}, Colour::RED);
         drawing_pad.render_quad(wall_line_.end - OFFSET, glm::vec2{16.0f}, Colour::RED);
     }
+}
+
+ToolType UpdateWallTool::get_tool_type() const
+{
+    return ToolType::UpdateWall;
+}
+
+
+CreatePlatformTool::CreatePlatformTool(const PlatformProps& platform_default)
+    : p_platform_default_(&platform_default)
+{
+}
+
+void CreatePlatformTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
+                                  ActionManager& actions)
+{
+    if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
+    {
+        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
+        {
+            actions.push_action(std::make_unique<AddObjectAction>(LevelObject{PlatformObject{
+                .properties = state.platform_default,
+                .parameters = {.position = node},
+            }}));
+        }
+    }
+    else if (event.is<sf::Event::MouseMoved>())
+    {
+        platform_preview_ = generate_platform_mesh({
+            .properties = state.platform_default,
+            .parameters = {.position = node},
+        });
+        platform_preview_.buffer();
+        tile_ = node;
+    }
+}
+
+void CreatePlatformTool::render_preview()
+{
+    if (platform_preview_.has_buffered())
+    {
+        platform_preview_.bind().draw_elements();
+    }
+}
+
+void CreatePlatformTool::render_preview_2d(DrawingPad& drawing_pad, const EditorState& state)
+{
+    // TODO Pass in the default here
+    if (state.platform_default.style == PlatformStyle::Quad)
+    {
+        drawing_pad.render_quad(
+            tile_, {TILE_SIZE * p_platform_default_->width, TILE_SIZE * p_platform_default_->depth},
+            Colour::RED);
+    }
+    else if (state.platform_default.style == PlatformStyle::Diamond)
+    {
+        drawing_pad.render_diamond(
+            tile_, {TILE_SIZE * p_platform_default_->width, TILE_SIZE * p_platform_default_->depth},
+            Colour::RED);
+    }
+}
+
+ToolType CreatePlatformTool::get_tool_type() const
+{
+    return ToolType::CreatePlatform;
 }

@@ -11,6 +11,13 @@ class LevelTextures;
 struct EditorState;
 class ActionManager;
 
+enum class ToolType
+{
+    CreateWall,
+    UpdateWall,
+    CreatePlatform
+};
+
 class ITool
 {
   public:
@@ -20,6 +27,8 @@ class ITool
                           ActionManager& actions) = 0;
     virtual void render_preview() = 0;
     virtual void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) = 0;
+
+    virtual ToolType get_tool_type() const = 0;
 };
 
 class CreateWallTool : public ITool
@@ -29,6 +38,8 @@ class CreateWallTool : public ITool
                   ActionManager& actions) override;
     void render_preview() override;
     void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) override;
+
+    ToolType get_tool_type() const override;
 
   private:
     LevelObjectsMesh3D wall_preview_;
@@ -44,6 +55,8 @@ class UpdateWallTool : public ITool
                   ActionManager& actions) override;
     void render_preview() override;
     void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) override;
+
+    ToolType get_tool_type() const override;
 
   private:
     LevelObjectsMesh3D wall_preview_;
@@ -70,6 +83,8 @@ class CreatePlatformTool : public ITool
                   ActionManager& actions) override;
     void render_preview() override;
     void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) override;
+
+    ToolType get_tool_type() const override;
 
   private:
     const PlatformProps* p_platform_default_;

@@ -122,6 +122,7 @@ bool ScreenEditGame::on_init()
 
 void ScreenEditGame::on_event(const sf::Event& event)
 {
+    bool try_set_tool_to_wall = false;
     if (auto key = event.getIf<sf::Event::KeyReleased>())
     {
         switch (key->code)
@@ -136,6 +137,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 {
                     action_manager_.push_action(
                         std::make_unique<DeleteObjectAction>(*editor_state_.p_active_object_));
+                    try_set_tool_to_wall = true;
                 }
                 break;
 
@@ -143,7 +145,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))
                 {
                     action_manager_.undo_action();
-                    tool_ = std::make_unique<CreateWallTool>();
+                    try_set_tool_to_wall = true;
                 }
                 break;
 
@@ -151,7 +153,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))
                 {
                     action_manager_.redo_action();
-                    tool_ = std::make_unique<CreateWallTool>();
+                    try_set_tool_to_wall = true;
                 }
                 break;
 
@@ -190,6 +192,16 @@ void ScreenEditGame::on_event(const sf::Event& event)
             {
                 tool_ = std::make_unique<CreateWallTool>();
             }
+        }
+    }
+
+    // Certain events cause issues if the current tool is UpdateWall (such as rendering the 2D
+    // preview of deleting walls) so this prevents that
+    if (try_set_tool_to_wall)
+    {
+        if (tool_->get_tool_type() == ToolType::UpdateWall)
+        {
+            tool_ = std::make_unique<CreateWallTool>();
         }
     }
 
@@ -306,10 +318,12 @@ void ScreenEditGame::render_editor_ui()
         if (ImGui::Button("Wall"))
         {
             tool_ = std::make_unique<CreateWallTool>();
+            editor_state_.p_active_object_ = nullptr;
         }
         if (ImGui::Button("Platform"))
         {
             tool_ = std::make_unique<CreatePlatformTool>(editor_state_.platform_default);
+            editor_state_.p_active_object_ = nullptr;
         }
 
         ImGui::Separator();

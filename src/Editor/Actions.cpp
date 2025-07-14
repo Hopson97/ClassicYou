@@ -127,8 +127,6 @@ UpdateObjectAction::UpdateObjectAction(const LevelObject& old_object, const Leve
     : old_object_(old_object)
     , new_object_(new_object)
 {
-    std::println("UpdateObjectAction created: {} -> {}", old_object_.object_id,
-                 new_object_.object_id);
 }
 
 void UpdateObjectAction::execute(EditorState& state, EditorLevel& level)

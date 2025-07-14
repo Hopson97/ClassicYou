@@ -14,24 +14,24 @@ namespace
 
         float width = props.width;
         float depth = props.depth;
-        float bo = props.base;
+        float ob = props.base * 2.0f;
 
-        GLfloat tex1 = static_cast<float>(props.texture_top);
-        GLfloat tex2 = static_cast<float>(props.texture_bottom);
+        GLfloat texture_bottom = static_cast<float>(props.texture_top);
+        GLfloat texture_top = static_cast<float>(props.texture_bottom);
         auto p = glm::vec3{params.position.x, 0, params.position.y} / static_cast<float>(TILE_SIZE);
         // clang-format off
         return {
             // Top
-            {{p.x, bo, p.z,}, {0, 0, tex1}, {0, 1, 0}},
-            {{p.x, bo, p.z + depth,}, {0, depth, tex1}, {0, 1, 0}},
-            {{p.x + width, bo, p.z + depth,}, {width, depth, tex1}, {0, 1, 0}},
-            {{p.x + width, bo, p.z,}, {width, 0, tex1}, {0, 1, 0}},
+            {{p.x,          ob, p.z,        },  {0,     0,      texture_bottom},    {0, 1, 0}},
+            {{p.x,          ob, p.z + depth,},  {0,     depth,  texture_bottom},    {0, 1, 0}},
+            {{p.x + width,  ob, p.z + depth,},  {width, depth,  texture_bottom},    {0, 1, 0}},
+            {{p.x + width,  ob, p.z,},          {width, 0,      texture_bottom},    {0, 1, 0}},
 
             // Bottom
-            {{p.x, bo, p.z,}, {0, 0, tex2}, {0, 1, 0}},
-            {{p.x, bo, p.z + depth,}, {0, depth, tex2}, {0, 1, 0}},
-            {{p.x + width, bo, p.z + depth,}, {width, depth, tex2}, {0, 1, 0}},
-            {{p.x + width, bo, p.z,}, {width, 0, tex2}, {0, 1, 0}},
+            {{p.x,          ob, p.z,        },  {0,     0,      texture_top},   {0, -1, 0}},
+            {{p.x,          ob, p.z + depth,},  {0,     depth,  texture_top},   {0, -1, 0}},
+            {{p.x + width,  ob, p.z + depth,},  {width, depth,  texture_top},   {0, -1, 0}},
+            {{p.x + width,  ob, p.z,        },  {width, 0,      texture_top},   {0, -1, 0}},
         };
         // clang-format on
     }
@@ -43,25 +43,26 @@ namespace
 
         float width = props.width;
         float depth = props.depth;
-        float bo = props.base;
+        float ob = props.base * 2.0f;
 
-        GLfloat tex1 = static_cast<float>(props.texture_bottom);
-        GLfloat tex2 = static_cast<float>(props.texture_top);
+        GLfloat texture_bottom = static_cast<float>(props.texture_bottom);
+        GLfloat texture_top = static_cast<float>(props.texture_top);
         auto p = glm::vec3{params.position.x, 0, params.position.y} / static_cast<float>(TILE_SIZE);
 
         // clang-format off
         return {
             // Bottom
-            {{p.x + width / 2, bo, p.z}, {width / 2, 0, tex1}, {0, 1, 0}},
-            {{p.x + width, bo, p.z + depth / 2}, {width, depth / 2, tex1}, {0, 1, 0}},
-            {{p.x + width / 2, bo, p.z + depth}, {width / 2, depth, tex1}, {0, 1, 0}},
-            {{p.x, bo, p.z + depth / 2}, {0, depth / 2, tex1}, {0, 1, 0}},
+            {{p.x + width / 2,  ob, p.z             }, {width / 2,  0,          texture_bottom}, {0, 1, 0}},
+            {{p.x + width,      ob, p.z + depth / 2 }, {width,      depth / 2,  texture_bottom}, {0, 1, 0}},
+            {{p.x + width / 2,  ob, p.z + depth     }, {width / 2,  depth,      texture_bottom}, {0, 1, 0}},
+            {{p.x,              ob, p.z + depth / 2 }, {0,          depth / 2,  texture_bottom}, {0, 1, 0}},
+
 
             // Top
-            {{p.x + width / 2, bo, p.z}, {width / 2, 0, tex2}, {0, 1, 0}},
-            {{p.x + width, bo, p.z + depth / 2}, {width, depth / 2, tex2}, {0, 1, 0}},
-            {{p.x + width / 2, bo, p.z + depth}, {width / 2, depth, tex2}, {0, 1, 0}},
-            {{p.x, bo, p.z + depth / 2}, {0, depth / 2, tex2}, {0, 1, 0}},
+            {{p.x + width / 2,  ob, p.z             }, {width / 2,  0,          texture_top}, {0, 1, 0}},
+            {{p.x + width,      ob, p.z + depth / 2 }, {width,      depth / 2,  texture_top}, {0, 1, 0}},
+            {{p.x + width / 2,  ob, p.z + depth     }, {width / 2,  depth,      texture_top}, {0, 1, 0}},
+            {{p.x,              ob, p.z + depth / 2 }, {0,          depth / 2,  texture_top}, {0, 1, 0}}
         };
         // clang-format on
     }
@@ -85,24 +86,26 @@ LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall)
 
     const auto length = glm::length(b - e);
 
-    GLfloat tex1 = static_cast<float>(props.texture_front);
-    GLfloat tex2 = static_cast<float>(props.texture_back);
+    GLfloat texture_back = static_cast<float>(props.texture_back);
+    GLfloat texture_front = static_cast<float>(props.texture_front);
 
     LevelObjectsMesh3D mesh;
+
+    // clang-format off
     mesh.vertices = {
-        // Front
-        {{b.x + ox, ob, b.z + oz}, {0.0f, ob, tex1}, {0, 0, 1}},
-        {{b.x + ox, h, b.z + oz}, {0.0, h, tex1}, {0, 0, 1}},
-        {{e.x + ox, h, e.z + oz}, {length, h, tex1}, {0, 0, 1}},
-        {{e.x + ox, ob, e.z + oz}, {length, ob, tex1}, {0, 0, 1}},
-
         // Back
-        {{b.x - ox, ob, b.z - oz}, {0.0f, ob, tex2}, {0, 0, 1}},
-        {{b.x - ox, h, b.z - oz}, {0.0, h, tex2}, {0, 0, 1}},
-        {{e.x - ox, h, e.z - oz}, {length, h, tex2}, {0, 0, 1}},
-        {{e.x - ox, ob, e.z - oz}, {length, ob, tex2}, {0, 0, 1}},
+        {{b.x + ox, ob, b.z + oz}, {0.0f,   ob, texture_back},  {0, 0, 1}},
+        {{b.x + ox, h,  b.z + oz}, {0.0,    h,  texture_back},  {0, 0, 1}},
+        {{e.x + ox, h,  e.z + oz}, {length, h,  texture_back},  {0, 0, 1}},
+        {{e.x + ox, ob, e.z + oz}, {length, ob, texture_back},  {0, 0, 1}},
 
+        // Front 
+        {{b.x - ox, ob, b.z - oz}, {0.0f,   ob, texture_front}, {0, 0, 1}},
+        {{b.x - ox, h,  b.z - oz}, {0.0,    h,  texture_front}, {0, 0, 1}},
+        {{e.x - ox, h,  e.z - oz}, {length, h,  texture_front}, {0, 0, 1}},
+        {{e.x - ox, ob, e.z - oz}, {length, ob, texture_front}, {0, 0, 1}},
     };
+    // clang-format on
 
     mesh.indices = {// Front
                     0, 1, 2, 2, 3, 0,

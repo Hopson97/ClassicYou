@@ -71,7 +71,6 @@ namespace
             // after a slider was used) to enable proper undo and redo
             //
             // Otherwise, the non-cached version can be used
-            std::println("Update Action: {}", update.action ? "True" : "False");
             action_manager.push_action(std::make_unique<UpdateObjectAction>(
                                            update.action ? cached_object : current, new_object),
                                        update.action);
@@ -98,7 +97,7 @@ void LevelObject::property_gui(EditorState& state, const LevelTextures& textures
         ::property_gui<WallObject>(&wall_gui, textures, action_manager, *wall, *this,
                                    state.wall_default);
     }
-    if (auto platform = std::get_if<PlatformObject>(&object_type))
+    else if (auto platform = std::get_if<PlatformObject>(&object_type))
     {
         ::property_gui<PlatformObject>(&platform_gui, textures, action_manager, *platform, *this,
                                        state.platform_default);
@@ -165,11 +164,11 @@ void LevelObject::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active
 
         if (platform->properties.style == PlatformStyle::Quad)
         {
-            drawing_pad.render_quad(position, {width, depth}, Colour::RED);
+            drawing_pad.render_quad(position, {width, depth}, colour);
         }
         else if (platform->properties.style == PlatformStyle::Diamond)
         {
-            drawing_pad.render_diamond(position, {width, depth}, Colour::RED);
+            drawing_pad.render_diamond(position, {width, depth}, colour);
         }
     }
 }

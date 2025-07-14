@@ -67,7 +67,7 @@ struct EditorState
         .texture_front = 0,
         .texture_back = 0,
         .base_height = 0,
-        .wall_height = 2,
+        .wall_height = 1,
     };
 
     PlatformProps platform_default = {
