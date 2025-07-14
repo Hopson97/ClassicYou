@@ -16,10 +16,11 @@ namespace
 {
 
     template <typename T>
-    void property_gui(GUIFunction<T> function, EditorState& state, const LevelTextures& textures,
+    void property_gui(GUIFunction<T> function, const LevelTextures& textures,
                       ActionManager& action_manager, const T& object, LevelObject& current,
                       typename T::PropertiesType& object_default)
     {
+
         // Caching the object is a work-around due to an ImGui limitation that when the mouse is
         // held on a slider element, it will continuously trigger that input, returning true. This
         // means that when the object gets updated, it creates many events - even if nothing has
@@ -28,20 +29,32 @@ namespace
         //
         // For example, sliding the wall height from 0.2m to 0.8m creates 10s of updates for every
         // incremental change. The history should only store the main update though, 0.2 -> 0.8m
-        // However as many events get created, it means ,without caching, the uodate would be stored
+        // However as many events get created, it means ,without caching, the update would be stored
         // as 0.8m -> 0.8m
         //
         // So by caching the object the first time the slider is clicked, it means the correct
         // history can be stored, meaning undo/redo functionality actually works.
+
         static auto cached_object = current;
 
         // Was the last update one where the mouse was released - storing it in the
-        // ActionManagerHistory>
-        static auto last_store_action = true;
+        // ActionManagerHistory?
+        static auto last_store_action = false;
 
         auto [update, new_props] = function(textures, object);
-        if (update.value)
+
+        if (update.always_update)
         {
+            // Inputs such a button clicks (textures, styles etc) should always cause an update to
+            // happen and always trigger history to be recorded to enable undo/redo
+            LevelObject new_object = current;
+            std::get<T>(new_object.object_type).properties = new_props;
+            action_manager.push_action(std::make_unique<UpdateObjectAction>(current, new_object));
+            last_store_action = true;
+        }
+        else if (update.continuous_update)
+        {
+
             // If the last update was when the user released the mouse, it means this is a new input
             // event to a property editor element
             // This means the object state must be cached at this point
@@ -54,7 +67,9 @@ namespace
             std::get<T>(new_object.object_type).properties = new_props;
 
             // When the mouse is released (so update.action is true), the cached object should be
-            // used to update the object.
+            // used to update the object such that only the "major" history is recorded (before and
+            // after a slider was used) to enable proper undo and redo
+            //
             // Otherwise, the non-cached version can be used
             std::println("Update Action: {}", update.action ? "True" : "False");
             action_manager.push_action(std::make_unique<UpdateObjectAction>(
@@ -80,13 +95,13 @@ void LevelObject::property_gui(EditorState& state, const LevelTextures& textures
     ImGui::Separator();
     if (auto wall = std::get_if<WallObject>(&object_type))
     {
-        ::property_gui<WallObject>(&wall_gui, state, textures, action_manager, *wall, *this,
+        ::property_gui<WallObject>(&wall_gui, textures, action_manager, *wall, *this,
                                    state.wall_default);
     }
     if (auto platform = std::get_if<PlatformObject>(&object_type))
     {
-        ::property_gui<PlatformObject>(&platform_gui, state, textures, action_manager, *platform,
-                                       *this, state.platform_default);
+        ::property_gui<PlatformObject>(&platform_gui, textures, action_manager, *platform, *this,
+                                       state.platform_default);
     }
 }
 

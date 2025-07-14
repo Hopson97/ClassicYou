@@ -9,26 +9,29 @@ class LevelTextures;
 /**
  * @brief The return value for the GUI functions.
  */
-struct ShouldUpdate
+struct UpdateResult
 {
-    /// @brief Whether the user has changed a value in the GUI.
-    bool value = false;
+    /// Was there a continuous update in the GUI, such a slider being moved?
+    bool continuous_update = false;
 
-    /// @brief Whether an action history should be created for the update.
+    /// Should an action be recorded? Only used for continuous update when the mouse is released off
+    /// a slider element
     bool action = false;
+
+    /// For discrete GUI elements eg buttons, elements being click should ALWAYS update the object
+    /// and record its history (for undo etc)
+    bool always_update = false;
 };
 
 /// @brief Alias for object GUI functions - used in LevelObject.h
 /// @tparam T
 template <typename T>
-using GUIFunction = std::pair<ShouldUpdate, typename T::PropertiesType> (*)(
+using GUIFunction = std::pair<UpdateResult, typename T::PropertiesType> (*)(
     const LevelTextures& textures, const T& object);
 
 /// @brief Properties GUI for a platform object.
-std::pair<ShouldUpdate, WallProps> wall_gui(const LevelTextures& textures, const WallObject& wall);
+std::pair<UpdateResult, WallProps> wall_gui(const LevelTextures& textures, const WallObject& wall);
 
 /// @brief Properties GUI for a platform object.
-std::pair<ShouldUpdate, PlatformProps> platform_gui(const LevelTextures& textures,
+std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& textures,
                                                     const PlatformObject& platform);
-
-
