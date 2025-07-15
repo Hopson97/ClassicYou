@@ -86,8 +86,9 @@ void ActionManager::display_action_history()
     ImGui::End();
 }
 
-AddObjectAction::AddObjectAction(const LevelObject& object)
+AddObjectAction::AddObjectAction(const LevelObject& object, int floor)
     : object_(object)
+    , floor_{floor}
 {
 }
 
@@ -98,7 +99,7 @@ void AddObjectAction::execute(EditorState& state, EditorLevel& level)
     if (!executed_)
     {
 
-        auto& level_object = level.add_object(object_);
+        auto& level_object = level.add_object(object_, floor_);
         id_ = level_object.object_id;
 
         executed_ = true;
@@ -106,7 +107,7 @@ void AddObjectAction::execute(EditorState& state, EditorLevel& level)
     }
     else
     {
-        auto& level_object = level.add_object(object_);
+        auto& level_object = level.add_object(object_, floor_);
         level.set_object_id(level_object.object_id, id_);
         state.p_active_object_ = &level_object;
     }
@@ -123,20 +124,22 @@ ActionStrings AddObjectAction::to_string() const
     return {.title = "Add Object", .body = object_.to_string()};
 }
 
-UpdateObjectAction::UpdateObjectAction(const LevelObject& old_object, const LevelObject& new_object)
+UpdateObjectAction::UpdateObjectAction(const LevelObject& old_object, const LevelObject& new_object,
+                                       int floor)
     : old_object_(old_object)
     , new_object_(new_object)
+    , floor_(floor)
 {
 }
 
 void UpdateObjectAction::execute(EditorState& state, EditorLevel& level)
 {
-    level.update_object(new_object_);
+    level.update_object(new_object_, floor_);
 }
 
 void UpdateObjectAction::undo(EditorState& state, EditorLevel& level)
 {
-    level.update_object(old_object_);
+    level.update_object(old_object_, floor_);
 }
 
 ActionStrings UpdateObjectAction::to_string() const
@@ -147,8 +150,9 @@ ActionStrings UpdateObjectAction::to_string() const
     };
 }
 
-DeleteObjectAction::DeleteObjectAction(const LevelObject& object)
+DeleteObjectAction::DeleteObjectAction(const LevelObject& object, int floor)
     : object_(object)
+    , floor_{floor}
 {
 }
 
@@ -160,7 +164,7 @@ void DeleteObjectAction::execute(EditorState& state, EditorLevel& level)
 
 void DeleteObjectAction::undo(EditorState& state, EditorLevel& level)
 {
-    auto& new_object = level.add_object(object_);
+    auto& new_object = level.add_object(object_, floor_);
 
     // new_object.p = object_.props;
 

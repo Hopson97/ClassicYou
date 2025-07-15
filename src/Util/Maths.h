@@ -16,8 +16,8 @@ struct Transform
 
 struct Line
 {
-    glm::vec2 start;
-    glm::vec2 end;
+    glm::vec2 start{0};
+    glm::vec2 end{0};
 };
 
 glm::mat4 create_model_matrix(const Transform& transform);

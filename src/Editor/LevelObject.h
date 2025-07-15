@@ -13,8 +13,6 @@ struct EditorState;
 class ActionManager;
 class DrawingPad;
 
-
-
 // =======================================
 //     Object Type Template
 // =======================================
@@ -52,10 +50,10 @@ struct LevelObject
     void property_gui(EditorState& state, const LevelTextures& textures,
                       ActionManager& action_manager);
 
-    [[nodiscard]] LevelObjectsMesh3D to_geometry() const;
+    [[nodiscard]] LevelObjectsMesh3D to_geometry(int floor_number) const;
     [[nodiscard]] std::string to_string() const;
 
-    void render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object);
+    void render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object, bool is_current_floor);
     bool try_select_2d(glm::vec2 selection_tile, const LevelObject* p_active_object);
 };
 
@@ -79,8 +77,11 @@ struct EditorState
     };
 
     LevelObject* p_active_object_ = nullptr;
+
+    int current_floor = 0;
 };
 
 // Note: These are defined in LevelObjectGeometry.cpp
-[[nodiscard]] LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall);
-[[nodiscard]] LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform);
+[[nodiscard]] LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number);
+[[nodiscard]] LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform,
+                                                        int floor_number);

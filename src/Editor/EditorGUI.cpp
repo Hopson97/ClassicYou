@@ -20,9 +20,12 @@ namespace
         for (const auto& [name, texture] : textures.texture_2d_map)
         {
 
-            if (imgui_id != 0)
+            if (imgui_id != 0  )
             {
-                ImGui::SameLine();
+                if (imgui_id % 5 != 0)
+                {
+                    ImGui::SameLine();
+                }
             }
             ImGui::PushID(imgui_id++);
             std::string button_id = name + "###" + label;
@@ -117,10 +120,10 @@ namespace
             result.continuous_update |= true;
         }
 
+        // Called once when the user releases the mouse after changing the value - used to prevent
+        // creating history until a selection within the slider is made
         if (ImGui::IsItemDeactivatedAfterEdit())
         {
-            // Called once when the user releases the mouse after changing the value
-            // Great place to trigger a one-time event, like saving a setting
             result.action = true;
         }
     }
@@ -177,8 +180,8 @@ std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& texture
                 new_props.texture_bottom);
     enum_gui<PlatformStyle>(result, "Platform Style", platform.properties.style, new_props.style);
 
-    slider(result, "Width", new_props.width, 0.5f, 100.0f, 0.5f);
-    slider(result, "Depth", new_props.depth, 0.5f, 100.0f, 0.5f);
+    slider(result, "Width", new_props.width, 0.5f, 20.0f, 0.5f);
+    slider(result, "Depth", new_props.depth, 0.5f, 20.0f, 0.5f);
 
     // Multiplied by 2 when mesh is created
     slider(result, "Base Height", new_props.base, 0.0f, 0.9f, 0.1f);

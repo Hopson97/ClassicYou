@@ -7,14 +7,17 @@ namespace
     ///
     /// Platform Style UIs
     ///
-    std::vector<VertexLevelObjects> create_quad_platform_vertices(const PlatformObject& platform)
+    std::vector<VertexLevelObjects> create_quad_platform_vertices(const PlatformObject& platform,
+                                                                  int floor_number)
     {
         const auto& params = platform.parameters;
         const auto& props = platform.properties;
 
         float width = props.width;
         float depth = props.depth;
-        float ob = props.base * 2.0f;
+        float ob = props.base * FLOOR_HEIGHT;
+
+        ob += floor_number * FLOOR_HEIGHT;
 
         GLfloat texture_bottom = static_cast<float>(props.texture_top);
         GLfloat texture_top = static_cast<float>(props.texture_bottom);
@@ -36,14 +39,17 @@ namespace
         // clang-format on
     }
 
-    std::vector<VertexLevelObjects> create_diamond_platform_vertices(const PlatformObject& platform)
+    std::vector<VertexLevelObjects> create_diamond_platform_vertices(const PlatformObject& platform,
+                                                                     int floor_number)
     {
         const auto& params = platform.parameters;
         const auto& props = platform.properties;
 
         float width = props.width;
         float depth = props.depth;
-        float ob = props.base * 2.0f;
+        float ob = props.base * FLOOR_HEIGHT;
+
+        ob += floor_number * FLOOR_HEIGHT;
 
         GLfloat texture_bottom = static_cast<float>(props.texture_bottom);
         GLfloat texture_top = static_cast<float>(props.texture_top);
@@ -68,7 +74,7 @@ namespace
     }
 } // namespace
 
-LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall)
+LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number)
 {
     const auto& params = wall.parameters;
     const auto& props = wall.properties;
@@ -81,8 +87,11 @@ LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall)
     // Offset x, y, bottom (TODO: Top)
     auto ox = 0.0f;
     auto oz = 0.0f;
-    auto ob = props.base_height * 2.0f;
-    auto h = std::min(ob + props.wall_height * 2, 2.0f);
+    auto ob = props.base_height * FLOOR_HEIGHT;
+    auto h = std::min(ob + props.wall_height * 2, FLOOR_HEIGHT);
+
+    ob += floor_number * FLOOR_HEIGHT;
+    h += floor_number * FLOOR_HEIGHT;
 
     const auto length = glm::length(b - e);
 
@@ -115,7 +124,7 @@ LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall)
     return mesh;
 }
 
-LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform)
+LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform, int floor_number)
 {
     const auto& props = platform.properties;
 
@@ -125,10 +134,10 @@ LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform)
         switch (props.style)
         {
             case PlatformStyle::Quad:
-                return create_quad_platform_vertices(platform);
+                return create_quad_platform_vertices(platform, floor_number);
 
             case PlatformStyle::Diamond:
-                return create_diamond_platform_vertices(platform);
+                return create_diamond_platform_vertices(platform, floor_number);
         }
         return std::vector<VertexLevelObjects>{};
     }();

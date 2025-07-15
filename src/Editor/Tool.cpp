@@ -18,20 +18,24 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
             active_dragging_ = true;
             wall_line_.start = node;
             wall_line_.end = node;
-            wall_preview_ = generate_wall_mesh({
-                .properties = state.wall_default,
-                .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
-            });
+            wall_preview_ = generate_wall_mesh(
+                {
+                    .properties = state.wall_default,
+                    .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
+                },
+                state.current_floor);
             wall_preview_.buffer();
         }
     }
     else if (event.is<sf::Event::MouseMoved>())
     {
         wall_line_.end = node;
-        wall_preview_ = generate_wall_mesh({
-            .properties = state.wall_default,
-            .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
-        });
+        wall_preview_ = generate_wall_mesh(
+            {
+                .properties = state.wall_default,
+                .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
+            },
+            state.current_floor);
         wall_preview_.buffer();
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
@@ -42,10 +46,12 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
             if (glm::length(wall_line_.start - wall_line_.end) > 0.25f)
             {
 
-                actions.push_action(std::make_unique<AddObjectAction>(LevelObject{WallObject{
-                    .properties = state.wall_default,
-                    .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
-                }}));
+                actions.push_action(std::make_unique<AddObjectAction>(
+                    LevelObject{WallObject{
+                        .properties = state.wall_default,
+                        .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
+                    }},
+                    state.current_floor));
             }
             else
             {
@@ -76,7 +82,6 @@ ToolType CreateWallTool::get_tool_type() const
 {
     return ToolType::CreateWall;
 }
-
 
 UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall)
     : object_(object)
@@ -109,7 +114,7 @@ void UpdateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
                 wall_line_.start = wall_.parameters.line.start;
                 wall_line_.end = wall_.parameters.line.end;
 
-                wall_preview_ = generate_wall_mesh(wall_);
+                wall_preview_ = generate_wall_mesh(wall_, state.current_floor);
                 wall_preview_.buffer();
             }
         }
@@ -132,10 +137,12 @@ void UpdateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
                     break;
             }
 
-            wall_preview_ = generate_wall_mesh({
-                .properties = wall_.properties,
-                .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
-            });
+            wall_preview_ = generate_wall_mesh(
+                {
+                    .properties = wall_.properties,
+                    .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
+                },
+                state.current_floor);
             wall_preview_.buffer();
         }
     }
@@ -148,7 +155,8 @@ void UpdateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
             auto& new_wall = std::get<WallObject>(new_object.object_type);
             new_wall.parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}};
 
-            actions.push_action(std::make_unique<UpdateObjectAction>(object_, new_object));
+            actions.push_action(
+                std::make_unique<UpdateObjectAction>(object_, new_object, state.current_floor));
 
             object_ = new_object;
             wall_ = new_wall;
@@ -187,7 +195,6 @@ ToolType UpdateWallTool::get_tool_type() const
     return ToolType::UpdateWall;
 }
 
-
 CreatePlatformTool::CreatePlatformTool(const PlatformProps& platform_default)
     : p_platform_default_(&platform_default)
 {
@@ -200,18 +207,22 @@ void CreatePlatformTool::on_event(sf::Event event, glm::vec2 node, EditorState& 
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
-            actions.push_action(std::make_unique<AddObjectAction>(LevelObject{PlatformObject{
-                .properties = state.platform_default,
-                .parameters = {.position = node},
-            }}));
+            actions.push_action(
+                std::make_unique<AddObjectAction>(LevelObject{PlatformObject{
+                                                      .properties = state.platform_default,
+                                                      .parameters = {.position = node},
+                                                  }},
+                                                  state.current_floor));
         }
     }
     else if (event.is<sf::Event::MouseMoved>())
     {
-        platform_preview_ = generate_platform_mesh({
-            .properties = state.platform_default,
-            .parameters = {.position = node},
-        });
+        platform_preview_ = generate_platform_mesh(
+            {
+                .properties = state.platform_default,
+                .parameters = {.position = node},
+            },
+            state.current_floor);
         platform_preview_.buffer();
         tile_ = node;
     }

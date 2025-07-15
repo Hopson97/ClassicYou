@@ -27,10 +27,10 @@ DrawingPad::DrawingPad(glm::vec2 size, const glm::ivec2& selected_node)
           .far = 1000.0f,
       })
     , keybinds_2d_{
-          .foward = sf::Keyboard::Key::Up,
+          .foward = sf::Keyboard::Key::Down,
           .left = sf::Keyboard::Key::Left,
           .right = sf::Keyboard::Key::Right,
-          .back = sf::Keyboard::Key::Down,
+          .back = sf::Keyboard::Key::Up,
       }
       ,selected_node_(selected_node)
 {

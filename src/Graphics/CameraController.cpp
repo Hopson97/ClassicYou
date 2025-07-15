@@ -110,6 +110,6 @@ void free_camera_controller_2d(const Keyboard& keyboard, Camera& camera, sf::Tim
     {
         move += glm::vec3{1, 0, 0};
     }
-    camera.transform.position += move * 50.0f * dt.asSeconds();
+    camera.transform.position += move * 100.0f * dt.asSeconds();
     camera.update();
 }

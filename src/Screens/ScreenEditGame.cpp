@@ -1,5 +1,7 @@
 #include "ScreenEditGame.h"
 
+#include <ranges>
+
 #include <imgui.h>
 
 #include "../Editor/EditConstants.h"
@@ -10,14 +12,12 @@
 
 namespace
 {
-    constexpr std::array<std::pair<const char*, const char*>, 7> TEXTURES = {
-        std::make_pair("Red Bricks", "assets/textures/RedBricks.png"),
-        std::make_pair("Grey Bricks", "assets/textures/GreyBricks.png"),
-        std::make_pair("Bars", "assets/textures/Bars.png"),
-        std::make_pair("ChainFence", "assets/textures/ChainFence.png"),
-        std::make_pair("Grass", "assets/textures/Grass.png"),
-        std::make_pair("Dirt", "assets/textures/Dirt.png"),
-        std::make_pair("Glass", "assets/textures/Glass.png"),
+    constexpr std::array<const char*, 14> TEXTURE_NAMES = {
+        "Red Bricks", "Grey Bricks", "Stone Bricks", "Stone Bricks Mossy",
+        "Bars",       "Chain Fence", "Grass",        "Dirt",
+        "Glass",      "Sand",        "Bark",         "Leaf",
+        "Planks",     "Rock",
+
     };
 
     glm::ivec2 map_pixel_to_tile(glm::vec2 point, const Camera& camera)
@@ -58,12 +58,15 @@ bool ScreenEditGame::on_init()
     // -----------------------
     // ==== Load textures ====
     // -----------------------
-    // Load textures
     texture_.create(16, 32, gl::TEXTURE_PARAMS_NEAREST);
-
-    for (auto& texture : TEXTURES)
+    for (auto& texture : TEXTURE_NAMES)
     {
-        if (!level_textures_.register_texture(texture.first, texture.second, texture_))
+        std::string name = texture;
+        name.erase(std::remove_if(name.begin(), name.end(), [](char c) { return c == ' '; }),
+                   name.end());
+
+        if (!level_textures_.register_texture(texture, "assets/textures/World/" + name + ".png",
+                                              texture_))
         {
             return false;
         }
@@ -135,8 +138,8 @@ void ScreenEditGame::on_event(const sf::Event& event)
             case sf::Keyboard::Key::Delete:
                 if (editor_state_.p_active_object_)
                 {
-                    action_manager_.push_action(
-                        std::make_unique<DeleteObjectAction>(*editor_state_.p_active_object_));
+                    action_manager_.push_action(std::make_unique<DeleteObjectAction>(
+                        *editor_state_.p_active_object_, editor_state_.current_floor));
                     try_set_tool_to_wall = true;
                 }
                 break;
@@ -173,7 +176,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
             editor_state_.p_active_object_ =
                 level_.try_select(map_pixel_to_tile({mouse->position.x, mouse->position.y},
                                                     drawing_pad_.get_camera()),
-                                  editor_state_.p_active_object_);
+                                  editor_state_.p_active_object_, editor_state_.current_floor);
 
             if (editor_state_.p_active_object_)
             {
@@ -229,7 +232,7 @@ void ScreenEditGame::on_render(bool show_debug)
     glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
 
     tool_->render_preview_2d(drawing_pad_, editor_state_);
-    level_.render_2d(drawing_pad_, editor_state_.p_active_object_);
+    level_.render_2d(drawing_pad_, editor_state_.p_active_object_, editor_state_.current_floor);
 
     // Finalise 2d rendering
     drawing_pad_.display();
@@ -250,7 +253,8 @@ void ScreenEditGame::on_render(bool show_debug)
     world_geometry_shader_.set_uniform("model_matrix", create_model_matrix({}));
     tool_->render_preview();
 
-    level_.render(world_geometry_shader_, editor_state_.p_active_object_);
+    level_.render(world_geometry_shader_, editor_state_.p_active_object_,
+                  editor_state_.current_floor);
 
     // Ensure GUI etc are rendered using fill
     gl::polygon_mode(gl::Face::FrontAndBack, gl::PolygonMode::Fill);
@@ -272,18 +276,19 @@ void ScreenEditGame::render_scene(gl::Shader& shader)
 
     // Draw grid
     glLineWidth(2);
-    shader.set_uniform("model_matrix", create_model_matrix({}));
+    shader.set_uniform(
+        "model_matrix",
+        create_model_matrix({.position = {0, editor_state_.current_floor * FLOOR_HEIGHT, 0}}));
+
     shader.set_uniform("use_texture", false);
     grid_mesh_.bind().draw_elements(GL_LINES);
 
-    // Draw level
-
     // Draw the selection node
-    shader.set_uniform(
-        "model_matrix",
-        create_model_matrix({.position = {editor_state_.node_hovered.x / TILE_SIZE, 0,
-                                          editor_state_.node_hovered.y / TILE_SIZE},
-                             .rotation = {-90, 0, 0}}));
+    shader.set_uniform("model_matrix",
+                       create_model_matrix({.position = {editor_state_.node_hovered.x / TILE_SIZE,
+                                                         editor_state_.current_floor * FLOOR_HEIGHT,
+                                                         editor_state_.node_hovered.y / TILE_SIZE},
+                                            .rotation = {-90, 0, 0}}));
     shader.set_uniform("use_texture", false);
     selection_mesh_.bind().draw_elements();
 }
@@ -325,6 +330,23 @@ void ScreenEditGame::render_editor_ui()
             tool_ = std::make_unique<CreatePlatformTool>(editor_state_.platform_default);
             editor_state_.p_active_object_ = nullptr;
         }
+
+        ImGui::Separator();
+        ImGui::Text("Floors");
+        if (ImGui::Button("Floor Down"))
+        {
+            level_.ensure_floor_exists(--editor_state_.current_floor);
+            editor_state_.p_active_object_ = nullptr;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Floor Up"))
+        {
+            level_.ensure_floor_exists(++editor_state_.current_floor);
+            editor_state_.p_active_object_ = nullptr;
+        }
+
+        ImGui::Text("Lowest: %d - Current: %d - Highest: %d", level_.get_min_floor(),
+                    editor_state_.current_floor, level_.get_max_floor());
 
         ImGui::Separator();
 

@@ -18,7 +18,7 @@ namespace
     template <typename T>
     void property_gui(GUIFunction<T> function, const LevelTextures& textures,
                       ActionManager& action_manager, const T& object, LevelObject& current,
-                      typename T::PropertiesType& object_default)
+                      typename T::PropertiesType& object_default, int current_floor)
     {
 
         // Caching the object is a work-around due to an ImGui limitation that when the mouse is
@@ -49,7 +49,8 @@ namespace
             // happen and always trigger history to be recorded to enable undo/redo
             LevelObject new_object = current;
             std::get<T>(new_object.object_type).properties = new_props;
-            action_manager.push_action(std::make_unique<UpdateObjectAction>(current, new_object));
+            action_manager.push_action(
+                std::make_unique<UpdateObjectAction>(current, new_object, current_floor));
             last_store_action = true;
         }
         else if (update.continuous_update)
@@ -70,10 +71,11 @@ namespace
             // used to update the object such that only the "major" history is recorded (before and
             // after a slider was used) to enable proper undo and redo
             //
-            // Otherwise, the non-cached version can be used
-            action_manager.push_action(std::make_unique<UpdateObjectAction>(
-                                           update.action ? cached_object : current, new_object),
-                                       update.action);
+            // Otherwise, the non-cached version can be used.
+            action_manager.push_action(
+                std::make_unique<UpdateObjectAction>(update.action ? cached_object : current,
+                                                     new_object, current_floor),
+                update.action);
 
             last_store_action = update.action;
         }
@@ -95,24 +97,24 @@ void LevelObject::property_gui(EditorState& state, const LevelTextures& textures
     if (auto wall = std::get_if<WallObject>(&object_type))
     {
         ::property_gui<WallObject>(&wall_gui, textures, action_manager, *wall, *this,
-                                   state.wall_default);
+                                   state.wall_default, state.current_floor);
     }
     else if (auto platform = std::get_if<PlatformObject>(&object_type))
     {
         ::property_gui<PlatformObject>(&platform_gui, textures, action_manager, *platform, *this,
-                                       state.platform_default);
+                                       state.platform_default, state.current_floor);
     }
 }
 
-LevelObjectsMesh3D LevelObject::to_geometry() const
+LevelObjectsMesh3D LevelObject::to_geometry(int floor_number) const
 {
     if (auto wall = std::get_if<WallObject>(&object_type))
     {
-        return generate_wall_mesh(*wall);
+        return generate_wall_mesh(*wall, floor_number);
     }
     else if (auto platform = std::get_if<PlatformObject>(&object_type))
     {
-        return generate_platform_mesh(*platform);
+        return generate_platform_mesh(*platform, floor_number);
     }
 
     throw std::runtime_error("Must implement getting geometry for all types!");
@@ -144,10 +146,11 @@ std::string LevelObject::to_string() const
     return "";
 }
 
-void LevelObject::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object)
+void LevelObject::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object,
+                            bool is_current_floor)
 {
     auto is_selected = p_active_object && p_active_object->object_id == object_id;
-    auto colour = is_selected ? Colour::RED : Colour::WHITE;
+    auto colour = is_selected ? Colour::RED : (is_current_floor ? Colour::WHITE : Colour::GREY);
 
     if (auto wall = std::get_if<WallObject>(&object_type))
     {

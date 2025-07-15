@@ -24,24 +24,10 @@ class Action
     virtual ActionStrings to_string() const = 0;
 };
 
-class DeleteObjectAction final : public Action
-{
-  public:
-    DeleteObjectAction(const LevelObject& object);
-
-    void execute(EditorState& state, EditorLevel& level) override;
-    void undo(EditorState& state, EditorLevel& level) override;
-
-    ActionStrings to_string() const override;
-
-  private:
-    LevelObject object_;
-};
-
 class AddObjectAction final : public Action
 {
   public:
-    AddObjectAction(const LevelObject& object);
+    AddObjectAction(const LevelObject& object, int floor);
 
     void execute(EditorState& state, EditorLevel& level) override;
     void undo(EditorState& state, EditorLevel& level) override;
@@ -54,12 +40,14 @@ class AddObjectAction final : public Action
 
     // Flag for when re-doing this action, it uses the stored props rather than the default
     bool executed_ = false;
+
+    const int floor_;
 };
 
 class UpdateObjectAction final : public Action
 {
   public:
-    UpdateObjectAction(const LevelObject& old_object, const LevelObject& new_object);
+    UpdateObjectAction(const LevelObject& old_object, const LevelObject& new_object, int floor);
 
     void execute(EditorState& state, EditorLevel& level) override;
     void undo(EditorState& state, EditorLevel& level) override;
@@ -69,6 +57,23 @@ class UpdateObjectAction final : public Action
   private:
     const LevelObject old_object_;
     const LevelObject new_object_;
+
+    const int floor_;
+};
+
+class DeleteObjectAction final : public Action
+{
+  public:
+    DeleteObjectAction(const LevelObject& object, int floor);
+
+    void execute(EditorState& state, EditorLevel& level) override;
+    void undo(EditorState& state, EditorLevel& level) override;
+
+    ActionStrings to_string() const override;
+
+  private:
+    LevelObject object_;
+    const int floor_;
 };
 
 class ActionManager
