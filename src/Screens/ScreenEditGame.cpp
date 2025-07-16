@@ -6,11 +6,11 @@
 #include <imgui_stdlib.h>
 
 #include "../Editor/EditConstants.h"
+#include "../Editor/EditorGUI.h"
 #include "../Graphics/OpenGL/GLUtils.h"
 #include "../Util/ImGuiExtras.h"
 #include "../Util/Keyboard.h"
 #include "../Util/Util.h"
-#include "../Editor/EditorGUI.h"
 
 namespace
 {
@@ -191,14 +191,12 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 }
                 break;
 
-
             case sf::Keyboard::Key::Escape:
                 if (level_.changes_made_since_last_save())
                 {
                     std::println("TODO: Implement saving before loading menu");
                 }
-                level_.save("levels/backup.cly");
-                p_screen_manager_->pop_screen();
+                exit_editor();
                 break;
 
             default:
@@ -413,6 +411,12 @@ void ScreenEditGame::render_editor_ui()
     ImGui::End();
 }
 
+void ScreenEditGame::exit_editor()
+{
+    level_.save("levels/backup.cly");
+    p_screen_manager_->pop_screen();
+    window().setMouseCursorVisible(true);
+}
 
 void ScreenEditGame::save_level()
 {
@@ -465,13 +469,9 @@ void ScreenEditGame::show_menu_bar()
                 }
                 show_load_dialog_ = true;
             }
-            if (ImGui::MenuItem("Save"))        { save_level(); }
+            if (ImGui::MenuItem("Save"))        { save_level();             }
             if (ImGui::MenuItem("Save As..."))  { show_save_dialog_ = true; }
-            if (ImGui::MenuItem("Exit")) 
-            { 
-                level_.save("levels/backup.cly");
-                p_screen_manager_->pop_screen();
-            }
+            if (ImGui::MenuItem("Exit"))        { exit_editor();            }
             ImGui::EndMenu();
         }
 
@@ -485,7 +485,6 @@ void ScreenEditGame::show_menu_bar()
     }
     // clang-format on
 }
-
 
 void ScreenEditGame::debug_gui()
 {
@@ -505,4 +504,3 @@ bool ScreenEditGame::showing_dialog() const
 {
     return show_save_dialog_ || show_load_dialog_;
 }
-

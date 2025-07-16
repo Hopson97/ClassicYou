@@ -28,6 +28,8 @@ class ScreenEditGame final : public Screen
   private:
     void render_editor_ui();
 
+    void exit_editor();
+
     // Dialog GUIs for loading/editing etc
     void show_menu_bar();
     void save_level();

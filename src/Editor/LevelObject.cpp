@@ -147,7 +147,7 @@ std::string LevelObject::to_string() const
 }
 
 void LevelObject::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object,
-                            bool is_current_floor)
+                            bool is_current_floor) const
 {
     auto is_selected = p_active_object && p_active_object->object_id == object_id;
     auto colour = is_selected ? Colour::RED : (is_current_floor ? Colour::WHITE : Colour::GREY);
@@ -176,7 +176,7 @@ void LevelObject::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active
     }
 }
 
-bool LevelObject::try_select_2d(glm::vec2 selection_tile, const LevelObject* p_active_object)
+bool LevelObject::try_select_2d(glm::vec2 selection_tile, const LevelObject* p_active_object) const
 {
     if (auto wall = std::get_if<WallObject>(&object_type))
     {
@@ -260,12 +260,10 @@ bool LevelObject::deserialise_as_wall(const nlohmann::json& wall_json)
     wall.parameters.line.start = {params[0], params[1]};
     wall.parameters.line.end = {params[2], params[3]};
 
-
     wall.properties.texture_back = props[0];
     wall.properties.texture_front = props[1];
     wall.properties.wall_height = props[2];
     wall.properties.base_height = props[3];
-
 
     object_type = wall;
     return true;

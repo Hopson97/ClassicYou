@@ -2,7 +2,6 @@
 
 #include <variant>
 
-
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <nlohmann/json.hpp>
@@ -55,8 +54,9 @@ struct LevelObject
     [[nodiscard]] LevelObjectsMesh3D to_geometry(int floor_number) const;
     [[nodiscard]] std::string to_string() const;
 
-    void render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object, bool is_current_floor);
-    bool try_select_2d(glm::vec2 selection_tile, const LevelObject* p_active_object);
+    void render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object,
+                   bool is_current_floor) const;
+    bool try_select_2d(glm::vec2 selection_tile, const LevelObject* p_active_object) const;
 
     std::pair<nlohmann::json, std::string> serialise() const;
 
