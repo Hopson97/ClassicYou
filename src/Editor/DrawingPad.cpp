@@ -34,7 +34,8 @@ DrawingPad::DrawingPad(glm::vec2 size, const glm::ivec2& selected_node)
       }
       ,selected_node_(selected_node)
 {
-    camera_.transform.position = {0, 0, 10};
+    camera_.transform.position = {WORLD_SIZE * TILE_SIZE / 3,
+                                  WORLD_SIZE * TILE_SIZE - TILE_SIZE * TILE_SIZE, 10};
 }
 
 bool DrawingPad::init()

@@ -172,7 +172,9 @@ EditorLevel::Floor& EditorLevel::ensure_floor_exists(int floor_number)
     if (floors_.empty())
     {
         auto& floor = floors_.emplace_back();
-        floor.real_floor = 0;
+        floor.real_floor = floor_number;
+        min_floor_ = floor_number;
+        max_floor_ = floor_number;
         return floor;
     }
     else

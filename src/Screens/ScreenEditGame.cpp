@@ -135,7 +135,7 @@ bool ScreenEditGame::on_init()
     // -----------------------------------
     // ==== Entity Transform Creation ====
     // -----------------------------------
-    camera_.transform = {.position = {WORLD_SIZE / 2, 7, WORLD_SIZE + 1},
+    camera_.transform = {.position = {WORLD_SIZE / 2, 12, WORLD_SIZE + 3},
                          .rotation = {-40, 270.0f, 0.0f}};
 
     // Load the level if the name has been set already
@@ -389,12 +389,14 @@ void ScreenEditGame::render_editor_ui()
         {
             level_.ensure_floor_exists(--editor_state_.current_floor);
             editor_state_.p_active_object_ = nullptr;
+            camera_.transform.position.y -= FLOOR_HEIGHT;
         }
         ImGui::SameLine();
         if (ImGui::Button("Floor Up"))
         {
             level_.ensure_floor_exists(++editor_state_.current_floor);
             editor_state_.p_active_object_ = nullptr;
+            camera_.transform.position.y += FLOOR_HEIGHT;
         }
         ImGui::Text("Lowest: %d - Current: %d - Highest: %d", level_.get_min_floor(),
                     editor_state_.current_floor, level_.get_max_floor());
