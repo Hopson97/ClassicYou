@@ -35,3 +35,6 @@ std::pair<UpdateResult, WallProps> wall_gui(const LevelTextures& textures, const
 /// @brief Properties GUI for a platform object.
 std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& textures,
                                                     const PlatformObject& platform);
+
+
+bool display_level_list(bool& show_load_dialog, std::string& name);

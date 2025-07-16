@@ -3,12 +3,14 @@
 #include <ranges>
 
 #include <imgui.h>
+#include <imgui_stdlib.h>
 
 #include "../Editor/EditConstants.h"
 #include "../Graphics/OpenGL/GLUtils.h"
 #include "../Util/ImGuiExtras.h"
 #include "../Util/Keyboard.h"
 #include "../Util/Util.h"
+#include "../Editor/EditorGUI.h"
 
 namespace
 {
@@ -44,6 +46,22 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens)
       })
     , drawing_pad_({window().getSize().x / 2, window().getSize().y}, editor_state_.node_hovered)
     , action_manager_(editor_state_, level_)
+{
+}
+
+ScreenEditGame::ScreenEditGame(ScreenManager& screens, std::string level_name)
+    : Screen(screens)
+    , camera_(CameraConfig{
+          .type = CameraType::Perspective,
+          .viewport_size = {window().getSize().x / 2, window().getSize().y},
+          .near = 0.1f,
+          .far = 1000.0f,
+          .fov = 90.0f,
+      })
+    , drawing_pad_({window().getSize().x / 2, window().getSize().y}, editor_state_.node_hovered)
+    , action_manager_(editor_state_, level_)
+    , level_name_(level_name)
+    , level_name_actual_(level_name)
 {
 }
 
@@ -120,11 +138,22 @@ bool ScreenEditGame::on_init()
     camera_.transform = {.position = {WORLD_SIZE / 2, 7, WORLD_SIZE + 1},
                          .rotation = {-40, 270.0f, 0.0f}};
 
+    // Load the level if the name has been set already
+    if (!level_name_.empty())
+    {
+        level_.load("levels/" + level_name_ + ".cly");
+    }
+
     return true;
 }
 
 void ScreenEditGame::on_event(const sf::Event& event)
 {
+    if (showing_dialog())
+    {
+        return;
+    }
+
     bool try_set_tool_to_wall = false;
     if (auto key = event.getIf<sf::Event::KeyReleased>())
     {
@@ -144,6 +173,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 }
                 break;
 
+            // Undo functionality with CTRL+Z
             case sf::Keyboard::Key::Z:
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))
                 {
@@ -152,12 +182,23 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 }
                 break;
 
+            // Redo functionality with CTRL+Y
             case sf::Keyboard::Key::Y:
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))
                 {
                     action_manager_.redo_action();
                     try_set_tool_to_wall = true;
                 }
+                break;
+
+
+            case sf::Keyboard::Key::Escape:
+                if (level_.changes_made_since_last_save())
+                {
+                    std::println("TODO: Implement saving before loading menu");
+                }
+                level_.save("levels/backup.cly");
+                p_screen_manager_->pop_screen();
                 break;
 
             default:
@@ -171,6 +212,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
+        // Try to select an object (2D view)
         if (mouse->button == sf::Mouse::Button::Right)
         {
             editor_state_.p_active_object_ =
@@ -178,6 +220,8 @@ void ScreenEditGame::on_event(const sf::Event& event)
                                                     drawing_pad_.get_camera()),
                                   editor_state_.p_active_object_, editor_state_.current_floor);
 
+            // Editing a wall requires a special tool to enable resizing, so after a object it
+            // switches between tools
             if (editor_state_.p_active_object_)
             {
                 if (auto wall =
@@ -193,13 +237,14 @@ void ScreenEditGame::on_event(const sf::Event& event)
             }
             else
             {
+                // Nothing was selected, default back to CreateWallTOol
                 tool_ = std::make_unique<CreateWallTool>();
             }
         }
     }
 
     // Certain events cause issues if the current tool is UpdateWall (such as rendering the 2D
-    // preview of deleting walls) so this prevents that
+    // preview of deleting walls) so this prevents that.
     if (try_set_tool_to_wall)
     {
         if (tool_->get_tool_type() == ToolType::UpdateWall)
@@ -213,6 +258,10 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
 void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
 {
+    if (showing_dialog())
+    {
+        return;
+    }
     free_camera_controller(keyboard, camera_, dt, camera_keybinds_, window(), rotation_locked_);
     drawing_pad_.update(keyboard, dt);
 }
@@ -223,12 +272,10 @@ void ScreenEditGame::on_fixed_update(sf::Time dt)
 
 void ScreenEditGame::on_render(bool show_debug)
 {
-    if (show_debug)
-    {
-        debug_gui();
-    }
 
-    // Render the drawing pad to the left side
+    //=============================================
+    //          Render the 2D View
+    //=============================================
     glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
 
     tool_->render_preview_2d(drawing_pad_, editor_state_);
@@ -237,37 +284,18 @@ void ScreenEditGame::on_render(bool show_debug)
     // Finalise 2d rendering
     drawing_pad_.display();
 
-    // Render the actual scene
+    //=============================================
+    //      Render the non-scene 3D Object
+    // ============================================
     // Update the shader buffers
     matrices_ssbo_.buffer_sub_data(0, camera_.get_projection_matrix());
     matrices_ssbo_.buffer_sub_data(sizeof(glm::mat4), camera_.get_view_matrix());
 
+    // Render the drawing pad to the left side
     glViewport(window().getSize().x / 2, 0, window().getSize().x / 2, window().getSize().y);
     scene_shader_.bind();
-    render_scene(scene_shader_);
 
-    // Draw preview wall
-    world_geometry_shader_.bind();
-    texture_.bind(0);
-    world_geometry_shader_.set_uniform("use_texture", true);
-    world_geometry_shader_.set_uniform("model_matrix", create_model_matrix({}));
-    tool_->render_preview();
-
-    level_.render(world_geometry_shader_, editor_state_.p_active_object_,
-                  editor_state_.current_floor);
-
-    // Ensure GUI etc are rendered using fill
-    gl::polygon_mode(gl::Face::FrontAndBack, gl::PolygonMode::Fill);
-
-    render_editor_ui();
-
-    action_manager_.display_action_history();
-}
-
-void ScreenEditGame::render_scene(gl::Shader& shader)
-{
     // Set up the capabilities/ render states
-    shader.bind();
     gl::enable(gl::Capability::DepthTest);
     gl::enable(gl::Capability::CullFace);
     gl::cull_face(gl::Face::Back);
@@ -276,49 +304,74 @@ void ScreenEditGame::render_scene(gl::Shader& shader)
 
     // Draw grid
     glLineWidth(2);
-    shader.set_uniform(
+    scene_shader_.set_uniform(
         "model_matrix",
         create_model_matrix({.position = {0, editor_state_.current_floor * FLOOR_HEIGHT, 0}}));
 
-    shader.set_uniform("use_texture", false);
+    scene_shader_.set_uniform("use_texture", false);
     grid_mesh_.bind().draw_elements(GL_LINES);
 
+    //=============================================
+    //      Render the actual level and previews
+    // ============================================
     // Draw the selection node
-    shader.set_uniform("model_matrix",
-                       create_model_matrix({.position = {editor_state_.node_hovered.x / TILE_SIZE,
-                                                         editor_state_.current_floor * FLOOR_HEIGHT,
-                                                         editor_state_.node_hovered.y / TILE_SIZE},
-                                            .rotation = {-90, 0, 0}}));
-    shader.set_uniform("use_texture", false);
+    scene_shader_.set_uniform(
+        "model_matrix",
+        create_model_matrix({.position = {editor_state_.node_hovered.x / TILE_SIZE,
+                                          editor_state_.current_floor * FLOOR_HEIGHT,
+                                          editor_state_.node_hovered.y / TILE_SIZE},
+                             .rotation = {-90, 0, 0}}));
+    scene_shader_.set_uniform("use_texture", false);
     selection_mesh_.bind().draw_elements();
+
+    // Draw the current tool preview
+    world_geometry_shader_.bind();
+    texture_.bind(0);
+    world_geometry_shader_.set_uniform("use_texture", true);
+    world_geometry_shader_.set_uniform("model_matrix", create_model_matrix({}));
+    tool_->render_preview();
+
+    // Render the level itself
+    level_.render(world_geometry_shader_, editor_state_.p_active_object_,
+                  editor_state_.current_floor);
+
+    // Ensure GUI etc are rendered using fill
+    gl::polygon_mode(gl::Face::FrontAndBack, gl::PolygonMode::Fill);
+
+    //=============================
+    //     Render the ImGUI
+    // ============================
+    show_menu_bar();
+    render_editor_ui();
+    if (show_debug)
+    {
+        debug_gui();
+    }
+    action_manager_.display_action_history();
+
+    // Dialogs for saving and loading levels from the disk
+    if (show_save_dialog_)
+    {
+        show_save_dialog();
+    }
+
+    if (show_load_dialog_)
+    {
+        if (display_level_list(show_load_dialog_, level_name_))
+        {
+            show_load_dialog_ = false;
+            level_.load("levels/" + level_name_ + ".cly");
+            level_name_actual_ = level_name_;
+        }
+    }
 }
 
 void ScreenEditGame::render_editor_ui()
 {
-
-    // clang-format off
-    if (ImGui::BeginMainMenuBar())
+    // Draw the editor gui itself, such as property editors, changing floors, etc
+    if (ImGui::Begin("Editor"))
     {
-        if (ImGui::BeginMenu("File"))
-        {
-            if (ImGui::MenuItem("New")) {  }
-            if (ImGui::MenuItem("Open...")) {  }
-            if (ImGui::MenuItem("Save")) {  }
-            if (ImGui::MenuItem("Exit")) { p_screen_manager_->pop_screen(); }
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Edit"))
-        {
-            if (ImGui::MenuItem("Undo (CTRL + Z)")) { action_manager_.undo_action(); }
-            if (ImGui::MenuItem("Redo (CTRL + Y)")) { action_manager_.redo_action(); }
-            ImGui::EndMenu();
-        }
-        ImGui::EndMainMenuBar();
-    }
-    // clang-format on
-
-    if (ImGui ::Begin("Editor"))
-    {
+        // Display the list of objects that can be placed
         ImGui::Text("Tools");
         if (ImGui::Button("Wall"))
         {
@@ -331,6 +384,7 @@ void ScreenEditGame::render_editor_ui()
             editor_state_.p_active_object_ = nullptr;
         }
 
+        // Display the floor options, so going up or down a floor
         ImGui::Separator();
         ImGui::Text("Floors");
         if (ImGui::Button("Floor Down"))
@@ -344,12 +398,12 @@ void ScreenEditGame::render_editor_ui()
             level_.ensure_floor_exists(++editor_state_.current_floor);
             editor_state_.p_active_object_ = nullptr;
         }
-
         ImGui::Text("Lowest: %d - Current: %d - Highest: %d", level_.get_min_floor(),
                     editor_state_.current_floor, level_.get_max_floor());
 
         ImGui::Separator();
 
+        // When an object is selected, its properties is rendered
         if (editor_state_.p_active_object_)
         {
             editor_state_.p_active_object_->property_gui(editor_state_, level_textures_,
@@ -359,20 +413,96 @@ void ScreenEditGame::render_editor_ui()
     ImGui::End();
 }
 
+
+void ScreenEditGame::save_level()
+{
+    // Ensure a level name is actually set before saving
+    if (level_name_.empty())
+    {
+        show_save_dialog_ = true;
+    }
+    else
+    {
+        if (level_.save("levels/" + level_name_ + ".cly"))
+        {
+            level_name_actual_ = level_name_;
+        }
+        show_save_dialog_ = false;
+    }
+}
+
+void ScreenEditGame::show_save_dialog()
+{
+    if (ImGui::BeginCentredWindow("Save As...", {300, 200}))
+    {
+        ImGui::InputText("Level Name", &level_name_);
+        bool can_save = !level_name_.empty();
+
+        // Only enable the save button if a name is actually set
+        // clang-format off
+        if (!can_save)                  { ImGui::BeginDisabled();    } 
+        if (ImGui::Button("Save Game")) { save_level();              }
+        if (!can_save)                  { ImGui::EndDisabled();      }
+        if (ImGui::Button("Cancel"))    { show_save_dialog_ = false; }
+        // clang-format on
+    }
+    ImGui::End();
+}
+
+void ScreenEditGame::show_menu_bar()
+{
+    // clang-format off
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("New")) {  }
+            if (ImGui::MenuItem("Open...")) 
+            { 
+                if (level_.changes_made_since_last_save())
+                {
+                    std::println("TODO: Implement saving before loading menu");
+                }
+                show_load_dialog_ = true;
+            }
+            if (ImGui::MenuItem("Save"))        { save_level(); }
+            if (ImGui::MenuItem("Save As..."))  { show_save_dialog_ = true; }
+            if (ImGui::MenuItem("Exit")) 
+            { 
+                level_.save("levels/backup.cly");
+                p_screen_manager_->pop_screen();
+            }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Edit"))
+        {
+            if (ImGui::MenuItem("Undo (CTRL + Z)")) { action_manager_.undo_action(); }
+            if (ImGui::MenuItem("Redo (CTRL + Y)")) { action_manager_.redo_action(); }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+    // clang-format on
+}
+
+
 void ScreenEditGame::debug_gui()
 {
     camera_.gui("Camera");
 
+    // clang-format off
     if (ImGui::Begin("Camera Kind"))
     {
-        if (ImGui::Button("Perspective"))
-        {
-            camera_.set_type(CameraType::Perspective);
-        }
-        if (ImGui::Button("Orthographic"))
-        {
-            camera_.set_type(CameraType::OrthographicWorld);
-        }
+        if (ImGui::Button("Perspective"))   { camera_.set_type(CameraType::Perspective);        }
+        if (ImGui::Button("Orthographic"))  { camera_.set_type(CameraType::OrthographicWorld);  }
     }
+    // clang-format on
     ImGui::End();
 }
+
+bool ScreenEditGame::showing_dialog() const
+{
+    return show_save_dialog_ || show_load_dialog_;
+}
+

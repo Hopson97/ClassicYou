@@ -23,6 +23,6 @@ vcpkg_installed/
 
 classic-you/
 
-*.blend
-*.blend1
-urbania
+*.cly
+
+ClassicYou/

@@ -1,9 +1,11 @@
 #pragma once
 
+#include <variant>
+
+
 #include <glad/glad.h>
 #include <glm/glm.hpp>
-
-#include <variant>
+#include <nlohmann/json.hpp>
 
 #include "../Graphics/Mesh.h"
 #include "ObjectProperties.h"
@@ -55,6 +57,11 @@ struct LevelObject
 
     void render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object, bool is_current_floor);
     bool try_select_2d(glm::vec2 selection_tile, const LevelObject* p_active_object);
+
+    std::pair<nlohmann::json, std::string> serialise() const;
+
+    bool deserialise_as_wall(const nlohmann::json& wall);
+    bool deserialise_as_platform(const nlohmann::json& platform);
 };
 
 struct EditorState

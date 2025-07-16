@@ -7,6 +7,7 @@
 #include "../Util/ImGuiExtras.h"
 #include "ScreenEditGame.h"
 #include "ScreenPlaying.h"
+#include "../Editor/EditorGUI.h"
 
 ScreenMainMenu::ScreenMainMenu(ScreenManager& screens)
     : Screen(screens)
@@ -54,20 +55,27 @@ void ScreenMainMenu::main_menu()
 
     if (ImGui::CustomButton("Create Game"))
     {
-        current_menu_ = Menu::CreateMenu;
-    }
-    if (ImGui::CustomButton("Quick Create Game"))
-    {
         p_screen_manager_->push_screen(std::make_unique<ScreenEditGame>(*p_screen_manager_));
+        // current_menu_ = Menu::CreateMenu;
     }
-    if (ImGui::CustomButton("Play"))
+    if (ImGui::CustomButton("Load Edit Game"))
     {
+        show_load_dialog_ = true;
         // p_screen_manager_->push_screen(std::make_unique<ScreenPlaying>(*p_screen_manager_));
-
     }
     if (ImGui::CustomButton("Exit"))
     {
         p_screen_manager_->pop_screen();
+    }
+
+    if (show_load_dialog_)
+    {
+        if (display_level_list(show_load_dialog_, load_level_name_))
+        {
+            show_load_dialog_ = false;
+            p_screen_manager_->push_screen(
+                std::make_unique<ScreenEditGame>(*p_screen_manager_, load_level_name_));
+        }
     }
 }
 

@@ -27,4 +27,18 @@ namespace ImGui
         }
         return false;
     }
+    bool BeginCentredWindow(const char* name, const ImVec2& size)
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        ImVec2 window_size = io.DisplaySize;
+
+        ImGui::SetNextWindowPos({(window_size.x - size.x) * 0.5f, (window_size.y - size.y) * 0.5f},
+                                ImGuiCond_Always);
+        ImGui::SetNextWindowSize(size, ImGuiCond_Always);
+
+        return ImGui::Begin(name, nullptr,
+                            ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse |
+                                ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
+                                ImGuiWindowFlags_AlwaysAutoResize);
+    }
 } // namespace ImGui

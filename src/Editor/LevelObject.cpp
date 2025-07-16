@@ -209,3 +209,93 @@ bool LevelObject::try_select_2d(glm::vec2 selection_tile, const LevelObject* p_a
     }
     return false;
 }
+
+std::pair<nlohmann::json, std::string> LevelObject::serialise() const
+{
+    std::string type = "";
+    nlohmann::json object;
+    if (auto wall = std::get_if<WallObject>(&object_type))
+    {
+        type = "wall";
+        auto& params = wall->parameters;
+        auto& props = wall->properties;
+
+        object["params"] = {params.line.start.x, params.line.start.y, params.line.end.x,
+                            params.line.end.y};
+
+        object["props"] = {props.texture_back, props.texture_front, props.wall_height,
+                           props.base_height};
+    }
+    else if (auto platform = std::get_if<PlatformObject>(&object_type))
+    {
+        type = "platform";
+        auto& params = platform->parameters;
+        auto& props = platform->properties;
+
+        object["params"] = {params.position.x, params.position.y};
+
+        object["props"] = {props.texture_bottom, props.texture_top, props.width,
+                           props.depth,          props.base,        (int)props.style};
+    }
+
+    return {object, type};
+}
+
+bool LevelObject::deserialise_as_wall(const nlohmann::json& wall_json)
+{
+    WallObject wall;
+
+    auto params = wall_json["params"];
+    auto props = wall_json["props"];
+    if (params.size() < 4)
+    {
+        std::println("Invalid wall parameters, expected 4 values");
+        return false;
+    }
+    if (props.size() < 4)
+    {
+        std::println("Invalid wall properties, expected 4 values");
+        return false;
+    }
+    wall.parameters.line.start = {params[0], params[1]};
+    wall.parameters.line.end = {params[2], params[3]};
+
+
+    wall.properties.texture_back = props[0];
+    wall.properties.texture_front = props[1];
+    wall.properties.wall_height = props[2];
+    wall.properties.base_height = props[3];
+
+
+    object_type = wall;
+    return true;
+}
+
+bool LevelObject::deserialise_as_platform(const nlohmann::json& platform_json)
+{
+    PlatformObject platform;
+
+    auto params = platform_json["params"];
+    auto props = platform_json["props"];
+    if (params.size() < 2)
+    {
+        std::println("Invalid platform parameters, expected 2 values");
+    }
+    if (props.size() < 6)
+    {
+        std::println("Invalid platform properties, expected 5 values");
+        return false;
+    }
+
+    platform.parameters.position = {params[0], params[1]};
+
+    platform.properties.texture_bottom = props[0];
+    platform.properties.texture_top = props[1];
+    platform.properties.width = props[2];
+    platform.properties.depth = props[3];
+    platform.properties.base = props[4];
+    platform.properties.style = (PlatformStyle)(props[5]);
+
+    object_type = platform;
+    return true;
+}

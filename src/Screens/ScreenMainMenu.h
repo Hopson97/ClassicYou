@@ -20,5 +20,9 @@ class ScreenMainMenu final : public Screen
     void main_menu();
     void create_game_menu();
 
+
     Menu current_menu_ = Menu::MainMenu;
+
+    bool show_load_dialog_ = false;
+    std::string load_level_name_;
 };

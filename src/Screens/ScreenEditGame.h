@@ -17,6 +17,7 @@ class ScreenEditGame final : public Screen
 {
   public:
     ScreenEditGame(ScreenManager& screens);
+    ScreenEditGame(ScreenManager& screens, std::string level_name);
 
     bool on_init() override;
     void on_event(const sf::Event& event) override;
@@ -26,9 +27,14 @@ class ScreenEditGame final : public Screen
 
   private:
     void render_editor_ui();
-    void debug_gui();
 
-    void render_scene(gl::Shader& shader);
+    // Dialog GUIs for loading/editing etc
+    void show_menu_bar();
+    void save_level();
+    void show_save_dialog();
+
+    void debug_gui();
+    bool showing_dialog() const;
 
     Camera camera_;
 
@@ -54,4 +60,12 @@ class ScreenEditGame final : public Screen
     EditorLevel level_;
     std::unique_ptr<ITool> tool_;
     ActionManager action_manager_;
+
+    bool show_save_dialog_ = false;
+    bool show_load_dialog_ = false;
+
+    // Level name is used in the save dialog such that the actual name is not overriden if the save
+    // operation is cancelled
+    std::string level_name_;
+    std::string level_name_actual_;
 };

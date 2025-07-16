@@ -64,8 +64,6 @@ glm::vec3 backward_vector_flat(const glm::vec3& rotation)
 
 float distance_to_line(const glm::vec2& point, const Line& line)
 {
-    glm::vec2 vect;
-
     auto length = glm::distance2(line.start, line.end);
     if (length == 0)
     {

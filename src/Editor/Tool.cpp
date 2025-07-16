@@ -238,7 +238,6 @@ void CreatePlatformTool::render_preview()
 
 void CreatePlatformTool::render_preview_2d(DrawingPad& drawing_pad, const EditorState& state)
 {
-    // TODO Pass in the default here
     if (state.platform_default.style == PlatformStyle::Quad)
     {
         drawing_pad.render_quad(

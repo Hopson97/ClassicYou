@@ -144,9 +144,6 @@ namespace
 
             switch (key->code)
             {
-                case sf::Keyboard::Key::Escape:
-                    close_requested = true;
-                    break;
 
                 case sf::Keyboard::Key::F1:
                     show_debug_info = !show_debug_info;

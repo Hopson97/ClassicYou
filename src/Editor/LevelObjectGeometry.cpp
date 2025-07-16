@@ -84,7 +84,7 @@ LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number)
     // End
     auto e = glm::vec3{params.line.end.x, 0, params.line.end.y} / static_cast<float>(TILE_SIZE);
 
-    // Offset x, y, bottom (TODO: Top)
+    // Offset x, y
     auto ox = 0.0f;
     auto oz = 0.0f;
     auto ob = props.base_height * FLOOR_HEIGHT;

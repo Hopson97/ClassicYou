@@ -1,5 +1,7 @@
 #include "EditorGUI.h"
 
+#include <filesystem>
+
 #include <SFML/Window/Mouse.hpp>
 #include <imgui.h>
 #include <magic_enum/magic_enum_all.hpp>
@@ -20,7 +22,7 @@ namespace
         for (const auto& [name, texture] : textures.texture_2d_map)
         {
 
-            if (imgui_id != 0  )
+            if (imgui_id != 0)
             {
                 if (imgui_id % 5 != 0)
                 {
@@ -190,4 +192,36 @@ std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& texture
         check_prop_updated(result, platform.properties, new_props),
         new_props,
     };
+}
+
+bool display_level_list(bool& show_load_dialog, std::string& name)
+{
+    bool result = false;
+
+    if (ImGui::BeginCentredWindow("Load Level", {800, 800}))
+    {
+        ImGui::Text("Select a level to load:");
+        ImGui::Separator();
+
+        for (const auto& entry : std::filesystem::directory_iterator("./levels"))
+        {
+            if (entry.is_regular_file() && entry.path().extension() == ".cly")
+            {
+                std::string filename = entry.path().stem().string();
+                if (ImGui::Button(filename.c_str()))
+                {
+                    name = filename;
+                    result = true;
+                    break;
+                }
+            }
+        }
+
+        if (ImGui::Button("Cancel"))
+        {
+            show_load_dialog = false;
+        }
+    }
+    ImGui::End();
+    return result;
 }
