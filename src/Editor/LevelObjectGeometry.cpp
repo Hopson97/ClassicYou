@@ -149,3 +149,51 @@ LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform, int fl
 
     return mesh;
 }
+
+LevelObjectsMesh3D generate_ground_mesh(const GroundObject& ground, int floor_number)
+{
+    const auto& params = ground.parameters;
+    const auto& props = ground.properties;
+
+    auto ob = floor_number * FLOOR_HEIGHT;
+
+    auto texture_bottom = static_cast<float>(props.texture_top);
+    auto texture_top = static_cast<float>(props.texture_bottom);
+
+    auto p1 = glm::vec3{params.corner_top_left.x, 0, params.corner_top_left.x} /
+              static_cast<float>(TILE_SIZE);
+    auto p2 = glm::vec3{params.corner_top_right.x, 0, params.corner_top_right.y} /
+              static_cast<float>(TILE_SIZE);
+
+    auto p3 = glm::vec3{params.corner_bottom_right.x, 0, params.corner_bottom_right.y} /
+              static_cast<float>(TILE_SIZE);
+
+    auto p4 = glm::vec3{params.corner_bottom_left.x, 0, params.corner_bottom_left.y} /
+              static_cast<float>(TILE_SIZE);
+
+    LevelObjectsMesh3D mesh;
+
+    // clang-format off
+    mesh.vertices = {
+            // Top
+            {{p1.x, ob, p1.z,},  {0,                    0,                      texture_bottom},    {0, 1, 0}},
+            {{p2.x, ob, p2.z,},  {0,                    glm::length(p2 - p1),   texture_bottom},    {0, 1, 0}},
+            {{p3.x, ob, p3.z },  {glm::length(p3 - p2), glm::length(p3 - p2),   texture_bottom},    {0, 1, 0}},
+            {{p4.x, ob, p4.z,},  {glm::length(p4 - p1), 0,                      texture_bottom},    {0, 1, 0}},
+
+            // Bottom
+            {{p1.x, ob, p1.z},  {0,                     0,                      texture_top},   {0, -1, 0}},
+            {{p2.x, ob, p2.z},  {0,                     glm::length(p2 - p1),   texture_top},   {0, -1, 0}},
+            {{p3.x, ob, p3.z},  {glm::length(p3 - p2),  glm::length(p3 - p2),   texture_top},   {0, -1, 0}},
+            {{p4.x, ob, p4.z},  {glm::length(p4 - p1),  0,                      texture_top},   {0, -1, 0}},
+        };
+    // clang-format on
+
+    mesh.indices = {// Front
+                    0, 1, 2, 2, 3, 0,
+                    // Back
+                    6, 5, 4, 4, 7, 6};
+
+    return mesh;
+    // clang-format on
+}

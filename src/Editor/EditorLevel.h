@@ -23,11 +23,17 @@ class EditorLevel
 
     struct Floor
     {
-        // The vector floors do not need to be in order, to allow easier "negative" floors.
-        int real_floor = 0;
+        Floor(int real_floor, ObjectId ground_object_id);
+
+        void update_mesh();
 
         std::vector<LevelObject> objects;
         std::vector<LevelMesh> meshes;
+
+        LevelObject ground;
+        LevelObjectsMesh3D ground_mesh;
+
+        int real_floor = 0;
     };
 
   public:
@@ -35,6 +41,7 @@ class EditorLevel
 
     // Wall& add_wall(const WallParameters& parameters, const WallProps& props);
     LevelObject& add_object(const LevelObject& object, int floor_number);
+    LevelObject& add_object(const LevelObject& object, Floor& floor);
 
     void update_object(const LevelObject& object, int floor_number);
     void remove_object(std::size_t id);
@@ -85,13 +92,15 @@ class EditorLevel
 
     bool changes_made_since_last_save() const;
 
+    void floor_gui(EditorState& state, const LevelTextures& textures);
+
   private:
     bool do_save(const std::filesystem::path& path) const;
     std::optional<Floor*> find_floor(int floor_number);
     std::optional<const Floor*> find_floor(int floor_number) const;
 
     template <typename LoadFunc>
-    void load_objects(nlohmann::json& json, const char* object_key, int floor_number, LoadFunc func)
+    void load_objects(nlohmann::json& json, const char* object_key, Floor& floor, LoadFunc func)
     {
         if (json.find(object_key) != json.end())
         {
@@ -99,12 +108,10 @@ class EditorLevel
             {
                 LevelObject level_object{0};
                 func(level_object, object);
-                add_object(level_object, floor_number);
+                add_object(level_object, floor);
             }
         }
     }
-
-
 
   private:
     std::vector<Floor> floors_;

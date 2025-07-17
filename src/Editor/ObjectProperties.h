@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 
 #include "../Util/Maths.h"
+#include "EditConstants.h"
 
 class LevelTextures;
 
@@ -39,6 +40,12 @@ inline bool operator!=(const WallProps& lhs, const WallProps& rhs)
 // =======================================
 //      Platform Object Types
 // =======================================
+
+struct PlatformParameters
+{
+    glm::vec2 position{0};
+};
+
 enum class PlatformStyle
 {
     Quad,
@@ -48,8 +55,8 @@ enum class PlatformStyle
 
 struct PlatformProps
 {
-    TextureProp texture_top;
-    TextureProp texture_bottom;
+    TextureProp texture_top{0};
+    TextureProp texture_bottom{0};
     float width = 1;
     float depth = 1;
     float base = 0;
@@ -71,7 +78,31 @@ inline bool operator!=(const PlatformProps& lhs, const PlatformProps& rhs)
     return !(lhs == rhs);
 }
 
-struct PlatformParameters
+// =======================================
+//      Ground Object Types
+// =======================================
+struct GroundParameters
 {
-    glm::vec2 position{0};
+    glm::vec2 corner_top_left{0};
+    glm::vec2 corner_top_right{0, WORLD_SIZE* TILE_SIZE};
+    glm::vec2 corner_bottom_right{WORLD_SIZE * TILE_SIZE, WORLD_SIZE* TILE_SIZE};
+    glm::vec2 corner_bottom_left{WORLD_SIZE * TILE_SIZE, 0};
 };
+
+struct GroundProps
+{
+    TextureProp texture_top{0};
+    TextureProp texture_bottom{0};
+    bool visible = false;
+};
+
+inline bool operator==(const GroundProps& lhs, const GroundProps& rhs)
+{
+    return lhs.texture_top == rhs.texture_top && lhs.texture_bottom == rhs.texture_bottom &&
+           lhs.visible == rhs.visible;
+}
+
+inline bool operator!=(const GroundProps& lhs, const GroundProps& rhs)
+{
+    return !(lhs == rhs);
+}

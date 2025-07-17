@@ -116,6 +116,10 @@ LevelObjectsMesh3D LevelObject::to_geometry(int floor_number) const
     {
         return generate_platform_mesh(*platform, floor_number);
     }
+    else if (auto ground = std::get_if<GroundObject>(&object_type))
+    {
+        return generate_ground_mesh(*ground, floor_number);
+    }
 
     throw std::runtime_error("Must implement getting geometry for all types!");
 }
@@ -142,6 +146,18 @@ std::string LevelObject::to_string() const
                            platform->properties.base,
                            magic_enum::enum_name(platform->properties.style),
                            platform->parameters.position.x, platform->parameters.position.y);
+    }
+    else if (auto ground = std::get_if<GroundObject>(&object_type))
+    {
+        return std::format(
+            "Props:\n Texture Top: {}\n Texture Bottom: {}\nParameters:\n "
+            "Corner Top Left: ({:.2f}, {:.2f})\n - Corner Top Right: ({:.2f}, {:.2f})\n "
+            "Corner Bottom Right: ({:.2f}, {:.2f})\n - Corner Bottom Left: ({:.2f}",
+            ground->properties.texture_top, ground->properties.texture_bottom,
+            ground->parameters.corner_top_left.x, ground->parameters.corner_top_left.y,
+            ground->parameters.corner_top_right.x, ground->parameters.corner_top_right.y,
+            ground->parameters.corner_bottom_right.x, ground->parameters.corner_bottom_right.y,
+            ground->parameters.corner_bottom_left.x, ground->parameters.corner_bottom_left.y);
     }
     return "";
 }
@@ -173,6 +189,26 @@ void LevelObject::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active
         {
             drawing_pad.render_diamond(position, {width, depth}, colour);
         }
+    }
+    else if (auto ground = std::get_if<GroundObject>(&object_type))
+    {
+        const auto& params = ground->parameters;
+        auto& tl = params.corner_top_left;
+        auto& tr = params.corner_top_right;
+        auto& br = params.corner_bottom_right;
+        auto& bl = params.corner_bottom_right;
+
+        drawing_pad.render_line(tl, tl + glm::vec2(TILE_SIZE, 0), colour, 5);
+        drawing_pad.render_line(tl, tl - glm::vec2(0, TILE_SIZE), colour, 5);
+
+        drawing_pad.render_line(tr, tr - glm::vec2(TILE_SIZE, 0), colour, 5);
+        drawing_pad.render_line(tr, tr - glm::vec2(0, TILE_SIZE), colour, 5);
+
+        drawing_pad.render_line(br, br - glm::vec2(TILE_SIZE, 0), colour, 5);
+        drawing_pad.render_line(br, br + glm::vec2(0, TILE_SIZE), colour, 5);
+
+        drawing_pad.render_line(bl, bl + glm::vec2(TILE_SIZE, 0), colour, 5);
+        drawing_pad.render_line(bl, bl + glm::vec2(0, TILE_SIZE), colour, 5);
     }
 }
 
@@ -237,6 +273,19 @@ std::pair<nlohmann::json, std::string> LevelObject::serialise() const
         object["props"] = {props.texture_bottom, props.texture_top, props.width,
                            props.depth,          props.base,        (int)props.style};
     }
+    else if (auto ground = std::get_if<GroundObject>(&object_type))
+    {
+        type = "ground";
+        auto& params = ground->parameters;
+        auto& props = ground->properties;
+
+        object["params"] = {params.corner_top_left.x,     params.corner_top_left.y,
+                            params.corner_top_right.x,    params.corner_top_right.y,
+                            params.corner_bottom_right.x, params.corner_bottom_right.y,
+                            params.corner_bottom_left.x,  params.corner_bottom_left.y};
+
+        object["props"] = {props.texture_top, props.texture_bottom, props.visible};
+    }
 
     return {object, type};
 }
@@ -295,5 +344,35 @@ bool LevelObject::deserialise_as_platform(const nlohmann::json& platform_json)
     platform.properties.style = (PlatformStyle)(props[5]);
 
     object_type = platform;
+    return true;
+}
+
+bool LevelObject::deserialise_as_ground(const nlohmann::json& platform)
+{
+    GroundObject ground;
+
+    auto params = platform["params"];
+    auto props = platform["props"];
+    if (params.size() < 8)
+    {
+        std::println("Invalid ground parameters, expected 8 values");
+        return false;
+    }
+    if (props.size() < 3)
+    {
+        std::println("Invalid ground properties, expected 3 values");
+        return false;
+    }
+
+    ground.parameters.corner_top_left = {params[0], params[1]};
+    ground.parameters.corner_top_right = {params[2], params[3]};
+    ground.parameters.corner_bottom_right = {params[4], params[5]};
+    ground.parameters.corner_bottom_left = {params[6], params[7]};
+
+    ground.properties.texture_top = props[0];
+    ground.properties.texture_bottom = props[1];
+    ground.properties.visible = props[2];
+
+    object_type = ground;
     return true;
 }

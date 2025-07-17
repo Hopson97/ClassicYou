@@ -11,6 +11,9 @@
 
 namespace
 {
+    // Padding for surrounding image buttons
+    constexpr ImVec2 BORDER_PADDING = {4, 4};
+
     /// Displays a list of available textures as a list of buttons, returns the ID of the given
     /// texture if a button is clicked
     int texture_prop_gui(const char* label, TextureProp current_texture,
@@ -33,7 +36,7 @@ namespace
             std::string button_id = name + "###" + label;
             auto old_texture = current_texture;
 
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 6));
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, BORDER_PADDING);
 
             // Give selected textures a red border
             if (auto texture_id = textures.get_texture(name))
@@ -42,7 +45,7 @@ namespace
                 {
                     ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(255, 0, 0, 255));
                     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.0f);
-                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 6));
+                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, BORDER_PADDING);
                 }
             }
 
@@ -153,10 +156,22 @@ std::pair<UpdateResult, WallProps> wall_gui(const LevelTextures& textures, const
 
     WallProps new_props = wall.properties;
 
-    texture_gui(result, "Front Texture", textures, wall.properties.texture_front,
-                new_props.texture_front);
-    texture_gui(result, "Back Texture", textures, wall.properties.texture_back,
-                new_props.texture_back);
+    if (ImGui::BeginTabBar("Textures_wall"))
+    {
+        if (ImGui::BeginTabItem("Front Texture"))
+        {
+            texture_gui(result, "Front Texture", textures, wall.properties.texture_front,
+                        new_props.texture_front);
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Back Texture"))
+        {
+            texture_gui(result, "Back Texture", textures, wall.properties.texture_back,
+                        new_props.texture_back);
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
 
     // When the wall is generating the mesh, these values are multiplied by 2.0f
     slider(result, "Base Height", new_props.base_height, 0.0f, 0.9f, 0.1f);
@@ -176,10 +191,22 @@ std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& texture
 
     PlatformProps new_props = platform.properties;
 
-    texture_gui(result, "Top Texture", textures, platform.properties.texture_top,
-                new_props.texture_top);
-    texture_gui(result, "Bottom Texture", textures, platform.properties.texture_bottom,
-                new_props.texture_bottom);
+    if (ImGui::BeginTabBar("Textures_platform"))
+    {
+        if (ImGui::BeginTabItem("Top Texture"))
+        {
+            texture_gui(result, "Top Texture", textures, platform.properties.texture_top,
+                        new_props.texture_top);
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Bottom Texture"))
+        {
+            texture_gui(result, "Bottom Texture", textures, platform.properties.texture_bottom,
+                        new_props.texture_bottom);
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
     enum_gui<PlatformStyle>(result, "Platform Style", platform.properties.style, new_props.style);
 
     slider(result, "Width", new_props.width, 0.5f, 20.0f, 0.5f);
@@ -190,6 +217,53 @@ std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& texture
 
     return {
         check_prop_updated(result, platform.properties, new_props),
+        new_props,
+    };
+}
+
+std::pair<UpdateResult, GroundProps> ground_gui(const LevelTextures& textures,
+                                                const GroundObject& ground)
+{
+    UpdateResult result;
+
+    GroundProps new_props = ground.properties;
+
+    if (ImGui::Checkbox("Show Floor?", &new_props.visible))
+    {
+        result.continuous_update |= true;
+    }
+
+    if (new_props.visible)
+    {
+        if (ImGui::BeginTabBar("Textures_ground"))
+        {
+            if (ImGui::BeginTabItem("Top Texture"))
+            {
+                texture_gui(result, "Top Texture", textures, ground.properties.texture_top,
+                            new_props.texture_top);
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Bottom Texture"))
+            {
+                texture_gui(result, "Bottom Texture", textures, ground.properties.texture_bottom,
+                            new_props.texture_bottom);
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
+        }
+    }
+
+    // For now the ground is stored seperately to the rest of the objects as it is one-per-floor
+    // This means actions do not work, hence this work-around
+    if (result.always_update)
+    {
+        result.always_update = false;
+        result.continuous_update = true;
+        result.action = false;
+    }
+
+    return {
+        check_prop_updated(result, ground.properties, new_props),
         new_props,
     };
 }

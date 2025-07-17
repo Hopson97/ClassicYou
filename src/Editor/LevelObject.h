@@ -30,6 +30,9 @@ struct ObjectType
 
 using WallObject = ObjectType<WallProps, WallParameters>;
 using PlatformObject = ObjectType<PlatformProps, PlatformParameters>;
+using GroundObject = ObjectType<GroundProps, GroundParameters>;
+
+using GeometryObjects = std::variant<WallObject, PlatformObject, GroundObject>;
 
 struct LevelObject
 {
@@ -46,7 +49,7 @@ struct LevelObject
 
     int object_id = 0;
 
-    std::variant<WallObject, PlatformObject> object_type;
+    GeometryObjects object_type;
 
     void property_gui(EditorState& state, const LevelTextures& textures,
                       ActionManager& action_manager);
@@ -62,6 +65,8 @@ struct LevelObject
 
     bool deserialise_as_wall(const nlohmann::json& wall);
     bool deserialise_as_platform(const nlohmann::json& platform);
+    bool deserialise_as_ground(const nlohmann::json& platform);
+
 };
 
 struct EditorState
@@ -92,3 +97,5 @@ struct EditorState
 [[nodiscard]] LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number);
 [[nodiscard]] LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform,
                                                         int floor_number);
+
+[[nodiscard]] LevelObjectsMesh3D generate_ground_mesh(const GroundObject& ground, int floor_number);

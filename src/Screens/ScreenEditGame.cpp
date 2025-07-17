@@ -382,8 +382,9 @@ void ScreenEditGame::render_editor_ui()
             editor_state_.p_active_object_ = nullptr;
         }
 
-        // Display the floor options, so going up or down a floor
         ImGui::Separator();
+
+        // Display the floor options, so going up or down a floor
         ImGui::Text("Floors");
         if (ImGui::Button("Floor Down"))
         {
@@ -401,16 +402,25 @@ void ScreenEditGame::render_editor_ui()
         ImGui::Text("Lowest: %d - Current: %d - Highest: %d", level_.get_min_floor(),
                     editor_state_.current_floor, level_.get_max_floor());
 
-        ImGui::Separator();
+        if (ImGui::CollapsingHeader("Floor Settings"))
+        {
+            level_.floor_gui(editor_state_, level_textures_);
+        }
 
-        // When an object is selected, its properties is rendered
-        if (editor_state_.p_active_object_)
+        ImGui::Separator();
+        ImGui::End();
+    }
+
+    // When an object is selected, its properties is rendered
+    if (editor_state_.p_active_object_)
+    {
+        if (ImGui::Begin("Object Properties"))
         {
             editor_state_.p_active_object_->property_gui(editor_state_, level_textures_,
                                                          action_manager_);
+            ImGui::End();
         }
     }
-    ImGui::End();
 }
 
 void ScreenEditGame::exit_editor()
