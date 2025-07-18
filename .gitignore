@@ -26,3 +26,5 @@ classic-you/
 *.cly
 
 ClassicYou/
+
+src/Editor/ObjectTypes/

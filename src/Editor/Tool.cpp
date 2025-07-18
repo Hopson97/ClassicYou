@@ -256,3 +256,62 @@ ToolType CreatePlatformTool::get_tool_type() const
 {
     return ToolType::CreatePlatform;
 }
+
+CreateObjectTool::CreateObjectTool(const GeometryObjects& object)
+    :   p_object_(&object)
+{
+}
+
+void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
+                                ActionManager& actions)
+{
+    if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
+    {
+        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
+        {
+            if (auto platform = std::get_if<PlatformObject>(p_object_))
+            {
+                actions.push_action(
+                    std::make_unique<AddObjectAction>(LevelObject{PlatformObject{
+                                                          .properties = state.platform_default,
+                                                          .parameters = {.position = node},
+                                                      }},
+                                                      state.current_floor));
+            }
+            else if (auto poly_platform = std::get_if<PlatformObject>(p_object_))
+            {
+                actions.push_action(
+                    std::make_unique<AddObjectAction>(LevelObject{PlatformObject{
+                                                          .properties = state.platform_default,
+                                                          .parameters = {.position = node},
+                                                      }},
+                                                      state.current_floor));
+            }
+
+        }
+    }
+    else if (event.is<sf::Event::MouseMoved>())
+    {
+        platform_preview_ = generate_platform_mesh(
+            {
+                .properties = state.platform_default,
+                .parameters = {.position = node},
+            },
+            state.current_floor);
+        platform_preview_.buffer();
+        tile_ = node;
+    }
+}
+
+void CreateObjectTool::render_preview()
+{
+}
+
+void CreateObjectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorState& state)
+{
+}
+
+ToolType CreateObjectTool::get_tool_type() const
+{
+    return ToolType();
+}

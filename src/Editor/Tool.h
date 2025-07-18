@@ -91,3 +91,21 @@ class CreatePlatformTool : public ITool
     LevelObjectsMesh3D platform_preview_;
     glm::vec2 tile_{0.0f};
 };
+
+class CreateObjectTool : public ITool
+{
+  public:
+    CreateObjectTool(const GeometryObjects& object);
+
+    void on_event(sf::Event event, glm::vec2 node, EditorState& state,
+                  ActionManager& actions) override;
+    void render_preview() override;
+    void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) override;
+
+    ToolType get_tool_type() const override;
+
+  private:
+    const GeometryObjects* p_object_;
+    LevelObjectsMesh3D object_preview_;
+    glm::vec2 tile_{0.0f};
+};

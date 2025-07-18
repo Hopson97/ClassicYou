@@ -23,16 +23,13 @@ class EditorLevel
 
     struct Floor
     {
-        Floor(int real_floor, ObjectId ground_object_id);
-
-        void update_mesh();
+        Floor(int floor)
+            : real_floor(floor)
+        {
+        }
 
         std::vector<LevelObject> objects;
         std::vector<LevelMesh> meshes;
-
-        LevelObject ground;
-        LevelObjectsMesh3D ground_mesh;
-
         int real_floor = 0;
     };
 
@@ -91,8 +88,6 @@ class EditorLevel
     bool load(const std::filesystem::path& path);
 
     bool changes_made_since_last_save() const;
-
-    void floor_gui(EditorState& state, const LevelTextures& textures);
 
   private:
     bool do_save(const std::filesystem::path& path) const;

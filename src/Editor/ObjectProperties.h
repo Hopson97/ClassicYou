@@ -81,7 +81,7 @@ inline bool operator!=(const PlatformProps& lhs, const PlatformProps& rhs)
 // =======================================
 //      Ground Object Types
 // =======================================
-struct GroundParameters
+struct PolygonPlatformParameters
 {
     glm::vec2 corner_top_left{0};
     glm::vec2 corner_top_right{0, WORLD_SIZE* TILE_SIZE};
@@ -89,20 +89,20 @@ struct GroundParameters
     glm::vec2 corner_bottom_left{WORLD_SIZE * TILE_SIZE, 0};
 };
 
-struct GroundProps
+struct PolygonPlatformProps
 {
     TextureProp texture_top{0};
     TextureProp texture_bottom{0};
     bool visible = false;
 };
 
-inline bool operator==(const GroundProps& lhs, const GroundProps& rhs)
+inline bool operator==(const PolygonPlatformProps& lhs, const PolygonPlatformProps& rhs)
 {
     return lhs.texture_top == rhs.texture_top && lhs.texture_bottom == rhs.texture_bottom &&
            lhs.visible == rhs.visible;
 }
 
-inline bool operator!=(const GroundProps& lhs, const GroundProps& rhs)
+inline bool operator!=(const PolygonPlatformProps& lhs, const PolygonPlatformProps& rhs)
 {
     return !(lhs == rhs);
 }

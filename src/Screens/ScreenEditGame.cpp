@@ -402,10 +402,6 @@ void ScreenEditGame::render_editor_ui()
         ImGui::Text("Lowest: %d - Current: %d - Highest: %d", level_.get_min_floor(),
                     editor_state_.current_floor, level_.get_max_floor());
 
-        if (ImGui::CollapsingHeader("Floor Settings"))
-        {
-            level_.floor_gui(editor_state_, level_textures_);
-        }
 
         ImGui::Separator();
         ImGui::End();

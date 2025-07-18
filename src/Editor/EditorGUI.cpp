@@ -221,49 +221,41 @@ std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& texture
     };
 }
 
-std::pair<UpdateResult, GroundProps> ground_gui(const LevelTextures& textures,
-                                                const GroundObject& ground)
+std::pair<UpdateResult, PolygonPlatformProps>
+polygon_platform_gui(const LevelTextures& textures, const PolygonPlatformObject& polygon_platform)
 {
     UpdateResult result;
 
-    GroundProps new_props = ground.properties;
+    PolygonPlatformProps new_props = polygon_platform.properties;
 
     if (ImGui::Checkbox("Show Floor?", &new_props.visible))
     {
-        result.continuous_update |= true;
+        result.always_update |= true;
     }
 
     if (new_props.visible)
     {
-        if (ImGui::BeginTabBar("Textures_ground"))
+        if (ImGui::BeginTabBar("Textures_polygon_platform"))
         {
             if (ImGui::BeginTabItem("Top Texture"))
             {
-                texture_gui(result, "Top Texture", textures, ground.properties.texture_top,
-                            new_props.texture_top);
+                texture_gui(result, "Top Texture", textures,
+                            polygon_platform.properties.texture_top, new_props.texture_top);
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Bottom Texture"))
             {
-                texture_gui(result, "Bottom Texture", textures, ground.properties.texture_bottom,
-                            new_props.texture_bottom);
+                texture_gui(result, "Bottom Texture", textures,
+                            polygon_platform.properties.texture_bottom, new_props.texture_bottom);
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();
         }
     }
 
-    // For now the ground is stored seperately to the rest of the objects as it is one-per-floor
-    // This means actions do not work, hence this work-around
-    if (result.always_update)
-    {
-        result.always_update = false;
-        result.continuous_update = true;
-        result.action = false;
-    }
 
     return {
-        check_prop_updated(result, ground.properties, new_props),
+        check_prop_updated(result, polygon_platform.properties, new_props),
         new_props,
     };
 }

@@ -150,10 +150,11 @@ LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform, int fl
     return mesh;
 }
 
-LevelObjectsMesh3D generate_ground_mesh(const GroundObject& ground, int floor_number)
+LevelObjectsMesh3D generate_polygon_platform_mesh(const PolygonPlatformObject& polygon_platform,
+                                                  int floor_number)
 {
-    const auto& params = ground.parameters;
-    const auto& props = ground.properties;
+    const auto& params = polygon_platform.parameters;
+    const auto& props = polygon_platform.properties;
 
     auto ob = floor_number * FLOOR_HEIGHT;
 

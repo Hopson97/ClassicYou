@@ -36,9 +36,8 @@ std::pair<UpdateResult, WallProps> wall_gui(const LevelTextures& textures, const
 std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& textures,
                                                     const PlatformObject& platform);
 
-/// @brief Properties GUI for a ground object.
-std::pair<UpdateResult, GroundProps> ground_gui(const LevelTextures& textures,
-                                                    const GroundObject& platform);
-
+/// @brief Properties GUI for a polygon_platform object.
+std::pair<UpdateResult, PolygonPlatformProps>
+polygon_platform_gui(const LevelTextures& textures, const PolygonPlatformObject& platform);
 
 bool display_level_list(bool& show_load_dialog, std::string& name);

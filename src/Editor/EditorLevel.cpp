@@ -109,32 +109,8 @@ void EditorLevel::render(gl::Shader& scene_shader, const LevelObject* p_active_o
     bool rendered_selected = false;
     scene_shader.set_uniform("selected", false);
 
-    // Avoid repeating code for rendering ground and object list
-    auto render_object = [&](ObjectId object_id, const LevelObjectsMesh3D& mesh)
-    {
-        // Switch prevents setting the uniform needlessly many times
-        if (!rendered_selected && p_active_object && object_id == p_active_object->object_id)
-        {
-            rendered_selected = true;
-            scene_shader.set_uniform("selected", true);
-            mesh.bind().draw_elements();
-            scene_shader.set_uniform("selected", false);
-        }
-        else
-        {
-            mesh.bind().draw_elements();
-        }
-    };
-
-    // Render the ground object on each floor, and then all objects on that floor
     for (auto& floor : floors_)
     {
-
-        auto ground = std::get<GroundObject>(floor.ground.object_type);
-        if (ground.properties.visible)
-        {
-            render_object(floor.ground.object_id, floor.ground_mesh);
-        }
         // Render floors only from the current floor and below
         if (floor.real_floor > current_floor)
         {
@@ -143,7 +119,17 @@ void EditorLevel::render(gl::Shader& scene_shader, const LevelObject* p_active_o
 
         for (auto& object : floor.meshes)
         {
-            render_object(object.id, object.mesh);
+            if (!rendered_selected && p_active_object && object.id == p_active_object->object_id)
+            {
+                rendered_selected = true;
+                scene_shader.set_uniform("selected", true);
+                object.mesh.bind().draw_elements();
+                scene_shader.set_uniform("selected", false);
+            }
+            else
+            {
+                object.mesh.bind().draw_elements();
+            }
         }
     }
 }
@@ -153,11 +139,9 @@ void EditorLevel::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active
 {
     for (auto& floor : floors_)
     {
-
         // Only render the current floor and the floor below
         if (floor.real_floor == current_floor || (current_floor == floor.real_floor + 1))
         {
-            floor.ground.render_2d(drawing_pad, p_active_object, current_floor);
             for (auto& object : floor.objects)
             {
                 // The current floor should be rendered using full colour, otherwise a more grey
@@ -192,7 +176,7 @@ EditorLevel::Floor& EditorLevel::ensure_floor_exists(int floor_number)
 {
     if (floors_.empty())
     {
-        auto& floor = floors_.emplace_back(floor_number, current_id_++);
+        auto& floor = floors_.emplace_back(floor_number);
         min_floor_ = floor_number;
         max_floor_ = floor_number;
         return floor;
@@ -201,12 +185,12 @@ EditorLevel::Floor& EditorLevel::ensure_floor_exists(int floor_number)
     {
         if (floor_number < get_min_floor())
         {
-            auto& floor = floors_.emplace_back(--min_floor_, current_id_++);
+            auto& floor = floors_.emplace_back(--min_floor_);
             return floor;
         }
         else if (floor_number > get_max_floor())
         {
-            auto& floor = floors_.emplace_back(++max_floor_, current_id_++);
+            auto& floor = floors_.emplace_back(++max_floor_);
             return floor;
         }
     }
@@ -277,9 +261,6 @@ bool EditorLevel::do_save(const std::filesystem::path& path) const
         current_floor["floor"] = floor_number;
         current_floor["objects"] = {};
 
-        // serialise the ground seperately
-        object_map["ground"] = {floor.ground.serialise().first};
-
         // Iterate through all objects on the floor and group them by type
         for (auto& object : floor.objects)
         {
@@ -331,18 +312,16 @@ bool EditorLevel::load(const std::filesystem::path& path)
 
         // Load the objects for the current floor
         auto object_types = floor_object["objects"];
+
         load_objects(object_types, "platform", floor, [&](auto& level_object, auto& json)
                      { level_object.deserialise_as_platform(json); });
+
         load_objects(object_types, "wall", floor, [&](auto& level_object, auto& json)
                      { level_object.deserialise_as_wall(json); });
 
-        if (object_types.find("ground") != object_types.end())
-        {
-            floor.ground.deserialise_as_ground(object_types["ground"]);
-            floor.ground_mesh = generate_ground_mesh(
-                std::get<GroundObject>(floor.ground.object_type), floor_number);
-            floor.ground_mesh.buffer();
-        }
+        load_objects(object_types, "polygon_platform", floor,
+                     [&](auto& level_object, auto& json)
+                     { level_object.deserialise_as_polygon_platform(json); });
     }
 
     changes_made_since_last_save_ = false;
@@ -352,24 +331,6 @@ bool EditorLevel::load(const std::filesystem::path& path)
 bool EditorLevel::changes_made_since_last_save() const
 {
     return changes_made_since_last_save_;
-}
-
-void EditorLevel::floor_gui(EditorState& state, const LevelTextures& textures)
-{
-
-    auto floor = find_floor(state.current_floor);
-    if (floor)
-    {
-        auto& ground = std::get<GroundObject>((*floor)->ground.object_type);
-        auto [update, new_props] =
-            ground_gui(textures, std::get<GroundObject>((*floor)->ground.object_type));
-
-        if (update.continuous_update)
-        {
-            ground.properties = new_props;
-            (*floor)->update_mesh();
-        }
-    }
 }
 
 std::optional<EditorLevel::Floor*> EditorLevel::find_floor(int floor_number)
@@ -394,20 +355,4 @@ std::optional<const EditorLevel::Floor*> EditorLevel::find_floor(int floor_numbe
         }
     }
     return {};
-}
-
-EditorLevel::Floor::Floor(int real_floor, ObjectId ground_object_id)
-    : ground(ground_object_id)
-    , real_floor(real_floor)
-{
-    GroundObject ground_object;
-    ground.object_type = ground_object;
-
-    update_mesh();
-}
-
-void EditorLevel::Floor::update_mesh()
-{
-    ground_mesh = generate_ground_mesh(std::get<GroundObject>(ground.object_type), real_floor);
-    ground_mesh.buffer();
 }
