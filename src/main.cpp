@@ -21,7 +21,13 @@ namespace
 
 int main()
 {
-    convert_legacy_level("levels/253.TheCastle.ChallengeYou.cy");
+    for (const auto& entry : std::filesystem::directory_iterator("./levels/legacy/"))
+    {
+        if (entry.is_regular_file() && entry.path().extension() == ".cy")
+        {
+            convert_legacy_level(entry.path());
+        }
+    }
 
     sf::ContextSettings context_settings;
     context_settings.depthBits = 24;

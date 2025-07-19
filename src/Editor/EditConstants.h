@@ -7,7 +7,7 @@ constexpr inline auto rgb_to_normalised(const glm::vec3& rgb)
     return glm::vec4(rgb / 255.0f, 1.0f);
 }
 
-static constexpr auto WORLD_SIZE = 128;
+static constexpr auto WORLD_SIZE = 400/ 5;
 static constexpr auto TILE_SIZE = 32;
 static constexpr auto HALF_TILE_SIZE = TILE_SIZE / 2;
 static constexpr auto TILE_SIZE_F = static_cast<float>(TILE_SIZE); 

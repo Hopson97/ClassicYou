@@ -11,7 +11,64 @@
 
 namespace
 {
-    nlohmann::json legacy_to_json(std::string& legacy_file_content)
+    std::unordered_map<int, int> TEXTURE_MAP = {
+        {1, 6}, // Grass
+        // {2, 7}, // Stucco
+        {3, 0}, // Red Brick
+        {4, 1}, // Stone Brick
+        {5, 12}, // 
+        // {6, 0}, // "happy"
+        // {7, 0  // Egypt texture
+        {8, 8}, // Glass
+        {9, 10}, // Bark
+        // {10, 10}, // Sci-Fi
+        // {11, 11}, // Tiles
+        {13, 13}, // Rock
+       //  {15, 13}, // Parquet
+    };
+
+    std::unordered_map<int, int> TEXTURE_MAP_WALL = {
+        {1, 0}, // Red bricks
+        {2, 4}, // Bars
+        {3, 1}, // Stone Brick
+        {4, 6},  // Grass
+        {5, 12}, // Wood
+        // {6, 0}, // "happy"
+        // {7, 0  // Egypt texture
+        {8, 8}, // Glass
+        // {9, 7}, // Stucco
+        {10, 10}, // Bark
+
+        // {11, 11}, // Sci-Fi
+        // {12, 12}, // Tiles
+        {13, 13}, // Rock
+        // {14, 14}, // Books
+        //  {16, 16}, // Parquet
+
+    };
+
+    auto map_texture(int legacy_id)
+    {
+        if (TEXTURE_MAP.find(legacy_id) != TEXTURE_MAP.cend())
+        {
+            return TEXTURE_MAP[legacy_id];
+        }
+        std::println("Missing floor mapping for {}", legacy_id);
+        return legacy_id;
+    }
+
+    auto map_wall_texture(int legacy_id)
+    {
+        if (TEXTURE_MAP_WALL.find(legacy_id) != TEXTURE_MAP_WALL.cend())
+        {
+            return TEXTURE_MAP_WALL[legacy_id];
+        }
+        std::println("Missing wall mapping for {}", legacy_id);
+        return legacy_id;
+    }
+
+    /// Converts a legacy ChallengeYou.com level format to JSON
+    auto legacy_to_json(std::string& legacy_file_content)
     {
         while (auto match = ctre::search<R"(#([a-zA-Z_][a-zA-Z0-9_]*)\s*:)">(legacy_file_content))
         {
@@ -25,77 +82,126 @@ namespace
         return nlohmann::json::parse(legacy_file_content);
     }
 
-    std::unordered_map<int, int> TEXTURE_MAP = {
-        {1, 6},  // Grass
-        {2, 7},  // Stucco
-        {3, 0},  // ???
-        {4, 2},  // Stone Wall/ Cobblestone
-        {5, 0},  // ???
-        {6, 0},  // ???
-        {7, 0},  // ???
-        {8, 0},  // ???
-        {9, 0},  // ???
-        {10, 0}, // ???
-        {11, 0}, // ???
-        {12, 0}, // ???
-        {13, 0}, // ???
-        {14, 0}, // ???
-    };
+    auto extract_vec2(float x, float y)
+    {
+        return glm::vec2{x, y} / 5.0f * TILE_SIZE_F;
+    }
 
 } // namespace
 
 // json conversion functions have to be defined outside of the anonamous namaepace to comply with
 // Argument Dependent Lookup (ADL)
 
+// ===========================================================
+//      Floor/ Ground Conversion (to PolygonPlatformObject)
+// ============================================================
+//  [[X0, Y0, X1, Y1, X2, Y2, X3, Y3], [[TextureTop, Visible], TextureBottom]
 void from_json(const nlohmann::json& json, PolygonPlatformObject& poly)
 {
-    std::cout << "Parsing floor: " << json << std::endl;
-
     auto& points = json[0];
     auto& props = json[1];
 
-    poly.parameters = {
-        .corner_top_left = glm::vec2{points[3][0], points[3][1]} / 5.0f * (float)TILE_SIZE_F,
-        .corner_top_right = glm::vec2{points[2][0], points[2][1]} / 5.0f * (float)TILE_SIZE_F,
-        .corner_bottom_right = glm::vec2{points[1][0], points[1][1]} / 5.0f * (float)TILE_SIZE_F,
-        .corner_bottom_left = glm::vec2{points[0][0], points[0][1]} / 5.0f * (float)TILE_SIZE_F,
-    };
-
-    std::cout << props << std::endl;
+    poly.parameters = {.corner_top_left = extract_vec2(points[3][0], points[3][1]),
+                       .corner_top_right = extract_vec2(points[2][0], points[2][1]),
+                       .corner_bottom_right = extract_vec2(points[1][0], points[1][1]),
+                       .corner_bottom_left = extract_vec2(points[0][0], points[0][1])};
 
     poly.properties.base = 0;
-    poly.properties.texture_bottom = TEXTURE_MAP.at(props[1]);
-    poly.properties.texture_top = TEXTURE_MAP.at(props[0][0]);
-    poly.properties.visible = true; // bool(attribs[0][1]);
+    poly.properties.texture_bottom = map_texture(props[1]);
+    poly.properties.texture_top = map_texture(props[0][0]);
+
+    int visible = props[0][1];
+    poly.properties.visible = static_cast<bool>(visible);
 }
 
+// =========================
+//      Wall Conversion
+// ==========================
 struct LegacyWall
 {
-    WallObject wall;
+    WallObject object;
     int floor = 0;
 };
 
-void from_json(const nlohmann::json& json, LegacyWall& object)
+//  [OffsetX, OffsetY, StartX, StartY, [TextureBack, TextureFront], Floor]
+//  [OffsetX, OffsetY, StartX, StartY, [TextureBack, TextureFront, Height], Floor]
+void from_json(const nlohmann::json& json, LegacyWall& wall)
 {
-    Line line;
-    line.start = glm::vec2{json[2], json[3]};
-    line.end = glm::vec2{line.start.x + (float)json[0], line.end.x + (float)json[1]};
+    auto start = extract_vec2(json[2], json[3]);
+    auto offset = extract_vec2(json[0], json[1]);
+    wall.object.parameters.line.start = start;
+    wall.object.parameters.line.end = start + offset;
 
-    line.start /= 5.0f;
-    line.end /= 5.0f;
+    wall.object.properties.texture_front = map_wall_texture(json[4][1]);
+    wall.object.properties.texture_back = map_wall_texture(json[4][0]);
+    wall.object.properties.base_height = 0;
+    wall.object.properties.wall_height = 1;
 
-    line.start *= (float)TILE_SIZE;
-    line.end *= (float)TILE_SIZE;
+    if (json[4].size() == 3)
+    {
+        // int height = json[4][2];
+    }
 
-    object.wall.parameters.line = line;
+    wall.floor = (int)json[5] - 1;
+}
 
-    object.wall.properties.texture_front = TEXTURE_MAP.at(json[4][0]);
-    object.wall.properties.texture_back = TEXTURE_MAP.at(json[4][1]);
-    object.wall.properties.base_height = 0;
-    object.wall.properties.wall_height = 1;
-    //json[4][2];
+// ============================
+//      Platform Conversion
+// ============================
+struct LegacyPlatform
+{
+    PlatformObject object;
+    int floor = 0;
+};
 
-    object.floor = json[5] - 1;
+// [[X, Y], [Size], Floor]
+// [[X, Y], [Size, Texture, Height], Floor]
+void from_json(const nlohmann::json& json, LegacyPlatform& platform)
+{
+    auto& positon = json[0];
+    auto& props = json[1];
+
+    auto& platform_params = platform.object.parameters;
+    auto& platform_props = platform.object.properties;
+
+    platform_props.width = static_cast<float>(props[0]) * 2;
+    platform_props.depth = static_cast<float>(props[0]) * 2;
+
+    platform_params.position =
+        extract_vec2(positon[0], positon[1]) - glm::vec2{TILE_SIZE_F * platform_props.width / 2.0f};
+
+
+    if (props.size() > 1)
+    {
+        platform_props.texture_bottom = map_texture(props[1]);
+        platform_props.texture_top = platform_props.texture_bottom;
+
+        if (props.size() > 2)
+        {
+            platform_props.base = 0; // 1 -> 0.0, 2 -> 0.25, 3 -> 0.5, 4 -> 0.75
+        }
+    }
+    else
+    {
+        // Platforms default to wood textures in older versions
+        platform_props.texture_bottom = 12;
+        platform_props.texture_top = 12;
+    }
+
+    platform.floor = (int)json[2] - 1;
+}
+
+template<typename T>
+void load_objects(const nlohmann::json& json, const char* json_key, FloorManager& new_level)
+{
+    std::vector<T> objects;
+    objects.reserve(json[json_key].size());
+    json[json_key].get_to(objects);
+    for (auto& object : objects)
+    {
+        auto& floor = new_level.ensure_floor_exists(object.floor);
+        floor.objects.push_back(LevelObject{object.object});
+    }
 }
 
 void convert_legacy_level(const std::filesystem::path& path)
@@ -109,6 +215,9 @@ void convert_legacy_level(const std::filesystem::path& path)
     auto time = clock.getElapsedTime().asSeconds();
     std::println("Conversion took {}s ({}ms) ", time, time * 1000.0f);
 
+    std::ofstream out_file_og((path.parent_path() / path.stem()).string() + ".json");
+    out_file_og << legacy_json;
+
     FloorManager new_level;
 
     int floor_n = 0;
@@ -120,13 +229,8 @@ void convert_legacy_level(const std::filesystem::path& path)
         floor.objects.push_back(LevelObject{legacy_floor});
     }
 
-    std::vector<LegacyWall> legacy_walls;
-    legacy_json["walls"].get_to(legacy_walls);
-    for (auto& legacy_wall : legacy_walls)
-    {
-        auto& floor = new_level.ensure_floor_exists(legacy_wall.floor);
-        floor.objects.push_back(LevelObject{legacy_wall.wall});
-    }
+    load_objects<LegacyWall>(legacy_json, "walls", new_level);
+    load_objects<LegacyPlatform>(legacy_json, "Plat", new_level);
 
     auto output = new_level.serialise();
 
@@ -134,7 +238,7 @@ void convert_legacy_level(const std::filesystem::path& path)
     {
         std::println("Succesfully serialised {} ", path.string());
 
-        std::ofstream out_file((path.parent_path() / path.stem()).string() + ".cly");
+        std::ofstream out_file(("levels" / path.stem()).string() + ".cly");
 
         out_file << output;
     }
