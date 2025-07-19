@@ -15,7 +15,8 @@ enum class ToolType
 {
     CreateWall,
     UpdateWall,
-    CreatePlatform
+    CreateObject,
+    Drag
 };
 
 class ITool
@@ -90,5 +91,4 @@ class CreateObjectTool : public ITool
     const ObjectTypeName object_type_;
     LevelObjectsMesh3D object_preview_;
     glm::vec2 tile_{0.0f};
-
 };

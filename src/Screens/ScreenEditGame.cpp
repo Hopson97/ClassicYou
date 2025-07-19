@@ -149,12 +149,22 @@ bool ScreenEditGame::on_init()
 
 void ScreenEditGame::on_event(const sf::Event& event)
 {
+    auto p_active = editor_state_.p_active_object_;
+
     if (showing_dialog())
     {
         return;
     }
 
+    // When dragging an object and the final placement is decided, this is set to true. This is to
+    // prevent calls to the tool event fuctions, which can have issues (such as walls appears in odd
+    // place) if their events are handled post-move
+    bool finish_move = false;
+
+    // Certain events cause issues if the current tool is UpdateWall (such as rendering the 2D
+    // preview of deleting walls) so this prevents that.
     bool try_set_tool_to_wall = false;
+
     if (auto key = event.getIf<sf::Event::KeyReleased>())
     {
         switch (key->code)
@@ -165,10 +175,10 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 break;
 
             case sf::Keyboard::Key::Delete:
-                if (editor_state_.p_active_object_)
+                if (p_active)
                 {
                     action_manager_.push_action(std::make_unique<DeleteObjectAction>(
-                        *editor_state_.p_active_object_, editor_state_.current_floor));
+                        *p_active, editor_state_.current_floor));
                     try_set_tool_to_wall = true;
                 }
                 break;
@@ -203,10 +213,32 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 break;
         }
     }
+    else if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
+    {
+        if (mouse->button == sf::Mouse::Button::Left)
+        {
+            if (p_active && p_active->try_select_2d(editor_state_.node_hovered) &&
+                !std::get_if<WallObject>(&p_active->object_type))
+            {
+                moving_object_ = true;
+                moving_object_cache_ = *p_active;
+            }
+        }
+    }
     else if (auto mouse = event.getIf<sf::Event::MouseMoved>())
     {
         editor_state_.node_hovered =
             map_pixel_to_tile({mouse->position.x, mouse->position.y}, drawing_pad_.get_camera());
+
+        if (p_active && moving_object_)
+        {
+            auto new_object = *p_active;
+            new_object.move_to(editor_state_.node_hovered);
+
+            action_manager_.push_action(std::make_unique<UpdateObjectAction>(
+                                            *p_active, new_object, editor_state_.current_floor),
+                                        false);
+        }
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
@@ -216,21 +248,15 @@ void ScreenEditGame::on_event(const sf::Event& event)
             editor_state_.p_active_object_ =
                 level_.try_select(map_pixel_to_tile({mouse->position.x, mouse->position.y},
                                                     drawing_pad_.get_camera()),
-                                  editor_state_.p_active_object_, editor_state_.current_floor);
+                                  p_active, editor_state_.current_floor);
 
             // Editing a wall requires a special tool to enable resizing, so after a object it
             // switches between tools
-            if (editor_state_.p_active_object_)
+            if (p_active)
             {
-                if (auto wall =
-                        std::get_if<WallObject>(&editor_state_.p_active_object_->object_type))
+                if (auto wall = std::get_if<WallObject>(&p_active->object_type))
                 {
-                    tool_ =
-                        std::make_unique<UpdateWallTool>(*editor_state_.p_active_object_, *wall);
-                }
-                else
-                {
-                    tool_ = std::make_unique<CreateWallTool>();
+                    tool_ = std::make_unique<UpdateWallTool>(*p_active, *wall);
                 }
             }
             else
@@ -239,10 +265,29 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 tool_ = std::make_unique<CreateWallTool>();
             }
         }
+        if (mouse->button == sf::Mouse::Button::Left)
+        {
+            if (moving_object_)
+            {
+                auto new_object = *p_active;
+                new_object.move_to(editor_state_.node_hovered);
+
+                action_manager_.push_action(
+                    std::make_unique<UpdateObjectAction>(moving_object_cache_, new_object,
+                                                         editor_state_.current_floor),
+                    true);
+                finish_move = true;
+            }
+
+            moving_object_ = false;
+        }
     }
 
-    // Certain events cause issues if the current tool is UpdateWall (such as rendering the 2D
-    // preview of deleting walls) so this prevents that.
+    if (!moving_object_ && !finish_move)
+    {
+        tool_->on_event(event, editor_state_.node_hovered, editor_state_, action_manager_);
+    }
+
     if (try_set_tool_to_wall)
     {
         if (tool_->get_tool_type() == ToolType::UpdateWall)
@@ -250,8 +295,6 @@ void ScreenEditGame::on_event(const sf::Event& event)
             tool_ = std::make_unique<CreateWallTool>();
         }
     }
-
-    tool_->on_event(event, editor_state_.node_hovered, editor_state_, action_manager_);
 }
 
 void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
@@ -277,7 +320,7 @@ void ScreenEditGame::on_render(bool show_debug)
     glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
 
     level_.render_2d(drawing_pad_, editor_state_.p_active_object_, editor_state_.current_floor);
-    if (!ImGui::GetIO().WantCaptureMouse)
+    if (!ImGui::GetIO().WantCaptureMouse && !moving_object_)
     {
         tool_->render_preview_2d(drawing_pad_, editor_state_);
     }
@@ -330,7 +373,11 @@ void ScreenEditGame::on_render(bool show_debug)
     texture_.bind(0);
     world_geometry_shader_.set_uniform("use_texture", true);
     world_geometry_shader_.set_uniform("model_matrix", create_model_matrix({}));
-    tool_->render_preview();
+
+    if (!moving_object_)
+    {
+        tool_->render_preview();
+    }
 
     // Render the level itself
     level_.render(world_geometry_shader_, editor_state_.p_active_object_,

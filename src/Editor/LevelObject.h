@@ -37,6 +37,7 @@ struct ObjectType
 using WallObject = ObjectType<WallProps, WallParameters>;
 using PlatformObject = ObjectType<PlatformProps, PlatformParameters>;
 using PolygonPlatformObject = ObjectType<PolygonPlatformProps, PolygonPlatformParameters>;
+
 using GeometryObjects = std::variant<WallObject, PlatformObject, PolygonPlatformObject>;
 
 struct LevelObject
@@ -65,6 +66,8 @@ struct LevelObject
     void render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object,
                    bool is_current_floor) const;
     bool try_select_2d(glm::vec2 selection_tile) const;
+
+    void move_to(glm::vec2 new_tile);
 
     std::pair<nlohmann::json, std::string> serialise() const;
 

@@ -342,5 +342,5 @@ void CreateObjectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorSt
 
 ToolType CreateObjectTool::get_tool_type() const
 {
-    return ToolType();
+    return ToolType::CreateObject;
 }

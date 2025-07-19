@@ -233,9 +233,9 @@ bool LevelObject::try_select_2d(glm::vec2 selection_tile) const
                selection_tile.y >= params.position.y &&
                selection_tile.y <= params.position.y + props.depth * TILE_SIZE;
     }
-    else if (auto platform = std::get_if<PolygonPlatformObject>(&object_type))
+    else if (auto poly = std::get_if<PolygonPlatformObject>(&object_type))
     {
-        const auto& params = platform->parameters;
+        const auto& params = poly->parameters;
 
         return selection_tile.x >= params.corner_top_left.x &&
                selection_tile.x <= params.corner_top_right.x &&
@@ -243,6 +243,28 @@ bool LevelObject::try_select_2d(glm::vec2 selection_tile) const
                selection_tile.y <= params.corner_bottom_left.y;
     }
     return false;
+}
+
+void LevelObject::move_to(glm::vec2 new_tile)
+{
+    if (auto platform = std::get_if<PlatformObject>(&object_type))
+    {
+        platform->parameters.position = new_tile;
+    }
+    else if (auto poly = std::get_if<PolygonPlatformObject>(&object_type))
+    {
+        auto& params = poly->parameters;
+
+        // Poly platforms require moving all points, so they are moved relative to the first point
+        auto trd = params.corner_top_right - params.corner_top_left;
+        auto brd = params.corner_bottom_right - params.corner_top_left;
+        auto bld = params.corner_bottom_left - params.corner_top_left;
+
+        params.corner_top_left = new_tile;
+        params.corner_top_right = new_tile + trd;
+        params.corner_bottom_right = new_tile + brd;
+        params.corner_bottom_left = new_tile + bld;
+    }
 }
 
 std::pair<nlohmann::json, std::string> LevelObject::serialise() const

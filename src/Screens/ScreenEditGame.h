@@ -66,6 +66,13 @@ class ScreenEditGame final : public Screen
     bool show_save_dialog_ = false;
     bool show_load_dialog_ = false;
 
+    // If the currently seleceted object being dragged?
+    bool moving_object_ = false;
+
+    // Capture the state of the object being moved at the start such that the inital state can be
+    // returned to when CTRL+Z is done
+    LevelObject moving_object_cache_{-1};
+
     // Level name is used in the save dialog such that the actual name is not overriden if the save
     // operation is cancelled
     std::string level_name_;
