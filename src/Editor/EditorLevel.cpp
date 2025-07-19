@@ -11,12 +11,12 @@
 
 EditorLevel::EditorLevel()
 {
-    ensure_floor_exists(0);
+    floors_manager_.ensure_floor_exists(0);
 }
 
 LevelObject& EditorLevel::add_object(const LevelObject& object, int floor_number)
 {
-    auto floor_opt = find_floor(floor_number);
+    auto floor_opt = floors_manager_.find_floor(floor_number);
     if (!floor_opt)
     {
         throw std::runtime_error("Floor does not exist");
@@ -31,7 +31,7 @@ LevelObject& EditorLevel::add_object(const LevelObject& object, Floor& floor)
     LevelObject new_object = object;
     new_object.object_id = current_id_++;
 
-    LevelMesh level_mesh = {
+    Floor::LevelMesh level_mesh = {
         .id = new_object.object_id,
         .mesh = object.to_geometry(floor.real_floor),
     };
@@ -44,7 +44,7 @@ LevelObject& EditorLevel::add_object(const LevelObject& object, Floor& floor)
 
 void EditorLevel::update_object(const LevelObject& object, int floor_number)
 {
-    for (auto& floor : floors_)
+    for (auto& floor : floors_manager_.floors)
     {
         for (auto& mesh : floor.meshes)
         {
@@ -71,7 +71,7 @@ void EditorLevel::update_object(const LevelObject& object, int floor_number)
 
 void EditorLevel::remove_object(std::size_t id)
 {
-    for (auto& floor : floors_)
+    for (auto& floor : floors_manager_.floors)
     {
         std::erase_if(floor.meshes, [id](const auto& mesh) { return mesh.id == id; });
         std::erase_if(floor.objects, [id](const auto& object) { return object.object_id == id; });
@@ -81,7 +81,7 @@ void EditorLevel::remove_object(std::size_t id)
 
 void EditorLevel::set_object_id(ObjectId current_id, ObjectId new_id)
 {
-    for (auto& floor : floors_)
+    for (auto& floor : floors_manager_.floors)
     {
         for (auto& mesh : floor.meshes)
         {
@@ -109,7 +109,7 @@ void EditorLevel::render(gl::Shader& scene_shader, const LevelObject* p_active_o
     bool rendered_selected = false;
     scene_shader.set_uniform("selected", false);
 
-    for (auto& floor : floors_)
+    for (auto& floor : floors_manager_.floors)
     {
         // Render floors only from the current floor and below
         if (floor.real_floor > current_floor)
@@ -137,7 +137,7 @@ void EditorLevel::render(gl::Shader& scene_shader, const LevelObject* p_active_o
 void EditorLevel::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object,
                             int current_floor)
 {
-    for (auto& floor : floors_)
+    for (auto& floor : floors_manager_.floors)
     {
         // Only render the current floor and the floor below
         if (floor.real_floor == current_floor || (current_floor == floor.real_floor + 1))
@@ -155,7 +155,7 @@ void EditorLevel::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active
 LevelObject* EditorLevel::try_select(glm::vec2 selection_tile, const LevelObject* p_active_object,
                                      int current_floor)
 {
-    for (auto& floor : floors_)
+    for (auto& floor : floors_manager_.floors)
     {
         // 2D Selection can only happen for objects on the current floor
         if (floor.real_floor != current_floor)
@@ -178,56 +178,31 @@ LevelObject* EditorLevel::try_select(glm::vec2 selection_tile, const LevelObject
     return nullptr;
 }
 
-EditorLevel::Floor& EditorLevel::ensure_floor_exists(int floor_number)
-{
-    if (floors_.empty())
-    {
-        auto& floor = floors_.emplace_back(floor_number);
-        min_floor_ = floor_number;
-        max_floor_ = floor_number;
-        return floor;
-    }
-    else
-    {
-        if (floor_number < get_min_floor())
-        {
-            return floors_.emplace_back(--min_floor_);
-        }
-        else if (floor_number > get_max_floor())
-        {
-            return floors_.emplace_back(++max_floor_);
-        }
-    }
-
-    auto floor = find_floor(floor_number);
-    if (!floor)
-    {
-        throw std::runtime_error("Trying to add floors failed, but the floor doesn't exist");
-    }
-    return **floor;
-}
-
 int EditorLevel::get_min_floor() const
 {
-    return min_floor_;
+    return floors_manager_.min_floor;
 }
 
 int EditorLevel::get_max_floor() const
 {
-    return max_floor_;
+    return floors_manager_.max_floor;
 }
 
 size_t EditorLevel::get_floor_count() const
 {
-    return floors_.size();
+    return floors_manager_.floors.size();
+}
+
+void EditorLevel::ensure_floor_exists(int floor_number)
+{
+    floors_manager_.ensure_floor_exists(floor_number);
 }
 
 void EditorLevel::clear_level()
 {
-    floors_.clear();
+
     current_id_ = 0;
-    min_floor_ = 0;
-    max_floor_ = 0;
+    floors_manager_.clear();
 }
 
 bool EditorLevel::save(const std::filesystem::path& path)
@@ -242,50 +217,20 @@ bool EditorLevel::save(const std::filesystem::path& path)
 
 bool EditorLevel::do_save(const std::filesystem::path& path) const
 {
-    nlohmann::json output;
-    output["version"] = 1;
-    output["floors"] = {};
+    auto output = floors_manager_.serialise();
 
-    // Floors are saved from bottom to top
-    for (int floor_number = min_floor_; floor_number < max_floor_ + 1; floor_number++)
+    if (output)
     {
-        auto floor_opt = find_floor(floor_number);
-        if (!floor_opt)
-        {
-            std::println(std::cerr, "Could not save floor {} as it does not exist", floor_number);
-            return false;
-        }
-        auto& floor = **floor_opt;
-
-        // Objects are grouped together by their type to optimize the json
-        std::unordered_map<std::string, nlohmann::json> object_map;
-
-        // Create a json object for the current floor
-        nlohmann::json current_floor;
-        current_floor["floor"] = floor_number;
-        current_floor["objects"] = {};
-
-        // Iterate through all objects on the floor and group them by type
-        for (auto& object : floor.objects)
-        {
-            auto [data, type] = object.serialise();
-            if (object_map.find(type) == object_map.end())
-            {
-                object_map[type] = {};
-            }
-            object_map[type].push_back(data);
-        }
-
-        // Add the grouped objects to the current floor json
-        current_floor["objects"] = object_map;
-        output["floors"].push_back(current_floor);
+        // Write the output to the file
+        std::ofstream output_file(path);
+        output_file << output << std::endl;
+        std::println("Level has been saved to: {}", path.string());
+        return true;
     }
-
-    // Write the output to the file
-    std::ofstream output_file(path);
-    output_file << output << std::endl;
-    std::println("Level has been saved to: {}", path.string());
-    return true;
+    else
+    {
+        return false;
+    }
 }
 
 bool EditorLevel::load(const std::filesystem::path& path)
@@ -312,7 +257,7 @@ bool EditorLevel::load(const std::filesystem::path& path)
         }
 
         int floor_number = floor_object["floor"];
-        auto& floor = ensure_floor_exists(floor_number);
+        auto& floor = floors_manager_.ensure_floor_exists(floor_number);
 
         // Load the objects for the current floor
         auto object_types = floor_object["objects"];
@@ -334,28 +279,4 @@ bool EditorLevel::load(const std::filesystem::path& path)
 bool EditorLevel::changes_made_since_last_save() const
 {
     return changes_made_since_last_save_;
-}
-
-std::optional<EditorLevel::Floor*> EditorLevel::find_floor(int floor_number)
-{
-    for (auto& floor : floors_)
-    {
-        if (floor.real_floor == floor_number)
-        {
-            return &floor;
-        }
-    }
-    return {};
-}
-
-std::optional<const EditorLevel::Floor*> EditorLevel::find_floor(int floor_number) const
-{
-    for (auto& floor : floors_)
-    {
-        if (floor.real_floor == floor_number)
-        {
-            return &floor;
-        }
-    }
-    return {};
 }

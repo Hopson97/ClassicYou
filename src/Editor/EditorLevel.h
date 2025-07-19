@@ -8,35 +8,15 @@
 #include "../Editor/LevelObject.h"
 #include "../Graphics/Mesh.h"
 #include "../Graphics/OpenGL/Shader.h"
+#include "FloorManager.h"
 
 class DrawingPad;
 
-using ObjectId = std::int32_t;
-
 class EditorLevel
 {
-    struct LevelMesh
-    {
-        ObjectId id;
-        LevelObjectsMesh3D mesh;
-    };
-
-    struct Floor
-    {
-        Floor(int floor)
-            : real_floor(floor)
-        {
-        }
-
-        std::vector<LevelObject> objects;
-        std::vector<LevelMesh> meshes;
-        int real_floor = 0;
-    };
-
   public:
     EditorLevel();
 
-    // Wall& add_wall(const WallParameters& parameters, const WallProps& props);
     LevelObject& add_object(const LevelObject& object, int floor_number);
     LevelObject& add_object(const LevelObject& object, Floor& floor);
 
@@ -73,15 +53,11 @@ class EditorLevel
     LevelObject* try_select(glm::vec2 selection_tile, const LevelObject* p_active_object,
                             int current_floor);
 
-    Floor& ensure_floor_exists(int floor_number);
-
     int get_min_floor() const;
     int get_max_floor() const;
     size_t get_floor_count() const;
+    void ensure_floor_exists(int floor_number);
 
-    /**
-     *   @brief Reset the level back to its default state
-     */
     void clear_level();
 
     bool save(const std::filesystem::path& path);
@@ -91,8 +67,6 @@ class EditorLevel
 
   private:
     bool do_save(const std::filesystem::path& path) const;
-    std::optional<Floor*> find_floor(int floor_number);
-    std::optional<const Floor*> find_floor(int floor_number) const;
 
     template <typename LoadFunc>
     void load_objects(nlohmann::json& json, const char* object_key, Floor& floor, LoadFunc func)
@@ -109,10 +83,7 @@ class EditorLevel
     }
 
   private:
-    std::vector<Floor> floors_;
-    int max_floor_ = 0;
-    int min_floor_ = 0;
-
+    FloorManager floors_manager_;
     int current_id_ = 0;
 
     bool changes_made_since_last_save_ = false;

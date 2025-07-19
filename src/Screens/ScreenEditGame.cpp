@@ -217,6 +217,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
     {
         if (mouse->button == sf::Mouse::Button::Left)
         {
+            // Start dragging the selected object
             if (p_active && p_active->try_select_2d(editor_state_.node_hovered) &&
                 !std::get_if<WallObject>(&p_active->object_type))
             {
@@ -252,16 +253,18 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
             // Editing a wall requires a special tool to enable resizing, so after a object it
             // switches between tools
-            if (p_active)
+            if (editor_state_.p_active_object_)
             {
-                if (auto wall = std::get_if<WallObject>(&p_active->object_type))
+                if (auto wall =
+                        std::get_if<WallObject>(&editor_state_.p_active_object_->object_type))
                 {
-                    tool_ = std::make_unique<UpdateWallTool>(*p_active, *wall);
+                    tool_ =
+                        std::make_unique<UpdateWallTool>(*editor_state_.p_active_object_, *wall);
                 }
             }
-            else
+            else if (tool_->get_tool_type() == ToolType::UpdateWall)
             {
-                // Nothing was selected, default back to CreateWallTOol
+                // Nothing was selected, default back to CreateWallTool if currently selecting a wall
                 tool_ = std::make_unique<CreateWallTool>();
             }
         }
@@ -320,7 +323,9 @@ void ScreenEditGame::on_render(bool show_debug)
     glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
 
     level_.render_2d(drawing_pad_, editor_state_.p_active_object_, editor_state_.current_floor);
-    if (!ImGui::GetIO().WantCaptureMouse && !moving_object_)
+
+    if (tool_->get_tool_type() == ToolType::UpdateWall ||
+        (!ImGui::GetIO().WantCaptureMouse && !moving_object_))
     {
         tool_->render_preview_2d(drawing_pad_, editor_state_);
     }

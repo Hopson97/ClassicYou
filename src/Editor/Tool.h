@@ -16,7 +16,6 @@ enum class ToolType
     CreateWall,
     UpdateWall,
     CreateObject,
-    Drag
 };
 
 class ITool

@@ -73,7 +73,7 @@ namespace
 
 LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number)
 {
-    const auto FLOOR_OFFSET = floor_number * FLOOR_HEIGHT;
+
     const auto& params = wall.parameters;
     const auto& props = wall.properties;
     // Begin
@@ -85,8 +85,11 @@ LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number)
     // Offset x, y
     auto ox = 0.0f;
     auto oz = 0.0f;
-    auto ob = props.base_height * FLOOR_HEIGHT + FLOOR_OFFSET;
-    auto h = std::min(ob + props.wall_height * 2, FLOOR_HEIGHT) + FLOOR_OFFSET;
+    auto ob = props.base_height * FLOOR_HEIGHT;
+    auto h = std::min(ob + props.wall_height * 2, FLOOR_HEIGHT);
+
+    ob += floor_number * FLOOR_HEIGHT;
+    h += floor_number * FLOOR_HEIGHT;
 
 
     const auto length = glm::length(b - e);
