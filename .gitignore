@@ -28,3 +28,6 @@ classic-you/
 ClassicYou/
 
 src/Editor/ObjectTypes/
+
+levels/*.cy
+levels/*.json

@@ -114,6 +114,11 @@ void Camera::gui(const char* name)
     bool should_update = false;
     if (ImGui::Begin(name))
     {
+        auto p = transform.position;
+        auto r = transform.rotation;
+        ImGui::Text("Position: (%f, %f, %f)", p.x, p.y, p.z);
+        ImGui::Text("Rotation: (%f, %f, %f)", r.x, r.y, r.z);
+
         if (config_.type == CameraType::Perspective)
         {
 

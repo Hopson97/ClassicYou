@@ -67,6 +67,7 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens, std::string level_name)
 
 bool ScreenEditGame::on_init()
 {
+
     tool_ = std::make_unique<CreateWallTool>();
     if (!drawing_pad_.init())
     {
@@ -563,6 +564,7 @@ void ScreenEditGame::debug_gui()
         if (ImGui::Button("Perspective"))   { camera_.set_type(CameraType::Perspective);        }
         if (ImGui::Button("Orthographic"))  { camera_.set_type(CameraType::OrthographicWorld);  }
     }
+
     // clang-format on
     ImGui::End();
 }

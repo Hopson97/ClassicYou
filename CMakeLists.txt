@@ -43,9 +43,11 @@ else()
 		-Wall -Wextra -pedantic)		
 endif()
 
-find_package(glm CONFIG REQUIRED)
 find_package(SFML COMPONENTS system audio network window graphics CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
+find_package(ctre CONFIG REQUIRED)
+target_link_libraries(main PRIVATE ctre::ctre)
 
 add_subdirectory(deps)
 target_include_directories(
@@ -56,8 +58,9 @@ target_include_directories(
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     sfml-system sfml-audio sfml-network sfml-graphics sfml-window
-    imgui::imgui
     glm::glm
+    imgui::imgui
+    ctre::ctre
     imgui_sfml
     glad 
 )

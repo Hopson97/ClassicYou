@@ -272,6 +272,7 @@ bool EditorLevel::load(const std::filesystem::path& path)
                      { level_object.deserialise_as_polygon_platform(json); });
     }
 
+    std::println("Successfully loaded {} ", path.string());
     changes_made_since_last_save_ = false;
     return true;
 }

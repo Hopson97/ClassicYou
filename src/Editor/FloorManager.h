@@ -41,3 +41,5 @@ struct FloorManager
 
     std::optional<nlohmann::json> serialise() const;
 };
+
+void convert_legacy_level(const std::filesystem::path& path);

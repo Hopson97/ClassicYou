@@ -16,10 +16,10 @@ class LevelTextures
             return true;
         }
 
-        // Load the texture from disk - todo maybe load the image once and use for both?
         auto [loaded, id] = textures.add_texture_from_file(texture_file_path, 4, false, false);
         if (loaded)
         {
+            std::println("{} -> {}", name, id);
             texture_map.emplace(name, id);
 
             // Also load the "TEXTURE_2D" for GUIs

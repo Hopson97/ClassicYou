@@ -11,6 +11,7 @@
 #include "Util/Keyboard.h"
 #include "Util/Profiler.h"
 #include "Util/TimeStep.h"
+#include "Editor/FloorManager.h"
 
 namespace
 {
@@ -20,6 +21,8 @@ namespace
 
 int main()
 {
+    convert_legacy_level("levels/253.TheCastle.ChallengeYou.cy");
+
     sf::ContextSettings context_settings;
     context_settings.depthBits = 24;
     context_settings.stencilBits = 8;

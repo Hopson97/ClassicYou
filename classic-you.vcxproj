@@ -160,6 +160,7 @@
     <ClCompile Include="src\Editor\EditorGUI.cpp" />
     <ClCompile Include="src\Editor\EditorLevel.cpp" />
     <ClCompile Include="src\Editor\FloorManager.cpp" />
+    <ClCompile Include="src\Editor\LegacyFileConverter.cpp" />
     <ClCompile Include="src\Editor\LevelObjectGeometry.cpp" />
     <ClCompile Include="src\Editor\FloorManager.h" />
     <ClCompile Include="src\Editor\Tool.cpp" />
