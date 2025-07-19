@@ -276,20 +276,23 @@ void ScreenEditGame::on_render(bool show_debug)
     //=============================================
     glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
 
-    tool_->render_preview_2d(drawing_pad_, editor_state_);
     level_.render_2d(drawing_pad_, editor_state_.p_active_object_, editor_state_.current_floor);
+    if (!ImGui::GetIO().WantCaptureMouse)
+    {
+        tool_->render_preview_2d(drawing_pad_, editor_state_);
+    }
 
     // Finalise 2d rendering
     drawing_pad_.display();
 
     //=============================================
-    //      Render the non-scene 3D Object
+    //      Render the 3D View
     // ============================================
     // Update the shader buffers
     matrices_ssbo_.buffer_sub_data(0, camera_.get_projection_matrix());
     matrices_ssbo_.buffer_sub_data(sizeof(glm::mat4), camera_.get_view_matrix());
 
-    // Render the drawing pad to the left side
+    // Render the 3D view to the right side
     glViewport(window().getSize().x / 2, 0, window().getSize().x / 2, window().getSize().y);
     scene_shader_.bind();
 
@@ -378,7 +381,12 @@ void ScreenEditGame::render_editor_ui()
         }
         if (ImGui::Button("Platform"))
         {
-            tool_ = std::make_unique<CreatePlatformTool>(editor_state_.platform_default);
+            tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::Platform);
+            editor_state_.p_active_object_ = nullptr;
+        }
+        if (ImGui::Button("Polygon Platform"))
+        {
+            tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::PolygonPlatform);
             editor_state_.p_active_object_ = nullptr;
         }
 
@@ -401,7 +409,6 @@ void ScreenEditGame::render_editor_ui()
         }
         ImGui::Text("Lowest: %d - Current: %d - Highest: %d", level_.get_min_floor(),
                     editor_state_.current_floor, level_.get_max_floor());
-
 
         ImGui::Separator();
         ImGui::End();

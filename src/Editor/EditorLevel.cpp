@@ -157,15 +157,21 @@ LevelObject* EditorLevel::try_select(glm::vec2 selection_tile, const LevelObject
 {
     for (auto& floor : floors_)
     {
-        // Only render the current floor and the floor below!
-        if (floor.real_floor == current_floor)
+        // 2D Selection can only happen for objects on the current floor
+        if (floor.real_floor != current_floor)
         {
-            for (auto& object : floor.objects)
+            continue;
+        }
+
+        for (auto& object : floor.objects)
+        {
+            if (object.try_select_2d(selection_tile))
             {
-                if (object.try_select_2d(selection_tile, p_active_object))
+                if (p_active_object && p_active_object->object_id == object.object_id)
                 {
-                    return &object;
+                    continue;
                 }
+                return &object;
             }
         }
     }
@@ -185,13 +191,11 @@ EditorLevel::Floor& EditorLevel::ensure_floor_exists(int floor_number)
     {
         if (floor_number < get_min_floor())
         {
-            auto& floor = floors_.emplace_back(--min_floor_);
-            return floor;
+            return floors_.emplace_back(--min_floor_);
         }
         else if (floor_number > get_max_floor())
         {
-            auto& floor = floors_.emplace_back(++max_floor_);
-            return floor;
+            return floors_.emplace_back(++max_floor_);
         }
     }
 
@@ -319,8 +323,7 @@ bool EditorLevel::load(const std::filesystem::path& path)
         load_objects(object_types, "wall", floor, [&](auto& level_object, auto& json)
                      { level_object.deserialise_as_wall(json); });
 
-        load_objects(object_types, "polygon_platform", floor,
-                     [&](auto& level_object, auto& json)
+        load_objects(object_types, "polygon_platform", floor, [&](auto& level_object, auto& json)
                      { level_object.deserialise_as_polygon_platform(json); });
     }
 

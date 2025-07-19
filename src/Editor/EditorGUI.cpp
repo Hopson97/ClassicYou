@@ -91,6 +91,32 @@ namespace
         }
     }
 
+    struct TextureTab
+    {
+        const char* name;
+        TextureProp current;
+        TextureProp* new_texture;
+    };
+
+    void texture_gui_tabs(UpdateResult& result, const char* tab_names,
+                          const LevelTextures& textures, TextureTab tab_a, TextureTab tab_b)
+    {
+        if (ImGui::BeginTabBar(tab_names))
+        {
+            if (ImGui::BeginTabItem(tab_a.name))
+            {
+                texture_gui(result, tab_a.name, textures, tab_a.current, *tab_a.new_texture);
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem(tab_b.name))
+            {
+                texture_gui(result, tab_b.name, textures, tab_b.current, *tab_b.new_texture);
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
+        }
+    }
+
     /// GUI for a enum property such a styles etc
     template <typename EnumType>
     void enum_gui(UpdateResult& result, const char* label, EnumType current, EnumType& new_value)
@@ -156,22 +182,13 @@ std::pair<UpdateResult, WallProps> wall_gui(const LevelTextures& textures, const
 
     WallProps new_props = wall.properties;
 
-    if (ImGui::BeginTabBar("Textures_wall"))
-    {
-        if (ImGui::BeginTabItem("Front Texture"))
-        {
-            texture_gui(result, "Front Texture", textures, wall.properties.texture_front,
-                        new_props.texture_front);
-            ImGui::EndTabItem();
-        }
-        if (ImGui::BeginTabItem("Back Texture"))
-        {
-            texture_gui(result, "Back Texture", textures, wall.properties.texture_back,
-                        new_props.texture_back);
-            ImGui::EndTabItem();
-        }
-        ImGui::EndTabBar();
-    }
+    texture_gui_tabs(result, "Textures_wall", textures,
+                     {.name = "Front Texture",
+                      .current = wall.properties.texture_front,
+                      .new_texture = &new_props.texture_front},
+                     {.name = "Back Texture",
+                      .current = wall.properties.texture_back,
+                      .new_texture = &new_props.texture_back});
 
     // When the wall is generating the mesh, these values are multiplied by 2.0f
     slider(result, "Base Height", new_props.base_height, 0.0f, 0.9f, 0.1f);
@@ -191,22 +208,14 @@ std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& texture
 
     PlatformProps new_props = platform.properties;
 
-    if (ImGui::BeginTabBar("Textures_platform"))
-    {
-        if (ImGui::BeginTabItem("Top Texture"))
-        {
-            texture_gui(result, "Top Texture", textures, platform.properties.texture_top,
-                        new_props.texture_top);
-            ImGui::EndTabItem();
-        }
-        if (ImGui::BeginTabItem("Bottom Texture"))
-        {
-            texture_gui(result, "Bottom Texture", textures, platform.properties.texture_bottom,
-                        new_props.texture_bottom);
-            ImGui::EndTabItem();
-        }
-        ImGui::EndTabBar();
-    }
+    texture_gui_tabs(result, "Textures_platform", textures,
+                     {.name = "Top Texture",
+                      .current = platform.properties.texture_top,
+                      .new_texture = &new_props.texture_top},
+                     {.name = "Bottom Texture",
+                      .current = platform.properties.texture_bottom,
+                      .new_texture = &new_props.texture_bottom});
+
     enum_gui<PlatformStyle>(result, "Platform Style", platform.properties.style, new_props.style);
 
     slider(result, "Width", new_props.width, 0.5f, 20.0f, 0.5f);
@@ -222,11 +231,11 @@ std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& texture
 }
 
 std::pair<UpdateResult, PolygonPlatformProps>
-polygon_platform_gui(const LevelTextures& textures, const PolygonPlatformObject& polygon_platform)
+polygon_platform_gui(const LevelTextures& textures, const PolygonPlatformObject& poly)
 {
     UpdateResult result;
 
-    PolygonPlatformProps new_props = polygon_platform.properties;
+    PolygonPlatformProps new_props = poly.properties;
 
     if (ImGui::Checkbox("Show Floor?", &new_props.visible))
     {
@@ -235,27 +244,20 @@ polygon_platform_gui(const LevelTextures& textures, const PolygonPlatformObject&
 
     if (new_props.visible)
     {
-        if (ImGui::BeginTabBar("Textures_polygon_platform"))
-        {
-            if (ImGui::BeginTabItem("Top Texture"))
-            {
-                texture_gui(result, "Top Texture", textures,
-                            polygon_platform.properties.texture_top, new_props.texture_top);
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem("Bottom Texture"))
-            {
-                texture_gui(result, "Bottom Texture", textures,
-                            polygon_platform.properties.texture_bottom, new_props.texture_bottom);
-                ImGui::EndTabItem();
-            }
-            ImGui::EndTabBar();
-        }
+        texture_gui_tabs(result, "Textures_platform", textures,
+                         {.name = "Top Texture",
+                          .current = poly.properties.texture_top,
+                          .new_texture = &new_props.texture_top},
+                         {.name = "Bottom Texture",
+                          .current = poly.properties.texture_bottom,
+                          .new_texture = &new_props.texture_bottom});
+
+        // Multiplied by 2 when mesh is created
+        slider(result, "Base Height", new_props.base, 0.0f, 0.9f, 0.1f);
     }
 
-
     return {
-        check_prop_updated(result, polygon_platform.properties, new_props),
+        check_prop_updated(result, poly.properties, new_props),
         new_props,
     };
 }

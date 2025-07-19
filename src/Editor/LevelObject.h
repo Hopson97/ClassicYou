@@ -17,10 +17,16 @@ class DrawingPad;
 // =======================================
 //     Object Type Template
 // =======================================
+enum class ObjectTypeName
+{
+    Wall,
+    Platform,
+    PolygonPlatform
+};
+
 template <typename Properties, typename Parameters>
 struct ObjectType
 {
-
     using PropertiesType = Properties;
     using ParametersType = Parameters;
 
@@ -31,7 +37,6 @@ struct ObjectType
 using WallObject = ObjectType<WallProps, WallParameters>;
 using PlatformObject = ObjectType<PlatformProps, PlatformParameters>;
 using PolygonPlatformObject = ObjectType<PolygonPlatformProps, PolygonPlatformParameters>;
-
 using GeometryObjects = std::variant<WallObject, PlatformObject, PolygonPlatformObject>;
 
 struct LevelObject
@@ -59,7 +64,7 @@ struct LevelObject
 
     void render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object,
                    bool is_current_floor) const;
-    bool try_select_2d(glm::vec2 selection_tile, const LevelObject* p_active_object) const;
+    bool try_select_2d(glm::vec2 selection_tile) const;
 
     std::pair<nlohmann::json, std::string> serialise() const;
 

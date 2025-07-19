@@ -91,7 +91,6 @@ namespace
 void LevelObject::property_gui(EditorState& state, const LevelTextures& textures,
                                ActionManager& action_manager)
 {
-
     ImGui::Text("Properties");
     ImGui::Separator();
     if (auto wall = std::get_if<WallObject>(&object_type))
@@ -202,52 +201,46 @@ void LevelObject::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active
         auto& tl = params.corner_top_left;
         auto& tr = params.corner_top_right;
         auto& br = params.corner_bottom_right;
-        auto& bl = params.corner_bottom_right;
+        auto& bl = params.corner_bottom_left;
 
         drawing_pad.render_line(tl, tl + glm::vec2(TILE_SIZE, 0), colour, 5);
-        drawing_pad.render_line(tl, tl - glm::vec2(0, TILE_SIZE), colour, 5);
+        drawing_pad.render_line(tl, tl + glm::vec2(0, TILE_SIZE), colour, 5);
 
         drawing_pad.render_line(tr, tr - glm::vec2(TILE_SIZE, 0), colour, 5);
-        drawing_pad.render_line(tr, tr - glm::vec2(0, TILE_SIZE), colour, 5);
+        drawing_pad.render_line(tr, tr + glm::vec2(0, TILE_SIZE), colour, 5);
 
         drawing_pad.render_line(br, br - glm::vec2(TILE_SIZE, 0), colour, 5);
-        drawing_pad.render_line(br, br + glm::vec2(0, TILE_SIZE), colour, 5);
+        drawing_pad.render_line(br, br - glm::vec2(0, TILE_SIZE), colour, 5);
 
         drawing_pad.render_line(bl, bl + glm::vec2(TILE_SIZE, 0), colour, 5);
-        drawing_pad.render_line(bl, bl + glm::vec2(0, TILE_SIZE), colour, 5);
+        drawing_pad.render_line(bl, bl - glm::vec2(0, TILE_SIZE), colour, 5);
     }
 }
 
-bool LevelObject::try_select_2d(glm::vec2 selection_tile, const LevelObject* p_active_object) const
+bool LevelObject::try_select_2d(glm::vec2 selection_tile) const
 {
     if (auto wall = std::get_if<WallObject>(&object_type))
     {
-        const auto& params = wall->parameters;
-        if (distance_to_line(selection_tile, {params.line.start, params.line.end}) < 15)
-        {
-            // Allow selecting objects that may be overlapping
-            if (!p_active_object || p_active_object->object_id != object_id)
-            {
-                return true;
-            }
-        }
+        return distance_to_line(selection_tile, wall->parameters.line) < 15;
     }
     else if (auto platform = std::get_if<PlatformObject>(&object_type))
     {
         const auto& params = platform->parameters;
         const auto& props = platform->properties;
 
-        if (selection_tile.x >= params.position.x &&
-            selection_tile.x <= params.position.x + props.width * TILE_SIZE &&
-            selection_tile.y >= params.position.y &&
-            selection_tile.y <= params.position.y + props.depth * TILE_SIZE)
-        {
-            // Allow selecting objects that may be overlapping
-            if (!p_active_object || p_active_object->object_id != object_id)
-            {
-                return true;
-            }
-        }
+        return selection_tile.x >= params.position.x &&
+               selection_tile.x <= params.position.x + props.width * TILE_SIZE &&
+               selection_tile.y >= params.position.y &&
+               selection_tile.y <= params.position.y + props.depth * TILE_SIZE;
+    }
+    else if (auto platform = std::get_if<PolygonPlatformObject>(&object_type))
+    {
+        const auto& params = platform->parameters;
+
+        return selection_tile.x >= params.corner_top_left.x &&
+               selection_tile.x <= params.corner_top_right.x &&
+               selection_tile.y >= params.corner_top_left.y &&
+               selection_tile.y <= params.corner_bottom_left.y;
     }
     return false;
 }

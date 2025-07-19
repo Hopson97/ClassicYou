@@ -74,28 +74,10 @@ class UpdateWallTool : public ITool
     } target_;
 };
 
-class CreatePlatformTool : public ITool
-{
-  public:
-    CreatePlatformTool(const PlatformProps& platform_default);
-
-    void on_event(sf::Event event, glm::vec2 node, EditorState& state,
-                  ActionManager& actions) override;
-    void render_preview() override;
-    void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) override;
-
-    ToolType get_tool_type() const override;
-
-  private:
-    const PlatformProps* p_platform_default_;
-    LevelObjectsMesh3D platform_preview_;
-    glm::vec2 tile_{0.0f};
-};
-
 class CreateObjectTool : public ITool
 {
   public:
-    CreateObjectTool(const GeometryObjects& object);
+    CreateObjectTool(ObjectTypeName object_type);
 
     void on_event(sf::Event event, glm::vec2 node, EditorState& state,
                   ActionManager& actions) override;
@@ -105,7 +87,8 @@ class CreateObjectTool : public ITool
     ToolType get_tool_type() const override;
 
   private:
-    const GeometryObjects* p_object_;
+    const ObjectTypeName object_type_;
     LevelObjectsMesh3D object_preview_;
     glm::vec2 tile_{0.0f};
+
 };

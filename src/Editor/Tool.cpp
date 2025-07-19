@@ -1,6 +1,9 @@
 #include "Tool.h"
 
+#include <print>
+
 #include <imgui.h>
+#include <magic_enum/magic_enum.hpp>
 
 #include "Actions.h"
 #include "DrawingPad.h"
@@ -195,120 +198,146 @@ ToolType UpdateWallTool::get_tool_type() const
     return ToolType::UpdateWall;
 }
 
-CreatePlatformTool::CreatePlatformTool(const PlatformProps& platform_default)
-    : p_platform_default_(&platform_default)
-{
-}
-
-void CreatePlatformTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
-                                  ActionManager& actions)
-{
-    if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
-    {
-        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
-        {
-            actions.push_action(
-                std::make_unique<AddObjectAction>(LevelObject{PlatformObject{
-                                                      .properties = state.platform_default,
-                                                      .parameters = {.position = node},
-                                                  }},
-                                                  state.current_floor));
-        }
-    }
-    else if (event.is<sf::Event::MouseMoved>())
-    {
-        platform_preview_ = generate_platform_mesh(
-            {
-                .properties = state.platform_default,
-                .parameters = {.position = node},
-            },
-            state.current_floor);
-        platform_preview_.buffer();
-        tile_ = node;
-    }
-}
-
-void CreatePlatformTool::render_preview()
-{
-    if (platform_preview_.has_buffered())
-    {
-        platform_preview_.bind().draw_elements();
-    }
-}
-
-void CreatePlatformTool::render_preview_2d(DrawingPad& drawing_pad, const EditorState& state)
-{
-    if (state.platform_default.style == PlatformStyle::Quad)
-    {
-        drawing_pad.render_quad(
-            tile_, {TILE_SIZE * p_platform_default_->width, TILE_SIZE * p_platform_default_->depth},
-            Colour::RED);
-    }
-    else if (state.platform_default.style == PlatformStyle::Diamond)
-    {
-        drawing_pad.render_diamond(
-            tile_, {TILE_SIZE * p_platform_default_->width, TILE_SIZE * p_platform_default_->depth},
-            Colour::RED);
-    }
-}
-
-ToolType CreatePlatformTool::get_tool_type() const
-{
-    return ToolType::CreatePlatform;
-}
-
-CreateObjectTool::CreateObjectTool(const GeometryObjects& object)
-    :   p_object_(&object)
+CreateObjectTool::CreateObjectTool(ObjectTypeName object_type)
+    : object_type_(object_type)
 {
 }
 
 void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
                                 ActionManager& actions)
 {
+    float TS = TILE_SIZE;
+
     if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
-            if (auto platform = std::get_if<PlatformObject>(p_object_))
+            switch (object_type_)
             {
-                actions.push_action(
-                    std::make_unique<AddObjectAction>(LevelObject{PlatformObject{
-                                                          .properties = state.platform_default,
-                                                          .parameters = {.position = node},
-                                                      }},
-                                                      state.current_floor));
-            }
-            else if (auto poly_platform = std::get_if<PlatformObject>(p_object_))
-            {
-                actions.push_action(
-                    std::make_unique<AddObjectAction>(LevelObject{PlatformObject{
-                                                          .properties = state.platform_default,
-                                                          .parameters = {.position = node},
-                                                      }},
-                                                      state.current_floor));
-            }
+                case ObjectTypeName::Platform:
+                    actions.push_action(std::make_unique<AddObjectAction>(
+                        LevelObject{
+                            PlatformObject{
+                                .properties = state.platform_default,
+                                .parameters = {.position = node},
+                            },
+                        },
+                        state.current_floor));
+                    break;
 
+                case ObjectTypeName::PolygonPlatform:
+                    actions.push_action(std::make_unique<AddObjectAction>(
+                        LevelObject{
+                            PolygonPlatformObject{
+                                .properties = state.polygon_platform_default,
+                                .parameters = {.corner_top_left = node,
+                                               .corner_top_right = node + glm::vec2{10.0f, 0} * TS,
+                                               .corner_bottom_right =
+                                                   node + glm::vec2{10.0f, 10.0f} * TS,
+                                               .corner_bottom_left = node + glm::vec2{0, 10.0f} * TS
+
+                                },
+                            },
+                        },
+                        state.current_floor));
+                    break;
+
+                default:
+                    std::println("Missing implemention for CreateObjectTool for {}",
+                                 magic_enum::enum_name(object_type_));
+                    break;
+            }
         }
     }
     else if (event.is<sf::Event::MouseMoved>())
     {
-        platform_preview_ = generate_platform_mesh(
-            {
-                .properties = state.platform_default,
-                .parameters = {.position = node},
-            },
-            state.current_floor);
-        platform_preview_.buffer();
+        switch (object_type_)
+        {
+            case ObjectTypeName::Platform:
+                object_preview_ = generate_platform_mesh(
+                    {
+                        .properties = state.platform_default,
+                        .parameters = {.position = node},
+                    },
+                    state.current_floor);
+                break;
+
+            case ObjectTypeName::PolygonPlatform:
+                object_preview_ = generate_polygon_platform_mesh(
+                    {.properties = state.polygon_platform_default,
+                     .parameters = {.corner_top_left = node,
+                                    .corner_top_right = node + glm::vec2{10.0f, 0} * TS,
+                                    .corner_bottom_right = node + glm::vec2{10.0f, 10.0f} * TS,
+                                    .corner_bottom_left = node + glm::vec2{0, 10.0f} * TS}},
+                    state.current_floor);
+                break;
+
+            default:
+                std::println("Missing implemention for CreateObjectTool mouse move for {}",
+                             magic_enum::enum_name(object_type_));
+                break;
+        }
+        object_preview_.buffer();
         tile_ = node;
     }
 }
 
 void CreateObjectTool::render_preview()
 {
+    if (object_preview_.has_buffered())
+    {
+        object_preview_.bind().draw_elements();
+    }
 }
 
 void CreateObjectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorState& state)
 {
+    switch (object_type_)
+    {
+        case ObjectTypeName::Platform:
+            if (state.platform_default.style == PlatformStyle::Quad)
+            {
+                drawing_pad.render_quad(tile_,
+                                        {TILE_SIZE * state.platform_default.width,
+                                         TILE_SIZE * state.platform_default.depth},
+                                        Colour::RED);
+            }
+            else if (state.platform_default.style == PlatformStyle::Diamond)
+            {
+                drawing_pad.render_diamond(tile_,
+                                           {TILE_SIZE * state.platform_default.width,
+                                            TILE_SIZE * state.platform_default.depth},
+                                           Colour::RED);
+            }
+            break;
+
+        case ObjectTypeName::PolygonPlatform:
+        {
+            float TS = TILE_SIZE;
+            auto tl = tile_;
+            auto tr = tile_ + glm::vec2{10.0f, 0} * TS;
+            auto br = tile_ + glm::vec2{10.0f, 10.0f} * TS;
+            auto bl = tile_ + glm::vec2{0, 10.0f} * TS;
+
+            drawing_pad.render_line(tl, tl + glm::vec2(TILE_SIZE, 0), Colour::RED, 5);
+            drawing_pad.render_line(tl, tl + glm::vec2(0, TILE_SIZE), Colour::RED, 5);
+
+            drawing_pad.render_line(tr, tr - glm::vec2(TILE_SIZE, 0), Colour::RED, 5);
+            drawing_pad.render_line(tr, tr + glm::vec2(0, TILE_SIZE), Colour::RED, 5);
+
+            drawing_pad.render_line(br, br - glm::vec2(TILE_SIZE, 0), Colour::RED, 5);
+            drawing_pad.render_line(br, br - glm::vec2(0, TILE_SIZE), Colour::RED, 5);
+
+            drawing_pad.render_line(bl, bl + glm::vec2(TILE_SIZE, 0), Colour::RED, 5);
+            drawing_pad.render_line(bl, bl - glm::vec2(0, TILE_SIZE), Colour::RED, 5);
+        }
+        break;
+
+        default:
+            std::println("Missing implemention for CreateObjectTool for {}",
+                         magic_enum::enum_name(object_type_));
+            break;
+    }
 }
 
 ToolType CreateObjectTool::get_tool_type() const
