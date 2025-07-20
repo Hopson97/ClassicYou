@@ -7,20 +7,18 @@
 #include "EditConstants.h"
 
 class LevelTextures;
-/*
+
+using TextureID = int;
 struct TextureProp
 {
-    GLfloat id;
-    glm::u8vec4 colour;
+    TextureID id{0};
+    glm::u8vec4 colour{255};
 };
 
 inline bool operator==(const TextureProp& lhs, const TextureProp& rhs)
 {
     return lhs.id == rhs.id && lhs.colour == rhs.colour;
 }
-*/
-
-using TextureProp = int;
 
 // =======================================
 //      Wall Object Types

@@ -118,8 +118,8 @@ void from_json(const nlohmann::json& json, PolygonPlatformObject& poly)
                        .corner_bottom_left = extract_vec2(points[0][0], points[0][1])};
 
     poly.properties.base = 0;
-    poly.properties.texture_bottom = map_texture(props[1]);
-    poly.properties.texture_top = map_texture(props[0][0]);
+    poly.properties.texture_bottom.id = map_texture(props[1]);
+    poly.properties.texture_top.id = map_texture(props[0][0]);
 
     int visible = props[0][1];
     poly.properties.visible = static_cast<bool>(visible);
@@ -143,8 +143,8 @@ void from_json(const nlohmann::json& json, LegacyWall& wall)
     wall.object.parameters.line.start = start;
     wall.object.parameters.line.end = start + offset;
 
-    wall.object.properties.texture_front = map_wall_texture(json[4][1]);
-    wall.object.properties.texture_back = map_wall_texture(json[4][0]);
+    wall.object.properties.texture_front.id = map_wall_texture(json[4][1]);
+    wall.object.properties.texture_back.id = map_wall_texture(json[4][0]);
     wall.object.properties.base_height = 0;
     wall.object.properties.wall_height = 1;
 
@@ -183,7 +183,7 @@ void from_json(const nlohmann::json& json, LegacyPlatform& platform)
 
     if (props.size() > 1)
     {
-        platform_props.texture_bottom = map_texture(props[1]);
+        platform_props.texture_bottom.id = map_texture(props[1]);
         platform_props.texture_top = platform_props.texture_bottom;
 
         if (props.size() > 2)
@@ -194,8 +194,8 @@ void from_json(const nlohmann::json& json, LegacyPlatform& platform)
     else
     {
         // Platforms default to wood textures in older versions
-        platform_props.texture_bottom = 12;
-        platform_props.texture_top = 12;
+        platform_props.texture_bottom.id = 12;
+        platform_props.texture_top.id = 12;
     }
 
     platform.floor = (int)json[2] - 1;

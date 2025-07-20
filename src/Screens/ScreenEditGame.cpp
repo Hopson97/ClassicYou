@@ -33,6 +33,11 @@ namespace
             std::round((point.y + transform.y) / scale) * scale,
         };
     }
+
+    std::filesystem::path make_level_path(const std::string& level_name)
+    {
+        return "levels/" + level_name + ".cly";
+    }
 } // namespace
 
 ScreenEditGame::ScreenEditGame(ScreenManager& screens)
@@ -142,7 +147,7 @@ bool ScreenEditGame::on_init()
     // Load the level if the name has been set already
     if (!level_name_.empty())
     {
-        level_.load("levels/" + level_name_ + ".cly");
+        level_.load(make_level_path(level_name_));
     }
 
     return true;
@@ -216,7 +221,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {
-        if (mouse->button == sf::Mouse::Button::Left)
+        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
             // Start dragging the selected object
             if (p_active && p_active->try_select_2d(editor_state_.node_hovered) &&
@@ -265,7 +270,8 @@ void ScreenEditGame::on_event(const sf::Event& event)
             }
             else if (tool_->get_tool_type() == ToolType::UpdateWall)
             {
-                // Nothing was selected, default back to CreateWallTool if currently selecting a wall
+                // Nothing was selected, default back to CreateWallTool if currently selecting a
+                // wall
                 tool_ = std::make_unique<CreateWallTool>();
             }
         }
@@ -414,7 +420,7 @@ void ScreenEditGame::on_render(bool show_debug)
         if (display_level_list(show_load_dialog_, level_name_))
         {
             show_load_dialog_ = false;
-            level_.load("levels/" + level_name_ + ".cly");
+            level_.load(make_level_path(level_name_));
             level_name_actual_ = level_name_;
         }
     }
@@ -481,7 +487,7 @@ void ScreenEditGame::render_editor_ui()
 
 void ScreenEditGame::exit_editor()
 {
-    level_.save("levels/backup.cly");
+    level_.save(make_level_path("backup"));
     p_screen_manager_->pop_screen();
     window().setMouseCursorVisible(true);
 }
@@ -495,7 +501,7 @@ void ScreenEditGame::save_level()
     }
     else
     {
-        if (level_.save("levels/" + level_name_ + ".cly"))
+        if (level_.save(make_level_path(level_name_)))
         {
             level_name_actual_ = level_name_;
         }

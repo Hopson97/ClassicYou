@@ -135,7 +135,7 @@ std::string LevelObject::to_string() const
     {
         return std::format("Props:\n Texture 1/2: {} {}: \n Base: {}\n Height: {}\nParameters:\n "
                            "  Start position: ({:.2f}, {:.2f}) - End Position: ({:.2f}, {:.2f})",
-                           wall->properties.texture_front, wall->properties.texture_back,
+                           wall->properties.texture_front.id, wall->properties.texture_back.id,
                            wall->properties.base_height, wall->properties.wall_height,
                            wall->parameters.line.start.x, wall->parameters.line.start.y,
                            wall->parameters.line.end.x, wall->parameters.line.end.y);
@@ -146,9 +146,9 @@ std::string LevelObject::to_string() const
                            "{} \n Height: {} \n Style: {}\n"
                            "Parameters:\n "
                            " Position: ({:.2f}, {:.2f})",
-                           platform->properties.texture_top, platform->properties.texture_bottom,
-                           platform->properties.width, platform->properties.depth,
-                           platform->properties.base,
+                           platform->properties.texture_top.id,
+                           platform->properties.texture_bottom.id, platform->properties.width,
+                           platform->properties.depth, platform->properties.base,
                            magic_enum::enum_name(platform->properties.style),
                            platform->parameters.position.x, platform->parameters.position.y);
     }
@@ -158,7 +158,7 @@ std::string LevelObject::to_string() const
             "Props:\n Texture Top: {}\n Texture Bottom: {}\nParameters:\n "
             "Corner Top Left: ({:.2f}, {:.2f})\n - Corner Top Right: ({:.2f}, {:.2f})\n "
             "Corner Bottom Right: ({:.2f}, {:.2f})\n - Corner Bottom Left: ({:.2f}",
-            poly->properties.texture_top, poly->properties.texture_bottom,
+            poly->properties.texture_top.id, poly->properties.texture_bottom.id,
             poly->parameters.corner_top_left.x, poly->parameters.corner_top_left.y,
             poly->parameters.corner_top_right.x, poly->parameters.corner_top_right.y,
             poly->parameters.corner_bottom_right.x, poly->parameters.corner_bottom_right.y,
@@ -267,6 +267,19 @@ void LevelObject::move_to(glm::vec2 new_tile)
     }
 }
 
+void serialise_texture(nlohmann::json& object, const TextureProp& prop)
+{
+    object.push_back({prop.id, prop.colour.r, prop.colour.g, prop.colour.b, prop.colour.a});
+}
+
+TextureProp deserialise_texture(const nlohmann::json& object)
+{
+    return {
+        .id = object[0],
+        .colour = {object[1], object[2], object[3], object[4]},
+    };
+}
+
 std::pair<nlohmann::json, std::string> LevelObject::serialise() const
 {
     std::string type = "";
@@ -277,11 +290,15 @@ std::pair<nlohmann::json, std::string> LevelObject::serialise() const
         auto& params = wall->parameters;
         auto& props = wall->properties;
 
-        object["params"] = {params.line.start.x, params.line.start.y, params.line.end.x,
-                            params.line.end.y};
+        nlohmann::json json_params = {params.line.start.x, params.line.start.y, params.line.end.x,
+                                      params.line.end.y};
 
-        object["props"] = {props.texture_back, props.texture_front, props.wall_height,
-                           props.base_height};
+        nlohmann::json json_props = {};
+        serialise_texture(json_props, props.texture_back);
+        serialise_texture(json_props, props.texture_front);
+        json_props.insert(json_props.end(), {props.wall_height, props.base_height});
+
+        object = {json_params, json_props};
     }
     else if (auto platform = std::get_if<PlatformObject>(&object_type))
     {
@@ -289,10 +306,15 @@ std::pair<nlohmann::json, std::string> LevelObject::serialise() const
         auto& params = platform->parameters;
         auto& props = platform->properties;
 
-        object["params"] = {params.position.x, params.position.y};
+        nlohmann::json json_params = {params.position.x, params.position.y};
 
-        object["props"] = {props.texture_bottom, props.texture_top, props.width,
-                           props.depth,          props.base,        (int)props.style};
+        nlohmann::json json_props = {};
+        serialise_texture(json_props, props.texture_top);
+        serialise_texture(json_props, props.texture_bottom);
+        json_props.insert(json_props.end(),
+                          {props.width, props.depth, props.base, (int)props.style});
+
+        object = {json_params, json_props};
     }
     else if (auto polygon_platform = std::get_if<PolygonPlatformObject>(&object_type))
     {
@@ -300,12 +322,16 @@ std::pair<nlohmann::json, std::string> LevelObject::serialise() const
         auto& params = polygon_platform->parameters;
         auto& props = polygon_platform->properties;
 
-        object["params"] = {params.corner_top_left.x,     params.corner_top_left.y,
-                            params.corner_top_right.x,    params.corner_top_right.y,
-                            params.corner_bottom_right.x, params.corner_bottom_right.y,
-                            params.corner_bottom_left.x,  params.corner_bottom_left.y};
+        nlohmann::json json_params = {params.corner_top_left.x,     params.corner_top_left.y,
+                                      params.corner_top_right.x,    params.corner_top_right.y,
+                                      params.corner_bottom_right.x, params.corner_bottom_right.y,
+                                      params.corner_bottom_left.x,  params.corner_bottom_left.y};
 
-        object["props"] = {props.texture_top, props.texture_bottom, props.visible};
+        nlohmann::json json_props = {};
+        serialise_texture(json_props, props.texture_top);
+        serialise_texture(json_props, props.texture_bottom);
+        json_props.push_back(props.visible);
+        object = {json_params, json_props};
     }
 
     return {object, type};
@@ -314,26 +340,28 @@ std::pair<nlohmann::json, std::string> LevelObject::serialise() const
 bool LevelObject::deserialise_as_wall(const nlohmann::json& wall_json)
 {
     WallObject wall;
+    auto& params = wall.parameters;
+    auto& props = wall.properties;
 
-    auto params = wall_json["params"];
-    auto props = wall_json["props"];
-    if (params.size() < 4)
+    auto jparams = wall_json[0];
+    auto jprops = wall_json[1];
+    if (jparams.size() < 4)
     {
         std::println("Invalid wall parameters, expected 4 values");
         return false;
     }
-    if (props.size() < 4)
+    if (jprops.size() < 4)
     {
         std::println("Invalid wall properties, expected 4 values");
         return false;
     }
-    wall.parameters.line.start = {params[0], params[1]};
-    wall.parameters.line.end = {params[2], params[3]};
+    params.line.start = {jparams[0], jparams[1]};
+    params.line.end = {jparams[2], jparams[3]};
 
-    wall.properties.texture_back = props[0];
-    wall.properties.texture_front = props[1];
-    wall.properties.wall_height = props[2];
-    wall.properties.base_height = props[3];
+    props.texture_back = deserialise_texture(jprops[0]);
+    props.texture_front = deserialise_texture(jprops[1]);
+    props.wall_height = jprops[2];
+    props.base_height = jprops[3];
 
     object_type = wall;
     return true;
@@ -342,57 +370,60 @@ bool LevelObject::deserialise_as_wall(const nlohmann::json& wall_json)
 bool LevelObject::deserialise_as_platform(const nlohmann::json& platform_json)
 {
     PlatformObject platform;
-
-    auto params = platform_json["params"];
-    auto props = platform_json["props"];
-    if (params.size() < 2)
+    auto& params = platform.parameters;
+    auto& props = platform.properties;
+    auto jparams = platform_json[0];
+    auto jprops = platform_json[1];
+    if (jparams.size() < 2)
     {
         std::println("Invalid platform parameters, expected 2 values");
     }
-    if (props.size() < 6)
+    if (jprops.size() < 6)
     {
         std::println("Invalid platform properties, expected 5 values");
         return false;
     }
 
-    platform.parameters.position = {params[0], params[1]};
+    params.position = {jparams[0], jparams[1]};
 
-    platform.properties.texture_bottom = props[0];
-    platform.properties.texture_top = props[1];
-    platform.properties.width = props[2];
-    platform.properties.depth = props[3];
-    platform.properties.base = props[4];
-    platform.properties.style = (PlatformStyle)(props[5]);
+    props.texture_top = deserialise_texture(jprops[0]);
+    props.texture_bottom = deserialise_texture(jprops[1]);
+    props.width = jprops[2];
+    props.depth = jprops[3];
+    props.base = jprops[4];
+    props.style = (PlatformStyle)(jprops[5]);
 
     object_type = platform;
     return true;
 }
 
-bool LevelObject::deserialise_as_polygon_platform(const nlohmann::json& platform)
+bool LevelObject::deserialise_as_polygon_platform(const nlohmann::json& poly_json)
 {
     PolygonPlatformObject polygon_platform;
+    auto& params = polygon_platform.parameters;
+    auto& props = polygon_platform.properties;
 
-    auto params = platform["params"];
-    auto props = platform["props"];
-    if (params.size() < 8)
+    auto jparams = poly_json[0];
+    auto jprops = poly_json[1];
+    if (jparams.size() < 8)
     {
         std::println("Invalid polygon_platform parameters, expected 8 values");
         return false;
     }
-    if (props.size() < 3)
+    if (jprops.size() < 3)
     {
         std::println("Invalid polygon_platform properties, expected 3 values");
         return false;
     }
 
-    polygon_platform.parameters.corner_top_left = {params[0], params[1]};
-    polygon_platform.parameters.corner_top_right = {params[2], params[3]};
-    polygon_platform.parameters.corner_bottom_right = {params[4], params[5]};
-    polygon_platform.parameters.corner_bottom_left = {params[6], params[7]};
+    params.corner_top_left = {jparams[0], jparams[1]};
+    params.corner_top_right = {jparams[2], jparams[3]};
+    params.corner_bottom_right = {jparams[4], jparams[5]};
+    params.corner_bottom_left = {jparams[6], jparams[7]};
 
-    polygon_platform.properties.texture_top = props[0];
-    polygon_platform.properties.texture_bottom = props[1];
-    polygon_platform.properties.visible = props[2];
+    props.texture_top = deserialise_texture(jprops[0]);
+    props.texture_bottom = deserialise_texture(jprops[1]);
+    props.visible = jprops[2];
 
     object_type = polygon_platform;
     return true;

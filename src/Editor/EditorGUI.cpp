@@ -16,10 +16,14 @@ namespace
 
     /// Displays a list of available textures as a list of buttons, returns the ID of the given
     /// texture if a button is clicked
-    int texture_prop_gui(const char* label, TextureProp current_texture,
-                         const LevelTextures& textures)
+    std::optional<TextureProp> texture_prop_gui(UpdateResult& result, const char* label,
+                                                TextureProp current_texture,
+                                                const LevelTextures& textures)
     {
-        int new_texture = -1;
+        bool texture_changed = false;
+
+        TextureProp new_texture = current_texture;
+
         ImGui::Text("%s", label);
         int imgui_id = 0;
         for (const auto& [name, texture] : textures.texture_2d_map)
@@ -41,7 +45,7 @@ namespace
             // Give selected textures a red border
             if (auto texture_id = textures.get_texture(name))
             {
-                if (texture_id == old_texture)
+                if (texture_id == old_texture.id)
                 {
                     ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(255, 0, 0, 255));
                     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.0f);
@@ -54,7 +58,9 @@ namespace
             {
                 if (auto texture_id = textures.get_texture(name))
                 {
-                    new_texture = *texture_id;
+                    new_texture.id = *texture_id;
+                    result.always_update |= true;
+                    texture_changed = true;
                 }
             }
 
@@ -62,7 +68,7 @@ namespace
             ImGui::PopStyleVar();
             if (auto texture_id = textures.get_texture(name))
             {
-                if (texture_id == old_texture)
+                if (texture_id == old_texture.id)
                 {
                     ImGui::PopStyleVar(2);
                     ImGui::PopStyleColor();
@@ -75,19 +81,43 @@ namespace
             }
             ImGui::PopID();
         }
-        return new_texture;
+
+        if (ImGui::CollapsingHeader("Colour"))
+        {
+            auto& c = current_texture.colour;
+            ImVec4 colour{c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f};
+
+            if (ImGui::ColorPicker4("Colour", (float*)&colour))
+            {
+                new_texture.colour.r = static_cast<uint8_t>(colour.x * 255.0f);
+                new_texture.colour.g = static_cast<uint8_t>(colour.y * 255.0f);
+                new_texture.colour.b = static_cast<uint8_t>(colour.z * 255.0f);
+                new_texture.colour.a = static_cast<uint8_t>(colour.w * 255.0f);
+                texture_changed = true;
+                result.continuous_update |= true;
+            }
+            if (ImGui::IsItemDeactivatedAfterEdit())
+            {
+                result.action = true;
+            }
+        }
+
+        if (texture_changed)
+        {
+            return new_texture;
+        }
+        return {};
     }
 
     /// GUI for selecting a texture from the given "LevelTextures" object
     void texture_gui(UpdateResult& result, const char* label, const LevelTextures& textures,
                      TextureProp current, TextureProp& new_texture)
     {
-        auto texture = texture_prop_gui(label, current, textures);
-        if (texture >= 0)
+        auto texture = texture_prop_gui(result, label, current, textures);
+        if (texture)
         {
 
-            new_texture = texture;
-            result.always_update |= true;
+            new_texture = *texture;
         }
     }
 

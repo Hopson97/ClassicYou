@@ -17,23 +17,25 @@ namespace
         float depth = props.depth;
         auto ob = props.base * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT;
 
+        GLfloat texture_bottom = static_cast<float>(props.texture_bottom.id);
+        GLfloat texture_top = static_cast<float>(props.texture_top.id);
+        auto colour_bottom = props.texture_bottom.colour;
+        auto colour_top = props.texture_top.colour;
 
-        GLfloat texture_bottom = static_cast<float>(props.texture_top);
-        GLfloat texture_top = static_cast<float>(props.texture_bottom);
         auto p = glm::vec3{params.position.x, 0, params.position.y} / TILE_SIZE_F;
         // clang-format off
         return {
             // Top
-            {{p.x,          ob, p.z,        },  {0,     0,      texture_bottom},    {0, 1, 0}},
-            {{p.x,          ob, p.z + depth,},  {0,     depth,  texture_bottom},    {0, 1, 0}},
-            {{p.x + width,  ob, p.z + depth,},  {width, depth,  texture_bottom},    {0, 1, 0}},
-            {{p.x + width,  ob, p.z,},          {width, 0,      texture_bottom},    {0, 1, 0}},
+            {{p.x,          ob, p.z,        },  {0,     0,      texture_top},    {0, 1, 0}, colour_top},
+            {{p.x,          ob, p.z + depth,},  {0,     depth,  texture_top},    {0, 1, 0}, colour_top},
+            {{p.x + width,  ob, p.z + depth,},  {width, depth,  texture_top},    {0, 1, 0}, colour_top},
+            {{p.x + width,  ob, p.z,},          {width, 0,      texture_top},    {0, 1, 0}, colour_top},
 
             // Bottom
-            {{p.x,          ob, p.z,        },  {0,     0,      texture_top},   {0, -1, 0}},
-            {{p.x,          ob, p.z + depth,},  {0,     depth,  texture_top},   {0, -1, 0}},
-            {{p.x + width,  ob, p.z + depth,},  {width, depth,  texture_top},   {0, -1, 0}},
-            {{p.x + width,  ob, p.z,        },  {width, 0,      texture_top},   {0, -1, 0}},
+            {{p.x,          ob, p.z,        },  {0,     0,      texture_bottom},   {0, -1, 0}, colour_bottom},
+            {{p.x,          ob, p.z + depth,},  {0,     depth,  texture_bottom},   {0, -1, 0}, colour_bottom},
+            {{p.x + width,  ob, p.z + depth,},  {width, depth,  texture_bottom},   {0, -1, 0}, colour_bottom},
+            {{p.x + width,  ob, p.z,        },  {width, 0,      texture_bottom},   {0, -1, 0}, colour_bottom},
         };
         // clang-format on
     }
@@ -48,24 +50,27 @@ namespace
         float depth = props.depth;
         auto ob = props.base * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT;
 
-        GLfloat texture_bottom = static_cast<float>(props.texture_bottom);
-        GLfloat texture_top = static_cast<float>(props.texture_top);
+        GLfloat texture_bottom = static_cast<float>(props.texture_bottom.id);
+        GLfloat texture_top = static_cast<float>(props.texture_top.id);
+        auto colour_bottom = props.texture_bottom.colour;
+        auto colour_top = props.texture_top.colour;
+
         auto p = glm::vec3{params.position.x, 0, params.position.y} / TILE_SIZE_F;
 
         // clang-format off
         return {
             // Bottom
-            {{p.x + width / 2,  ob, p.z             }, {width / 2,  0,          texture_bottom}, {0, 1, 0}},
-            {{p.x + width,      ob, p.z + depth / 2 }, {width,      depth / 2,  texture_bottom}, {0, 1, 0}},
-            {{p.x + width / 2,  ob, p.z + depth     }, {width / 2,  depth,      texture_bottom}, {0, 1, 0}},
-            {{p.x,              ob, p.z + depth / 2 }, {0,          depth / 2,  texture_bottom}, {0, 1, 0}},
+            {{p.x + width / 2,  ob, p.z             }, {width / 2,  0,          texture_bottom}, {0, 1, 0}, colour_bottom},
+            {{p.x + width,      ob, p.z + depth / 2 }, {width,      depth / 2,  texture_bottom}, {0, 1, 0}, colour_bottom},
+            {{p.x + width / 2,  ob, p.z + depth     }, {width / 2,  depth,      texture_bottom}, {0, 1, 0}, colour_bottom},
+            {{p.x,              ob, p.z + depth / 2 }, {0,          depth / 2,  texture_bottom}, {0, 1, 0}, colour_bottom},
 
 
             // Top
-            {{p.x + width / 2,  ob, p.z             }, {width / 2,  0,          texture_top}, {0, 1, 0}},
-            {{p.x + width,      ob, p.z + depth / 2 }, {width,      depth / 2,  texture_top}, {0, 1, 0}},
-            {{p.x + width / 2,  ob, p.z + depth     }, {width / 2,  depth,      texture_top}, {0, 1, 0}},
-            {{p.x,              ob, p.z + depth / 2 }, {0,          depth / 2,  texture_top}, {0, 1, 0}}
+            {{p.x + width / 2,  ob, p.z             }, {width / 2,  0,          texture_top}, {0, 1, 0}, colour_top},
+            {{p.x + width,      ob, p.z + depth / 2 }, {width,      depth / 2,  texture_top}, {0, 1, 0}, colour_top},
+            {{p.x + width / 2,  ob, p.z + depth     }, {width / 2,  depth,      texture_top}, {0, 1, 0}, colour_top},
+            {{p.x,              ob, p.z + depth / 2 }, {0,          depth / 2,  texture_top}, {0, 1, 0}, colour_top}
         };
         // clang-format on
     }
@@ -91,27 +96,28 @@ LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number)
     ob += floor_number * FLOOR_HEIGHT;
     h += floor_number * FLOOR_HEIGHT;
 
-
     const auto length = glm::length(b - e);
 
-    GLfloat texture_back = static_cast<float>(props.texture_back);
-    GLfloat texture_front = static_cast<float>(props.texture_front);
+    GLfloat texture_back = static_cast<float>(props.texture_back.id);
+    GLfloat texture_front = static_cast<float>(props.texture_front.id);
+    auto colour_back = props.texture_back.colour;
+    auto colour_front = props.texture_front.colour;
 
     LevelObjectsMesh3D mesh;
 
     // clang-format off
     mesh.vertices = {
         // Back
-        {{b.x + ox, ob, b.z + oz}, {0.0f,   ob, texture_back},  {0, 0, 1}},
-        {{b.x + ox, h,  b.z + oz}, {0.0,    h,  texture_back},  {0, 0, 1}},
-        {{e.x + ox, h,  e.z + oz}, {length, h,  texture_back},  {0, 0, 1}},
-        {{e.x + ox, ob, e.z + oz}, {length, ob, texture_back},  {0, 0, 1}},
+        {{b.x + ox, ob, b.z + oz}, {0.0f,   ob, texture_back},  {0, 0, 1}, colour_back},
+        {{b.x + ox, h,  b.z + oz}, {0.0,    h,  texture_back},  {0, 0, 1}, colour_back},
+        {{e.x + ox, h,  e.z + oz}, {length, h,  texture_back},  {0, 0, 1}, colour_back},
+        {{e.x + ox, ob, e.z + oz}, {length, ob, texture_back},  {0, 0, 1}, colour_back},
 
         // Front 
-        {{b.x - ox, ob, b.z - oz}, {0.0f,   ob, texture_front}, {0, 0, 1}},
-        {{b.x - ox, h,  b.z - oz}, {0.0,    h,  texture_front}, {0, 0, 1}},
-        {{e.x - ox, h,  e.z - oz}, {length, h,  texture_front}, {0, 0, 1}},
-        {{e.x - ox, ob, e.z - oz}, {length, ob, texture_front}, {0, 0, 1}},
+        {{b.x - ox, ob, b.z - oz}, {0.0f,   ob, texture_front}, {0, 0, 1}, colour_front},
+        {{b.x - ox, h,  b.z - oz}, {0.0,    h,  texture_front}, {0, 0, 1}, colour_front},
+        {{e.x - ox, h,  e.z - oz}, {length, h,  texture_front}, {0, 0, 1}, colour_front},
+        {{e.x - ox, ob, e.z - oz}, {length, ob, texture_front}, {0, 0, 1}, colour_front},
     };
     // clang-format on
 
@@ -157,8 +163,10 @@ LevelObjectsMesh3D generate_polygon_platform_mesh(const PolygonPlatformObject& p
 
     auto ob = props.base * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT;
 
-    auto texture_bottom = static_cast<float>(props.texture_top);
-    auto texture_top = static_cast<float>(props.texture_bottom);
+    auto texture_bottom = static_cast<float>(props.texture_top.id);
+    auto texture_top = static_cast<float>(props.texture_bottom.id);
+    auto colour_bottom = props.texture_bottom.colour;
+    auto colour_top = props.texture_top.colour;
 
     auto p1 = glm::vec3{params.corner_top_left.x, 0, params.corner_top_left.y} / TILE_SIZE_F;
     auto p2 = glm::vec3{params.corner_top_right.x, 0, params.corner_top_right.y} / TILE_SIZE_F;
@@ -171,16 +179,16 @@ LevelObjectsMesh3D generate_polygon_platform_mesh(const PolygonPlatformObject& p
     // clang-format off
     mesh.vertices = {
             // Top
-            {{p1.x, ob, p1.z,},  {0,                    0,                      texture_top},    {0, 1, 0}},
-            {{p2.x, ob, p2.z,},  {0,                    glm::length(p2 - p1),   texture_top},    {0, 1, 0}},
-            {{p3.x, ob, p3.z },  {glm::length(p3 - p2), glm::length(p3 - p2),   texture_top},    {0, 1, 0}},
-            {{p4.x, ob, p4.z,},  {glm::length(p4 - p1), 0,                      texture_top},    {0, 1, 0}},
+            {{p1.x, ob, p1.z,},  {0,                    0,                      texture_top},    {0, 1, 0}, colour_bottom},
+            {{p2.x, ob, p2.z,},  {0,                    glm::length(p2 - p1),   texture_top},    {0, 1, 0}, colour_bottom},
+            {{p3.x, ob, p3.z },  {glm::length(p3 - p2), glm::length(p3 - p2),   texture_top},    {0, 1, 0}, colour_bottom},
+            {{p4.x, ob, p4.z,},  {glm::length(p4 - p1), 0,                      texture_top},    {0, 1, 0}, colour_bottom},
 
             // Bottom
-            {{p1.x, ob, p1.z},  {0,                     0,                      texture_bottom},   {0, -1, 0}},
-            {{p2.x, ob, p2.z},  {0,                     glm::length(p2 - p1),   texture_bottom},   {0, -1, 0}},
-            {{p3.x, ob, p3.z},  {glm::length(p3 - p2),  glm::length(p3 - p2),   texture_bottom},   {0, -1, 0}},
-            {{p4.x, ob, p4.z},  {glm::length(p4 - p1),  0,                      texture_bottom},   {0, -1, 0}},
+            {{p1.x, ob, p1.z},  {0,                     0,                      texture_bottom},   {0, -1, 0}, colour_top},
+            {{p2.x, ob, p2.z},  {0,                     glm::length(p2 - p1),   texture_bottom},   {0, -1, 0}, colour_top},
+            {{p3.x, ob, p3.z},  {glm::length(p3 - p2),  glm::length(p3 - p2),   texture_bottom},   {0, -1, 0}, colour_top},
+            {{p4.x, ob, p4.z},  {glm::length(p4 - p1),  0,                      texture_bottom},   {0, -1, 0}, colour_top},
         };
     // clang-format on
 
