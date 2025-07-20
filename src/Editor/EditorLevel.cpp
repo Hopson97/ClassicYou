@@ -119,6 +119,11 @@ void EditorLevel::render(gl::Shader& scene_shader, const LevelObject* p_active_o
 
         for (auto& object : floor.meshes)
         {
+            if (!object.mesh.has_buffered())
+            {
+                continue;
+            }
+            
             if (!rendered_selected && p_active_object && object.id == p_active_object->object_id)
             {
                 rendered_selected = true;

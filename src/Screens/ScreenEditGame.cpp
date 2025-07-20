@@ -14,11 +14,12 @@
 
 namespace
 {
-    constexpr std::array<const char*, 14> TEXTURE_NAMES = {
+    constexpr std::array<const char*, 17> TEXTURE_NAMES = {
         "Red Bricks", "Grey Bricks", "Stone Bricks", "Stone Bricks Mossy",
         "Bars",       "Chain Fence", "Grass",        "Dirt",
         "Glass",      "Sand",        "Bark",         "Leaf",
-        "Planks",     "Rock",
+        "Planks",     "Rock",        "Stucco",       "Ancient2",
+        "Blank",
 
     };
 

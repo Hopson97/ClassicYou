@@ -161,6 +161,11 @@ LevelObjectsMesh3D generate_polygon_platform_mesh(const PolygonPlatformObject& p
     const auto& params = polygon_platform.parameters;
     const auto& props = polygon_platform.properties;
 
+    if (!props.visible)
+    {
+        return LevelObjectsMesh3D{};
+    }
+
     auto ob = props.base * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT;
 
     auto texture_bottom = static_cast<float>(props.texture_top.id);

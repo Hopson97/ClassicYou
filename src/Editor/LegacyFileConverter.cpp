@@ -13,14 +13,14 @@ namespace
 {
     // Map for colour from the legacy format to the new format
     // For platforms, floors
-    std::unordered_map<int, int> TEXTURE_MAP = {
-        {1, 6}, // Grass
-        // {2, 7}, // Stucco
+    const std::unordered_map<int, int> TEXTURE_MAP = {
+        {1, 6},  // Grass
+        {2, 14}, // Stucco
         {3, 0},  // Red Brick
         {4, 1},  // Stone Brick
         {5, 12}, //
         // {6, 0}, // "happy"
-        // {7, 0  // Egypt texture
+        {7, 15}, // Egypt texture
         {8, 8},  // Glass
         {9, 10}, // Bark
         // {10, 10}, // Sci-Fi
@@ -31,16 +31,16 @@ namespace
 
     // Map for colour from the legacy format to the new format
     // For walls, pillars
-    std::unordered_map<int, int> TEXTURE_MAP_WALL = {
+    const std::unordered_map<int, int> TEXTURE_MAP_WALL = {
         {1, 0},  // Red bricks
         {2, 4},  // Bars
         {3, 1},  // Stone Brick
         {4, 6},  // Grass
         {5, 12}, // Wood
         // {6, 0}, // "happy"
-        // {7, 0  // Egypt texture
-        {8, 8}, // Glass
-        // {9, 7}, // Stucco
+        {7, 15},  // Egypt texture
+        {8, 8},   // Glass
+        {9, 14},  // Stucco
         {10, 10}, // Bark
 
         // {11, 11}, // Sci-Fi
@@ -51,24 +51,36 @@ namespace
 
     };
 
-    auto map_texture(int legacy_id)
+    TextureProp map_texture(const std::unordered_map<int, int>& mapping,
+                            nlohmann::json legacy_texture)
     {
-        if (TEXTURE_MAP.find(legacy_id) != TEXTURE_MAP.cend())
+        if (legacy_texture.is_array())
         {
-            return TEXTURE_MAP[legacy_id];
+            return {
+                .id = 16,
+                .colour = {legacy_texture[0], legacy_texture[1], legacy_texture[2], 255},
+            };
+        }
+        else
+        {
+            auto itr = mapping.find(legacy_texture);
+            if (itr != mapping.cend())
+            {
+                return {.id = itr->second};
+            }
         }
 
-        return legacy_id;
+        return {.id = legacy_texture};
     }
 
-    auto map_wall_texture(int legacy_id)
+    TextureProp map_texture(nlohmann::json legacy_texture)
     {
-        if (TEXTURE_MAP_WALL.find(legacy_id) != TEXTURE_MAP_WALL.cend())
-        {
-            return TEXTURE_MAP_WALL[legacy_id];
-        }
+        return map_texture(TEXTURE_MAP, legacy_texture);
+    }
 
-        return legacy_id;
+    TextureProp map_wall_texture(nlohmann::json legacy_texture)
+    {
+        return map_texture(TEXTURE_MAP_WALL, legacy_texture);
     }
 
     // Converts a legacy ChallengeYou.com level format to JSON
@@ -79,6 +91,18 @@ namespace
         {
             std::string key = match.get<1>().to_string();
             legacy_file_content.replace(match.begin(), match.end(), "\"" + key + "\":");
+        }
+
+        while (auto match =
+                   ctre::search<R"(color\(\s*([0-9]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)\s*\))">(
+                       legacy_file_content))
+        {
+            std::string r = match.get<1>().to_string();
+            std::string g = match.get<2>().to_string();
+            std::string b = match.get<3>().to_string();
+
+            legacy_file_content.replace(match.begin(), match.end(),
+                                        "[" + r + "," + g + "," + b + "]");
         }
 
         // Wrap the JSON with { } to be read as an object
@@ -118,16 +142,20 @@ void from_json(const nlohmann::json& json, PolygonPlatformObject& poly)
                        .corner_bottom_left = extract_vec2(points[0][0], points[0][1])};
 
     poly.properties.base = 0;
-    poly.properties.texture_bottom.id = map_texture(props[1]);
-    poly.properties.texture_top.id = map_texture(props[0][0]);
+    poly.properties.texture_bottom = map_texture(props[1]);
+    poly.properties.texture_top = map_texture(props[0][0]);
 
-    int visible = props[0][1];
-    poly.properties.visible = static_cast<bool>(visible);
+    poly.properties.visible = (props[0][1] == 1);
 }
 
 // =========================
 //      Wall Conversion
 // ==========================
+
+constexpr std::array<float, 10> MIN_WALL_HEIGHTS = {0, 0, 0, 0, 1, 2, 3, 2, 1, 1};
+constexpr std::array<float, 10> MAX_WALL_HEIGHTS = {4, 3, 2, 1, 2, 3, 4, 4, 4, 3};
+
+
 struct LegacyWall
 {
     WallObject object;
@@ -143,14 +171,18 @@ void from_json(const nlohmann::json& json, LegacyWall& wall)
     wall.object.parameters.line.start = start;
     wall.object.parameters.line.end = start + offset;
 
-    wall.object.properties.texture_front.id = map_wall_texture(json[4][1]);
-    wall.object.properties.texture_back.id = map_wall_texture(json[4][0]);
+    wall.object.properties.texture_front = map_wall_texture(json[4][1]);
+    wall.object.properties.texture_back = map_wall_texture(json[4][0]);
     wall.object.properties.base_height = 0;
     wall.object.properties.wall_height = 1;
 
     if (json[4].size() == 3)
     {
         // int height = json[4][2];
+        // wall.object.properties.base_height = MIN_WALL_HEIGHTS[height] / 4.0f;
+        // 
+        // int max = MAX_WALL_HEIGHTS[height] / 4.0f;
+        // wall.object.properties.wall_height = wall.object.properties.base_height - max;
     }
 
     wall.floor = (int)json[5] - 1;
@@ -183,7 +215,7 @@ void from_json(const nlohmann::json& json, LegacyPlatform& platform)
 
     if (props.size() > 1)
     {
-        platform_props.texture_bottom.id = map_texture(props[1]);
+        platform_props.texture_bottom = map_texture(props[1]);
         platform_props.texture_top = platform_props.texture_bottom;
 
         if (props.size() > 2)
@@ -227,7 +259,6 @@ void convert_legacy_level(const std::filesystem::path& path)
 
     auto time = clock.restart().asSeconds();
     std::println("Converting to JSON took {}s ({}ms)", time, time * 1000.0f);
-
     std::ofstream out_file_og((path.parent_path() / path.stem()).string() + ".json");
     out_file_og << legacy_json;
     clock.restart();
@@ -248,6 +279,7 @@ void convert_legacy_level(const std::filesystem::path& path)
     load_objects<LegacyPlatform>(legacy_json, "Plat", new_level);
 
     auto output = new_level.serialise();
+    time = clock.restart().asSeconds();
     std::println("Converting to ClassicYou format took {}s ({}ms)\n", time, time * 1000.0f);
 
     if (output)
