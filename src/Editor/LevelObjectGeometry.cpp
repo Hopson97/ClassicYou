@@ -8,14 +8,13 @@ namespace
     /// Platform Style UIs
     ///
     std::vector<VertexLevelObjects> create_quad_platform_vertices(const PlatformObject& platform,
-                                                                  int floor_number)
+                                                                  float ob)
     {
         const auto& params = platform.parameters;
         const auto& props = platform.properties;
 
         float width = props.width;
         float depth = props.depth;
-        auto ob = props.base * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT;
 
         GLfloat texture_bottom = static_cast<float>(props.texture_bottom.id);
         GLfloat texture_top = static_cast<float>(props.texture_top.id);
@@ -41,14 +40,13 @@ namespace
     }
 
     std::vector<VertexLevelObjects> create_diamond_platform_vertices(const PlatformObject& platform,
-                                                                     int floor_number)
+                                                                     float ob)
     {
         const auto& params = platform.parameters;
         const auto& props = platform.properties;
 
         float width = props.width;
         float depth = props.depth;
-        auto ob = props.base * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT;
 
         GLfloat texture_bottom = static_cast<float>(props.texture_bottom.id);
         GLfloat texture_top = static_cast<float>(props.texture_top.id);
@@ -133,16 +131,19 @@ LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform, int fl
 {
     const auto& props = platform.properties;
 
+    // Offset platform heights by a hair to prevent Z-fighting with PolygonPlatforms which can go
+    // underneath
+    float ob = props.base * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT + 0.001;
     LevelObjectsMesh3D mesh;
     mesh.vertices = [&]()
     {
         switch (props.style)
         {
             case PlatformStyle::Quad:
-                return create_quad_platform_vertices(platform, floor_number);
+                return create_quad_platform_vertices(platform, ob);
 
             case PlatformStyle::Diamond:
-                return create_diamond_platform_vertices(platform, floor_number);
+                return create_diamond_platform_vertices(platform, ob);
         }
         return std::vector<VertexLevelObjects>{};
     }();

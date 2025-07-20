@@ -14,40 +14,39 @@ namespace
     // Map for colour from the legacy format to the new format
     // For platforms, floors
     const std::unordered_map<int, int> TEXTURE_MAP = {
-        {1, 6},  // Grass
-        {2, 14}, // Stucco
-        {3, 0},  // Red Brick
-        {4, 1},  // Stone Brick
-        {5, 12}, //
-        // {6, 0}, // "happy"
-        {7, 15}, // Egypt texture
-        {8, 8},  // Glass
-        {9, 10}, // Bark
-        // {10, 10}, // Sci-Fi
-        // {11, 11}, // Tiles
+        {1, 6},   // Grass
+        {2, 14},  // Stucco
+        {3, 0},   // Red Brick
+        {4, 1},   // Stone Brick
+        {5, 12},  // Wood
+        {6, 17},  // "happy"
+        {7, 15},  // Egypt texture
+        {8, 8},   // Glass
+        {9, 10},  // Bark
+        {10, 18}, // Sci-Fi
+        {11, 19}, // Tiles
         {13, 13}, // Rock
-                  //  {15, 13}, // Parquet
+        {15, 21}, // Parquet
     };
 
     // Map for colour from the legacy format to the new format
     // For walls, pillars
     const std::unordered_map<int, int> TEXTURE_MAP_WALL = {
-        {1, 0},  // Red bricks
-        {2, 4},  // Bars
-        {3, 1},  // Stone Brick
-        {4, 6},  // Grass
-        {5, 12}, // Wood
-        // {6, 0}, // "happy"
+        {1, 0},   // Red bricks
+        {2, 4},   // Bars
+        {3, 1},   // Stone Brick
+        {4, 6},   // Grass
+        {5, 12},  // Wood
+        {6, 17},  // "happy"
         {7, 15},  // Egypt texture
         {8, 8},   // Glass
         {9, 14},  // Stucco
         {10, 10}, // Bark
-
-        // {11, 11}, // Sci-Fi
-        // {12, 12}, // Tiles
+        {11, 18}, // Sci-Fi
+        {12, 19}, // Tiles
         {13, 13}, // Rock
-        // {14, 14}, // Books
-        //  {16, 16}, // Parquet
+        {14, 20}, // Books
+        {16, 21}, // Parquet
 
     };
 
@@ -154,6 +153,7 @@ void from_json(const nlohmann::json& json, PolygonPlatformObject& poly)
 
 constexpr std::array<float, 10> MIN_WALL_HEIGHTS = {0, 0, 0, 0, 1, 2, 3, 2, 1, 1};
 constexpr std::array<float, 10> MAX_WALL_HEIGHTS = {4, 3, 2, 1, 2, 3, 4, 4, 4, 3};
+constexpr std::array<float, 10> PLATFORM_HEIGHTS = {0, 1, 2, 3};
 
 struct LegacyWall
 {
@@ -220,7 +220,7 @@ void from_json(const nlohmann::json& json, LegacyPlatform& platform)
 
         if (props.size() > 2)
         {
-            platform_props.base = 0; // 1 -> 0.0, 2 -> 0.25, 3 -> 0.5, 4 -> 0.75
+            platform_props.base = PLATFORM_HEIGHTS[(int)props[2] - 1] / 4.0f;
         }
     }
     else
@@ -280,11 +280,11 @@ void convert_legacy_level(const std::filesystem::path& path)
 
     auto output = new_level.serialise();
     time = clock.restart().asSeconds();
-    std::println("Converting to ClassicYou format took {}s ({}ms)\n", time, time * 1000.0f);
+    std::println("Converting to ClassicYou format took {}s ({}ms)", time, time * 1000.0f);
 
     if (output)
     {
-        std::println("Successfully serialised {} ", path.string());
+        std::println("Successfully serialised {}\n\n", path.string());
 
         std::ofstream out_file(("levels" / path.stem()).string() + ".cly");
 
