@@ -91,7 +91,7 @@ LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number)
     auto ox = 0.0f;
     auto oz = 0.0f;
     auto ob = props.base_height * FLOOR_HEIGHT;
-    auto h = std::min(ob + props.wall_height * 2, FLOOR_HEIGHT);
+    auto h = std::min(ob + props.wall_height * FLOOR_HEIGHT, FLOOR_HEIGHT);
 
     ob += floor_number * FLOOR_HEIGHT;
     h += floor_number * FLOOR_HEIGHT;

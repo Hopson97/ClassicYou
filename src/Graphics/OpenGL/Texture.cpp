@@ -305,7 +305,7 @@ namespace gl
             return {false, 0};
         }
 
-        glTextureSubImage3D(id, levels, 0, 0, texture_count_, texture_size_, texture_size_, 1,
+        glTextureSubImage3D(id, 0, 0, 0, texture_count_, texture_size_, texture_size_, 1,
                             static_cast<GLenum>(format), GL_UNSIGNED_BYTE, image.getPixelsPtr());
         return {true, texture_count_++};
     }

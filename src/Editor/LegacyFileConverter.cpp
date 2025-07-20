@@ -155,7 +155,6 @@ void from_json(const nlohmann::json& json, PolygonPlatformObject& poly)
 constexpr std::array<float, 10> MIN_WALL_HEIGHTS = {0, 0, 0, 0, 1, 2, 3, 2, 1, 1};
 constexpr std::array<float, 10> MAX_WALL_HEIGHTS = {4, 3, 2, 1, 2, 3, 4, 4, 4, 3};
 
-
 struct LegacyWall
 {
     WallObject object;
@@ -178,11 +177,12 @@ void from_json(const nlohmann::json& json, LegacyWall& wall)
 
     if (json[4].size() == 3)
     {
-        // int height = json[4][2];
-        // wall.object.properties.base_height = MIN_WALL_HEIGHTS[height] / 4.0f;
-        // 
-        // int max = MAX_WALL_HEIGHTS[height] / 4.0f;
-        // wall.object.properties.wall_height = wall.object.properties.base_height - max;
+        int height = json[4][2];
+        float min = MIN_WALL_HEIGHTS[height - 1] / 4.0f;
+        float max = MAX_WALL_HEIGHTS[height - 1] / 4.0f;
+
+        wall.object.properties.base_height = min;
+        wall.object.properties.wall_height = max - min;
     }
 
     wall.floor = (int)json[5] - 1;

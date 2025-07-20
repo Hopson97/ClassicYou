@@ -81,22 +81,22 @@ struct EditorState
     glm::ivec2 node_hovered{0};
 
     WallProps wall_default = {
-        .texture_front = 0,
-        .texture_back = 0,
+        .texture_front = {.id = 0},
+        .texture_back = {.id = 0},
         .base_height = 0,
         .wall_height = 1,
     };
 
     PlatformProps platform_default = {
-        .texture_top = 0,
-        .texture_bottom = 0,
+        .texture_top = {.id = 0},
+        .texture_bottom = {.id = 0},
         .width = 1,
         .depth = 1,
         .base = 0,
     };
 
     PolygonPlatformProps polygon_platform_default = {
-        .texture_top = 0, .texture_bottom = 0, .visible = true};
+        .texture_top = {.id = 0}, .texture_bottom = {.id = 0}, .visible = true};
 
     LevelObject* p_active_object_ = nullptr;
 

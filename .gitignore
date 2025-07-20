@@ -31,4 +31,5 @@ src/Editor/ObjectTypes/
 
 *.cy
 levels/legacy/*.json
+levels/legacy2/*.json
 levels/*.json
