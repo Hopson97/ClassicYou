@@ -209,8 +209,11 @@ std::pair<UpdateResult, WallProps> wall_gui(const LevelTextures& textures, const
 
 {
     UpdateResult result;
+    auto new_props = wall.properties;
 
-    WallProps new_props = wall.properties;
+    // When the wall is generating the mesh, these values are multiplied by 2.0f
+    slider(result, "Base Height", new_props.base_height, 0.0f, 0.9f, 0.1f);
+    slider(result, "Wall Height", new_props.height, 0.1f, 1.0f - new_props.base_height, 0.1f);
 
     texture_gui_tabs(result, "Textures_wall", textures,
                      {.name = "Front Texture",
@@ -219,10 +222,6 @@ std::pair<UpdateResult, WallProps> wall_gui(const LevelTextures& textures, const
                      {.name = "Back Texture",
                       .current = wall.properties.texture_back,
                       .new_texture = &new_props.texture_back});
-
-    // When the wall is generating the mesh, these values are multiplied by 2.0f
-    slider(result, "Base Height", new_props.base_height, 0.0f, 0.9f, 0.1f);
-    slider(result, "Wall Height", new_props.wall_height, 0.1f, 1.0f - new_props.base_height, 0.1f);
 
     return {
         check_prop_updated(result, wall.properties, new_props),
@@ -238,14 +237,6 @@ std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& texture
 
     PlatformProps new_props = platform.properties;
 
-    texture_gui_tabs(result, "Textures_platform", textures,
-                     {.name = "Top Texture",
-                      .current = platform.properties.texture_top,
-                      .new_texture = &new_props.texture_top},
-                     {.name = "Bottom Texture",
-                      .current = platform.properties.texture_bottom,
-                      .new_texture = &new_props.texture_bottom});
-
     enum_gui<PlatformStyle>(result, "Platform Style", platform.properties.style, new_props.style);
 
     slider(result, "Width", new_props.width, 0.5f, 20.0f, 0.5f);
@@ -253,6 +244,14 @@ std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& texture
 
     // Multiplied by 2 when mesh is created
     slider(result, "Base Height", new_props.base, 0.0f, 0.9f, 0.1f);
+
+    texture_gui_tabs(result, "Textures_platform", textures,
+                     {.name = "Top Texture",
+                      .current = platform.properties.texture_top,
+                      .new_texture = &new_props.texture_top},
+                     {.name = "Bottom Texture",
+                      .current = platform.properties.texture_bottom,
+                      .new_texture = &new_props.texture_bottom});
 
     return {
         check_prop_updated(result, platform.properties, new_props),
@@ -274,6 +273,9 @@ polygon_platform_gui(const LevelTextures& textures, const PolygonPlatformObject&
 
     if (new_props.visible)
     {
+
+        // Multiplied by 2 when mesh is created
+        slider(result, "Base Height", new_props.base, 0.0f, 0.9f, 0.1f);
         texture_gui_tabs(result, "Textures_platform", textures,
                          {.name = "Top Texture",
                           .current = poly.properties.texture_top,
@@ -281,13 +283,35 @@ polygon_platform_gui(const LevelTextures& textures, const PolygonPlatformObject&
                          {.name = "Bottom Texture",
                           .current = poly.properties.texture_bottom,
                           .new_texture = &new_props.texture_bottom});
-
-        // Multiplied by 2 when mesh is created
-        slider(result, "Base Height", new_props.base, 0.0f, 0.9f, 0.1f);
     }
 
     return {
         check_prop_updated(result, poly.properties, new_props),
+        new_props,
+    };
+}
+
+std::pair<UpdateResult, PillarProps> pillar_gui(const LevelTextures& textures,
+                                                const PillarObject& pillar)
+{
+    UpdateResult result;
+    auto new_props = pillar.properties;
+
+    enum_gui<PillarStyle>(result, "Platform Style", pillar.properties.style, new_props.style);
+
+    if (ImGui::Checkbox("Angled?", &new_props.angled))
+    {
+        result.always_update |= true;
+    }
+
+    slider(result, "Size", new_props.size, 0.1f, 0.8f, 0.1f);
+    slider(result, "Base Height", new_props.base_height, 0.0f, 0.9f, 0.1f);
+    slider(result, "Height", new_props.height, 0.1f, 1.0f - new_props.base_height, 0.1f);
+
+    texture_gui(result, "Texture", textures, pillar.properties.texture, new_props.texture);
+
+    return {
+        check_prop_updated(result, pillar.properties, new_props),
         new_props,
     };
 }

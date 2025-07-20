@@ -109,6 +109,11 @@ void LevelObject::property_gui(EditorState& state, const LevelTextures& textures
                                               *poly, *this, state.polygon_platform_default,
                                               state.current_floor);
     }
+    else if (auto pillar = std::get_if<PillarObject>(&object_type))
+    {
+        ::property_gui<PillarObject>(&pillar_gui, textures, action_manager, *pillar, *this,
+                                     state.pillar_default, state.current_floor);
+    }
 }
 
 LevelObjectsMesh3D LevelObject::to_geometry(int floor_number) const
@@ -125,6 +130,10 @@ LevelObjectsMesh3D LevelObject::to_geometry(int floor_number) const
     {
         return generate_polygon_platform_mesh(*polygon_platform, floor_number);
     }
+    else if (auto pillar = std::get_if<PillarObject>(&object_type))
+    {
+        return generate_pillar_mesh(*pillar, floor_number);
+    }
 
     throw std::runtime_error("Must implement getting geometry for all types!");
 }
@@ -133,36 +142,51 @@ std::string LevelObject::to_string() const
 {
     if (auto wall = std::get_if<WallObject>(&object_type))
     {
+        auto& params = wall->parameters;
+        auto& props = wall->properties;
         return std::format("Props:\n Texture 1/2: {} {}: \n Base: {}\n Height: {}\nParameters:\n "
                            "  Start position: ({:.2f}, {:.2f}) - End Position: ({:.2f}, {:.2f})",
-                           wall->properties.texture_front.id, wall->properties.texture_back.id,
-                           wall->properties.base_height, wall->properties.wall_height,
-                           wall->parameters.line.start.x, wall->parameters.line.start.y,
-                           wall->parameters.line.end.x, wall->parameters.line.end.y);
+                           props.texture_front.id, props.texture_back.id, props.base_height,
+                           props.height, params.line.start.x, params.line.start.y,
+                           params.line.end.x, params.line.end.y);
     }
     else if (auto platform = std::get_if<PlatformObject>(&object_type))
     {
+        auto& params = platform->parameters;
+        auto& props = platform->properties;
+
         return std::format("Props:\n Texture Top: {}\n Texture Bottom: {}\n Width: {}\n Depth: "
                            "{} \n Height: {} \n Style: {}\n"
                            "Parameters:\n "
                            " Position: ({:.2f}, {:.2f})",
-                           platform->properties.texture_top.id,
-                           platform->properties.texture_bottom.id, platform->properties.width,
-                           platform->properties.depth, platform->properties.base,
-                           magic_enum::enum_name(platform->properties.style),
-                           platform->parameters.position.x, platform->parameters.position.y);
+                           props.texture_top.id, props.texture_bottom.id, props.width, props.depth,
+                           props.base, magic_enum::enum_name(props.style), params.position.x,
+                           params.position.y);
     }
     else if (auto poly = std::get_if<PolygonPlatformObject>(&object_type))
     {
+        auto& params = poly->parameters;
+        auto& props = poly->properties;
+
         return std::format(
-            "Props:\n Texture Top: {}\n Texture Bottom: {}\nParameters:\n "
+            "Props:\n Texture Top: {}\n Texture Bottom: {}\n Visible: {}\nParameters:\n "
             "Corner Top Left: ({:.2f}, {:.2f})\n - Corner Top Right: ({:.2f}, {:.2f})\n "
-            "Corner Bottom Right: ({:.2f}, {:.2f})\n - Corner Bottom Left: ({:.2f}",
-            poly->properties.texture_top.id, poly->properties.texture_bottom.id,
-            poly->parameters.corner_top_left.x, poly->parameters.corner_top_left.y,
-            poly->parameters.corner_top_right.x, poly->parameters.corner_top_right.y,
-            poly->parameters.corner_bottom_right.x, poly->parameters.corner_bottom_right.y,
-            poly->parameters.corner_bottom_left.x, poly->parameters.corner_bottom_left.y);
+            "Corner Bottom Right: ({:.2f}, {:.2f})\n - Corner Bottom Left: ({:.2f}, {:.2f})",
+            props.texture_top.id, props.texture_bottom.id, props.visible, params.corner_top_left.x,
+            params.corner_top_left.y, params.corner_top_right.x, params.corner_top_right.y,
+            params.corner_bottom_right.x, params.corner_bottom_right.y, params.corner_bottom_left.x,
+            params.corner_bottom_left.y);
+    }
+    else if (auto pillar = std::get_if<PillarObject>(&object_type))
+    {
+        auto& params = pillar->parameters;
+        auto& props = pillar->properties;
+
+        return std::format(
+            "Props:\n Texture: {}\n Style: {}\n Size: {}\n Base Height: {}\n Height: {}\n "
+            "Angled: {}\nParameters:\n Position: ({:.2f}, {:.2f})",
+            props.texture.id, magic_enum::enum_name(props.style), props.size, props.base_height,
+            props.height, props.angled, params.position.x, params.position.y);
     }
     return "";
 }
@@ -215,6 +239,15 @@ void LevelObject::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active
         drawing_pad.render_line(bl, bl + glm::vec2(TILE_SIZE, 0), colour, 5);
         drawing_pad.render_line(bl, bl - glm::vec2(0, TILE_SIZE), colour, 5);
     }
+    else if (auto pillar = std::get_if<PillarObject>(&object_type))
+    {
+        const auto& position = pillar->parameters.position;
+        const auto& size = pillar->properties.size * TILE_SIZE;
+
+        auto offset = size / 2.0f;
+
+        drawing_pad.render_quad(position - offset, {size, size}, colour);
+    }
 }
 
 bool LevelObject::try_select_2d(glm::vec2 selection_tile) const
@@ -242,6 +275,16 @@ bool LevelObject::try_select_2d(glm::vec2 selection_tile) const
                selection_tile.y >= params.corner_top_left.y &&
                selection_tile.y <= params.corner_bottom_left.y;
     }
+    else if (auto pillar = std::get_if<PillarObject>(&object_type))
+    {
+        const auto& params = pillar->parameters;
+        const auto& props = pillar->properties;
+
+        return selection_tile.x >= params.position.x &&
+               selection_tile.x <= params.position.x + props.size * TILE_SIZE &&
+               selection_tile.y >= params.position.y &&
+               selection_tile.y <= params.position.y + props.size * TILE_SIZE;
+    }
     return false;
 }
 
@@ -264,6 +307,10 @@ void LevelObject::move_to(glm::vec2 new_tile)
         params.corner_top_right = new_tile + trd;
         params.corner_bottom_right = new_tile + brd;
         params.corner_bottom_left = new_tile + bld;
+    }
+    else if (auto pillar = std::get_if<PillarObject>(&object_type))
+    {
+        pillar->parameters.position = new_tile;
     }
 }
 
@@ -296,7 +343,7 @@ std::pair<nlohmann::json, std::string> LevelObject::serialise() const
         nlohmann::json json_props = {};
         serialise_texture(json_props, props.texture_back);
         serialise_texture(json_props, props.texture_front);
-        json_props.insert(json_props.end(), {props.wall_height, props.base_height});
+        json_props.insert(json_props.end(), {props.height, props.base_height});
 
         object = {json_params, json_props};
     }
@@ -333,6 +380,26 @@ std::pair<nlohmann::json, std::string> LevelObject::serialise() const
         json_props.push_back(props.visible);
         object = {json_params, json_props};
     }
+    else if (auto pillar = std::get_if<PillarObject>(&object_type))
+    {
+        type = "pillar";
+        auto& params = pillar->parameters;
+        auto& props = pillar->properties;
+
+        nlohmann::json json_params = {params.position.x, params.position.y};
+
+        nlohmann::json json_props = {};
+        serialise_texture(json_props, props.texture);
+        json_props.insert(json_props.end(), {(int)props.style, props.size, props.base_height,
+                                             props.height, props.angled});
+
+        object = {json_params, json_props};
+    }
+    else
+    {
+        std::println("Unknown object type for serialisation");
+        return {};
+    }
 
     return {object, type};
 }
@@ -360,7 +427,7 @@ bool LevelObject::deserialise_as_wall(const nlohmann::json& wall_json)
 
     props.texture_back = deserialise_texture(jprops[0]);
     props.texture_front = deserialise_texture(jprops[1]);
-    props.wall_height = jprops[2];
+    props.height = jprops[2];
     props.base_height = jprops[3];
 
     object_type = wall;
@@ -426,5 +493,37 @@ bool LevelObject::deserialise_as_polygon_platform(const nlohmann::json& poly_jso
     props.visible = jprops[2];
 
     object_type = polygon_platform;
+    return true;
+}
+
+bool LevelObject::deserialise_as_pillar(const nlohmann::json& pillar)
+{
+    PillarObject pillar_object;
+    auto& params = pillar_object.parameters;
+    auto& props = pillar_object.properties;
+
+    auto jparams = pillar[0];
+    auto jprops = pillar[1];
+    if (jparams.size() < 2)
+    {
+        std::println("Invalid pillar parameters, expected 2 values");
+        return false;
+    }
+    if (jprops.size() < 6)
+    {
+        std::println("Invalid pillar properties, expected 6 values");
+        return false;
+    }
+
+    params.position = {jparams[0], jparams[1]};
+
+    props.texture = deserialise_texture(jprops[0]);
+    props.style = (PillarStyle)(jprops[1]);
+    props.size = jprops[2];
+    props.base_height = jprops[3];
+    props.height = jprops[4];
+    props.angled = jprops[5];
+
+    object_type = pillar_object;
     return true;
 }

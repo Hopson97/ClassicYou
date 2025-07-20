@@ -89,7 +89,7 @@ LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number)
     auto ox = 0.0f;
     auto oz = 0.0f;
     auto ob = props.base_height * FLOOR_HEIGHT;
-    auto h = std::min(ob + props.wall_height * FLOOR_HEIGHT, FLOOR_HEIGHT);
+    auto h = std::min(ob + props.height * FLOOR_HEIGHT, FLOOR_HEIGHT);
 
     ob += floor_number * FLOOR_HEIGHT;
     h += floor_number * FLOOR_HEIGHT;
@@ -154,6 +154,85 @@ LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform, int fl
                     6, 5, 4, 4, 7, 6};
 
     return mesh;
+}
+
+LevelObjectsMesh3D generate_pillar_mesh(const PillarObject& platform, int floor_number)
+{
+    const auto& params = platform.parameters;
+    const auto& props = platform.properties;
+
+    auto texture = static_cast<float>(props.texture.id);
+    auto colour = props.texture.colour;
+
+    auto size = props.size;
+    auto ob = props.base_height * FLOOR_HEIGHT;
+    auto h = std::min(ob + props.height * FLOOR_HEIGHT, FLOOR_HEIGHT);
+
+    ob += floor_number * FLOOR_HEIGHT;
+    h += floor_number * FLOOR_HEIGHT;
+
+    float o = size / 2;
+    auto p = glm::vec3{params.position.x, 0, params.position.y} / TILE_SIZE_F;
+
+    LevelObjectsMesh3D mesh;
+
+    auto min_x = p.x - o;
+    auto max_x = p.x + o;
+
+    auto min_z = p.z - o;
+    auto max_z = p.z + o;
+
+    if (props.angled)
+    {
+        // ???
+    }
+
+    mesh.vertices = {
+        {{max_x, h, max_z}, {size, h, texture}, {0.0f, 0.0f, 1.0f}, colour},
+        {{min_x, h, max_z}, {0.0f, h, texture}, {0.0f, 0.0f, 1.0f}, colour},
+        {{min_x, ob, max_z}, {0.0f, ob, texture}, {0.0f, 0.0f, 1.0f}, colour},
+        {{max_x, ob, max_z}, {size, ob, texture}, {0.0f, 0.0f, 1.0f}, colour},
+
+        {{min_x, h, max_z}, {size, h, texture}, {-1.0f, 0.0f, 0.0f}, colour},
+        {{min_x, h, min_z}, {0.0f, h, texture}, {-1.0f, 0.0f, 0.0f}, colour},
+        {{min_x, ob, min_z}, {0.0f, ob, texture}, {-1.0f, 0.0f, 0.0f}, colour},
+        {{min_x, ob, max_z}, {size, ob, texture}, {-1.0f, 0.0f, 0.0f}, colour},
+
+        {{min_x, h, min_z}, {size, h, texture}, {0.0f, 0.0f, -1.0f}, colour},
+        {{max_x, h, min_z}, {0.0f, h, texture}, {0.0f, 0.0f, -1.0f}, colour},
+        {{max_x, ob, min_z}, {0.0f, ob, texture}, {0.0f, 0.0f, -1.0f}, colour},
+        {{min_x, ob, min_z}, {size, ob, texture}, {0.0f, 0.0f, -1.0f}, colour},
+
+        {{max_x, h, min_z}, {size, h, texture}, {1.0f, 0.0f, 0.0f}, colour},
+        {{max_x, h, max_z}, {0.0f, h, texture}, {1.0f, 0.0f, 0.0f}, colour},
+        {{max_x, ob, max_z}, {0.0f, ob, texture}, {1.0f, 0.0f, 0.0f}, colour},
+        {{max_x, ob, min_z}, {size, ob, texture}, {1.0f, 0.0f, 0.0f}, colour},
+
+        {{max_x, h, min_z}, {size, 0, texture}, {0.0f, 1.0f, 0.0f}, colour},
+        {{min_x, h, min_z}, {0.0f, 0, texture}, {0.0f, 1.0f, 0.0f}, colour},
+        {{min_x, h, max_z}, {0.0f, size, texture}, {0.0f, 1.0f, 0.0f}, colour},
+        {{max_x, h, max_z}, {size, size, texture}, {0.0f, 1.0f, 0.0f}, colour},
+
+        {{min_x, ob, min_z}, {size, 0, texture}, {0.0f, -1.0f, 0.0f}, colour},
+        {{max_x, ob, min_z}, {0.0f, 0, texture}, {0.0f, -1.0f, 0.0f}, colour},
+        {{max_x, ob, max_z}, {0.0f, size, texture}, {0.0f, -1.0f, 0.0f}, colour},
+        {{min_x, ob, max_z}, {size, size, texture}, {0.0f, -1.0f, 0.0f}, colour},
+    };
+
+    int index = 0;
+    for (int i = 0; i < 6; i++)
+    {
+        mesh.indices.push_back(index);
+        mesh.indices.push_back(index + 1);
+        mesh.indices.push_back(index + 2);
+        mesh.indices.push_back(index + 2);
+        mesh.indices.push_back(index + 3);
+        mesh.indices.push_back(index);
+        index += 4;
+    }
+
+    return mesh;
+    // clang-format on
 }
 
 LevelObjectsMesh3D generate_polygon_platform_mesh(const PolygonPlatformObject& polygon_platform,

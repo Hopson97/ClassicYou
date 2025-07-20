@@ -242,6 +242,17 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
                         state.current_floor));
                     break;
 
+                case ObjectTypeName::Pillar:
+                    actions.push_action(std::make_unique<AddObjectAction>(
+                        LevelObject{
+                            PillarObject{
+                                .properties = state.pillar_default,
+                                .parameters = {.position = node},
+                            },
+                        },
+                        state.current_floor));
+                    break;
+
                 default:
                     std::println("Missing implemention for CreateObjectTool for {}",
                                  magic_enum::enum_name(object_type_));
@@ -269,6 +280,15 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
                                     .corner_top_right = node + glm::vec2{10.0f, 0} * TS,
                                     .corner_bottom_right = node + glm::vec2{10.0f, 10.0f} * TS,
                                     .corner_bottom_left = node + glm::vec2{0, 10.0f} * TS}},
+                    state.current_floor);
+                break;
+
+            case ObjectTypeName::Pillar:
+                object_preview_ = generate_pillar_mesh(
+                    PillarObject{
+                        .properties = state.pillar_default,
+                        .parameters = {.position = node},
+                    },
                     state.current_floor);
                 break;
 
@@ -332,6 +352,18 @@ void CreateObjectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorSt
             drawing_pad.render_line(bl, bl - glm::vec2(0, TILE_SIZE), Colour::RED, 5);
         }
         break;
+        case ObjectTypeName::Pillar:
+            if (state.pillar_default.style == PillarStyle::Vertical)
+            {
+                const auto& position = tile_;
+                const auto& size = state.pillar_default.size * TILE_SIZE;
+
+                auto offset = size / 2.0f;
+
+                drawing_pad.render_quad(position - offset, {size, size}, Colour::RED);
+            }
+            // TODO Add implementation for horizontal and verticle pillars
+            break;
 
         default:
             std::println("Missing implemention for CreateObjectTool for {}",

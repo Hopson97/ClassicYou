@@ -40,4 +40,8 @@ std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& texture
 std::pair<UpdateResult, PolygonPlatformProps>
 polygon_platform_gui(const LevelTextures& textures, const PolygonPlatformObject& platform);
 
+/// @brief Properties GUI for a polygon_platform object.
+std::pair<UpdateResult, PillarProps>
+pillar_gui(const LevelTextures& textures, const PillarObject& pillar);
+
 bool display_level_list(bool& show_load_dialog, std::string& name);

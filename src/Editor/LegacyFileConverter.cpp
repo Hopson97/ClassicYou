@@ -47,11 +47,22 @@ namespace
         {13, 13}, // Rock
         {14, 20}, // Books
         {16, 21}, // Parquet
-
     };
 
+    constexpr std::array<float, 10> MIN_WALL_HEIGHTS = {0, 0, 0, 0, 1, 2, 3, 2, 1, 1};
+    constexpr std::array<float, 10> MAX_WALL_HEIGHTS = {4, 3, 2, 1, 2, 3, 4, 4, 4, 3};
+    constexpr std::array<float, 10> PLATFORM_HEIGHTS = {0, 1, 2, 3};
+
+    std::pair<float, float> extract_wall_base_and_height(const nlohmann::json& height)
+    {
+        float min = MIN_WALL_HEIGHTS[height - 1] / 4.0f;
+        float max = MAX_WALL_HEIGHTS[height - 1] / 4.0f;
+
+        return {min, max - min};
+    }
+
     TextureProp map_texture(const std::unordered_map<int, int>& mapping,
-                            nlohmann::json legacy_texture)
+                            const nlohmann::json& legacy_texture)
     {
         if (legacy_texture.is_array())
         {
@@ -72,12 +83,12 @@ namespace
         return {.id = legacy_texture};
     }
 
-    TextureProp map_texture(nlohmann::json legacy_texture)
+    TextureProp map_texture(const nlohmann::json& legacy_texture)
     {
         return map_texture(TEXTURE_MAP, legacy_texture);
     }
 
-    TextureProp map_wall_texture(nlohmann::json legacy_texture)
+    TextureProp map_wall_texture(const nlohmann::json& legacy_texture)
     {
         return map_texture(TEXTURE_MAP_WALL, legacy_texture);
     }
@@ -150,11 +161,6 @@ void from_json(const nlohmann::json& json, PolygonPlatformObject& poly)
 // =========================
 //      Wall Conversion
 // ==========================
-
-constexpr std::array<float, 10> MIN_WALL_HEIGHTS = {0, 0, 0, 0, 1, 2, 3, 2, 1, 1};
-constexpr std::array<float, 10> MAX_WALL_HEIGHTS = {4, 3, 2, 1, 2, 3, 4, 4, 4, 3};
-constexpr std::array<float, 10> PLATFORM_HEIGHTS = {0, 1, 2, 3};
-
 struct LegacyWall
 {
     WallObject object;
@@ -165,24 +171,24 @@ struct LegacyWall
 //  [OffsetX, OffsetY, StartX, StartY, [TextureBack, TextureFront, Height], Floor]
 void from_json(const nlohmann::json& json, LegacyWall& wall)
 {
+    auto& wall_params = wall.object.parameters;
+    auto& wall_props = wall.object.properties;
+
     auto start = extract_vec2(json[2], json[3]);
     auto offset = extract_vec2(json[0], json[1]);
-    wall.object.parameters.line.start = start;
-    wall.object.parameters.line.end = start + offset;
+    wall_params.line.start = start;
+    wall_params.line.end = start + offset;
 
-    wall.object.properties.texture_front = map_wall_texture(json[4][1]);
-    wall.object.properties.texture_back = map_wall_texture(json[4][0]);
-    wall.object.properties.base_height = 0;
-    wall.object.properties.wall_height = 1;
+    wall_props.texture_front = map_wall_texture(json[4][1]);
+    wall_props.texture_back = map_wall_texture(json[4][0]);
+    wall_props.base_height = 0;
+    wall_props.height = 1;
 
     if (json[4].size() == 3)
     {
-        int height = json[4][2];
-        float min = MIN_WALL_HEIGHTS[height - 1] / 4.0f;
-        float max = MAX_WALL_HEIGHTS[height - 1] / 4.0f;
-
-        wall.object.properties.base_height = min;
-        wall.object.properties.wall_height = max - min;
+        auto [base, height] = extract_wall_base_and_height(json[4][2]);
+        wall_props.base_height = base;
+        wall_props.height = height;
     }
 
     wall.floor = (int)json[5] - 1;
@@ -233,6 +239,50 @@ void from_json(const nlohmann::json& json, LegacyPlatform& platform)
     platform.floor = (int)json[2] - 1;
 }
 
+// ============================
+//      Pillar Conversion
+// ============================
+struct LegacyPillar
+{
+    PillarObject object;
+    int floor = 0;
+};
+
+// [[X, Y], [Angled, Texture, Size, Height], Floor]
+void from_json(const nlohmann::json& json, LegacyPillar& pillar)
+{
+    auto& position = json[0];
+    auto& props = json[1];
+
+    auto& platform_params = pillar.object.parameters;
+    auto& platform_props = pillar.object.properties;
+
+    platform_params.position = extract_vec2(position[0], position[1]);
+
+    platform_props.angled = (props[0] == 1);
+    if (props.size() > 1)
+    {
+        platform_props.texture = map_wall_texture(props[1]);
+
+        if (props.size() > 2)
+        {
+            // TODO: Is divide by 6 the correct factor?
+            platform_props.size = (float)props[2] / 6.0f;
+
+            auto [base, height] = extract_wall_base_and_height(props[3]);
+            platform_props.base_height = base;
+            platform_props.height = height;
+        }
+    }
+    else
+    {
+        // Default to red brick
+        platform_props.texture.id = 0;
+    }
+
+    pillar.floor = (int)json[2] - 1;
+}
+
 // =========================================
 //      End of object conversion
 // =========================================
@@ -275,8 +325,10 @@ void convert_legacy_level(const std::filesystem::path& path)
         floor.objects.push_back(LevelObject{legacy_floor});
     }
 
+    // Extract geometric object
     load_objects<LegacyWall>(legacy_json, "walls", new_level);
     load_objects<LegacyPlatform>(legacy_json, "Plat", new_level);
+    load_objects<LegacyPillar>(legacy_json, "Pillar", new_level);
 
     auto output = new_level.serialise();
     time = clock.restart().asSeconds();

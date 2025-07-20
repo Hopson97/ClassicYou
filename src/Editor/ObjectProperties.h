@@ -28,7 +28,7 @@ struct WallProps
     TextureProp texture_front{0};
     TextureProp texture_back{0};
     float base_height{0};
-    float wall_height{2};
+    float height{1};
 };
 
 struct WallParameters
@@ -39,7 +39,7 @@ struct WallParameters
 inline bool operator==(const WallProps& lhs, const WallProps& rhs)
 {
     return lhs.texture_front == rhs.texture_front && lhs.texture_back == rhs.texture_back &&
-           lhs.base_height == rhs.base_height && lhs.wall_height == rhs.wall_height;
+           lhs.base_height == rhs.base_height && lhs.height == rhs.height;
 }
 
 inline bool operator!=(const WallProps& lhs, const WallProps& rhs)
@@ -50,7 +50,6 @@ inline bool operator!=(const WallProps& lhs, const WallProps& rhs)
 // =======================================
 //      Platform Object Types
 // =======================================
-
 struct PlatformParameters
 {
     glm::vec2 position{0};
@@ -59,8 +58,8 @@ struct PlatformParameters
 enum class PlatformStyle
 {
     Quad,
-    // Triagle,
-    Diamond
+    Diamond,
+    Triangle,
 };
 
 struct PlatformProps
@@ -89,11 +88,11 @@ inline bool operator!=(const PlatformProps& lhs, const PlatformProps& rhs)
 }
 
 // =======================================
-//      Ground Object Types
+//      PolyGon Platform Object Types
 // =======================================
 struct PolygonPlatformParameters
 {
-    //std::vector<glm::vec2> points{4};
+    // std::vector<glm::vec2> points{4};
     glm::vec2 corner_top_left{0};
     glm::vec2 corner_top_right{0, WORLD_SIZE* TILE_SIZE};
     glm::vec2 corner_bottom_right{WORLD_SIZE * TILE_SIZE, WORLD_SIZE* TILE_SIZE};
@@ -115,6 +114,43 @@ inline bool operator==(const PolygonPlatformProps& lhs, const PolygonPlatformPro
 }
 
 inline bool operator!=(const PolygonPlatformProps& lhs, const PolygonPlatformProps& rhs)
+{
+    return !(lhs == rhs);
+}
+
+// =======================================
+//      Pillar Object Types
+// =======================================
+enum class PillarStyle
+{
+    Vertical,
+    Diagonal,
+    Horizontal
+};
+
+struct PillarParameters
+{
+    glm::vec2 position{0};
+};
+
+struct PillarProps
+{
+    TextureProp texture;
+    PillarStyle style = PillarStyle::Vertical;
+    float size = 0.2f;
+    float base_height{0};
+    float height{1};
+    bool angled = false;
+};
+
+inline bool operator==(const PillarProps& lhs, const PillarProps& rhs)
+{
+    return lhs.texture == rhs.texture && lhs.style == rhs.style && lhs.size == rhs.size &&
+           lhs.base_height == rhs.base_height && lhs.height == rhs.height &&
+           lhs.angled == rhs.angled;
+}
+
+inline bool operator!=(const PillarProps& lhs, const PillarProps& rhs)
 {
     return !(lhs == rhs);
 }

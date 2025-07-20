@@ -450,6 +450,11 @@ void ScreenEditGame::render_editor_ui()
             tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::PolygonPlatform);
             editor_state_.p_active_object_ = nullptr;
         }
+        if (ImGui::Button("Pillar"))
+        {
+            tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::Pillar);
+            editor_state_.p_active_object_ = nullptr;
+        }
 
         ImGui::Separator();
 

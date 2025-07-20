@@ -21,7 +21,8 @@ enum class ObjectTypeName
 {
     Wall,
     Platform,
-    PolygonPlatform
+    PolygonPlatform,
+    Pillar,
 };
 
 template <typename Properties, typename Parameters>
@@ -37,8 +38,10 @@ struct ObjectType
 using WallObject = ObjectType<WallProps, WallParameters>;
 using PlatformObject = ObjectType<PlatformProps, PlatformParameters>;
 using PolygonPlatformObject = ObjectType<PolygonPlatformProps, PolygonPlatformParameters>;
+using PillarObject = ObjectType<PillarProps, PillarParameters>;
 
-using GeometryObjects = std::variant<WallObject, PlatformObject, PolygonPlatformObject>;
+using GeometryObjects =
+    std::variant<WallObject, PlatformObject, PolygonPlatformObject, PillarObject>;
 
 struct LevelObject
 {
@@ -74,6 +77,7 @@ struct LevelObject
     bool deserialise_as_wall(const nlohmann::json& wall);
     bool deserialise_as_platform(const nlohmann::json& platform);
     bool deserialise_as_polygon_platform(const nlohmann::json& platform);
+    bool deserialise_as_pillar(const nlohmann::json& pillar);
 };
 
 struct EditorState
@@ -84,7 +88,7 @@ struct EditorState
         .texture_front = {.id = 0},
         .texture_back = {.id = 0},
         .base_height = 0,
-        .wall_height = 1,
+        .height = 1,
     };
 
     PlatformProps platform_default = {
@@ -96,7 +100,12 @@ struct EditorState
     };
 
     PolygonPlatformProps polygon_platform_default = {
-        .texture_top = {.id = 0}, .texture_bottom = {.id = 0}, .visible = true};
+        .texture_top = {.id = 0},
+        .texture_bottom = {.id = 0},
+        .visible = true,
+    };
+
+    PillarProps pillar_default;
 
     LevelObject* p_active_object_ = nullptr;
 
@@ -107,6 +116,9 @@ struct EditorState
 [[nodiscard]] LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number);
 [[nodiscard]] LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform,
                                                         int floor_number);
+
+[[nodiscard]] LevelObjectsMesh3D generate_pillar_mesh(const PillarObject& platform,
+                                                      int floor_number);
 
 [[nodiscard]] LevelObjectsMesh3D
 generate_polygon_platform_mesh(const PolygonPlatformObject& polygon_platform, int floor_number);

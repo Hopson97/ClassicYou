@@ -275,6 +275,9 @@ bool EditorLevel::load(const std::filesystem::path& path)
 
         load_objects(object_types, "polygon_platform", floor, [&](auto& level_object, auto& json)
                      { level_object.deserialise_as_polygon_platform(json); });
+
+        load_objects(object_types, "pillar", floor, [&](auto& level_object, auto& json)
+                     { level_object.deserialise_as_pillar(json); });
     }
 
     std::println("Successfully loaded {} ", path.string());
