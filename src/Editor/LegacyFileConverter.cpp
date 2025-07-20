@@ -11,26 +11,30 @@
 
 namespace
 {
+    // Map for colour from the legacy format to the new format
+    // For platforms, floors
     std::unordered_map<int, int> TEXTURE_MAP = {
         {1, 6}, // Grass
         // {2, 7}, // Stucco
-        {3, 0}, // Red Brick
-        {4, 1}, // Stone Brick
-        {5, 12}, // 
+        {3, 0},  // Red Brick
+        {4, 1},  // Stone Brick
+        {5, 12}, //
         // {6, 0}, // "happy"
         // {7, 0  // Egypt texture
-        {8, 8}, // Glass
+        {8, 8},  // Glass
         {9, 10}, // Bark
         // {10, 10}, // Sci-Fi
         // {11, 11}, // Tiles
         {13, 13}, // Rock
-       //  {15, 13}, // Parquet
+                  //  {15, 13}, // Parquet
     };
 
+    // Map for colour from the legacy format to the new format
+    // For walls, pillars
     std::unordered_map<int, int> TEXTURE_MAP_WALL = {
-        {1, 0}, // Red bricks
-        {2, 4}, // Bars
-        {3, 1}, // Stone Brick
+        {1, 0},  // Red bricks
+        {2, 4},  // Bars
+        {3, 1},  // Stone Brick
         {4, 6},  // Grass
         {5, 12}, // Wood
         // {6, 0}, // "happy"
@@ -53,7 +57,7 @@ namespace
         {
             return TEXTURE_MAP[legacy_id];
         }
-        std::println("Missing floor mapping for {}", legacy_id);
+
         return legacy_id;
     }
 
@@ -63,34 +67,41 @@ namespace
         {
             return TEXTURE_MAP_WALL[legacy_id];
         }
-        std::println("Missing wall mapping for {}", legacy_id);
+
         return legacy_id;
     }
 
-    /// Converts a legacy ChallengeYou.com level format to JSON
+    // Converts a legacy ChallengeYou.com level format to JSON
     auto legacy_to_json(std::string& legacy_file_content)
     {
+        // Replace the #name: to "name":
         while (auto match = ctre::search<R"(#([a-zA-Z_][a-zA-Z0-9_]*)\s*:)">(legacy_file_content))
         {
             std::string key = match.get<1>().to_string();
             legacy_file_content.replace(match.begin(), match.end(), "\"" + key + "\":");
         }
 
+        // Wrap the JSON with { } to be read as an object
         legacy_file_content.front() = '{';
         legacy_file_content.back() = '}';
 
+        // Parse the string
         return nlohmann::json::parse(legacy_file_content);
     }
 
     auto extract_vec2(float x, float y)
     {
+        // The legacy format has each square as 5 units wide, so the values must be divided by this
+        // before being multiplied to TILE_SIZE to map to the new format
         return glm::vec2{x, y} / 5.0f * TILE_SIZE_F;
     }
 
 } // namespace
 
-// json conversion functions have to be defined outside of the anonamous namaepace to comply with
-// Argument Dependent Lookup (ADL)
+/*
+ * The JSON conversion functions have to be defined outside of the anonymous namespace to comply
+ * with Argument Dependent Lookup (ADL)
+ */
 
 // ===========================================================
 //      Floor/ Ground Conversion (to PolygonPlatformObject)
@@ -158,7 +169,7 @@ struct LegacyPlatform
 // [[X, Y], [Size, Texture, Height], Floor]
 void from_json(const nlohmann::json& json, LegacyPlatform& platform)
 {
-    auto& positon = json[0];
+    auto& position = json[0];
     auto& props = json[1];
 
     auto& platform_params = platform.object.parameters;
@@ -167,9 +178,8 @@ void from_json(const nlohmann::json& json, LegacyPlatform& platform)
     platform_props.width = static_cast<float>(props[0]) * 2;
     platform_props.depth = static_cast<float>(props[0]) * 2;
 
-    platform_params.position =
-        extract_vec2(positon[0], positon[1]) - glm::vec2{TILE_SIZE_F * platform_props.width / 2.0f};
-
+    platform_params.position = extract_vec2(position[0], position[1]) -
+                               glm::vec2{TILE_SIZE_F * platform_props.width / 2.0f};
 
     if (props.size() > 1)
     {
@@ -191,7 +201,10 @@ void from_json(const nlohmann::json& json, LegacyPlatform& platform)
     platform.floor = (int)json[2] - 1;
 }
 
-template<typename T>
+// =========================================
+//      End of object conversion
+// =========================================
+template <typename T>
 void load_objects(const nlohmann::json& json, const char* json_key, FloorManager& new_level)
 {
     std::vector<T> objects;
@@ -206,18 +219,20 @@ void load_objects(const nlohmann::json& json, const char* json_key, FloorManager
 
 void convert_legacy_level(const std::filesystem::path& path)
 {
-
+    std::println("Converting {}", path.string());
     sf::Clock clock;
 
     auto legacy_file_content = read_file_to_string(path);
     auto legacy_json = legacy_to_json(legacy_file_content);
 
-    auto time = clock.getElapsedTime().asSeconds();
-    std::println("Conversion took {}s ({}ms) ", time, time * 1000.0f);
+    auto time = clock.restart().asSeconds();
+    std::println("Converting to JSON took {}s ({}ms)", time, time * 1000.0f);
 
     std::ofstream out_file_og((path.parent_path() / path.stem()).string() + ".json");
     out_file_og << legacy_json;
+    clock.restart();
 
+    // Begin conversion from JSON to new format
     FloorManager new_level;
 
     int floor_n = 0;
@@ -233,10 +248,11 @@ void convert_legacy_level(const std::filesystem::path& path)
     load_objects<LegacyPlatform>(legacy_json, "Plat", new_level);
 
     auto output = new_level.serialise();
+    std::println("Converting to ClassicYou format took {}s ({}ms)\n", time, time * 1000.0f);
 
     if (output)
     {
-        std::println("Succesfully serialised {} ", path.string());
+        std::println("Successfully serialised {} ", path.string());
 
         std::ofstream out_file(("levels" / path.stem()).string() + ".cly");
 

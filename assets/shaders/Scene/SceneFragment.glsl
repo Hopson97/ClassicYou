@@ -19,7 +19,7 @@ void main()
     out_colour = fs_in.colour;
     if (use_texture) 
     {
-        out_colour *= texture(diffuse, fs_in.texture_coord);
+        out_colour *= texture(diffuse, fs_in.texture_coord) * fs_in.colour;
 
         if (selected)
         {

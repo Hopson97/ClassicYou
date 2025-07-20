@@ -58,12 +58,13 @@ namespace gl
     VertexArrayObject::AttributeBuilder&
     VertexArrayObject::AttributeBuilder::add_instance_attribute(GLint size, GLenum type,
                                                                 GLuint offset, GLuint divisor,
-                                                                int count)
+                                                                int count, bool normalise)
     {
         for (int i = 0; i < 4; i++)
         {
             glEnableVertexArrayAttrib(vao_, *p_attribs_);
-            glVertexArrayAttribFormat(vao_, *p_attribs_, size, type, GL_FALSE, offset * i);
+            glVertexArrayAttribFormat(vao_, *p_attribs_, size, type, normalise ? GL_TRUE : GL_FALSE,
+                                      offset * i);
             glVertexArrayAttribBinding(vao_, *p_attribs_, vbo_binding_index_);
             *p_attribs_ += 1;
         }
@@ -72,10 +73,12 @@ namespace gl
     }
 
     VertexArrayObject::AttributeBuilder&
-    VertexArrayObject::AttributeBuilder::add_attribute(GLint size, GLenum type, GLuint offset)
+    VertexArrayObject::AttributeBuilder::add_attribute(GLint size, GLenum type, GLuint offset,
+                                                       bool normalise)
     {
         glEnableVertexArrayAttrib(vao_, *p_attribs_);
-        glVertexArrayAttribFormat(vao_, *p_attribs_, size, type, GL_FALSE, offset);
+        glVertexArrayAttribFormat(vao_, *p_attribs_, size, type, normalise ? GL_TRUE : GL_FALSE,
+                                  offset);
         glVertexArrayAttribBinding(vao_, *p_attribs_, vbo_binding_index_);
         *p_attribs_ += 1;
         return *this;

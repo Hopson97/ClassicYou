@@ -21,7 +21,7 @@ struct Vertex3D
     glm::vec3 position{0.0f};
     TextureCoordType texture_coord{0.0f};
     glm::vec3 normal{0.0f};
-    glm::vec4 colour{1.0f};
+    glm::u8vec4 colour{255};
 
     /**
      * @brief Builds the vertex attributes for the given VertexArrayObject and BufferObject.
@@ -35,7 +35,7 @@ struct Vertex3D
             .add_attribute(3, GL_FLOAT, offsetof(Vertex3D, position))
             .add_attribute(T::length(), GL_FLOAT, offsetof(Vertex3D, texture_coord))
             .add_attribute(3, GL_FLOAT, offsetof(Vertex3D, normal))
-            .add_attribute(4, GL_FLOAT, offsetof(Vertex3D, colour));
+            .add_attribute(4, GL_UNSIGNED_BYTE, offsetof(Vertex3D, colour), true);
     }
 };
 

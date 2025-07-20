@@ -15,10 +15,10 @@ Mesh3D generate_quad_mesh(float w, float h)
     Mesh3D mesh;
 
     mesh.vertices = {// positions                // tex coords   // normal           // color
-                     {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, glm::vec4{1.0f}},
-                     {{w, 0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, glm::vec4{1.0f}},
-                     {{w, h, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, glm::vec4{1.0f}},
-                     {{0.0f, h, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, glm::vec4{1.0f}}};
+                     {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+                     {{w, 0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+                     {{w, h, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+                     {{0.0f, h, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}}};
     mesh.indices = {0, 1, 2, 2, 3, 0};
 
     return mesh;
@@ -188,14 +188,13 @@ Mesh3D generate_terrain_mesh(int size, int edgeVertices)
     return mesh;
 }
 
-
 Mesh3D generate_grid_mesh(int width, int height)
 {
     Mesh3D mesh;
     auto create_line = [&](const glm::vec3& begin, const glm::vec3& end, glm::vec4 colour)
     {
-        mesh.vertices.push_back({.position = begin, .colour = {1, 1, 1, 1}});
-        mesh.vertices.push_back({.position = end, .colour = {1, 1, 1, 1}});
+        mesh.vertices.push_back({.position = begin});
+        mesh.vertices.push_back({.position = end});
 
         mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
         mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));

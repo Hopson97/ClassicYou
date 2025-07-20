@@ -42,4 +42,10 @@ struct FloorManager
     std::optional<nlohmann::json> serialise() const;
 };
 
+/**
+ * @brief Converts legacy level files to the new format.
+ * This is done by first converting the legacy format to JSON, and then the JSON is read by
+ * nlohmann::json to be converted to the new format.
+ * @param path
+ */
 void convert_legacy_level(const std::filesystem::path& path);

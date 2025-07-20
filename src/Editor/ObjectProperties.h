@@ -7,6 +7,18 @@
 #include "EditConstants.h"
 
 class LevelTextures;
+/*
+struct TextureProp
+{
+    GLfloat id;
+    glm::u8vec4 colour;
+};
+
+inline bool operator==(const TextureProp& lhs, const TextureProp& rhs)
+{
+    return lhs.id == rhs.id && lhs.colour == rhs.colour;
+}
+*/
 
 using TextureProp = int;
 
