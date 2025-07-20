@@ -1,5 +1,7 @@
 #include "ImGuiExtras.h"
 
+#include <cmath>
+
 #include <imgui.h>
 
 namespace ImGui

@@ -226,12 +226,12 @@ namespace gl
 
     GLuint CubeMapTexture::create_depth_cube(GLsizei width, GLsizei height)
     {
-        //glTextureStorage2D(id, 1, GL_R8, width, h);
-        //for (int i = 0; i < 6; i++)
+        // glTextureStorage2D(id, 1, GL_R8, width, h);
+        // for (int i = 0; i < 6; i++)
         //{
-        //    glTextureSubImage3D(id, 0, 0, 0, i, width, height, 1, GL_DEPTH_COMPONENT, GL_FLOAT,
-        //                        nullptr);
-        //}
+        //     glTextureSubImage3D(id, 0, 0, 0, i, width, height, 1, GL_DEPTH_COMPONENT, GL_FLOAT,
+        //                         nullptr);
+        // }
 
         glBindTexture(GL_TEXTURE_CUBE_MAP, id);
         for (int i = 0; i < 6; i++)
@@ -305,7 +305,7 @@ namespace gl
             return {false, 0};
         }
 
-        glTextureSubImage3D(id, 0, 0, 0, texture_count_, texture_size_, texture_size_, 1,
+        glTextureSubImage3D(id, levels, 0, 0, texture_count_, texture_size_, texture_size_, 1,
                             static_cast<GLenum>(format), GL_UNSIGNED_BYTE, image.getPixelsPtr());
         return {true, texture_count_++};
     }

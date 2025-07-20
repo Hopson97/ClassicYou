@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 target_release() {
     cd release
     cmake -DCMAKE_BUILD_TYPE=Release ../..

@@ -193,8 +193,8 @@ Mesh3D generate_grid_mesh(int width, int height)
     Mesh3D mesh;
     auto create_line = [&](const glm::vec3& begin, const glm::vec3& end, glm::vec4 colour)
     {
-        mesh.vertices.push_back({.position = begin});
-        mesh.vertices.push_back({.position = end});
+        mesh.vertices.push_back({.position = begin, .colour = colour});
+        mesh.vertices.push_back({.position = end, .colour = colour});
 
         mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
         mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));

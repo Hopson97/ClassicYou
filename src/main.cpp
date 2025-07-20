@@ -4,6 +4,7 @@
 #include <SFML/Window/Window.hpp>
 #include <glad/glad.h>
 
+#include "Editor/FloorManager.h"
 #include "GUI.h"
 #include "Graphics/OpenGL/GLUtils.h"
 #include "Screens/Screen.h"
@@ -11,12 +12,10 @@
 #include "Util/Keyboard.h"
 #include "Util/Profiler.h"
 #include "Util/TimeStep.h"
-#include "Editor/FloorManager.h"
 
 namespace
 {
-    void handle_event(const sf::Event& eventvent, sf::Window& window, bool& show_debug_info,
-                      bool& close_requested);
+    void handle_event(const sf::Event& event, bool& show_debug_info, bool& close_requested);
 } // namespace
 
 int main()
@@ -89,7 +88,7 @@ int main()
             GUI::event(window, *event);
             keyboard.update(*event);
             screen.on_event(*event);
-            handle_event(*event, window, show_debug_info, close_requested);
+            handle_event(*event, show_debug_info, close_requested);
         }
         auto dt = clock.restart();
 
@@ -141,8 +140,7 @@ int main()
 
 namespace
 {
-    void handle_event(const sf::Event& event, sf::Window& window, bool& show_debug_info,
-                      bool& close_requested)
+    void handle_event(const sf::Event& event, bool& show_debug_info, bool& close_requested)
     {
         if (event.is<sf::Event::Closed>())
         {

@@ -21,7 +21,7 @@ class EditorLevel
     LevelObject& add_object(const LevelObject& object, Floor& floor);
 
     void update_object(const LevelObject& object, int floor_number);
-    void remove_object(std::size_t id);
+    void remove_object(ObjectId id);
 
     void set_object_id(ObjectId current_id, ObjectId new_id);
 

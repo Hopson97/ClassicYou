@@ -12,7 +12,7 @@ void ScreenManager::push_screen(std::unique_ptr<Screen> screen)
 
 void ScreenManager::pop_screen()
 {
-    m_actions.push_back({.kind = Action::Kind::Pop});
+    m_actions.push_back({.kind = Action::Kind::Pop, .screen = nullptr});
 }
 
 void ScreenManager::change_screen(std::unique_ptr<Screen> screen)

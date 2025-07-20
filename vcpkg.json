@@ -1,3 +1,10 @@
 {
-  "dependencies": ["glm", "sfml", "imgui", "ctre"]
+  "dependencies": [
+    "ctre",
+    "glm",
+    "imgui",
+    "magic-enum",
+    "nlohmann-json",
+    "sfml"
+  ]
 }

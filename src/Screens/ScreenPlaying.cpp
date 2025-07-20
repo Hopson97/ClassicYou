@@ -104,7 +104,7 @@ void ScreenPlaying::on_update(const Keyboard& keyboard, sf::Time dt)
                            rotation_locked_);
 }
 
-void ScreenPlaying::on_fixed_update(sf::Time dt)
+void ScreenPlaying::on_fixed_update([[maybe_unused]] sf::Time dt)
 {
 }
 

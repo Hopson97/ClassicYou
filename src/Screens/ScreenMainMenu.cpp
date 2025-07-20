@@ -4,10 +4,10 @@
 
 #include <imgui.h>
 
+#include "../Editor/EditorGUI.h"
 #include "../Util/ImGuiExtras.h"
 #include "ScreenEditGame.h"
 #include "ScreenPlaying.h"
-#include "../Editor/EditorGUI.h"
 
 ScreenMainMenu::ScreenMainMenu(ScreenManager& screens)
     : Screen(screens)
@@ -19,7 +19,7 @@ bool ScreenMainMenu::on_init()
     return true;
 }
 
-void ScreenMainMenu::on_render(bool show_debug)
+void ScreenMainMenu::on_render([[maybe_unused]] bool show_debug)
 {
 
     ImVec2 window_size(window().getSize().x / 4.0f, window().getSize().y / 2.0f);

@@ -60,7 +60,7 @@ namespace gl
                                                                 GLuint offset, GLuint divisor,
                                                                 int count, bool normalise)
     {
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < count /*4*/; i++)
         {
             glEnableVertexArrayAttrib(vao_, *p_attribs_);
             glVertexArrayAttribFormat(vao_, *p_attribs_, size, type, normalise ? GL_TRUE : GL_FALSE,

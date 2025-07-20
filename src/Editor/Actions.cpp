@@ -132,12 +132,12 @@ UpdateObjectAction::UpdateObjectAction(const LevelObject& old_object, const Leve
 {
 }
 
-void UpdateObjectAction::execute(EditorState& state, EditorLevel& level)
+void UpdateObjectAction::execute([[maybe_unused]] EditorState& state, EditorLevel& level)
 {
     level.update_object(new_object_, floor_);
 }
 
-void UpdateObjectAction::undo(EditorState& state, EditorLevel& level)
+void UpdateObjectAction::undo([[maybe_unused]] EditorState& state, EditorLevel& level)
 {
     level.update_object(old_object_, floor_);
 }

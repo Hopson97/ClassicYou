@@ -55,9 +55,10 @@ class Screen
     Screen(ScreenManager& screen_manager);
 
     virtual bool on_init() = 0;
-    virtual void on_event(const sf::Event& event) {};
-    virtual void on_update(const Keyboard& keyboard, sf::Time dt) {};
-    virtual void on_fixed_update(sf::Time dt) {};
+    virtual void on_event([[maybe_unused]] const sf::Event& event) {};
+    virtual void on_update([[maybe_unused]] const Keyboard& keyboard,
+                           [[maybe_unused]] sf::Time dt) {};
+    virtual void on_fixed_update([[maybe_unused]] sf::Time dt) {};
     virtual void on_render(bool show_debug) = 0;
 
   protected:
@@ -65,6 +66,4 @@ class Screen
 
   protected:
     ScreenManager* p_screen_manager_ = nullptr;
-
-  private:
 };

@@ -69,7 +69,7 @@ void EditorLevel::update_object(const LevelObject& object, int floor_number)
     changes_made_since_last_save_ = true;
 }
 
-void EditorLevel::remove_object(std::size_t id)
+void EditorLevel::remove_object(ObjectId id)
 {
     for (auto& floor : floors_manager_.floors)
     {
@@ -123,7 +123,7 @@ void EditorLevel::render(gl::Shader& scene_shader, const LevelObject* p_active_o
             {
                 continue;
             }
-            
+
             if (!rendered_selected && p_active_object && object.id == p_active_object->object_id)
             {
                 rendered_selected = true;

@@ -12,9 +12,8 @@ bool Skybox::init(const std::filesystem::path& folder)
         return false;
     }
 
-
     // Load skybox
-    if (!texture_.load_from_folder("assets/textures/skybox"))
+    if (!texture_.load_from_folder(folder))
     {
         return false;
     }

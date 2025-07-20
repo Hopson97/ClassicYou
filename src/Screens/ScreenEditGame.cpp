@@ -318,7 +318,7 @@ void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
     drawing_pad_.update(keyboard, dt);
 }
 
-void ScreenEditGame::on_fixed_update(sf::Time dt)
+void ScreenEditGame::on_fixed_update([[maybe_unused]] sf::Time dt)
 {
 }
 
