@@ -71,7 +71,7 @@ class UpdateWallTool : public ITool
     {
         Start,
         End
-    } target_;
+    } target_ = DragTarget::End;
 };
 
 class CreateObjectTool : public ITool

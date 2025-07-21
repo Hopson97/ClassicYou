@@ -20,7 +20,7 @@ namespace
         "Glass",      "Sand",        "Bark",         "Leaf",
         "Planks",     "Rock",        "Stucco",       "Ancient",
         "Blank",      "Happy",       "SciFi",        "Tiles",
-        "Book Case",   "Parquet"
+        "Book Case",  "Parquet"
 
     };
 
@@ -229,6 +229,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
             if (p_active && p_active->try_select_2d(editor_state_.node_hovered) &&
                 !std::get_if<WallObject>(&p_active->object_type))
             {
+                select_position_ = editor_state_.node_hovered;
                 moving_object_ = true;
                 moving_object_cache_ = *p_active;
             }
@@ -242,7 +243,8 @@ void ScreenEditGame::on_event(const sf::Event& event)
         if (p_active && moving_object_)
         {
             auto new_object = *p_active;
-            new_object.move_to(editor_state_.node_hovered);
+            new_object.move(editor_state_.node_hovered - select_position_);
+            select_position_ = editor_state_.node_hovered;
 
             action_manager_.push_action(std::make_unique<UpdateObjectAction>(
                                             *p_active, new_object, editor_state_.current_floor),
@@ -282,7 +284,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
             if (moving_object_)
             {
                 auto new_object = *p_active;
-                new_object.move_to(editor_state_.node_hovered);
+                new_object.move(editor_state_.node_hovered - select_position_);
 
                 action_manager_.push_action(
                     std::make_unique<UpdateObjectAction>(moving_object_cache_, new_object,
