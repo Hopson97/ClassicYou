@@ -14,10 +14,20 @@ struct Transform
     glm::vec3 scale{1.0f};
 };
 
+struct Rectangle
+{
+    glm::vec2 position{0};
+    glm::vec2 size{0};
+
+    bool is_entirely_within(const Rectangle& other);
+};
+
 struct Line
 {
     glm::vec2 start{0};
     glm::vec2 end{0};
+
+    Rectangle to_bounds();
 };
 
 glm::mat4 create_model_matrix(const Transform& transform);

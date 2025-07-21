@@ -6,9 +6,10 @@
 #include "../Graphics/Mesh.h"
 #include "LevelObject.h"
 
-using ObjectId = std::int32_t;
-
-// Each level is made out of a several floors
+/**
+ * @brief A single floor of a given level in the editor.
+ *
+ */
 struct Floor
 {
     struct LevelMesh
@@ -27,6 +28,9 @@ struct Floor
     int real_floor = 0;
 };
 
+/**
+ * @brief Wrapper for managing multiple floors in a level.
+ */
 struct FloorManager
 {
     std::vector<Floor> floors;
@@ -35,8 +39,13 @@ struct FloorManager
 
     std::optional<Floor*> find_floor(int floor_number);
     std::optional<const Floor*> find_floor(int floor_number) const;
+
+    /// @brief Adds a new floor to the manager if it does not already exist.
+    /// This currently assumes that a new floor will only be 1 above/below the current max/min
+    /// floor. (TODO: Change this?)
     Floor& ensure_floor_exists(int floor_number);
 
+    /// @brief Clears all floors and resets the manager.
     void clear();
 
     std::optional<nlohmann::json> serialise() const;

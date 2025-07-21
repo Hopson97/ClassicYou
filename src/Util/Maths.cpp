@@ -85,3 +85,18 @@ float distance_to_line(const glm::vec2& point, const Line& line)
 
     return glm::sqrt(dist);
 }
+
+Rectangle Line::to_bounds()
+{
+    return Rectangle{
+        .position = {std::min(start.x, end.x), std::min(start.y, end.y)},
+        .size = {std::abs(start.x - end.x), std::abs(start.y - end.y)},
+    };
+}
+
+bool Rectangle::is_entirely_within(const Rectangle& other)
+{
+    return other.position.x <= position.x && other.position.y <= position.y &&
+           other.position.x + other.size.x >= position.x + size.x &&
+           other.position.y + other.size.y >= position.y + size.y;
+}

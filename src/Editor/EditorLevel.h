@@ -9,9 +9,16 @@
 #include "../Graphics/Mesh.h"
 #include "../Graphics/OpenGL/Shader.h"
 #include "FloorManager.h"
+#include <unordered_set>
 
 class DrawingPad;
 
+/**
+ * @brief The editor representation of a level.
+ *
+ * Objects are stored on floors, and each floor can have multiple objects. Hence most functions take
+ * in the current_floor number, which is the floor number where objects should be manipulated.
+ */
 class EditorLevel
 {
   public:
@@ -25,39 +32,29 @@ class EditorLevel
 
     void set_object_id(ObjectId current_id, ObjectId new_id);
 
-    /**
-     * @brief Render the level in 3D.
-     * Assumes the camera, shader, and other OpenGL states are set up correctly.
-     * @param current_floor The current floor being used in the editor
-     */
+    /// Renders the level in 3D using the given shader and highlights the active object.
+    /// Assumes the camera, shader, and other OpenGL states are set up correctly.
     void render(gl::Shader& scene_shader, const LevelObject* p_active_object, int current_floor);
 
-    /**
-     * @brief Render the level in 2D using the given drawing pad.
-     * Assumes the camera, shader, and other OpenGL states are set up correctly.
-     *
-     * @param drawing_pad The drawing pad to render the level on.
-     * @param current_floor The current floor being used in the editor
-     */
+    /// Render the level in 2D using the given drawing pad, highlighting the active object.
+    /// Assumes the camera, shader, and other OpenGL states are set up correctly.
     void render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object, int current_floor);
 
-    /**
-     * @brief Try to select a level object at the given tile position.
-     *
-     * @param selection_tile The tile position to select an object at.
-     * @param p_active_object The currently active object. Used to ensure the object does not get
-     * selected twice
-     * @param current_floor The current floor being used in the editor
-     * @return LevelObject* if an object is found at the given tile, otherwise nullptr.
-     */
+    /// Try to select a level object at the given tile position. Returns nullptr if no object is
+    /// found.
     LevelObject* try_select(glm::vec2 selection_tile, const LevelObject* p_active_object,
                             int current_floor);
+
+    /// Try to select all objects at the given position, and put into the given set
+    void try_select_all(const Rectangle& selection_area, int current_floor,
+                        std::unordered_set<LevelObject*>& objects);
 
     int get_min_floor() const;
     int get_max_floor() const;
     size_t get_floor_count() const;
     void ensure_floor_exists(int floor_number);
 
+    /// @brief  Clears all floors and their objects, and resetting the level.
     void clear_level();
 
     bool save(const std::filesystem::path& path);
@@ -68,6 +65,8 @@ class EditorLevel
   private:
     bool do_save(const std::filesystem::path& path) const;
 
+    /// Loads the level from the given JSON object, where "LoadFunc" should be a function
+    /// deserialises the given json to an object.
     template <typename LoadFunc>
     void load_objects(nlohmann::json& json, const char* object_key, Floor& floor, LoadFunc func)
     {

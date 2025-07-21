@@ -179,8 +179,35 @@ LevelObject* EditorLevel::try_select(glm::vec2 selection_tile, const LevelObject
                 return &object;
             }
         }
+
+        // Found the right floor so can exit early
+        break;
     }
     return nullptr;
+}
+
+void EditorLevel::try_select_all(const Rectangle& selection_area, int current_floor,
+                                 std::unordered_set<LevelObject*>& objects)
+{
+    for (auto& floor : floors_manager_.floors)
+    {
+        // 2D Selection can only happen for objects on the current floor
+        if (floor.real_floor != current_floor)
+        {
+            continue;
+        }
+
+        for (auto& object : floor.objects)
+        {
+            if (object.is_within(selection_area))
+            {
+                objects.emplace(&object);
+            }
+        }
+
+        // Found the right floor so can exit early
+        break;
+    }
 }
 
 int EditorLevel::get_min_floor() const
