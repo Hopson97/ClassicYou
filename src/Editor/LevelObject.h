@@ -109,49 +109,6 @@ struct LevelObject
 };
 
 // =======================================
-//     Editor State
-// =======================================
-
-/// @brief The state of the editor input, such as the currently hovered node, the selected object
-/// and default object properties.
-struct EditorState
-{
-    WallProps wall_default = {
-        .texture_front = {.id = 0},
-        .texture_back = {.id = 0},
-        .base_height = 0,
-        .height = 1,
-    };
-
-    PlatformProps platform_default = {
-        .texture_top = {.id = 0},
-        .texture_bottom = {.id = 0},
-        .width = 1,
-        .depth = 1,
-        .base = 0,
-    };
-
-    PolygonPlatformProps polygon_platform_default = {
-        .texture_top = {.id = 0},
-        .texture_bottom = {.id = 0},
-        .visible = true,
-    };
-
-    PillarProps pillar_default;
-
-    /// The currently hovered node/tile in the editor.
-    glm::ivec2 node_hovered{0};
-
-    /// @brief The currently selected object in the editor.
-    /// When not nullptr, this object is highlighted in the editor and its properties are displayed
-    /// in the properties GUI.
-    LevelObject* p_active_object_ = nullptr;
-
-    /// The current floor number that the editor is working on.
-    int current_floor = 0;
-};
-
-// =======================================
 //     Level Object Geometry Generation
 // =======================================
 

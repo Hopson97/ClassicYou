@@ -10,6 +10,7 @@
 #include "DrawingPad.h"
 #include "EditConstants.h"
 #include "EditorGUI.h"
+#include "EditorState.h"
 #include "LevelTextures.h"
 
 namespace

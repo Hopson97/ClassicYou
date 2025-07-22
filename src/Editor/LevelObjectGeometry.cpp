@@ -133,7 +133,7 @@ LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform, int fl
 
     // Offset platform heights by a hair to prevent Z-fighting with PolygonPlatforms which can go
     // underneath
-    float ob = props.base * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT + 0.001;
+    float ob = props.base * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT + 0.00025;
     LevelObjectsMesh3D mesh;
     mesh.vertices = [&]()
     {

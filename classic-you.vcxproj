@@ -222,6 +222,7 @@
     <ClInclude Include="src\Editor\EditConstants.h" />
     <ClInclude Include="src\Editor\EditorGUI.h" />
     <ClInclude Include="src\Editor\EditorLevel.h" />
+    <ClInclude Include="src\Editor\EditorState.h" />
     <ClInclude Include="src\Editor\LevelTextures.h" />
     <ClInclude Include="src\Editor\ObjectProperties.h" />
     <ClInclude Include="src\Editor\Tool.h" />

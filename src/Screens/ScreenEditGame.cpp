@@ -157,7 +157,7 @@ bool ScreenEditGame::on_init()
 
 void ScreenEditGame::on_event(const sf::Event& event)
 {
-    auto p_active = editor_state_.p_active_object_;
+    auto p_active = editor_state_.p_active_object;
 
     if (showing_dialog())
     {
@@ -256,20 +256,23 @@ void ScreenEditGame::on_event(const sf::Event& event)
         // Try to select an object (2D view)
         if (mouse->button == sf::Mouse::Button::Right)
         {
-            editor_state_.p_active_object_ =
+            editor_state_.p_active_object =
                 level_.try_select(map_pixel_to_tile({mouse->position.x, mouse->position.y},
                                                     drawing_pad_.get_camera()),
                                   p_active, editor_state_.current_floor);
 
             // Editing a wall requires a special tool to enable resizing, so after a object it
             // switches between tools
-            if (editor_state_.p_active_object_)
+            if (editor_state_.p_active_object)
             {
                 if (auto wall =
-                        std::get_if<WallObject>(&editor_state_.p_active_object_->object_type))
+                        std::get_if<WallObject>(&editor_state_.p_active_object->object_type))
                 {
-                    tool_ =
-                        std::make_unique<UpdateWallTool>(*editor_state_.p_active_object_, *wall);
+                    tool_ = std::make_unique<UpdateWallTool>(*editor_state_.p_active_object, *wall);
+                }
+                else
+                {
+                    tool_ = std::make_unique<CreateWallTool>();
                 }
             }
             else if (tool_->get_tool_type() == ToolType::UpdateWall)
@@ -333,7 +336,7 @@ void ScreenEditGame::on_render(bool show_debug)
     //=============================================
     glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
 
-    level_.render_2d(drawing_pad_, editor_state_.p_active_object_, editor_state_.current_floor);
+    level_.render_2d(drawing_pad_, editor_state_.p_active_object, editor_state_.current_floor);
 
     if (tool_->get_tool_type() == ToolType::UpdateWall ||
         (!ImGui::GetIO().WantCaptureMouse && !moving_object_))
@@ -375,14 +378,16 @@ void ScreenEditGame::on_render(bool show_debug)
     //      Render the actual level and previews
     // ============================================
     // Draw the selection node
-    scene_shader_.set_uniform(
-        "model_matrix",
-        create_model_matrix({.position = {editor_state_.node_hovered.x / TILE_SIZE,
-                                          editor_state_.current_floor * FLOOR_HEIGHT,
-                                          editor_state_.node_hovered.y / TILE_SIZE},
-                             .rotation = {-90, 0, 0}}));
-    scene_shader_.set_uniform("use_texture", false);
-    selection_mesh_.bind().draw_elements();
+    if (tool_->get_tool_type() == ToolType::CreateWall)
+    {
+        scene_shader_.set_uniform(
+            "model_matrix",
+            create_model_matrix({.position = {editor_state_.node_hovered.x / TILE_SIZE,
+                                              editor_state_.current_floor * FLOOR_HEIGHT,
+                                              editor_state_.node_hovered.y / TILE_SIZE}}));
+        scene_shader_.set_uniform("use_texture", false);
+        selection_mesh_.bind().draw_elements();
+    }
 
     // Draw the current tool preview
     world_geometry_shader_.bind();
@@ -396,7 +401,7 @@ void ScreenEditGame::on_render(bool show_debug)
     }
 
     // Render the level itself
-    level_.render(world_geometry_shader_, editor_state_.p_active_object_,
+    level_.render(world_geometry_shader_, editor_state_.p_active_object,
                   editor_state_.current_floor);
 
     // Ensure GUI etc are rendered using fill
@@ -440,22 +445,22 @@ void ScreenEditGame::render_editor_ui()
         if (ImGui::Button("Wall"))
         {
             tool_ = std::make_unique<CreateWallTool>();
-            editor_state_.p_active_object_ = nullptr;
+            editor_state_.p_active_object = nullptr;
         }
         if (ImGui::Button("Platform"))
         {
             tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::Platform);
-            editor_state_.p_active_object_ = nullptr;
+            editor_state_.p_active_object = nullptr;
         }
         if (ImGui::Button("Polygon Platform"))
         {
             tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::PolygonPlatform);
-            editor_state_.p_active_object_ = nullptr;
+            editor_state_.p_active_object = nullptr;
         }
         if (ImGui::Button("Pillar"))
         {
             tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::Pillar);
-            editor_state_.p_active_object_ = nullptr;
+            editor_state_.p_active_object = nullptr;
         }
 
         ImGui::Separator();
@@ -465,14 +470,14 @@ void ScreenEditGame::render_editor_ui()
         if (ImGui::Button("Floor Down"))
         {
             level_.ensure_floor_exists(--editor_state_.current_floor);
-            editor_state_.p_active_object_ = nullptr;
+            editor_state_.p_active_object = nullptr;
             camera_.transform.position.y -= FLOOR_HEIGHT;
         }
         ImGui::SameLine();
         if (ImGui::Button("Floor Up"))
         {
             level_.ensure_floor_exists(++editor_state_.current_floor);
-            editor_state_.p_active_object_ = nullptr;
+            editor_state_.p_active_object = nullptr;
             camera_.transform.position.y += FLOOR_HEIGHT;
         }
         ImGui::Text("Lowest: %d - Current: %d - Highest: %d", level_.get_min_floor(),
@@ -483,12 +488,12 @@ void ScreenEditGame::render_editor_ui()
     }
 
     // When an object is selected, its properties is rendered
-    if (editor_state_.p_active_object_)
+    if (editor_state_.p_active_object)
     {
         if (ImGui::Begin("Object Properties"))
         {
-            editor_state_.p_active_object_->property_gui(editor_state_, level_textures_,
-                                                         action_manager_);
+            editor_state_.p_active_object->property_gui(editor_state_, level_textures_,
+                                                        action_manager_);
             ImGui::End();
         }
     }

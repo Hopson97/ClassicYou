@@ -8,6 +8,8 @@
 #include "Actions.h"
 #include "DrawingPad.h"
 #include "EditConstants.h"
+#include "EditorLevel.h"
+#include "EditorState.h"
 #include "LevelObject.h"
 
 void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
@@ -58,7 +60,7 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
             }
             else
             {
-                state.p_active_object_ = nullptr;
+                state.p_active_object = nullptr;
             }
         }
     }
@@ -231,10 +233,12 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
                             PolygonPlatformObject{
                                 .properties = state.polygon_platform_default,
                                 .parameters = {.corner_top_left = node,
-                                               .corner_top_right = node + glm::vec2{10.0f, 0} * TS,
+                                               .corner_top_right =
+                                                   node + glm::vec2{10.0f, 0} * TILE_SIZE_F,
                                                .corner_bottom_right =
-                                                   node + glm::vec2{10.0f, 10.0f} * TS,
-                                               .corner_bottom_left = node + glm::vec2{0, 10.0f} * TS
+                                                   node + glm::vec2{10.0f, 10.0f} * TILE_SIZE_F,
+                                               .corner_bottom_left =
+                                                   node + glm::vec2{0, 10.0f} * TILE_SIZE_F
 
                                 },
                             },
@@ -254,7 +258,7 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
                     break;
 
                 default:
-                    std::println("Missing implemention for CreateObjectTool for {}",
+                    std::println("Missing implementation for CreateObjectTool for {}",
                                  magic_enum::enum_name(object_type_));
                     break;
             }
@@ -277,9 +281,11 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
                 object_preview_ = generate_polygon_platform_mesh(
                     {.properties = state.polygon_platform_default,
                      .parameters = {.corner_top_left = node,
-                                    .corner_top_right = node + glm::vec2{10.0f, 0} * TS,
-                                    .corner_bottom_right = node + glm::vec2{10.0f, 10.0f} * TS,
-                                    .corner_bottom_left = node + glm::vec2{0, 10.0f} * TS}},
+                                    .corner_top_right = node + glm::vec2{10.0f, 0} * TILE_SIZE_F,
+                                    .corner_bottom_right =
+                                        node + glm::vec2{10.0f, 10.0f} * TILE_SIZE_F,
+                                    .corner_bottom_left =
+                                        node + glm::vec2{0, 10.0f} * TILE_SIZE_F}},
                     state.current_floor);
                 break;
 
@@ -333,11 +339,11 @@ void CreateObjectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorSt
 
         case ObjectTypeName::PolygonPlatform:
         {
-            float TS = TILE_SIZE;
+            float TILE_SIZE_F = TILE_SIZE;
             auto tl = tile_;
-            auto tr = tile_ + glm::vec2{10.0f, 0} * TS;
-            auto br = tile_ + glm::vec2{10.0f, 10.0f} * TS;
-            auto bl = tile_ + glm::vec2{0, 10.0f} * TS;
+            auto tr = tile_ + glm::vec2{10.0f, 0} * TILE_SIZE_F;
+            auto br = tile_ + glm::vec2{10.0f, 10.0f} * TILE_SIZE_F;
+            auto bl = tile_ + glm::vec2{0, 10.0f} * TILE_SIZE_F;
 
             drawing_pad.render_line(tl, tl + glm::vec2(TILE_SIZE, 0), Colour::RED, 5);
             drawing_pad.render_line(tl, tl + glm::vec2(0, TILE_SIZE), Colour::RED, 5);
@@ -362,11 +368,11 @@ void CreateObjectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorSt
 
                 drawing_pad.render_quad(position - offset, {size, size}, Colour::RED);
             }
-            // TODO Add implementation for horizontal and verticle pillars
+            // TODO Add implementation for horizontal and vertical pillars
             break;
 
         default:
-            std::println("Missing implemention for CreateObjectTool for {}",
+            std::println("Missing implementation for CreateObjectTool for {}",
                          magic_enum::enum_name(object_type_));
             break;
     }

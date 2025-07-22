@@ -6,6 +6,7 @@
 #include "../Editor/EditorLevel.h"
 #include "../Editor/LevelTextures.h"
 #include "../Editor/Tool.h"
+#include "../Editor/EditorState.h"
 #include "../Graphics/Camera.h"
 #include "../Graphics/CameraController.h"
 #include "../Graphics/Mesh.h"
@@ -47,7 +48,7 @@ class ScreenEditGame final : public Screen
     gl::Shader world_geometry_shader_;
     CameraKeybinds camera_keybinds_;
 
-    Mesh3D selection_mesh_ = generate_quad_mesh(0.25, 0.25);
+    Mesh3D selection_mesh_ = generate_cube_mesh({0.1, 1.0f, 0.1});
 
     DrawingPad drawing_pad_;
 
@@ -62,7 +63,7 @@ class ScreenEditGame final : public Screen
 
     /// 2D Texture array used for rendering the world geometry
     gl::Texture2DArray texture_;
-
+    
     EditorLevel level_;
     std::unique_ptr<ITool> tool_;
 
@@ -76,7 +77,7 @@ class ScreenEditGame final : public Screen
     bool moving_object_ = false;
 
     /// When moving an object, this is the position to offset from
-    glm::ivec2 select_position_;
+    glm::ivec2 select_position_{0};
 
     /// Capture the state of the object being moved at the start such that the inital state can be
     /// returned to when CTRL+Z is done

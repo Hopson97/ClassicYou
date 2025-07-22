@@ -4,6 +4,7 @@
 #include <print>
 
 #include "EditorLevel.h"
+#include "EditorState.h"
 
 ActionManager::ActionManager(EditorState& state, EditorLevel& level)
     : p_state_(&state)
@@ -103,19 +104,19 @@ void AddObjectAction::execute(EditorState& state, EditorLevel& level)
         id_ = level_object.object_id;
 
         executed_ = true;
-        state.p_active_object_ = &level_object;
+        state.p_active_object = &level_object;
     }
     else
     {
         auto& level_object = level.add_object(object_, floor_);
         level.set_object_id(level_object.object_id, id_);
-        state.p_active_object_ = &level_object;
+        state.p_active_object = &level_object;
     }
 }
 
 void AddObjectAction::undo(EditorState& state, EditorLevel& level)
 {
-    state.p_active_object_ = nullptr;
+    state.p_active_object = nullptr;
     level.remove_object(id_);
 }
 
@@ -158,7 +159,7 @@ DeleteObjectAction::DeleteObjectAction(const LevelObject& object, int floor)
 
 void DeleteObjectAction::execute(EditorState& state, EditorLevel& level)
 {
-    state.p_active_object_ = nullptr;
+    state.p_active_object = nullptr;
     level.remove_object(object_.object_id);
 }
 
@@ -168,7 +169,7 @@ void DeleteObjectAction::undo(EditorState& state, EditorLevel& level)
 
     // new_object.p = object_.props;
 
-    state.p_active_object_ = &new_object;
+    state.p_active_object = &new_object;
 
     level.set_object_id(new_object.object_id, object_.object_id);
     object_ = new_object;

@@ -299,6 +299,18 @@ void load_objects(const nlohmann::json& json, const char* json_key, FloorManager
     }
 }
 
+void load_floors(const nlohmann::json& json, FloorManager& new_level)
+{
+    int floor_n = 0;
+    std::vector<PolygonPlatformObject> legacy_floors;
+    json["Floor"].get_to(legacy_floors);
+    for (auto& legacy_floor : legacy_floors)
+    {
+        auto& floor = new_level.ensure_floor_exists(floor_n++);
+        floor.objects.push_back(LevelObject{legacy_floor});
+    }
+}
+
 void convert_legacy_level(const std::filesystem::path& path)
 {
     std::println("Converting {}", path.string());
@@ -309,21 +321,17 @@ void convert_legacy_level(const std::filesystem::path& path)
 
     auto time = clock.restart().asSeconds();
     std::println("Converting to JSON took {}s ({}ms)", time, time * 1000.0f);
-    std::ofstream out_file_og((path.parent_path() / path.stem()).string() + ".json");
-    out_file_og << legacy_json;
+
+    // Uncomment to inspect the converted JSON
+    // std::ofstream out_file_og((path.parent_path() / path.stem()).string() + ".json");
+    // out_file_og << legacy_json;
     clock.restart();
 
     // Begin conversion from JSON to new format
     FloorManager new_level;
 
-    int floor_n = 0;
-    std::vector<PolygonPlatformObject> legacy_floors;
-    legacy_json["Floor"].get_to(legacy_floors);
-    for (auto& legacy_floor : legacy_floors)
-    {
-        auto& floor = new_level.ensure_floor_exists(floor_n++);
-        floor.objects.push_back(LevelObject{legacy_floor});
-    }
+    // First load the floors
+    load_floors(legacy_json, new_level);
 
     // Extract geometric object
     load_objects<LegacyWall>(legacy_json, "walls", new_level);
@@ -343,8 +351,6 @@ void convert_legacy_level(const std::filesystem::path& path)
         out_file << output;
     }
 
-    // auto walls = legacy_json["walls"];
-    // auto platforms = legacy_json["Plat"];
     // auto tri_platforms = legacy_json["TriPlat"];
     // auto dia_platforms = legacy_json["DiaPlat"];
 }

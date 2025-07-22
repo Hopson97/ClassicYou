@@ -11,7 +11,7 @@ class LevelTextures;
 using TextureID = int;
 struct TextureProp
 {
-    TextureID id{0};
+    TextureID id = 0;
     glm::u8vec4 colour{255};
 };
 
@@ -25,10 +25,10 @@ inline bool operator==(const TextureProp& lhs, const TextureProp& rhs)
 // =======================================
 struct WallProps
 {
-    TextureProp texture_front{0};
-    TextureProp texture_back{0};
-    float base_height{0};
-    float height{1};
+    TextureProp texture_front;
+    TextureProp texture_back;
+    float base_height = 0.0f;
+    float height = 1.0f;
 };
 
 struct WallParameters
@@ -64,11 +64,11 @@ enum class PlatformStyle
 
 struct PlatformProps
 {
-    TextureProp texture_top{0};
-    TextureProp texture_bottom{0};
-    float width = 1;
-    float depth = 1;
-    float base = 0;
+    TextureProp texture_top;
+    TextureProp texture_bottom;
+    float width = 1.0f;
+    float depth = 1.0f;
+    float base = 0.0f;
 
     PlatformStyle style = PlatformStyle::Quad;
     // int direction = 0;
@@ -101,10 +101,10 @@ struct PolygonPlatformParameters
 
 struct PolygonPlatformProps
 {
-    TextureProp texture_top{0};
-    TextureProp texture_bottom{0};
+    TextureProp texture_top;
+    TextureProp texture_bottom;
     float base = 0;
-    bool visible = false;
+    bool visible = true;
 };
 
 inline bool operator==(const PolygonPlatformProps& lhs, const PolygonPlatformProps& rhs)
@@ -138,8 +138,8 @@ struct PillarProps
     TextureProp texture;
     PillarStyle style = PillarStyle::Vertical;
     float size = 0.2f;
-    float base_height{0};
-    float height{1};
+    float base_height = 0.0f;
+    float height = 1.0f;
     bool angled = false;
 };
 
