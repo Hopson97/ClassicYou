@@ -4,9 +4,9 @@
 #include "../Editor/DrawingPad.h"
 #include "../Editor/EditConstants.h"
 #include "../Editor/EditorLevel.h"
+#include "../Editor/EditorState.h"
 #include "../Editor/LevelTextures.h"
 #include "../Editor/Tool.h"
-#include "../Editor/EditorState.h"
 #include "../Graphics/Camera.h"
 #include "../Graphics/CameraController.h"
 #include "../Graphics/Mesh.h"
@@ -27,6 +27,13 @@ class ScreenEditGame final : public Screen
     void on_render(bool show_debug) override;
 
   private:
+    struct EditorSettings
+    {
+        bool show_grid = true;
+        bool show_2d_view = true;
+    } editor_settings_;
+
+  private:
     void render_editor_ui();
 
     void exit_editor();
@@ -39,6 +46,7 @@ class ScreenEditGame final : public Screen
     void debug_gui();
     bool showing_dialog() const;
 
+  private:
     Camera camera_;
 
     Mesh3D grid_mesh_ = generate_grid_mesh(WORLD_SIZE, WORLD_SIZE);
@@ -63,7 +71,7 @@ class ScreenEditGame final : public Screen
 
     /// 2D Texture array used for rendering the world geometry
     gl::Texture2DArray texture_;
-    
+
     EditorLevel level_;
     std::unique_ptr<ITool> tool_;
 

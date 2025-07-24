@@ -58,10 +58,10 @@ namespace
         // clang-format off
         return {
             // Bottom
-            {{p.x + width / 2,  ob, p.z             }, {width / 2,  0,          texture_bottom}, {0, 1, 0}, colour_bottom},
-            {{p.x + width,      ob, p.z + depth / 2 }, {width,      depth / 2,  texture_bottom}, {0, 1, 0}, colour_bottom},
-            {{p.x + width / 2,  ob, p.z + depth     }, {width / 2,  depth,      texture_bottom}, {0, 1, 0}, colour_bottom},
-            {{p.x,              ob, p.z + depth / 2 }, {0,          depth / 2,  texture_bottom}, {0, 1, 0}, colour_bottom},
+            {{p.x + width / 2,  ob, p.z             }, {width / 2,  0,          texture_bottom}, {0, -1, 0}, colour_bottom},
+            {{p.x + width,      ob, p.z + depth / 2 }, {width,      depth / 2,  texture_bottom}, {0, -1, 0}, colour_bottom},
+            {{p.x + width / 2,  ob, p.z + depth     }, {width / 2,  depth,      texture_bottom}, {0, -1, 0}, colour_bottom},
+            {{p.x,              ob, p.z + depth / 2 }, {0,          depth / 2,  texture_bottom}, {0, -1, 0}, colour_bottom},
 
 
             // Top
@@ -103,19 +103,22 @@ LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number)
 
     LevelObjectsMesh3D mesh;
 
+    auto front_normal = glm::cross(glm::normalize(e - b), {0, 1, 0});
+    auto back_normal = glm::cross(glm::normalize(b - e), {0, 1, 0});
+
     // clang-format off
     mesh.vertices = {
         // Back
-        {{b.x + ox, ob, b.z + oz}, {0.0f,   ob, texture_back},  {0, 0, 1}, colour_back},
-        {{b.x + ox, h,  b.z + oz}, {0.0,    h,  texture_back},  {0, 0, 1}, colour_back},
-        {{e.x + ox, h,  e.z + oz}, {length, h,  texture_back},  {0, 0, 1}, colour_back},
-        {{e.x + ox, ob, e.z + oz}, {length, ob, texture_back},  {0, 0, 1}, colour_back},
+        {{b.x + ox, ob, b.z + oz}, {0.0f,   ob, texture_back},  back_normal, colour_back},
+        {{b.x + ox, h,  b.z + oz}, {0.0,    h,  texture_back},  back_normal, colour_back},
+        {{e.x + ox, h,  e.z + oz}, {length, h,  texture_back},  back_normal, colour_back},
+        {{e.x + ox, ob, e.z + oz}, {length, ob, texture_back},  back_normal, colour_back},
 
         // Front 
-        {{b.x - ox, ob, b.z - oz}, {0.0f,   ob, texture_front}, {0, 0, 1}, colour_front},
-        {{b.x - ox, h,  b.z - oz}, {0.0,    h,  texture_front}, {0, 0, 1}, colour_front},
-        {{e.x - ox, h,  e.z - oz}, {length, h,  texture_front}, {0, 0, 1}, colour_front},
-        {{e.x - ox, ob, e.z - oz}, {length, ob, texture_front}, {0, 0, 1}, colour_front},
+        {{b.x - ox, ob, b.z - oz}, {0.0f,   ob, texture_front}, front_normal, colour_front},
+        {{b.x - ox, h,  b.z - oz}, {0.0,    h,  texture_front}, front_normal, colour_front},
+        {{e.x - ox, h,  e.z - oz}, {length, h,  texture_front}, front_normal, colour_front},
+        {{e.x - ox, ob, e.z - oz}, {length, ob, texture_front}, front_normal, colour_front},
     };
     // clang-format on
 

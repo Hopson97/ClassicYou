@@ -86,6 +86,13 @@ void Camera::set_type(CameraType type)
     set_projection();
 }
 
+void Camera::set_viewport_size(glm::vec2 viewport_size)
+{
+    config_.viewport_size = viewport_size;
+    aspect_ = config_.viewport_size.x / config_.viewport_size.y;
+    set_projection();
+}
+
 void Camera::set_projection()
 {
     if (config_.type == CameraType::Perspective)

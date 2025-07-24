@@ -51,6 +51,8 @@ struct Camera
 
     void set_type(CameraType type);
 
+    void set_viewport_size(glm::vec2 viewport_size);
+
   private:
     void set_projection();
 

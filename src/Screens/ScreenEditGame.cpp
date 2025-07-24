@@ -334,18 +334,30 @@ void ScreenEditGame::on_render(bool show_debug)
     //=============================================
     //          Render the 2D View
     //=============================================
-    glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
-
-    level_.render_2d(drawing_pad_, editor_state_.p_active_object, editor_state_.current_floor);
-
-    if (tool_->get_tool_type() == ToolType::UpdateWall ||
-        (!ImGui::GetIO().WantCaptureMouse && !moving_object_))
+    if (editor_settings_.show_2d_view)
     {
-        tool_->render_preview_2d(drawing_pad_, editor_state_);
-    }
 
-    // Finalise 2d rendering
-    drawing_pad_.display();
+        glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
+
+        level_.render_2d(drawing_pad_, editor_state_.p_active_object, editor_state_.current_floor);
+
+        if (tool_->get_tool_type() == ToolType::UpdateWall ||
+            (!ImGui::GetIO().WantCaptureMouse && !moving_object_))
+        {
+            tool_->render_preview_2d(drawing_pad_, editor_state_);
+        }
+
+        // Finalise 2d rendering
+        drawing_pad_.display();
+
+        // When showing the 2D view, the 3D view is half width
+        glViewport(window().getSize().x / 2, 0, window().getSize().x / 2, window().getSize().y);
+    }
+    else
+    {
+        // Render the 3D view as full width
+        glViewport(0, 0, window().getSize().x, window().getSize().y);
+    }
 
     //=============================================
     //      Render the 3D View
@@ -354,8 +366,6 @@ void ScreenEditGame::on_render(bool show_debug)
     matrices_ssbo_.buffer_sub_data(0, camera_.get_projection_matrix());
     matrices_ssbo_.buffer_sub_data(sizeof(glm::mat4), camera_.get_view_matrix());
 
-    // Render the 3D view to the right side
-    glViewport(window().getSize().x / 2, 0, window().getSize().x / 2, window().getSize().y);
     scene_shader_.bind();
 
     // Set up the capabilities/ render states
@@ -366,13 +376,16 @@ void ScreenEditGame::on_render(bool show_debug)
                      settings_.wireframe ? gl::PolygonMode::Line : gl::PolygonMode::Fill);
 
     // Draw grid
-    glLineWidth(2);
-    scene_shader_.set_uniform(
-        "model_matrix",
-        create_model_matrix({.position = {0, editor_state_.current_floor * FLOOR_HEIGHT, 0}}));
+    if (editor_settings_.show_grid)
+    {
+        glLineWidth(2);
+        scene_shader_.set_uniform(
+            "model_matrix",
+            create_model_matrix({.position = {0, editor_state_.current_floor * FLOOR_HEIGHT, 0}}));
 
-    scene_shader_.set_uniform("use_texture", false);
-    grid_mesh_.bind().draw_elements(GL_LINES);
+        scene_shader_.set_uniform("use_texture", false);
+        grid_mesh_.bind().draw_elements(GL_LINES);
+    }
 
     //=============================================
     //      Render the actual level and previews
@@ -484,8 +497,8 @@ void ScreenEditGame::render_editor_ui()
                     editor_state_.current_floor, level_.get_max_floor());
 
         ImGui::Separator();
-        ImGui::End();
     }
+    ImGui::End();
 
     // When an object is selected, its properties is rendered
     if (editor_state_.p_active_object)
@@ -494,8 +507,8 @@ void ScreenEditGame::render_editor_ui()
         {
             editor_state_.p_active_object->property_gui(editor_state_, level_textures_,
                                                         action_manager_);
-            ImGui::End();
         }
+        ImGui::End();
     }
 }
 
@@ -567,6 +580,17 @@ void ScreenEditGame::show_menu_bar()
         {
             if (ImGui::MenuItem("Undo (CTRL + Z)")) { action_manager_.undo_action(); }
             if (ImGui::MenuItem("Redo (CTRL + Y)")) { action_manager_.redo_action(); }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("View"))
+        {
+            ImGui::Checkbox("Show Grid?", &editor_settings_.show_grid);
+            if (ImGui::Checkbox("Show 2D View? (Full Screen 3D)", &editor_settings_.show_2d_view))
+            {
+                auto factor = editor_settings_.show_2d_view ? 2 : 1;
+                camera_.set_viewport_size({window().getSize().x / factor, window().getSize().y});
+            }
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
