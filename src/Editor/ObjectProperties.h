@@ -27,8 +27,15 @@ struct WallProps
 {
     TextureProp texture_front;
     TextureProp texture_back;
-    float base_height = 0.0f;
-    float height = 1.0f;
+
+    float start_base_height = 0.0f;
+    float start_height = 1.0f;
+
+    float end_base_height = 0.0f;
+    float end_height = 1.0f;
+
+    bool tri_wall = false;
+    bool flip_wall = false;
 };
 
 struct WallParameters
@@ -39,7 +46,9 @@ struct WallParameters
 inline bool operator==(const WallProps& lhs, const WallProps& rhs)
 {
     return lhs.texture_front == rhs.texture_front && lhs.texture_back == rhs.texture_back &&
-           lhs.base_height == rhs.base_height && lhs.height == rhs.height;
+           lhs.start_base_height == rhs.start_base_height && lhs.start_height == rhs.start_height &&
+           lhs.end_base_height == rhs.end_base_height && lhs.end_height == rhs.end_height &&
+           lhs.tri_wall == rhs.tri_wall && lhs.flip_wall == rhs.flip_wall;
 }
 
 inline bool operator!=(const WallProps& lhs, const WallProps& rhs)

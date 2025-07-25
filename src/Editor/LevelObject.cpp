@@ -147,8 +147,8 @@ std::string LevelObject::to_string() const
         auto& props = wall->properties;
         return std::format("Props:\n Texture 1/2: {} {}: \n Base: {}\n Height: {}\nParameters:\n "
                            "  Start position: ({:.2f}, {:.2f}) - End Position: ({:.2f}, {:.2f})",
-                           props.texture_front.id, props.texture_back.id, props.base_height,
-                           props.height, params.line.start.x, params.line.start.y,
+                           props.texture_front.id, props.texture_back.id, props.start_base_height,
+                           props.start_height, params.line.start.x, params.line.start.y,
                            params.line.end.x, params.line.end.y);
     }
     else if (auto platform = std::get_if<PlatformObject>(&object_type))
@@ -380,7 +380,9 @@ std::pair<nlohmann::json, std::string> LevelObject::serialise() const
         nlohmann::json json_props = {};
         serialise_texture(json_props, props.texture_back);
         serialise_texture(json_props, props.texture_front);
-        json_props.insert(json_props.end(), {props.height, props.base_height});
+        json_props.insert(json_props.end(),
+                          {props.start_height, props.start_base_height, props.end_height,
+                           props.end_base_height, props.tri_wall, props.flip_wall});
 
         object = {json_params, json_props};
     }
@@ -464,8 +466,13 @@ bool LevelObject::deserialise_as_wall(const nlohmann::json& wall_json)
 
     props.texture_back = deserialise_texture(jprops[0]);
     props.texture_front = deserialise_texture(jprops[1]);
-    props.height = jprops[2];
-    props.base_height = jprops[3];
+
+    props.start_height = jprops[2];
+    props.start_base_height = jprops[3];
+    props.end_height = jprops[4];
+    props.end_base_height = jprops[5];
+    props.tri_wall = jprops[6];
+    props.flip_wall = jprops[7];
 
     object_type = wall;
     return true;

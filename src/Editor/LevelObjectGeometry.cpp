@@ -88,11 +88,16 @@ LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number)
     // Offset x, y
     auto ox = 0.0f;
     auto oz = 0.0f;
-    auto ob = props.base_height * FLOOR_HEIGHT;
-    auto h = std::min(ob + props.height * FLOOR_HEIGHT, FLOOR_HEIGHT);
 
-    ob += floor_number * FLOOR_HEIGHT;
-    h += floor_number * FLOOR_HEIGHT;
+    auto obs = props.start_base_height * FLOOR_HEIGHT;
+    auto hs = std::min(obs + props.start_height * FLOOR_HEIGHT, FLOOR_HEIGHT);
+    obs += floor_number * FLOOR_HEIGHT;
+    hs += floor_number * FLOOR_HEIGHT;
+
+    auto obe = props.end_base_height * FLOOR_HEIGHT;
+    auto he = std::min(obe + props.end_height * FLOOR_HEIGHT, FLOOR_HEIGHT);
+    obe += floor_number * FLOOR_HEIGHT;
+    he += floor_number * FLOOR_HEIGHT;
 
     const auto length = glm::length(b - e);
 
@@ -109,23 +114,44 @@ LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number)
     // clang-format off
     mesh.vertices = {
         // Back
-        {{b.x + ox, ob, b.z + oz}, {0.0f,   ob, texture_back},  back_normal, colour_back},
-        {{b.x + ox, h,  b.z + oz}, {0.0,    h,  texture_back},  back_normal, colour_back},
-        {{e.x + ox, h,  e.z + oz}, {length, h,  texture_back},  back_normal, colour_back},
-        {{e.x + ox, ob, e.z + oz}, {length, ob, texture_back},  back_normal, colour_back},
+        {{b.x + ox, obs, b.z + oz}, {0.0f,   obs, texture_back},  back_normal, colour_back},
+        {{b.x + ox, hs,  b.z + oz}, {0.0,    hs,  texture_back},  back_normal, colour_back},
+        {{e.x + ox, he,  e.z + oz}, {length, he,  texture_back},  back_normal, colour_back},
+        {{e.x + ox, obe, e.z + oz}, {length, obe, texture_back},  back_normal, colour_back},
 
         // Front 
-        {{b.x - ox, ob, b.z - oz}, {0.0f,   ob, texture_front}, front_normal, colour_front},
-        {{b.x - ox, h,  b.z - oz}, {0.0,    h,  texture_front}, front_normal, colour_front},
-        {{e.x - ox, h,  e.z - oz}, {length, h,  texture_front}, front_normal, colour_front},
-        {{e.x - ox, ob, e.z - oz}, {length, ob, texture_front}, front_normal, colour_front},
+        {{b.x - ox, obs, b.z - oz}, {0.0f,   obs, texture_front}, front_normal, colour_front},
+        {{b.x - ox, hs,  b.z - oz}, {0.0,    hs,  texture_front}, front_normal, colour_front},
+        {{e.x - ox, he,  e.z - oz}, {length, he,  texture_front}, front_normal, colour_front},
+        {{e.x - ox, obe, e.z - oz}, {length, obe, texture_front}, front_normal, colour_front},
     };
     // clang-format on
 
-    mesh.indices = {// Front
-                    0, 1, 2, 2, 3, 0,
-                    // Back
-                    6, 5, 4, 4, 7, 6};
+    if (props.tri_wall)
+    {
+        if (props.flip_wall)
+        {
+            mesh.indices = {// Front
+                            0, 1, 2,
+                            // Back
+                            6, 5, 4};
+        }
+        else
+        {
+            mesh.indices = {// Front
+                            2, 3, 0,
+                            // Back
+                            4, 7, 6};
+        }
+
+    }
+    else
+    {
+        mesh.indices = {// Front
+                        0, 1, 2, 2, 3, 0,
+                        // Back
+                        6, 5, 4, 4, 7, 6};
+    }
 
     return mesh;
 }

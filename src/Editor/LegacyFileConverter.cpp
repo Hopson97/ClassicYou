@@ -52,6 +52,18 @@ namespace
     constexpr std::array<float, 10> MIN_WALL_HEIGHTS = {0, 0, 0, 0, 1, 2, 3, 2, 1, 1};
     constexpr std::array<float, 10> MAX_WALL_HEIGHTS = {4, 3, 2, 1, 2, 3, 4, 4, 4, 3};
     constexpr std::array<float, 10> PLATFORM_HEIGHTS = {0, 1, 2, 3};
+    constexpr std::array<glm::vec2, 4> TRI_WALL_OFFSETS = {
+        glm::vec2{0, -2 * TILE_SIZE_F},
+        {0, 2 * TILE_SIZE_F},
+        {-2 * TILE_SIZE_F, 0},
+        {2 * TILE_SIZE_F, 0},
+    };
+    constexpr std::array<glm::vec2, 4> TRIWALL_START_OFFSETS = {
+        glm::vec2{0, 0},
+        {0, 0},
+        {2 * TILE_SIZE_F, 0},
+        {-2 * TILE_SIZE_F, 0},
+    };
 
     std::pair<float, float> extract_wall_base_and_height(const nlohmann::json& height)
     {
@@ -166,7 +178,6 @@ struct LegacyWall
     WallObject object;
     int floor = 0;
 };
-
 //  [OffsetX, OffsetY, StartX, StartY, [TextureBack, TextureFront], Floor]
 //  [OffsetX, OffsetY, StartX, StartY, [TextureBack, TextureFront, Height], Floor]
 void from_json(const nlohmann::json& json, LegacyWall& wall)
@@ -181,17 +192,62 @@ void from_json(const nlohmann::json& json, LegacyWall& wall)
 
     wall_props.texture_front = map_wall_texture(json[4][1]);
     wall_props.texture_back = map_wall_texture(json[4][0]);
-    wall_props.base_height = 0;
-    wall_props.height = 1;
+
+    wall_props.start_base_height = 0;
+    wall_props.start_height = 1;
+
+    wall_props.end_base_height = 0;
+    wall_props.end_height = 1;
 
     if (json[4].size() == 3)
     {
         auto [base, height] = extract_wall_base_and_height(json[4][2]);
-        wall_props.base_height = base;
-        wall_props.height = height;
+        wall_props.start_base_height = base;
+        wall_props.end_base_height = base;
+        wall_props.start_height = height;
+        wall_props.end_height = height;
     }
 
     wall.floor = (int)json[5] - 1;
+}
+
+// =========================
+//      TriWall Conversion
+// ==========================
+struct LegacyTriWall
+{
+    WallObject object;
+    int floor = 0;
+};
+
+//  [X, Y], [Flipped, Texture, direction], Floor]
+void from_json(const nlohmann::json& json, LegacyTriWall& wall)
+{
+    auto& wall_params = wall.object.parameters;
+    auto& wall_props = wall.object.properties;
+
+    auto start = extract_vec2(json[0][0], json[0][1]);
+
+    // TODO: Directions 5,6,7,8 are diagonal and need handling
+    int direction = json[1][2];
+    auto offset = direction <= 4 ? TRI_WALL_OFFSETS[direction - 1] : glm::vec2{0, -2 * TILE_SIZE_F};
+    start += direction <= 4 ? TRIWALL_START_OFFSETS[direction - 1] : glm::vec2{0, 0};
+
+    wall_params.line.start = start;
+    wall_params.line.end = start + offset;
+
+    wall_props.tri_wall = true;
+    wall_props.flip_wall = json[1][0] == 2;
+
+    wall_props.texture_front = map_wall_texture(json[1][1]);
+    wall_props.texture_back = map_wall_texture(json[1][1]);
+
+    wall_props.start_base_height = 0;
+    wall_props.start_height = 1;
+    wall_props.end_base_height = 0;
+    wall_props.end_height = 1;
+
+    wall.floor = (int)json[2] - 1;
 }
 
 // ============================
@@ -337,6 +393,7 @@ void convert_legacy_level(const std::filesystem::path& path)
     load_objects<LegacyWall>(legacy_json, "walls", new_level);
     load_objects<LegacyPlatform>(legacy_json, "Plat", new_level);
     load_objects<LegacyPillar>(legacy_json, "Pillar", new_level);
+    load_objects<LegacyTriWall>(legacy_json, "TriWall", new_level);
 
     auto output = new_level.serialise();
     time = clock.restart().asSeconds();

@@ -173,11 +173,13 @@ namespace
     }
 
     /// Wrapper around stepped slider for updating numerical props
-    void slider(UpdateResult& result, const char* label, float& value, float min, float max,
+    bool slider(UpdateResult& result, const char* label, float& value, float min, float max,
                 float interval, const char* fmt = "%.1f")
     {
+        bool updated = false;
         if (ImGui::SliderFloatStepped(label, value, min, max, interval, fmt))
         {
+            updated = true;
             result.continuous_update |= true;
         }
 
@@ -187,6 +189,7 @@ namespace
         {
             result.action = true;
         }
+        return updated;
     }
 
     /// To avoid creating too many mesh updates, this prevents updates from happening if the props
@@ -212,8 +215,41 @@ std::pair<UpdateResult, WallProps> wall_gui(const LevelTextures& textures, const
     auto new_props = wall.properties;
 
     // When the wall is generating the mesh, these values are multiplied by 2.0f
-    slider(result, "Base Height", new_props.base_height, 0.0f, 0.9f, 0.1f);
-    slider(result, "Wall Height", new_props.height, 0.1f, 1.0f - new_props.base_height, 0.1f);
+    auto base_height = new_props.start_base_height;
+    auto height = new_props.start_height;
+    if (slider(result, "Base Height", base_height, 0.0f, 0.9f, 0.1f))
+    {
+        new_props.start_base_height = base_height;
+        new_props.end_base_height = base_height;
+    }
+
+    if (slider(result, "Wall Height", height, 0.1f, 1.0f - base_height, 0.1f))
+    {
+        new_props.start_height = height;
+        new_props.end_height = height;
+    }
+
+    if (ImGui::Checkbox("Tri-wall", &new_props.tri_wall))
+    {
+        result.always_update |= true;
+    }
+    if (new_props.tri_wall)
+    {
+        if (ImGui::Checkbox("Flip tri-wall?", &new_props.flip_wall))
+        {
+            result.always_update |= true;
+        }
+    }
+    if (ImGui::CollapsingHeader("Advanced Wall Options"))
+    {
+        slider(result, "Start Base Height", new_props.start_base_height, 0.0f, 0.9f, 0.1f);
+        slider(result, "Start Wall Height", new_props.start_height, 0.1f,
+               1.0f - new_props.start_base_height, 0.1f);
+
+        slider(result, "End Base Height", new_props.end_base_height, 0.0f, 0.9f, 0.1f);
+        slider(result, "End Wall Height", new_props.end_height, 0.1f,
+               1.0f - new_props.end_base_height, 0.1f);
+    }
 
     texture_gui_tabs(result, "Textures_wall", textures,
                      {.name = "Front Texture",
