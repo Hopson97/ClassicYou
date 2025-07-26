@@ -27,7 +27,6 @@ classic-you/
 
 ClassicYou/
 
-src/Editor/ObjectTypes/
 
 *.cy
 levels/legacy/*.json

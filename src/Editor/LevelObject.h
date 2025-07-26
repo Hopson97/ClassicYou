@@ -7,45 +7,16 @@
 #include <nlohmann/json.hpp>
 
 #include "../Graphics/Mesh.h"
-#include "ObjectProperties.h"
+#include "ObjectTypes/LevelObjectTypes.h"
+#include "ObjectTypes/Pillar.h"
+#include "ObjectTypes/Platform.h"
+#include "ObjectTypes/PolygonPlatform.h"
+#include "ObjectTypes/Wall.h"
 
 class LevelTextures;
 struct EditorState;
 class ActionManager;
 class DrawingPad;
-
-// =======================================
-//     Object Type Template
-// =======================================
-enum class ObjectTypeName
-{
-    Wall,
-    Platform,
-    PolygonPlatform,
-    Pillar,
-};
-
-/// All objects in the level editor have a set of properties and parameters.
-/// The properties should be things editable by the properties GUI, such as textures, height, etc.
-/// The parameters are things that are not editable by the properties GUI, such as the object
-/// position.
-template <typename Properties, typename Parameters>
-struct ObjectType
-{
-    using PropertiesType = Properties;
-    using ParametersType = Parameters;
-
-    Properties properties;
-    Parameters parameters;
-};
-
-// =======================================
-//     Object Types
-// =======================================
-using WallObject = ObjectType<WallProps, WallParameters>;
-using PlatformObject = ObjectType<PlatformProps, PlatformParameters>;
-using PolygonPlatformObject = ObjectType<PolygonPlatformProps, PolygonPlatformParameters>;
-using PillarObject = ObjectType<PillarProps, PillarParameters>;
 
 using ObjectId = std::int32_t;
 
@@ -113,9 +84,6 @@ struct LevelObject
 // =======================================
 
 // Note: These are defined in LevelObjectGeometry.cpp
-[[nodiscard]] LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number);
-[[nodiscard]] LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform,
-                                                        int floor_number);
 
 [[nodiscard]] LevelObjectsMesh3D generate_pillar_mesh(const PillarObject& platform,
                                                       int floor_number);
