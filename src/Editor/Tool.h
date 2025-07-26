@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unordered_set>
+
 #include <SFML/Window/Event.hpp>
 
 #include "../Graphics/Mesh.h"
@@ -10,6 +12,7 @@ class DrawingPad;
 class LevelTextures;
 struct EditorState;
 class ActionManager;
+class EditorLevel;
 
 enum class ToolType
 {
@@ -91,3 +94,26 @@ class CreateObjectTool : public ITool
     LevelObjectsMesh3D object_preview_;
     glm::vec2 tile_{0.0f};
 };
+
+/*
+class SelectTool
+{
+  public:
+    SelectTool(EditorLevel& level);
+
+    void on_event(sf::Event event, glm::vec2 node, EditorState& state, ActionManager& actions);
+    void render_preview();
+    void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state);
+
+    void move_all(glm::vec2 offset, ActionManager& actions, int floor);
+
+    bool has_selection() const;
+
+  private:
+    EditorLevel* p_level_;
+    std::unordered_set<LevelObject*> selected_objects_;
+
+    bool active_dragging_ = false;
+    Line selection_area_;
+};
+*/

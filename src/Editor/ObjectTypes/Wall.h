@@ -34,6 +34,7 @@ bool operator!=(const WallProps& lhs, const WallProps& rhs);
 //     Free functions
 // =======================================
 [[nodiscard]] LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number);
+[[nodiscard]] bool object_deserialise(WallObject& wall, const nlohmann::json& json);
 
 // =======================================
 //      Specialised Functions
@@ -50,4 +51,8 @@ void render_object_2d<WallObject>(const WallObject& wall, DrawingPad& drawing_pa
                                   const glm::vec4& colour, bool is_selected);
 
 template <>
-bool object_try_select_2d<WallObject>(const WallObject& wall, glm::vec2 selection_tile);
+[[nodiscard]] bool object_try_select_2d<WallObject>(const WallObject& wall,
+                                                    glm::vec2 selection_tile);
+
+template <>
+SerialiseResponse object_serialise<WallObject>(const WallObject& wall);

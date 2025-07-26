@@ -41,6 +41,7 @@ bool operator!=(const PlatformProps& lhs, const PlatformProps& rhs);
 // Defined in LevelObjectGeometry.cpp
 [[nodiscard]] LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform,
                                                         int floor_number);
+[[nodiscard]] bool object_deserialise(PlatformObject& pillar, const nlohmann::json& json);
 
 // =======================================
 //      Specialised Functions
@@ -57,4 +58,8 @@ void render_object_2d<PlatformObject>(const PlatformObject& wall, DrawingPad& dr
                                       const glm::vec4& colour, bool is_selected);
 
 template <>
-bool object_try_select_2d<PlatformObject>(const PlatformObject& wall, glm::vec2 selection_tile);
+[[nodiscard]] bool object_try_select_2d<PlatformObject>(const PlatformObject& wall,
+                                                        glm::vec2 selection_tile);
+
+template <>
+SerialiseResponse object_serialise<PlatformObject>(const PlatformObject& platform);

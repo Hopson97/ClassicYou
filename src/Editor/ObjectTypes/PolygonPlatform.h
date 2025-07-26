@@ -36,7 +36,7 @@ bool operator!=(const PolygonPlatformProps& lhs, const PolygonPlatformProps& rhs
 // Defined in LevelObjectGeometry.cpp
 [[nodiscard]] LevelObjectsMesh3D generate_polygon_platform_mesh(const PolygonPlatformObject& poly,
                                                                 int floor_number);
-
+[[nodiscard]] bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json);
 // =======================================
 //      Specialised Functions
 // =======================================
@@ -54,5 +54,7 @@ void render_object_2d<PolygonPlatformObject>(const PolygonPlatformObject& poly,
                                              bool is_selected);
 
 template <>
-bool object_try_select_2d<PolygonPlatformObject>(const PolygonPlatformObject& poly,
-                                                 glm::vec2 selection_tile);
+[[nodiscard]] bool object_try_select_2d<PolygonPlatformObject>(const PolygonPlatformObject& poly,
+                                                               glm::vec2 selection_tile);
+template <>
+SerialiseResponse object_serialise<PolygonPlatformObject>(const PolygonPlatformObject& poly);
