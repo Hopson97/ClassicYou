@@ -1,9 +1,7 @@
 #pragma once
 
-#include "../DrawingPad.h"
-#include "LevelObjectTypes.h"
-
 #include "../EditConstants.h"
+#include "LevelObjectTypes.h"
 
 // =======================================
 //      Platform Object Types
@@ -33,10 +31,10 @@ bool operator!=(const PolygonPlatformProps& lhs, const PolygonPlatformProps& rhs
 // =======================================
 //     Free functions
 // =======================================
-// Defined in LevelObjectGeometry.cpp
 [[nodiscard]] LevelObjectsMesh3D generate_polygon_platform_mesh(const PolygonPlatformObject& poly,
                                                                 int floor_number);
 [[nodiscard]] bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json);
+
 // =======================================
 //      Specialised Functions
 // =======================================

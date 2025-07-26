@@ -19,7 +19,6 @@ add_executable(${PROJECT_NAME}
     src/Editor/FloorManager.cpp
     src/Editor/LegacyFileConverter.cpp
     src/Editor/LevelObject.cpp
-    src/Editor/LevelObjectGeometry.cpp
     src/Editor/Tool.cpp
 
     src/Graphics/Camera.cpp

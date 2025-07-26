@@ -38,7 +38,6 @@ bool operator!=(const PillarProps& lhs, const PillarProps& rhs);
 // =======================================
 //     Free functions
 // =======================================
-// Defined in LevelObjectGeometry.cpp
 [[nodiscard]] LevelObjectsMesh3D generate_pillar_mesh(const PillarObject& pillar, int floor_number);
 [[nodiscard]] bool object_deserialise(PillarObject& pillar, const nlohmann::json& json);
 

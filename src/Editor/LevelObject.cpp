@@ -213,46 +213,22 @@ std::pair<nlohmann::json, std::string> LevelObject::serialise() const
 }
 
 
-bool LevelObject::deserialise_as_wall(const nlohmann::json& wall_json)
+bool LevelObject::deserialise_as_wall(const nlohmann::json& json)
 {
-    WallObject wall;
-    if (!object_deserialise(wall, wall_json))
-    {
-        return false;
-    }
-    object_type = wall;
-    return true;
+    return deserialise_as<WallObject>(json);
 }
 
-bool LevelObject::deserialise_as_platform(const nlohmann::json& platform_json)
+bool LevelObject::deserialise_as_platform(const nlohmann::json& json)
 {
-    PlatformObject platform;
-    if (!object_deserialise(platform, platform_json))
-    {
-        return false;
-    }
-    object_type = platform;
-    return true;
+    return deserialise_as<PlatformObject>(json);
 }
 
-bool LevelObject::deserialise_as_polygon_platform(const nlohmann::json& poly_json)
+bool LevelObject::deserialise_as_polygon_platform(const nlohmann::json& json)
 {
-    PolygonPlatformObject polygon_platform;
-    if (!object_deserialise(polygon_platform, poly_json))
-    {
-        return false;
-    }
-    object_type = polygon_platform;
-    return true;
+    return deserialise_as<PolygonPlatformObject>(json);
 }
 
-bool LevelObject::deserialise_as_pillar(const nlohmann::json& pillar)
+bool LevelObject::deserialise_as_pillar(const nlohmann::json& json)
 {
-    PillarObject pillar_object;
-    if (!object_deserialise(pillar_object, pillar))
-    {
-        return false;
-    }
-    object_type = pillar_object;
-    return true;
+    return deserialise_as<PillarObject>(json);
 }

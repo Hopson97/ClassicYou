@@ -2,6 +2,7 @@
 
 #include <magic_enum/magic_enum.hpp>
 
+#include "../DrawingPad.h"
 #include "../EditConstants.h"
 
 bool operator==(const PlatformProps& lhs, const PlatformProps& rhs)
@@ -119,4 +120,103 @@ bool object_deserialise(PlatformObject& platform, const nlohmann::json& json)
     props.style = (PlatformStyle)(jprops[5]);
 
     return true;
+}
+
+namespace
+{
+    std::vector<VertexLevelObjects> create_quad_platform_vertices(const PlatformObject& platform,
+                                                                  float ob)
+    {
+        const auto& params = platform.parameters;
+        const auto& props = platform.properties;
+
+        float width = props.width;
+        float depth = props.depth;
+
+        GLfloat texture_bottom = static_cast<float>(props.texture_bottom.id);
+        GLfloat texture_top = static_cast<float>(props.texture_top.id);
+        auto colour_bottom = props.texture_bottom.colour;
+        auto colour_top = props.texture_top.colour;
+
+        auto p = glm::vec3{params.position.x, 0, params.position.y} / TILE_SIZE_F;
+        // clang-format off
+        return {
+            // Top
+            {{p.x,          ob, p.z,        },  {0,     0,      texture_top},    {0, 1, 0}, colour_top},
+            {{p.x,          ob, p.z + depth,},  {0,     depth,  texture_top},    {0, 1, 0}, colour_top},
+            {{p.x + width,  ob, p.z + depth,},  {width, depth,  texture_top},    {0, 1, 0}, colour_top},
+            {{p.x + width,  ob, p.z,},          {width, 0,      texture_top},    {0, 1, 0}, colour_top},
+
+            // Bottom
+            {{p.x,          ob, p.z,        },  {0,     0,      texture_bottom},   {0, -1, 0}, colour_bottom},
+            {{p.x,          ob, p.z + depth,},  {0,     depth,  texture_bottom},   {0, -1, 0}, colour_bottom},
+            {{p.x + width,  ob, p.z + depth,},  {width, depth,  texture_bottom},   {0, -1, 0}, colour_bottom},
+            {{p.x + width,  ob, p.z,        },  {width, 0,      texture_bottom},   {0, -1, 0}, colour_bottom},
+        };
+        // clang-format on
+    }
+
+    std::vector<VertexLevelObjects> create_diamond_platform_vertices(const PlatformObject& platform,
+                                                                     float ob)
+    {
+        const auto& params = platform.parameters;
+        const auto& props = platform.properties;
+
+        float width = props.width;
+        float depth = props.depth;
+
+        GLfloat texture_bottom = static_cast<float>(props.texture_bottom.id);
+        GLfloat texture_top = static_cast<float>(props.texture_top.id);
+        auto colour_bottom = props.texture_bottom.colour;
+        auto colour_top = props.texture_top.colour;
+
+        auto p = glm::vec3{params.position.x, 0, params.position.y} / TILE_SIZE_F;
+
+        // clang-format off
+        return {
+            // Bottom
+            {{p.x + width / 2,  ob, p.z             }, {width / 2,  0,          texture_bottom}, {0, -1, 0}, colour_bottom},
+            {{p.x + width,      ob, p.z + depth / 2 }, {width,      depth / 2,  texture_bottom}, {0, -1, 0}, colour_bottom},
+            {{p.x + width / 2,  ob, p.z + depth     }, {width / 2,  depth,      texture_bottom}, {0, -1, 0}, colour_bottom},
+            {{p.x,              ob, p.z + depth / 2 }, {0,          depth / 2,  texture_bottom}, {0, -1, 0}, colour_bottom},
+
+
+            // Top
+            {{p.x + width / 2,  ob, p.z             }, {width / 2,  0,          texture_top}, {0, 1, 0}, colour_top},
+            {{p.x + width,      ob, p.z + depth / 2 }, {width,      depth / 2,  texture_top}, {0, 1, 0}, colour_top},
+            {{p.x + width / 2,  ob, p.z + depth     }, {width / 2,  depth,      texture_top}, {0, 1, 0}, colour_top},
+            {{p.x,              ob, p.z + depth / 2 }, {0,          depth / 2,  texture_top}, {0, 1, 0}, colour_top}
+        };
+        // clang-format on
+    }
+} // namespace
+
+LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform, int floor_number)
+{
+    const auto& props = platform.properties;
+
+    // Offset platform heights by a hair to prevent Z-fighting with PolygonPlatforms which can go
+    // underneath
+    float ob = props.base * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT + 0.00025;
+    LevelObjectsMesh3D mesh;
+    mesh.vertices = [&]()
+    {
+            // TODO: triangle platforms
+        switch (props.style)
+        {
+            case PlatformStyle::Quad:
+                return create_quad_platform_vertices(platform, ob);
+
+            case PlatformStyle::Diamond:
+                return create_diamond_platform_vertices(platform, ob);
+        }
+        return std::vector<VertexLevelObjects>{};
+    }();
+
+    mesh.indices = {// Front
+                    0, 1, 2, 2, 3, 0,
+                    // Back
+                    6, 5, 4, 4, 7, 6};
+
+    return mesh;
 }

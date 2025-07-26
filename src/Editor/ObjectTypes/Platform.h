@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../DrawingPad.h"
 #include "LevelObjectTypes.h"
 
 // =======================================
@@ -38,7 +37,6 @@ bool operator!=(const PlatformProps& lhs, const PlatformProps& rhs);
 // =======================================
 //     Free functions
 // =======================================
-// Defined in LevelObjectGeometry.cpp
 [[nodiscard]] LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform,
                                                         int floor_number);
 [[nodiscard]] bool object_deserialise(PlatformObject& pillar, const nlohmann::json& json);
