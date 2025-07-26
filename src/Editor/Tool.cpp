@@ -50,7 +50,6 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
             active_dragging_ = false;
             if (glm::length(wall_line_.start - wall_line_.end) > 0.25f)
             {
-
                 actions.push_action(std::make_unique<AddObjectAction>(
                     LevelObject{WallObject{
                         .properties = state.wall_default,
@@ -79,7 +78,9 @@ void CreateWallTool::render_preview_2d(DrawingPad& drawing_pad,
 {
     if (active_dragging_)
     {
-        drawing_pad.render_line(wall_line_.start, wall_line_.end, {1, 0, 0, 1}, 4);
+        render_object_2d(
+            WallObject{.properties = state.wall_default, .parameters = {.line = wall_line_}},
+            drawing_pad, Colour::RED, true);
     }
 }
 
@@ -182,6 +183,7 @@ void UpdateWallTool::render_preview()
 void UpdateWallTool::render_preview_2d(DrawingPad& drawing_pad,
                                        [[maybe_unused]] const EditorState& state)
 {
+
     constexpr static glm::vec2 OFFSET{8, 8};
     drawing_pad.render_quad(wall_.parameters.line.start - OFFSET, glm::vec2{16.0f}, Colour::RED);
     drawing_pad.render_quad(wall_.parameters.line.end - OFFSET, glm::vec2{16.0f}, Colour::RED);
@@ -208,7 +210,6 @@ CreateObjectTool::CreateObjectTool(ObjectTypeName object_type)
 void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
                                 ActionManager& actions)
 {
-    float TS = TILE_SIZE;
 
     if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
@@ -321,54 +322,38 @@ void CreateObjectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorSt
     switch (object_type_)
     {
         case ObjectTypeName::Platform:
-            if (state.platform_default.style == PlatformStyle::Quad)
-            {
-                drawing_pad.render_quad(tile_,
-                                        {TILE_SIZE * state.platform_default.width,
-                                         TILE_SIZE * state.platform_default.depth},
-                                        Colour::RED);
-            }
-            else if (state.platform_default.style == PlatformStyle::Diamond)
-            {
-                drawing_pad.render_diamond(tile_,
-                                           {TILE_SIZE * state.platform_default.width,
-                                            TILE_SIZE * state.platform_default.depth},
-                                           Colour::RED);
-            }
-            break;
 
+            render_object_2d(
+                PlatformObject{
+                    .properties = state.platform_default,
+                    .parameters = {.position = tile_},
+
+                },
+                drawing_pad, Colour::RED, true);
+            break;
         case ObjectTypeName::PolygonPlatform:
         {
-            float TILE_SIZE_F = TILE_SIZE;
-            auto tl = tile_;
-            auto tr = tile_ + glm::vec2{10.0f, 0} * TILE_SIZE_F;
-            auto br = tile_ + glm::vec2{10.0f, 10.0f} * TILE_SIZE_F;
-            auto bl = tile_ + glm::vec2{0, 10.0f} * TILE_SIZE_F;
-
-            drawing_pad.render_line(tl, tl + glm::vec2(TILE_SIZE, 0), Colour::RED, 5);
-            drawing_pad.render_line(tl, tl + glm::vec2(0, TILE_SIZE), Colour::RED, 5);
-
-            drawing_pad.render_line(tr, tr - glm::vec2(TILE_SIZE, 0), Colour::RED, 5);
-            drawing_pad.render_line(tr, tr + glm::vec2(0, TILE_SIZE), Colour::RED, 5);
-
-            drawing_pad.render_line(br, br - glm::vec2(TILE_SIZE, 0), Colour::RED, 5);
-            drawing_pad.render_line(br, br - glm::vec2(0, TILE_SIZE), Colour::RED, 5);
-
-            drawing_pad.render_line(bl, bl + glm::vec2(TILE_SIZE, 0), Colour::RED, 5);
-            drawing_pad.render_line(bl, bl - glm::vec2(0, TILE_SIZE), Colour::RED, 5);
+            render_object_2d(
+                PolygonPlatformObject{
+                    .parameters =
+                        {
+                            .corner_top_left = tile_,
+                            .corner_top_right = tile_ + glm::vec2{10.0f, 0} * TILE_SIZE_F,
+                            .corner_bottom_right = tile_ + glm::vec2{10.0f, 10.0f} * TILE_SIZE_F,
+                            .corner_bottom_left = tile_ + glm::vec2{0, 10.0f} * TILE_SIZE_F,
+                        },
+                },
+                drawing_pad, Colour::RED, true);
         }
         break;
+
         case ObjectTypeName::Pillar:
-            if (state.pillar_default.style == PillarStyle::Vertical)
-            {
-                const auto& position = tile_;
-                const auto& size = state.pillar_default.size * TILE_SIZE;
-
-                auto offset = size / 2.0f;
-
-                drawing_pad.render_quad(position - offset, {size, size}, Colour::RED);
-            }
-            // TODO Add implementation for horizontal and vertical pillars
+            render_object_2d(
+                PillarObject{
+                    .properties = state.pillar_default,
+                    .parameters = {.position = tile_},
+                },
+                drawing_pad, Colour::RED, true);
             break;
 
         default:
@@ -382,3 +367,111 @@ ToolType CreateObjectTool::get_tool_type() const
 {
     return ToolType::CreateObject;
 }
+
+/*
+
+SelectTool::SelectTool(EditorLevel& level)
+    : p_level_(&level)
+{
+}
+
+void SelectTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
+                          ActionManager& actions)
+{
+    if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
+    {
+        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
+        {
+            selected_objects_.clear();
+            active_dragging_ = true;
+            selection_area_.start = node;
+            selection_area_.end = node;
+        }
+    }
+    else if (event.is<sf::Event::MouseMoved>())
+    {
+        if (active_dragging_)
+        {
+            selection_area_.end = node;
+        }
+    }
+    else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
+    {
+        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
+        {
+            active_dragging_ = false;
+            auto start = glm::ivec2{selection_area_.start};
+            auto end = glm::ivec2{selection_area_.end};
+
+            // Ensure start is less than end
+            if (start.x > end.x)
+            {
+                std::swap(start.x, end.x);
+            }
+            if (start.y > end.y)
+            {
+                std::swap(start.y, end.y);
+            }
+
+            p_level_->try_select_all(selection_area_.to_bounds(), state.current_floor,
+                                     selected_objects_);
+
+            std::println("Selected {}", selected_objects_.size());
+        }
+        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Right)
+        {
+            auto selection = p_level_->try_select(node, nullptr, state.current_floor);
+
+            if (selection)
+            {
+                if (selected_objects_.find(selection) != selected_objects_.end())
+                {
+                    selected_objects_.erase(selection);
+                }
+                else
+                {
+                    selected_objects_.emplace(selection);
+                }
+            }
+        }
+        std::println("Selected {}", selected_objects_.size());
+    }
+}
+
+void SelectTool::render_preview()
+{
+}
+
+void SelectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorState& state)
+{
+    if (active_dragging_)
+    {
+        drawing_pad.render_quad(selection_area_.start, selection_area_.end - selection_area_.start,
+                                Colour::RED);
+    }
+    else if (!selected_objects_.empty())
+    {
+        for (auto object : selected_objects_)
+        {
+            object->render_2d(drawing_pad, object, true);
+        }
+    }
+}
+
+void SelectTool::move_all(glm::vec2 offset, ActionManager& actions, int floor)
+{
+    for (auto object : selected_objects_)
+    {
+        auto new_object = *object;
+        new_object.move(offset);
+
+        actions.push_action(std::make_unique<UpdateObjectAction>(*object, new_object, floor),
+                            false);
+    }
+}
+
+bool SelectTool::has_selection() const
+{
+    return !selected_objects_.empty();
+}
+*/

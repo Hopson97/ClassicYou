@@ -87,6 +87,8 @@ class ActionManager
 
     void display_action_history();
 
+    void clear();
+
   private:
     EditorState* p_state_ = nullptr;
     EditorLevel* p_level_ = nullptr;

@@ -207,129 +207,19 @@ void LevelObject::move(glm::vec2 offset)
     }
 }
 
-void serialise_texture(nlohmann::json& object, const TextureProp& prop)
-{
-    object.push_back({prop.id, prop.colour.r, prop.colour.g, prop.colour.b, prop.colour.a});
-}
-
-TextureProp deserialise_texture(const nlohmann::json& object)
-{
-    return {
-        .id = object[0],
-        .colour = {object[1], object[2], object[3], object[4]},
-    };
-}
-
 std::pair<nlohmann::json, std::string> LevelObject::serialise() const
 {
-    std::string type = "";
-    nlohmann::json object;
-    if (auto wall = std::get_if<WallObject>(&object_type))
-    {
-        type = "wall";
-        auto& params = wall->parameters;
-        auto& props = wall->properties;
-
-        nlohmann::json json_params = {params.line.start.x, params.line.start.y, params.line.end.x,
-                                      params.line.end.y};
-
-        nlohmann::json json_props = {};
-        serialise_texture(json_props, props.texture_back);
-        serialise_texture(json_props, props.texture_front);
-        json_props.insert(json_props.end(),
-                          {props.start_height, props.start_base_height, props.end_height,
-                           props.end_base_height, props.tri_wall, props.flip_wall});
-
-        object = {json_params, json_props};
-    }
-    else if (auto platform = std::get_if<PlatformObject>(&object_type))
-    {
-        type = "platform";
-        auto& params = platform->parameters;
-        auto& props = platform->properties;
-
-        nlohmann::json json_params = {params.position.x, params.position.y};
-
-        nlohmann::json json_props = {};
-        serialise_texture(json_props, props.texture_top);
-        serialise_texture(json_props, props.texture_bottom);
-        json_props.insert(json_props.end(),
-                          {props.width, props.depth, props.base, (int)props.style});
-
-        object = {json_params, json_props};
-    }
-    else if (auto polygon_platform = std::get_if<PolygonPlatformObject>(&object_type))
-    {
-        type = "polygon_platform";
-        auto& params = polygon_platform->parameters;
-        auto& props = polygon_platform->properties;
-
-        nlohmann::json json_params = {params.corner_top_left.x,     params.corner_top_left.y,
-                                      params.corner_top_right.x,    params.corner_top_right.y,
-                                      params.corner_bottom_right.x, params.corner_bottom_right.y,
-                                      params.corner_bottom_left.x,  params.corner_bottom_left.y};
-
-        nlohmann::json json_props = {};
-        serialise_texture(json_props, props.texture_top);
-        serialise_texture(json_props, props.texture_bottom);
-        json_props.push_back(props.visible);
-        object = {json_params, json_props};
-    }
-    else if (auto pillar = std::get_if<PillarObject>(&object_type))
-    {
-        type = "pillar";
-        auto& params = pillar->parameters;
-        auto& props = pillar->properties;
-
-        nlohmann::json json_params = {params.position.x, params.position.y};
-
-        nlohmann::json json_props = {};
-        serialise_texture(json_props, props.texture);
-        json_props.insert(json_props.end(), {(int)props.style, props.size, props.base_height,
-                                             props.height, props.angled});
-
-        object = {json_params, json_props};
-    }
-    else
-    {
-        std::println("Unknown object type for serialisation");
-        return {};
-    }
-
-    return {object, type};
+    return std::visit([&](auto&& object) { return object_serialise(object); }, object_type);
 }
+
 
 bool LevelObject::deserialise_as_wall(const nlohmann::json& wall_json)
 {
     WallObject wall;
-    auto& params = wall.parameters;
-    auto& props = wall.properties;
-
-    auto jparams = wall_json[0];
-    auto jprops = wall_json[1];
-    if (jparams.size() < 4)
+    if (!object_deserialise(wall, wall_json))
     {
-        std::println("Invalid wall parameters, expected 4 values");
         return false;
     }
-    if (jprops.size() < 4)
-    {
-        std::println("Invalid wall properties, expected 4 values");
-        return false;
-    }
-    params.line.start = {jparams[0], jparams[1]};
-    params.line.end = {jparams[2], jparams[3]};
-
-    props.texture_back = deserialise_texture(jprops[0]);
-    props.texture_front = deserialise_texture(jprops[1]);
-
-    props.start_height = jprops[2];
-    props.start_base_height = jprops[3];
-    props.end_height = jprops[4];
-    props.end_base_height = jprops[5];
-    props.tri_wall = jprops[6];
-    props.flip_wall = jprops[7];
-
     object_type = wall;
     return true;
 }
@@ -337,29 +227,10 @@ bool LevelObject::deserialise_as_wall(const nlohmann::json& wall_json)
 bool LevelObject::deserialise_as_platform(const nlohmann::json& platform_json)
 {
     PlatformObject platform;
-    auto& params = platform.parameters;
-    auto& props = platform.properties;
-    auto jparams = platform_json[0];
-    auto jprops = platform_json[1];
-    if (jparams.size() < 2)
+    if (!object_deserialise(platform, platform_json))
     {
-        std::println("Invalid platform parameters, expected 2 values");
-    }
-    if (jprops.size() < 6)
-    {
-        std::println("Invalid platform properties, expected 5 values");
         return false;
     }
-
-    params.position = {jparams[0], jparams[1]};
-
-    props.texture_top = deserialise_texture(jprops[0]);
-    props.texture_bottom = deserialise_texture(jprops[1]);
-    props.width = jprops[2];
-    props.depth = jprops[3];
-    props.base = jprops[4];
-    props.style = (PlatformStyle)(jprops[5]);
-
     object_type = platform;
     return true;
 }
@@ -367,31 +238,10 @@ bool LevelObject::deserialise_as_platform(const nlohmann::json& platform_json)
 bool LevelObject::deserialise_as_polygon_platform(const nlohmann::json& poly_json)
 {
     PolygonPlatformObject polygon_platform;
-    auto& params = polygon_platform.parameters;
-    auto& props = polygon_platform.properties;
-
-    auto jparams = poly_json[0];
-    auto jprops = poly_json[1];
-    if (jparams.size() < 8)
+    if (!object_deserialise(polygon_platform, poly_json))
     {
-        std::println("Invalid polygon_platform parameters, expected 8 values");
         return false;
     }
-    if (jprops.size() < 3)
-    {
-        std::println("Invalid polygon_platform properties, expected 3 values");
-        return false;
-    }
-
-    params.corner_top_left = {jparams[0], jparams[1]};
-    params.corner_top_right = {jparams[2], jparams[3]};
-    params.corner_bottom_right = {jparams[4], jparams[5]};
-    params.corner_bottom_left = {jparams[6], jparams[7]};
-
-    props.texture_top = deserialise_texture(jprops[0]);
-    props.texture_bottom = deserialise_texture(jprops[1]);
-    props.visible = jprops[2];
-
     object_type = polygon_platform;
     return true;
 }
@@ -399,31 +249,10 @@ bool LevelObject::deserialise_as_polygon_platform(const nlohmann::json& poly_jso
 bool LevelObject::deserialise_as_pillar(const nlohmann::json& pillar)
 {
     PillarObject pillar_object;
-    auto& params = pillar_object.parameters;
-    auto& props = pillar_object.properties;
-
-    auto jparams = pillar[0];
-    auto jprops = pillar[1];
-    if (jparams.size() < 2)
+    if (!object_deserialise(pillar_object, pillar))
     {
-        std::println("Invalid pillar parameters, expected 2 values");
         return false;
     }
-    if (jprops.size() < 6)
-    {
-        std::println("Invalid pillar properties, expected 6 values");
-        return false;
-    }
-
-    params.position = {jparams[0], jparams[1]};
-
-    props.texture = deserialise_texture(jprops[0]);
-    props.style = (PillarStyle)(jprops[1]);
-    props.size = jprops[2];
-    props.base_height = jprops[3];
-    props.height = jprops[4];
-    props.angled = jprops[5];
-
     object_type = pillar_object;
     return true;
 }

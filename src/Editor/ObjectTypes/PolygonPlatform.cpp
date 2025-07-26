@@ -63,7 +63,7 @@ void render_object_2d(const PolygonPlatformObject& poly, DrawingPad& drawing_pad
 }
 
 template <>
-bool object_try_select_2d(const PolygonPlatformObject& poly, glm::vec2 selection_tile)
+[[nodiscard]] bool object_try_select_2d(const PolygonPlatformObject& poly, glm::vec2 selection_tile)
 
 {
     const auto& params = poly.parameters;
@@ -72,4 +72,53 @@ bool object_try_select_2d(const PolygonPlatformObject& poly, glm::vec2 selection
            selection_tile.x <= params.corner_top_right.x &&
            selection_tile.y >= params.corner_top_left.y &&
            selection_tile.y <= params.corner_bottom_left.y;
+}
+
+template <>
+SerialiseResponse object_serialise(const PolygonPlatformObject& poly)
+{
+    nlohmann::json object;
+
+    auto& params = poly.parameters;
+    auto& props = poly.properties;
+
+    nlohmann::json json_params = {params.corner_top_left.x,     params.corner_top_left.y,
+                                  params.corner_top_right.x,    params.corner_top_right.y,
+                                  params.corner_bottom_right.x, params.corner_bottom_right.y,
+                                  params.corner_bottom_left.x,  params.corner_bottom_left.y};
+
+    nlohmann::json json_props = {};
+    serialise_texture(json_props, props.texture_top);
+    serialise_texture(json_props, props.texture_bottom);
+    json_props.push_back(props.visible);
+    return {object, "polygon_platform"};
+}
+
+bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json)
+{
+    auto& params = poly.parameters;
+    auto& props = poly.properties;
+
+    auto jparams = json[0];
+    auto jprops = json[1];
+    if (jparams.size() < 8)
+    {
+        std::println("Invalid polygon_platform parameters, expected 8 values");
+        return false;
+    }
+    if (jprops.size() < 3)
+    {
+        std::println("Invalid polygon_platform properties, expected 3 values");
+        return false;
+    }
+
+    params.corner_top_left = {jparams[0], jparams[1]};
+    params.corner_top_right = {jparams[2], jparams[3]};
+    params.corner_bottom_right = {jparams[4], jparams[5]};
+    params.corner_bottom_left = {jparams[6], jparams[7]};
+
+    props.texture_top = deserialise_texture(jprops[0]);
+    props.texture_bottom = deserialise_texture(jprops[1]);
+    props.visible = jprops[2];
+    return true;
 }

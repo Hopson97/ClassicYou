@@ -3,6 +3,7 @@
 #include "EditConstants.h"
 
 #include "ObjectTypes/Wall.h"
+
 namespace
 {
     ///

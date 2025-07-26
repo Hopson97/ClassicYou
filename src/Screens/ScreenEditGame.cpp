@@ -441,8 +441,15 @@ void ScreenEditGame::on_render(bool show_debug)
         if (display_level_list(show_load_dialog_, level_name_))
         {
             show_load_dialog_ = false;
+
+            // Reset the state
+            action_manager_.clear();
+            editor_state_.p_active_object = nullptr;
+
             level_.load(make_level_path(level_name_));
             level_name_actual_ = level_name_;
+
+
         }
     }
 }

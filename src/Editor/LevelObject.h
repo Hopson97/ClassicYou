@@ -78,15 +78,3 @@ struct LevelObject
     bool deserialise_as_polygon_platform(const nlohmann::json& platform);
     bool deserialise_as_pillar(const nlohmann::json& pillar);
 };
-
-// =======================================
-//     Level Object Geometry Generation
-// =======================================
-
-// Note: These are defined in LevelObjectGeometry.cpp
-
-[[nodiscard]] LevelObjectsMesh3D generate_pillar_mesh(const PillarObject& platform,
-                                                      int floor_number);
-
-[[nodiscard]] LevelObjectsMesh3D
-generate_polygon_platform_mesh(const PolygonPlatformObject& polygon_platform, int floor_number);

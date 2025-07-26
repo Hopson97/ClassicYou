@@ -87,6 +87,11 @@ void ActionManager::display_action_history()
     ImGui::End();
 }
 
+void ActionManager::clear()
+{
+    action_stack_.clear();
+}
+
 AddObjectAction::AddObjectAction(const LevelObject& object, int floor)
     : object_(object)
     , floor_{floor}
