@@ -8,7 +8,7 @@ class Keyboard;
 
 struct CameraKeybinds
 {
-    sf::Keyboard::Key foward = sf::Keyboard::Key::W;
+    sf::Keyboard::Key forward = sf::Keyboard::Key::W;
     sf::Keyboard::Key left = sf::Keyboard::Key::A;
     sf::Keyboard::Key right = sf::Keyboard::Key::D;
     sf::Keyboard::Key back = sf::Keyboard::Key::S;

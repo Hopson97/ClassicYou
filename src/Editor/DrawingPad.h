@@ -20,12 +20,15 @@ class DrawingPad
     void render_line(glm::vec2 from, glm::vec2 to, const glm::vec4& colour, GLfloat thickness);
     void render_diamond(glm::vec2 position, glm::vec2 size, const glm::vec4& colour);
 
-    void display();
+    void display(const Transform& camera_transform);
 
     const Camera& get_camera() const;
 
+    void set_camera_position(glm::vec2 position);
+
   private:
-    gl::Shader shader_;
+    gl::Shader scene_shader_;
+    gl::Shader grid_shader_;
     std::unordered_map<GLfloat, Mesh2D> line_meshes_;
 
     struct GridMesh
@@ -39,5 +42,6 @@ class DrawingPad
 
     const glm::ivec2& selected_node_;
     gl::Texture2D selection_texture_;
+    gl::Texture2D arrow_texture_;
     Mesh2D selection_mesh_;
 };

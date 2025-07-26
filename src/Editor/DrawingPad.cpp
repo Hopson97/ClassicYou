@@ -5,6 +5,7 @@
 
 #include "../Graphics/OpenGL/GLUtils.h"
 #include "EditConstants.h"
+#include "InfiniteGrid.h"
 
 namespace
 {
@@ -27,28 +28,44 @@ DrawingPad::DrawingPad(glm::vec2 size, const glm::ivec2& selected_node)
           .far = 1000.0f,
       })
     , keybinds_2d_{
-          .foward = sf::Keyboard::Key::Down,
+          .forward = sf::Keyboard::Key::Down,
           .left = sf::Keyboard::Key::Left,
           .right = sf::Keyboard::Key::Right,
           .back = sf::Keyboard::Key::Up,
       }
       ,selected_node_(selected_node)
 {
+    // * 4 is such that the 3D default view can be seen
     camera_.transform.position = {WORLD_SIZE * TILE_SIZE / 3,
-                                  WORLD_SIZE * TILE_SIZE - TILE_SIZE * TILE_SIZE, 10};
+                                  WORLD_SIZE * TILE_SIZE - TILE_SIZE * TILE_SIZE + TILE_SIZE * 4,
+                                  10};
 }
 
 bool DrawingPad::init()
 {
-    if (!shader_.load_stage("assets/shaders/Scene/Scene2DVertex.glsl", gl::ShaderType::Vertex) ||
-        !shader_.load_stage("assets/shaders/Scene/Scene2DFragment.glsl",
-                            gl::ShaderType::Fragment) ||
-        !shader_.link_shaders())
+    if (!scene_shader_.load_stage("assets/shaders/Scene/Scene2DVertex.glsl",
+                                  gl::ShaderType::Vertex) ||
+        !scene_shader_.load_stage("assets/shaders/Scene/Scene2DFragment.glsl",
+                                  gl::ShaderType::Fragment) ||
+        !scene_shader_.link_shaders())
     {
         return false;
     }
 
-    if (!selection_texture_.load_from_file("assets/textures/selection.png", 1, false, false))
+    if (!grid_shader_.load_stage("assets/shaders/Grid/Grid2DVertex.glsl", gl::ShaderType::Vertex) ||
+        !grid_shader_.load_stage("assets/shaders/Grid/SceneGridFragment.glsl",
+                                 gl::ShaderType::Fragment) ||
+        !grid_shader_.link_shaders())
+    {
+        return false;
+    }
+
+    if (!selection_texture_.load_from_file("assets/textures/Selection.png", 1, false, false))
+    {
+        return false;
+    }
+
+    if (!arrow_texture_.load_from_file("assets/textures/Arrow.png", 1, false, false))
     {
         return false;
     }
@@ -154,26 +171,41 @@ const Camera& DrawingPad::get_camera() const
     return camera_;
 }
 
-void DrawingPad::display()
+void DrawingPad::set_camera_position(glm::vec2 position)
+{
+    const auto& viewport = camera_.get_config().viewport_size;
+    camera_.transform.position = {
+        position.x - viewport.x / 2,
+        position.y - viewport.y / 2,
+        camera_.transform.position.z,
+    };
+}
+
+void DrawingPad::display(const Transform& camera_transform)
 {
     // For 2D rendering, depth testing is not required
     gl::disable(gl::Capability::DepthTest);
     gl::disable(gl::Capability::CullFace);
     gl::cull_face(gl::Face::Back);
 
-    // Update the shaders
-    shader_.bind();
-    shader_.set_uniform("projection_matrix", camera_.get_projection_matrix());
-    shader_.set_uniform("view_matrix", camera_.get_view_matrix());
-    shader_.set_uniform("model_matrix", create_model_matrix({}));
-    shader_.set_uniform("use_texture", false);
-
     // Render the background grid
+    // Update the shaders
+    grid_shader_.bind();
+    grid_shader_.set_uniform("projection_matrix", camera_.get_projection_matrix());
+    grid_shader_.set_uniform("view_matrix", camera_.get_view_matrix());
+    grid_shader_.set_uniform("camera_position", camera_.transform.position);
     glLineWidth(1);
     grid_mesh_.sub_grid.bind().draw_elements(GL_LINES);
     grid_mesh_.main_grid.bind().draw_elements(GL_LINES);
 
-    // Render lines (walls) of various thickenss
+    // Update the shaders
+    scene_shader_.bind();
+    scene_shader_.set_uniform("projection_matrix", camera_.get_projection_matrix());
+    scene_shader_.set_uniform("view_matrix", camera_.get_view_matrix());
+    scene_shader_.set_uniform("model_matrix", create_model_matrix({}));
+    scene_shader_.set_uniform("use_texture", false);
+
+    // Render lines (walls) of various thickness
     for (auto& [thickness, mesh] : line_meshes_)
     {
         glLineWidth(thickness);
@@ -184,13 +216,24 @@ void DrawingPad::display()
     }
     line_meshes_.clear();
 
-    // Reder the selected quad
-    shader_.set_uniform("use_texture", true);
+    // Render the selected quad
+    scene_shader_.set_uniform("use_texture", true);
 
     // Offset selection by half its size such it renders in the center
     selection_texture_.bind(0);
-    shader_.set_uniform(
+    scene_shader_.set_uniform(
         "model_matrix",
         create_model_matrix({.position = {selected_node_.x - 4.0f, selected_node_.y - 4.0f, 0}}));
+    selection_mesh_.bind().draw_elements();
+
+    // Render the 3D camera's position
+    arrow_texture_.bind(0);
+    auto model = create_model_matrix_orbit(
+        {.position = {camera_transform.position.x * TILE_SIZE - TILE_SIZE / 4,
+                      camera_transform.position.z * TILE_SIZE, 0},
+         .rotation = {0, 0, camera_transform.rotation.y + 90.0f}},
+        {8, 8, 0});
+    model = glm::scale(model, {2, 2, 4});
+    scene_shader_.set_uniform("model_matrix", model);
     selection_mesh_.bind().draw_elements();
 }

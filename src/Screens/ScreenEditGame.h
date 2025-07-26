@@ -5,6 +5,7 @@
 #include "../Editor/EditConstants.h"
 #include "../Editor/EditorLevel.h"
 #include "../Editor/EditorState.h"
+#include "../Editor/InfiniteGrid.h"
 #include "../Editor/LevelTextures.h"
 #include "../Editor/Tool.h"
 #include "../Graphics/Camera.h"
@@ -49,8 +50,6 @@ class ScreenEditGame final : public Screen
   private:
     Camera camera_;
 
-    Mesh3D grid_mesh_ = generate_grid_mesh(WORLD_SIZE, WORLD_SIZE);
-
     gl::BufferObject matrices_ssbo_;
     gl::Shader scene_shader_;
     gl::Shader world_geometry_shader_;
@@ -62,6 +61,9 @@ class ScreenEditGame final : public Screen
 
     bool rotation_locked_ = true;
     Settings settings_;
+
+    /// Grid Mesh
+    InfiniteGrid grid_;
 
     /// State of the editor such as the currently selected object and defaults
     EditorState editor_state_;

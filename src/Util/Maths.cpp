@@ -14,6 +14,23 @@ glm::mat4 create_model_matrix(const Transform& transform)
     return matrix;
 }
 
+glm::mat4 create_model_matrix_orbit(const Transform& transform, const glm::vec3& origin)
+{
+    glm::mat4 matrix{1.0f};
+
+    matrix = glm::translate(matrix, transform.position);
+    matrix = glm::scale(matrix, transform.scale);
+
+    matrix = glm::translate(matrix, origin);
+    matrix = glm::rotate(matrix, glm::radians(transform.rotation.x), {1, 0, 0});
+    matrix = glm::rotate(matrix, glm::radians(transform.rotation.y), {0, 1, 0});
+    matrix = glm::rotate(matrix, glm::radians(transform.rotation.z), {0, 0, 1});
+    matrix = glm::translate(matrix, -origin);
+
+
+    return matrix;
+}
+
 glm::vec3 forward_vector(const glm::vec3& rotation)
 {
     float yaw = glm::radians(rotation.y);

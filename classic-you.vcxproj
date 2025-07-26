@@ -160,6 +160,7 @@
     <ClCompile Include="src\Editor\EditorGUI.cpp" />
     <ClCompile Include="src\Editor\EditorLevel.cpp" />
     <ClCompile Include="src\Editor\FloorManager.cpp" />
+    <ClCompile Include="src\Editor\InfiniteGrid.cpp" />
     <ClCompile Include="src\Editor\LegacyFileConverter.cpp" />
     <ClCompile Include="src\Editor\LevelObjectGeometry.cpp" />
     <ClCompile Include="src\Editor\FloorManager.h" />
@@ -192,8 +193,13 @@
     <None Include=".clang-format" />
     <None Include=".gitignore" />
     <None Include="assets\shaders\Empty.glsl" />
+    <None Include="assets\shaders\Grid\Grid3DVertex.glsl" />
     <None Include="assets\shaders\GUIFragment.glsl" />
     <None Include="assets\shaders\GUIVertex.glsl" />
+    <None Include="assets\shaders\Grid\Grid3DFragment.glsl" />
+    <None Include="assets\shaders\Grid\SceneGridVertex.glsl" />
+    <None Include="assets\shaders\Grid\SceneGridFragment.glsl" />
+    <None Include="assets\shaders\Grid\Grid2DVertex.glsl" />
     <None Include="assets\shaders\Scene\Scene2DFragment.glsl" />
     <None Include="assets\shaders\Scene\Scene2DVertex.glsl" />
     <None Include="assets\shaders\Scene\SceneFragment.glsl" />
@@ -229,6 +235,7 @@
     <ClInclude Include="src\Editor\LevelObject.h" />
     <ClInclude Include="src\Graphics\CameraController.h" />
     <ClInclude Include="src\Graphics\Camera.h" />
+    <ClInclude Include="src\Editor\InfiniteGrid.h" />
     <ClInclude Include="src\Graphics\ShadowMap.h" />
     <ClInclude Include="src\Graphics\Model.h" />
     <ClInclude Include="src\Graphics\OpenGL\BufferObject.h" />

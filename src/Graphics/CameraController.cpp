@@ -15,7 +15,7 @@ namespace
     {
         glm::vec3 move{0.0f};
         auto orthographic = camera.get_type() != CameraType::Perspective;
-        if (keyboard.is_key_down(keybinds.foward))
+        if (keyboard.is_key_down(keybinds.forward))
         {
             move += orthographic ? forward_vector_flat(camera.transform.rotation)
                                  : forward_vector(camera.transform.rotation);
@@ -93,7 +93,7 @@ void free_camera_controller_2d(const Keyboard& keyboard, Camera& camera, sf::Tim
 {
     glm::vec3 move{0.0f};
 
-    if (keyboard.is_key_down(keybinds.foward))
+    if (keyboard.is_key_down(keybinds.forward))
     {
         move += glm::vec3{0, 1, 0};
     }
@@ -116,7 +116,6 @@ void free_camera_controller_2d(const Keyboard& keyboard, Camera& camera, sf::Tim
     {
         move *= 20.0f;
     }
-
 
     camera.transform.position += move * 150.0f * dt.asSeconds();
     camera.update();

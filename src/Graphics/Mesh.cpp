@@ -203,14 +203,14 @@ Mesh3D generate_grid_mesh(int width, int height)
     // Tiny offset prevents platforms/floors clipping with the grid
     auto y = -0.01f;
 
-    for (int x = 0; x <= width; x++)
+    for (int x = -width / 2; x <= width / 2; x++)
     {
-        create_line({x, y, 0}, {x, y, width}, SUB_GRID_COLOUR);
+        create_line({x, y, -width / 2}, {x, y, width / 2}, SUB_GRID_COLOUR);
     }
 
-    for (int z = 0; z <= height; z++)
+    for (int z = -height / 2; z <= height / 2; z++)
     {
-        create_line({0, y, z}, {height, y, z}, SUB_GRID_COLOUR);
+        create_line({-height / 2, y, z}, {height / 2, y, z}, SUB_GRID_COLOUR);
     }
 
     return mesh;

@@ -22,7 +22,6 @@ namespace
         "Blank",      "Happy",       "SciFi",        "Tiles",
         "Book Case",  "Parquet",     "Tarmac",       "Large Stone Bricks",
         "Slate",
-
     };
 
     glm::ivec2 map_pixel_to_tile(glm::vec2 point, const Camera& camera)
@@ -102,7 +101,6 @@ bool ScreenEditGame::on_init()
     // ---------------------------
     // ==== Buffer thr meshes ====
     // ---------------------------
-    grid_mesh_.buffer();
     selection_mesh_.buffer();
 
     // ----------------------------
@@ -151,6 +149,12 @@ bool ScreenEditGame::on_init()
     if (!level_name_.empty())
     {
         level_.load(make_level_path(level_name_));
+    }
+
+    // Misc
+    if (!grid_.init())
+    {
+        return false;
     }
 
     return true;
@@ -349,7 +353,7 @@ void ScreenEditGame::on_render(bool show_debug)
         }
 
         // Finalise 2d rendering
-        drawing_pad_.display();
+        drawing_pad_.display(camera_.transform);
 
         // When showing the 2D view, the 3D view is half width
         glViewport(window().getSize().x / 2, 0, window().getSize().x / 2, window().getSize().y);
@@ -379,15 +383,9 @@ void ScreenEditGame::on_render(bool show_debug)
     // Draw grid
     if (editor_settings_.show_grid)
     {
-        glLineWidth(2);
-        scene_shader_.set_uniform(
-            "model_matrix",
-            create_model_matrix({.position = {0, editor_state_.current_floor * FLOOR_HEIGHT, 0}}));
-
-        scene_shader_.set_uniform("use_texture", false);
-        grid_mesh_.bind().draw_elements(GL_LINES);
+        grid_.render(camera_.transform.position, editor_state_.current_floor);
     }
-
+    scene_shader_.bind();
     //=============================================
     //      Render the actual level and previews
     // ============================================
@@ -498,6 +496,13 @@ void ScreenEditGame::render_editor_ui()
                     editor_state_.current_floor, level_.get_max_floor());
 
         ImGui::Separator();
+        if (ImGui::Button("Center 2D View To 3D Camera"))
+        {
+            drawing_pad_.set_camera_position({
+                camera_.transform.position.x * TILE_SIZE,
+                camera_.transform.position.z * TILE_SIZE,
+            });
+        }
     }
     ImGui::End();
 

@@ -31,6 +31,7 @@ struct Line
 };
 
 glm::mat4 create_model_matrix(const Transform& transform);
+glm::mat4 create_model_matrix_orbit(const Transform& transform, const glm::vec3& origin);
 glm::vec3 forward_vector(const glm::vec3& rotation);
 glm::vec3 backward_vector(const glm::vec3& rotation);
 glm::vec3 left_vector(const glm::vec3& rotation);

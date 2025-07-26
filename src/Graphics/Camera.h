@@ -53,6 +53,8 @@ struct Camera
 
     void set_viewport_size(glm::vec2 viewport_size);
 
+    const CameraConfig& get_config() const;
+
   private:
     void set_projection();
 
