@@ -1,0 +1,60 @@
+#pragma once
+
+#include "../DrawingPad.h"
+#include "LevelObjectTypes.h"
+
+// =======================================
+//      Platform Object Types
+// =======================================
+struct PlatformParameters
+{
+    glm::vec2 position{0};
+};
+
+enum class PlatformStyle
+{
+    Quad,
+    Diamond,
+    Triangle,
+};
+
+struct PlatformProps
+{
+    TextureProp texture_top;
+    TextureProp texture_bottom;
+    float width = 1.0f;
+    float depth = 1.0f;
+    float base = 0.0f;
+
+    PlatformStyle style = PlatformStyle::Quad;
+    // int direction = 0;
+};
+
+using PlatformObject = ObjectType<PlatformProps, PlatformParameters>;
+
+bool operator==(const PlatformProps& lhs, const PlatformProps& rhs);
+bool operator!=(const PlatformProps& lhs, const PlatformProps& rhs);
+
+// =======================================
+//     Free functions
+// =======================================
+// Defined in LevelObjectGeometry.cpp
+[[nodiscard]] LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform,
+                                                        int floor_number);
+
+// =======================================
+//      Specialised Functions
+// =======================================
+template <>
+[[nodiscard]] LevelObjectsMesh3D object_to_geometry<PlatformObject>(const PlatformObject& wall,
+                                                                    int floor_number);
+
+template <>
+[[nodiscard]] std::string object_to_string<PlatformObject>(const PlatformObject& wall);
+
+template <>
+void render_object_2d<PlatformObject>(const PlatformObject& wall, DrawingPad& drawing_pad,
+                                      const glm::vec4& colour, bool is_selected);
+
+template <>
+bool object_try_select_2d<PlatformObject>(const PlatformObject& wall, glm::vec2 selection_tile);

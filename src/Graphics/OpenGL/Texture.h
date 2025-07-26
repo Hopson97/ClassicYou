@@ -81,7 +81,7 @@ namespace gl
         TextureWrap wrap_r = TextureWrap::ClampToEdge;
     };
 
-    constexpr TextureParameters TEXTURE_PARAMS_MIPMAP = {
+    constexpr static TextureParameters TEXTURE_PARAMS_MIPMAP = {
         .min_filter = TextureMinFilter::LinearMipmapLinear,
         .mag_filter = TextureMagFilter::Linear,
         .wrap_s = TextureWrap::Repeat,
@@ -89,7 +89,7 @@ namespace gl
         .wrap_r = TextureWrap::Repeat,
     };
 
-    constexpr TextureParameters TEXTURE_PARAMS_NEAREST = {
+    constexpr static TextureParameters TEXTURE_PARAMS_NEAREST = {
         .min_filter = gl::TextureMinFilter::Nearest,
         .mag_filter = gl::TextureMagFilter::Nearest,
         .wrap_s = gl::TextureWrap::Repeat,

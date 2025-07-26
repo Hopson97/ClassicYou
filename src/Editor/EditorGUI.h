@@ -2,7 +2,7 @@
 #include <utility>
 
 #include "LevelObject.h"
-#include "ObjectProperties.h"
+#include "ObjectTypes/ObjectTypes.h"
 
 class LevelTextures;
 

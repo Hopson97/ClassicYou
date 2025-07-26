@@ -119,77 +119,14 @@ void LevelObject::property_gui(EditorState& state, const LevelTextures& textures
 
 LevelObjectsMesh3D LevelObject::to_geometry(int floor_number) const
 {
-    if (auto wall = std::get_if<WallObject>(&object_type))
-    {
-        return generate_wall_mesh(*wall, floor_number);
-    }
-    else if (auto platform = std::get_if<PlatformObject>(&object_type))
-    {
-        return generate_platform_mesh(*platform, floor_number);
-    }
-    else if (auto polygon_platform = std::get_if<PolygonPlatformObject>(&object_type))
-    {
-        return generate_polygon_platform_mesh(*polygon_platform, floor_number);
-    }
-    else if (auto pillar = std::get_if<PillarObject>(&object_type))
-    {
-        return generate_pillar_mesh(*pillar, floor_number);
-    }
-
-    throw std::runtime_error("Must implement getting geometry for all types!");
+    return std::visit([&](const auto& object) -> LevelObjectsMesh3D
+                      { return object_to_geometry(object, floor_number); }, object_type);
 }
 
 std::string LevelObject::to_string() const
 {
-    if (auto wall = std::get_if<WallObject>(&object_type))
-    {
-        auto& params = wall->parameters;
-        auto& props = wall->properties;
-        return std::format("Props:\n Texture 1/2: {} {}: \n Base: {}\n Height: {}\nParameters:\n "
-                           "  Start position: ({:.2f}, {:.2f}) - End Position: ({:.2f}, {:.2f})",
-                           props.texture_front.id, props.texture_back.id, props.start_base_height,
-                           props.start_height, params.line.start.x, params.line.start.y,
-                           params.line.end.x, params.line.end.y);
-    }
-    else if (auto platform = std::get_if<PlatformObject>(&object_type))
-    {
-        auto& params = platform->parameters;
-        auto& props = platform->properties;
-
-        return std::format("Props:\n Texture Top: {}\n Texture Bottom: {}\n Width: {}\n Depth: "
-                           "{} \n Height: {} \n Style: {}\n"
-                           "Parameters:\n "
-                           " Position: ({:.2f}, {:.2f})",
-                           props.texture_top.id, props.texture_bottom.id, props.width, props.depth,
-                           props.base, magic_enum::enum_name(props.style), params.position.x,
-                           params.position.y);
-    }
-    else if (auto poly = std::get_if<PolygonPlatformObject>(&object_type))
-    {
-        auto& params = poly->parameters;
-        auto& props = poly->properties;
-
-        return std::format(
-            "Props:\n Texture Top: {}\n Texture Bottom: {}\n Visible: {}\nParameters:\n "
-            "Corner Top Left: ({:.2f}, {:.2f})\n - Corner Top Right: ({:.2f}, {:.2f})\n "
-            "Corner Bottom Right: ({:.2f}, {:.2f})\n - Corner Bottom Left: ({:.2f}, {:.2f})",
-            props.texture_top.id, props.texture_bottom.id, props.visible, params.corner_top_left.x,
-            params.corner_top_left.y, params.corner_top_right.x, params.corner_top_right.y,
-            params.corner_bottom_right.x, params.corner_bottom_right.y, params.corner_bottom_left.x,
-            params.corner_bottom_left.y);
-    }
-    else if (auto pillar = std::get_if<PillarObject>(&object_type))
-    {
-        auto& params = pillar->parameters;
-        auto& props = pillar->properties;
-
-        return std::format(
-            "Props:\n Texture: {}\n Style: {}\n Size: {}\n Base Height: {}\n Height: {}\n "
-            "Angled: {}\nParameters:\n Position: ({:.2f}, {:.2f})",
-            props.texture.id, magic_enum::enum_name(props.style), props.size, props.base_height,
-            props.height, props.angled, params.position.x, params.position.y);
-    }
-    return "";
+    return std::visit([](auto&& object) -> std::string { return object_to_string(object); },
+                      object_type);
 }
 
 void LevelObject::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object,
@@ -198,95 +135,14 @@ void LevelObject::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active
     auto is_selected = p_active_object && p_active_object->object_id == object_id;
     auto colour = is_selected ? Colour::RED : (is_current_floor ? Colour::WHITE : Colour::GREY);
 
-    if (auto wall = std::get_if<WallObject>(&object_type))
-    {
-        auto thickness = is_selected ? 3.0f : 2.0f;
-
-        drawing_pad.render_line(wall->parameters.line.start, wall->parameters.line.end, colour,
-                                thickness);
-    }
-    else if (auto platform = std::get_if<PlatformObject>(&object_type))
-    {
-        const auto& position = platform->parameters.position;
-        const auto& width = platform->properties.width * TILE_SIZE;
-        const auto& depth = platform->properties.depth * TILE_SIZE;
-
-        if (platform->properties.style == PlatformStyle::Quad)
-        {
-            drawing_pad.render_quad(position, {width, depth}, colour);
-        }
-        else if (platform->properties.style == PlatformStyle::Diamond)
-        {
-            drawing_pad.render_diamond(position, {width, depth}, colour);
-        }
-    }
-    else if (auto polygon_platform = std::get_if<PolygonPlatformObject>(&object_type))
-    {
-        const auto& params = polygon_platform->parameters;
-        auto& tl = params.corner_top_left;
-        auto& tr = params.corner_top_right;
-        auto& br = params.corner_bottom_right;
-        auto& bl = params.corner_bottom_left;
-
-        drawing_pad.render_line(tl, tl + glm::vec2(TILE_SIZE, 0), colour, 5);
-        drawing_pad.render_line(tl, tl + glm::vec2(0, TILE_SIZE), colour, 5);
-
-        drawing_pad.render_line(tr, tr - glm::vec2(TILE_SIZE, 0), colour, 5);
-        drawing_pad.render_line(tr, tr + glm::vec2(0, TILE_SIZE), colour, 5);
-
-        drawing_pad.render_line(br, br - glm::vec2(TILE_SIZE, 0), colour, 5);
-        drawing_pad.render_line(br, br - glm::vec2(0, TILE_SIZE), colour, 5);
-
-        drawing_pad.render_line(bl, bl + glm::vec2(TILE_SIZE, 0), colour, 5);
-        drawing_pad.render_line(bl, bl - glm::vec2(0, TILE_SIZE), colour, 5);
-    }
-    else if (auto pillar = std::get_if<PillarObject>(&object_type))
-    {
-        const auto& position = pillar->parameters.position;
-        const auto& size = pillar->properties.size * TILE_SIZE;
-
-        auto offset = size / 2.0f;
-
-        drawing_pad.render_quad(position - offset, {size, size}, colour);
-    }
+    std::visit([&](auto&& object) { render_object_2d(object, drawing_pad, colour, is_selected); },
+               object_type);
 }
 
 bool LevelObject::try_select_2d(glm::vec2 selection_tile) const
 {
-    if (auto wall = std::get_if<WallObject>(&object_type))
-    {
-        return distance_to_line(selection_tile, wall->parameters.line) < 15;
-    }
-    else if (auto platform = std::get_if<PlatformObject>(&object_type))
-    {
-        const auto& params = platform->parameters;
-        const auto& props = platform->properties;
-
-        return selection_tile.x >= params.position.x &&
-               selection_tile.x <= params.position.x + props.width * TILE_SIZE &&
-               selection_tile.y >= params.position.y &&
-               selection_tile.y <= params.position.y + props.depth * TILE_SIZE;
-    }
-    else if (auto poly = std::get_if<PolygonPlatformObject>(&object_type))
-    {
-        const auto& params = poly->parameters;
-
-        return selection_tile.x >= params.corner_top_left.x &&
-               selection_tile.x <= params.corner_top_right.x &&
-               selection_tile.y >= params.corner_top_left.y &&
-               selection_tile.y <= params.corner_bottom_left.y;
-    }
-    else if (auto pillar = std::get_if<PillarObject>(&object_type))
-    {
-        const auto& params = pillar->parameters;
-        const auto& props = pillar->properties;
-
-        return selection_tile.x >= params.position.x &&
-               selection_tile.x <= params.position.x + props.size * TILE_SIZE &&
-               selection_tile.y >= params.position.y &&
-               selection_tile.y <= params.position.y + props.size * TILE_SIZE;
-    }
-    return false;
+    return std::visit([&](const auto& object)
+                      { return object_try_select_2d(object, selection_tile); }, object_type);
 }
 
 bool LevelObject::is_within(const Rectangle& selection_area)
