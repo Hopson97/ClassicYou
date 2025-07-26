@@ -77,4 +77,16 @@ struct LevelObject
     bool deserialise_as_platform(const nlohmann::json& platform);
     bool deserialise_as_polygon_platform(const nlohmann::json& platform);
     bool deserialise_as_pillar(const nlohmann::json& pillar);
+
+    template<typename T>
+    bool deserialise_as(const nlohmann::json& json)
+    {
+        T object;
+        if (!object_deserialise(object, json))
+        {
+            return false;
+        }
+        object_type = object;
+        return true;
+    }
 };

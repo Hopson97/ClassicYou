@@ -163,7 +163,6 @@
     <ClCompile Include="src\Editor\InfiniteGrid.cpp" />
     <ClCompile Include="src\Editor\LegacyFileConverter.cpp" />
     <ClCompile Include="src\Editor\LevelObject.cpp" />
-    <ClCompile Include="src\Editor\LevelObjectGeometry.cpp" />
     <ClCompile Include="src\Editor\FloorManager.h" />
     <ClCompile Include="src\Editor\ObjectTypes\Pillar.cpp" />
     <ClCompile Include="src\Editor\ObjectTypes\Platform.cpp" />
