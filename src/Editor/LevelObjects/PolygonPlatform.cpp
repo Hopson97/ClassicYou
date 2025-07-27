@@ -29,13 +29,13 @@ std::string object_to_string(const PolygonPlatformObject& poly)
     auto& props = poly.properties;
 
     return std::format(
-        "Props:\n Texture Top: {}\n Texture Bottom: {}\n Visible: {}\nParameters:\n "
-        "Corner Top Left: ({:.2f}, {:.2f})\n - Corner Top Right: ({:.2f}, {:.2f})\n "
-        "Corner Bottom Right: ({:.2f}, {:.2f})\n - Corner Bottom Left: ({:.2f}, {:.2f})",
-        props.texture_top.id, props.texture_bottom.id, props.visible, params.corner_top_left.x,
-        params.corner_top_left.y, params.corner_top_right.x, params.corner_top_right.y,
-        params.corner_bottom_right.x, params.corner_bottom_right.y, params.corner_bottom_left.x,
-        params.corner_bottom_left.y);
+        "Props:\n Texture Top: {}\n Texture Bottom: {}\n Base: {:.2f}\n Visible: {}\n"
+        "Parameters:\n Corner Top Left: ({:.2f}, {:.2f})\n Corner Top Right: ({:.2f}, {:.2f})\n "
+        "Corner Bottom Right: ({:.2f}, {:.2f})\n Corner Bottom Left: ({:.2f}, {:.2f})",
+        props.texture_top.id, props.texture_bottom.id, props.base, props.visible ? "true" : "false",
+        params.corner_top_left.x, params.corner_top_left.y, params.corner_top_right.x,
+        params.corner_top_right.y, params.corner_bottom_right.x, params.corner_bottom_right.y,
+        params.corner_bottom_left.x, params.corner_bottom_left.y);
 }
 
 template <>
@@ -80,15 +80,10 @@ void object_move(PolygonPlatformObject& poly, glm::vec2 offset)
 {
     auto& params = poly.parameters;
 
-    // Poly platforms require moving all points, so they are moved relative to the first point
-    auto trd = params.corner_top_right - params.corner_top_left;
-    auto brd = params.corner_bottom_right - params.corner_top_left;
-    auto bld = params.corner_bottom_left - params.corner_top_left;
-
     params.corner_top_left += offset;
-    params.corner_top_right += offset + trd;
-    params.corner_bottom_right += offset + brd;
-    params.corner_bottom_left += offset + bld;
+    params.corner_top_right += offset;
+    params.corner_bottom_right += offset;
+    params.corner_bottom_left += offset;
 }
 
 template <>
@@ -106,8 +101,6 @@ template <>
 template <>
 SerialiseResponse object_serialise(const PolygonPlatformObject& poly)
 {
-    nlohmann::json object;
-
     auto& params = poly.parameters;
     auto& props = poly.properties;
 
@@ -119,8 +112,9 @@ SerialiseResponse object_serialise(const PolygonPlatformObject& poly)
     nlohmann::json json_props = {};
     serialise_texture(json_props, props.texture_top);
     serialise_texture(json_props, props.texture_bottom);
+    json_props.push_back(props.base);
     json_props.push_back(props.visible);
-    return {object, "polygon_platform"};
+    return {{json_params, json_props}, "polygon_platform"};
 }
 
 bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json)
@@ -135,9 +129,9 @@ bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json)
         std::println("Invalid polygon_platform parameters, expected 8 values");
         return false;
     }
-    if (jprops.size() < 3)
+    if (jprops.size() < 4)
     {
-        std::println("Invalid polygon_platform properties, expected 3 values");
+        std::println("Invalid polygon_platform properties, expected 4 values");
         return false;
     }
 
@@ -148,7 +142,8 @@ bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json)
 
     props.texture_top = deserialise_texture(jprops[0]);
     props.texture_bottom = deserialise_texture(jprops[1]);
-    props.visible = jprops[2];
+    props.base = jprops[2];
+    props.visible = jprops[3];
     return true;
 }
 
@@ -165,8 +160,8 @@ LevelObjectsMesh3D generate_polygon_platform_mesh(const PolygonPlatformObject& p
 
     auto ob = props.base * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT;
 
-    auto texture_bottom = static_cast<float>(props.texture_top.id);
-    auto texture_top = static_cast<float>(props.texture_bottom.id);
+    auto texture_bottom = static_cast<float>(props.texture_bottom.id);
+    auto texture_top = static_cast<float>(props.texture_top.id);
     auto colour_bottom = props.texture_bottom.colour;
     auto colour_top = props.texture_top.colour;
 
@@ -180,17 +175,17 @@ LevelObjectsMesh3D generate_polygon_platform_mesh(const PolygonPlatformObject& p
 
     // clang-format off
     mesh.vertices = {
-            // Top
-            {{p1.x, ob, p1.z,},  {0,                    0,                      texture_top},    {0, 1, 0}, colour_bottom},
-            {{p2.x, ob, p2.z,},  {0,                    glm::length(p2 - p1),   texture_top},    {0, 1, 0}, colour_bottom},
-            {{p3.x, ob, p3.z },  {glm::length(p3 - p2), glm::length(p3 - p2),   texture_top},    {0, 1, 0}, colour_bottom},
-            {{p4.x, ob, p4.z,},  {glm::length(p4 - p1), 0,                      texture_top},    {0, 1, 0}, colour_bottom},
-
             // Bottom
-            {{p1.x, ob, p1.z},  {0,                     0,                      texture_bottom},   {0, -1, 0}, colour_top},
-            {{p2.x, ob, p2.z},  {0,                     glm::length(p2 - p1),   texture_bottom},   {0, -1, 0}, colour_top},
-            {{p3.x, ob, p3.z},  {glm::length(p3 - p2),  glm::length(p3 - p2),   texture_bottom},   {0, -1, 0}, colour_top},
-            {{p4.x, ob, p4.z},  {glm::length(p4 - p1),  0,                      texture_bottom},   {0, -1, 0}, colour_top},
+            {{p1.x, ob, p1.z,},  {0,                    0,                      texture_bottom},    {0, -1, 0}, colour_bottom},
+            {{p2.x, ob, p2.z,},  {0,                    glm::length(p2 - p1),   texture_bottom},    {0, -1, 0}, colour_bottom},
+            {{p3.x, ob, p3.z },  {glm::length(p3 - p2), glm::length(p3 - p2),   texture_bottom},    {0, -1, 0}, colour_bottom},
+            {{p4.x, ob, p4.z,},  {glm::length(p4 - p1), 0,                      texture_bottom},    {0, -1, 0}, colour_bottom},
+
+            // Top
+            {{p1.x, ob, p1.z},  {0,                     0,                      texture_top},   {0, 1, 0}, colour_top},
+            {{p2.x, ob, p2.z},  {0,                     glm::length(p2 - p1),   texture_top},   {0, 1, 0}, colour_top},
+            {{p3.x, ob, p3.z},  {glm::length(p3 - p2),  glm::length(p3 - p2),   texture_top},   {0, 1, 0}, colour_top},
+            {{p4.x, ob, p4.z},  {glm::length(p4 - p1),  0,                      texture_top},   {0, 1, 0}, colour_top},
         };
     // clang-format on
 

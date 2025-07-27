@@ -33,10 +33,9 @@ std::string object_to_string(const PlatformObject& platform)
     auto& params = platform.parameters;
     auto& props = platform.properties;
 
-    return std::format("Props:\n Texture Top: {}\n Texture Bottom: {}\n Width: {}\n Depth: "
-                       "{} \n Height: {} \n Style: {}\n"
-                       "Parameters:\n "
-                       " Position: ({:.2f}, {:.2f})",
+    return std::format("Props:\n Texture Top: {}\n Texture Bottom: {}\n Width: {:.2f}\n Depth: "
+                       "{:.2f}\n Base: {:.2f}\n Style: {}\n"
+                       "Parameters:\n Position: ({:.2f}, {:.2f})",
                        props.texture_top.id, props.texture_bottom.id, props.width, props.depth,
                        props.base, magic_enum::enum_name(props.style), params.position.x,
                        params.position.y);
@@ -79,8 +78,7 @@ bool object_is_within(const PlatformObject& platform, const Rectangle& selection
 {
     return Rectangle{
         .position = {platform.parameters.position.x, platform.parameters.position.y},
-        .size = {platform.properties.width * TILE_SIZE_F,
-                 platform.properties.depth * TILE_SIZE_F},
+        .size = {platform.properties.width * TILE_SIZE_F, platform.properties.depth * TILE_SIZE_F},
     }
         .is_entirely_within(selection_area);
 }
@@ -94,8 +92,6 @@ void object_move(PlatformObject& platform, glm::vec2 offset)
 template <>
 SerialiseResponse object_serialise(const PlatformObject& platform)
 {
-    nlohmann::json object;
-
     auto& params = platform.parameters;
     auto& props = platform.properties;
 
@@ -106,9 +102,7 @@ SerialiseResponse object_serialise(const PlatformObject& platform)
     serialise_texture(json_props, props.texture_bottom);
     json_props.insert(json_props.end(), {props.width, props.depth, props.base, (int)props.style});
 
-    object = {json_params, json_props};
-
-    return {object, "platform"};
+    return {{json_params, json_props}, "platform"};
 }
 
 bool object_deserialise(PlatformObject& platform, const nlohmann::json& json)
@@ -123,7 +117,7 @@ bool object_deserialise(PlatformObject& platform, const nlohmann::json& json)
     }
     if (jprops.size() < 6)
     {
-        std::println("Invalid platform properties, expected 5 values");
+        std::println("Invalid platform properties, expected 6 values");
         return false;
     }
 
@@ -218,7 +212,7 @@ LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform, int fl
     LevelObjectsMesh3D mesh;
     mesh.vertices = [&]()
     {
-            // TODO: triangle platforms
+        // TODO: triangle platforms
         switch (props.style)
         {
             case PlatformStyle::Quad:

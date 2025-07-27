@@ -117,6 +117,33 @@ void LevelObject::property_gui(EditorState& state, const LevelTextures& textures
     }
 }
 
+ObjectTypeName LevelObject::to_type() const
+{
+    if (std::get_if<WallObject>(&object_type))
+    {
+        return ObjectTypeName::Wall;
+    }
+    else if (std::get_if<PlatformObject>(&object_type))
+    {
+        return ObjectTypeName::Platform;
+    }
+    else if (std::get_if<PolygonPlatformObject>(&object_type))
+    {
+        return ObjectTypeName::PolygonPlatform;
+    }
+    else if (std::get_if<PillarObject>(&object_type))
+    {
+        return ObjectTypeName::Pillar;
+    }
+
+    return ObjectTypeName::MissingTypeName;
+}
+
+std::string LevelObject::to_type_string() const
+{
+    return magic_enum::enum_name(to_type()).data();
+}
+
 LevelObjectsMesh3D LevelObject::to_geometry(int floor_number) const
 {
     return std::visit([&](const auto& object) -> LevelObjectsMesh3D

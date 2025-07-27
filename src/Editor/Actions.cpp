@@ -1,6 +1,7 @@
 #include "Actions.h"
 
 #include <imgui.h>
+#include <magic_enum/magic_enum.hpp>
 #include <print>
 
 #include "EditorLevel.h"
@@ -78,8 +79,8 @@ void ActionManager::display_action_history()
 
             ImGui::Text("#%d:", i++);
             ImGui::SameLine();
-            ImGui::Text("%s:", title.c_str());
-            ImGui::Text("%s:", body.c_str());
+            ImGui::Text("%s", title.c_str());
+            ImGui::Text("%s", body.c_str());
 
             ImGui::Separator();
         }
@@ -127,7 +128,10 @@ void AddObjectAction::undo(EditorState& state, EditorLevel& level)
 
 ActionStrings AddObjectAction::to_string() const
 {
-    return {.title = "Add Object", .body = object_.to_string()};
+    return {
+        .title = std::format("Create {}", object_.to_type_string()),
+        .body = object_.to_string(),
+    };
 }
 
 UpdateObjectAction::UpdateObjectAction(const LevelObject& old_object, const LevelObject& new_object,
@@ -151,8 +155,9 @@ void UpdateObjectAction::undo([[maybe_unused]] EditorState& state, EditorLevel& 
 ActionStrings UpdateObjectAction::to_string() const
 {
     return {
-        .title = "Update Object",
-        .body = std::format("From: {}\nTo: {}", old_object_.to_string(), new_object_.to_string()),
+        .title = std::format("Update {}", old_object_.to_type_string()),
+        .body = std::format("Before:\n{}\n\nAfter:\n{}", old_object_.to_string(),
+                            new_object_.to_string()),
     };
 }
 
@@ -183,7 +188,7 @@ void DeleteObjectAction::undo(EditorState& state, EditorLevel& level)
 ActionStrings DeleteObjectAction::to_string() const
 {
     return {
-        .title = "Delete Wall",
-        .body = std::format("Deleted wall with ID: {} ", object_.object_id),
+        .title = std::format("Delete {}", object_.to_type_string()),
+        .body = std::format("ID: {} ", object_.object_id),
     };
 }
