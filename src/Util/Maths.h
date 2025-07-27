@@ -30,6 +30,11 @@ struct Line
     Rectangle to_bounds() const;
 };
 
+constexpr inline auto rgb_to_normalised(const glm::vec3& rgb)
+{
+    return glm::vec4(rgb / 255.0f, 1.0f);
+}
+
 glm::mat4 create_model_matrix(const Transform& transform);
 glm::mat4 create_model_matrix_orbit(const Transform& transform, const glm::vec3& origin);
 glm::vec3 forward_vector(const glm::vec3& rotation);

@@ -165,7 +165,7 @@ namespace
                     new_value = value;
                 }
 
-                if (++n < magic_enum::enum_count<EnumType>() - 1)
+                if (++n < magic_enum::enum_count<EnumType>())
                 {
                     ImGui::SameLine();
                 }
@@ -333,7 +333,7 @@ std::pair<UpdateResult, PillarProps> pillar_gui(const LevelTextures& textures,
     UpdateResult result;
     auto new_props = pillar.properties;
 
-    enum_gui<PillarStyle>(result, "Platform Style", pillar.properties.style, new_props.style);
+    enum_gui(result, "Platform Style", pillar.properties.style, new_props.style);
 
     if (ImGui::Checkbox("Angled?", &new_props.angled))
     {
@@ -348,6 +348,36 @@ std::pair<UpdateResult, PillarProps> pillar_gui(const LevelTextures& textures,
 
     return {
         check_prop_updated(result, pillar.properties, new_props),
+        new_props,
+    };
+}
+
+std::pair<UpdateResult, RampProps> ramp_gui(const LevelTextures& textures, const RampObject& ramp)
+{
+    UpdateResult result;
+
+    auto new_props = ramp.properties;
+
+
+    slider(result, "Width", new_props.width, 0.5f, 20.0f, 0.5f);
+    slider(result, "Depth", new_props.depth, 0.5f, 20.0f, 0.5f);
+
+    slider(result, "Start Height", new_props.start_height, 0.0f, 0.9f, 0.1f);
+    slider(result, "End Height", new_props.end_height, new_props.start_height + 0.1, 1.0f, 0.1f);
+
+    enum_gui(result, "Style", ramp.properties.style, new_props.style);
+    enum_gui(result, "Direction", ramp.properties.direction, new_props.direction);
+
+    texture_gui_tabs(result, "Textures_Ramp", textures,
+                     {.name = "Top Texture",
+                      .current = ramp.properties.texture_top,
+                      .new_texture = &new_props.texture_top},
+                     {.name = "Bottom Texture",
+                      .current = ramp.properties.texture_bottom,
+                      .new_texture = &new_props.texture_bottom});
+
+    return {
+        check_prop_updated(result, ramp.properties, new_props),
         new_props,
     };
 }

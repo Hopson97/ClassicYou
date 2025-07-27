@@ -22,6 +22,7 @@ enum class ObjectTypeName
     Platform,
     PolygonPlatform,
     Pillar,
+    Ramp
 };
 
 /// All objects in the level editor have a set of properties and parameters.
@@ -47,6 +48,15 @@ struct TextureProp
     glm::u8vec4 colour{255};
 };
 
+// For objects that have a direction
+enum class Direction
+{
+    Right,
+    Left,
+    Forward,
+    Back
+};
+
 inline bool operator==(const TextureProp& lhs, const TextureProp& rhs)
 {
     return lhs.id == rhs.id && lhs.colour == rhs.colour;
@@ -67,7 +77,7 @@ inline TextureProp deserialise_texture(const nlohmann::json& object)
 
 using SerialiseResponse = std::pair<nlohmann::json, std::string>;
 
-//These functions are specialised for each object type for use with std::visit
+// These functions are specialised for each object type for use with std::visit
 template <typename T>
 [[nodiscard]] LevelObjectsMesh3D object_to_geometry(const T& object, int floor_number);
 

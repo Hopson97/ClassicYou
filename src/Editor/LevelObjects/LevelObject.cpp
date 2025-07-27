@@ -115,6 +115,11 @@ void LevelObject::property_gui(EditorState& state, const LevelTextures& textures
         ::property_gui<PillarObject>(&pillar_gui, textures, action_manager, *pillar, *this,
                                      state.pillar_default, state.current_floor);
     }
+    else if (auto ramp = std::get_if<RampObject>(&object_type))
+    {
+        ::property_gui<RampObject>(&ramp_gui, textures, action_manager, *ramp, *this,
+                                   state.ramp_default, state.current_floor);
+    }
 }
 
 ObjectTypeName LevelObject::to_type() const
@@ -134,6 +139,10 @@ ObjectTypeName LevelObject::to_type() const
     else if (std::get_if<PillarObject>(&object_type))
     {
         return ObjectTypeName::Pillar;
+    }
+    else if (std::get_if<RampObject>(&object_type))
+    {
+        return ObjectTypeName::Ramp;
     }
 
     return ObjectTypeName::MissingTypeName;
@@ -206,4 +215,9 @@ bool LevelObject::deserialise_as_polygon_platform(const nlohmann::json& json)
 bool LevelObject::deserialise_as_pillar(const nlohmann::json& json)
 {
     return deserialise_as<PillarObject>(json);
+}
+
+bool LevelObject::deserialise_as_ramp(const nlohmann::json& json)
+{
+    return deserialise_as<RampObject>(json);
 }

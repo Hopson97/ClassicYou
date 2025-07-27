@@ -167,6 +167,7 @@
     <ClCompile Include="src\Editor\LevelObjects\Pillar.cpp" />
     <ClCompile Include="src\Editor\LevelObjects\Platform.cpp" />
     <ClCompile Include="src\Editor\LevelObjects\PolygonPlatform.cpp" />
+    <ClCompile Include="src\Editor\LevelObjects\Ramp.cpp" />
     <ClCompile Include="src\Editor\LevelObjects\Wall.cpp" />
     <ClCompile Include="src\Editor\Tool.cpp" />
     <ClCompile Include="src\Graphics\CameraController.cpp" />
@@ -232,6 +233,7 @@
     <ClInclude Include="src\Editor\EditorGUI.h" />
     <ClInclude Include="src\Editor\EditorLevel.h" />
     <ClInclude Include="src\Editor\EditorState.h" />
+    <ClInclude Include="src\Editor\LevelObjects\Ramp.h" />
     <ClInclude Include="src\Editor\LevelTextures.h" />
     <ClInclude Include="src\Editor\LevelObjects\LevelObjectTypes.h" />
     <ClInclude Include="src\Editor\LevelObjects\ObjectTypes.h" />

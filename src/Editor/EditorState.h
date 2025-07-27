@@ -14,6 +14,7 @@ struct EditorState
     PlatformProps platform_default;
     PolygonPlatformProps polygon_platform_default;
     PillarProps pillar_default;
+    RampProps ramp_default;
 
     /// The currently hovered node/tile in the editor.
     glm::ivec2 node_hovered{0};

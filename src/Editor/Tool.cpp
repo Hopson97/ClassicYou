@@ -257,6 +257,17 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
                         state.current_floor));
                     break;
 
+                case ObjectTypeName::Ramp:
+                    actions.push_action(std::make_unique<AddObjectAction>(
+                        LevelObject{
+                            RampObject{
+                                .properties = state.ramp_default,
+                                .parameters = {.position = node},
+                            },
+                        },
+                        state.current_floor));
+                    break;
+
                 default:
                     std::println("Missing implementation for CreateObjectTool for {}",
                                  magic_enum::enum_name(object_type_));
@@ -293,6 +304,15 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
                 object_preview_ = generate_pillar_mesh(
                     PillarObject{
                         .properties = state.pillar_default,
+                        .parameters = {.position = node},
+                    },
+                    state.current_floor);
+                break;
+
+            case ObjectTypeName::Ramp:
+                object_preview_ = generate_ramp_mesh(
+                    RampObject{
+                        .properties = state.ramp_default,
                         .parameters = {.position = node},
                     },
                     state.current_floor);
@@ -350,6 +370,15 @@ void CreateObjectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorSt
             render_object_2d(
                 PillarObject{
                     .properties = state.pillar_default,
+                    .parameters = {.position = tile_},
+                },
+                drawing_pad, Colour::RED, true);
+            break;
+
+        case ObjectTypeName::Ramp:
+            render_object_2d(
+                RampObject{
+                    .properties = state.ramp_default,
                     .parameters = {.position = tile_},
                 },
                 drawing_pad, Colour::RED, true);

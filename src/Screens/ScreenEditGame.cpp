@@ -14,14 +14,14 @@
 
 namespace
 {
-    constexpr std::array<const char*, 25> TEXTURE_NAMES = {
+    constexpr std::array<const char*, 26> TEXTURE_NAMES = {
         "Red Bricks", "Grey Bricks", "Stone Bricks", "Stone Bricks Mossy",
         "Bars",       "Chain Fence", "Grass",        "Dirt",
         "Glass",      "Sand",        "Bark",         "Leaf",
         "Planks",     "Rock",        "Stucco",       "Ancient",
         "Blank",      "Happy",       "SciFi",        "Tiles",
         "Book Case",  "Parquet",     "Tarmac",       "Large Stone Bricks",
-        "Slate",
+        "Slate",      "Board",
     };
 
     glm::ivec2 map_pixel_to_tile(glm::vec2 point, const Camera& camera)
@@ -485,6 +485,11 @@ void ScreenEditGame::render_editor_ui()
         if (ImGui::Button("Pillar"))
         {
             tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::Pillar);
+            editor_state_.p_active_object = nullptr;
+        }
+        if (ImGui::Button("Ramp"))
+        {
+            tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::Ramp);
             editor_state_.p_active_object = nullptr;
         }
 

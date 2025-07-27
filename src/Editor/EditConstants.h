@@ -2,10 +2,7 @@
 
 #include <glm/glm.hpp>
 
-constexpr inline auto rgb_to_normalised(const glm::vec3& rgb)
-{
-    return glm::vec4(rgb / 255.0f, 1.0f);
-}
+#include "../Util/Maths.h"
 
 static constexpr auto WORLD_SIZE = 100;
 static constexpr auto TILE_SIZE = 32;

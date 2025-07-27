@@ -29,7 +29,8 @@ struct LevelObject
     /// copied around while maintaining type safety, and avoiding issues with inheritance such as
     /// object slicing - Most notable in the actions manager where the state is copied around for
     /// easy undo and redo functionality.
-    std::variant<WallObject, PlatformObject, PolygonPlatformObject, PillarObject> object_type;
+    std::variant<WallObject, PlatformObject, PolygonPlatformObject, PillarObject, RampObject>
+        object_type;
 
     template <typename Properties, typename Parameters>
     explicit LevelObject(const ObjectType<Properties, Parameters>& object)
@@ -42,7 +43,6 @@ struct LevelObject
     {
     }
 
-
     /// Displays a GUI for updating the properties of the object.
     void property_gui(EditorState& state, const LevelTextures& textures,
                       ActionManager& action_manager);
@@ -50,7 +50,6 @@ struct LevelObject
     /// Convert the underlying "object_type" to a type name
     ObjectTypeName to_type() const;
     std::string to_type_string() const;
-
 
     /// Converts the object to a 3D mesh for rendering.
     [[nodiscard]] LevelObjectsMesh3D to_geometry(int floor_number) const;
@@ -75,12 +74,13 @@ struct LevelObject
     /// Serialise the object to JSON format.
     std::pair<nlohmann::json, std::string> serialise() const;
 
-    bool deserialise_as_wall(const nlohmann::json& wall);
-    bool deserialise_as_platform(const nlohmann::json& platform);
-    bool deserialise_as_polygon_platform(const nlohmann::json& platform);
-    bool deserialise_as_pillar(const nlohmann::json& pillar);
+    bool deserialise_as_wall(const nlohmann::json& json);
+    bool deserialise_as_platform(const nlohmann::json& json);
+    bool deserialise_as_polygon_platform(const nlohmann::json& json);
+    bool deserialise_as_pillar(const nlohmann::json& json);
+    bool deserialise_as_ramp(const nlohmann::json& json);
 
-    template<typename T>
+    template <typename T>
     bool deserialise_as(const nlohmann::json& json)
     {
         T object;

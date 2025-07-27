@@ -4,3 +4,4 @@
 #include "Platform.h"
 #include "PolygonPlatform.h"
 #include "Wall.h"
+#include "Ramp.h"
