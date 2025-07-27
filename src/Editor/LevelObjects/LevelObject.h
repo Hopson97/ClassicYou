@@ -6,12 +6,8 @@
 #include <glm/glm.hpp>
 #include <nlohmann/json.hpp>
 
-#include "../Graphics/Mesh.h"
-#include "ObjectTypes/LevelObjectTypes.h"
-#include "ObjectTypes/Pillar.h"
-#include "ObjectTypes/Platform.h"
-#include "ObjectTypes/PolygonPlatform.h"
-#include "ObjectTypes/Wall.h"
+#include "../../Graphics/Mesh.h"
+#include "ObjectTypes.h"
 
 class LevelTextures;
 struct EditorState;

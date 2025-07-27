@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ObjectTypes/ObjectTypes.h"
+#include "LevelObjects/ObjectTypes.h"
 
 struct LevelObject;
 

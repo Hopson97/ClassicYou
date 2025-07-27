@@ -4,14 +4,14 @@
 #include <magic_enum/magic_enum_all.hpp>
 #include <print>
 
-#include "../Util/ImGuiExtras.h"
-#include "../Util/Maths.h"
-#include "Actions.h"
-#include "DrawingPad.h"
-#include "EditConstants.h"
-#include "EditorGUI.h"
-#include "EditorState.h"
-#include "LevelTextures.h"
+#include "../../Util/ImGuiExtras.h"
+#include "../../Util/Maths.h"
+#include "../Actions.h"
+#include "../DrawingPad.h"
+#include "../EditConstants.h"
+#include "../EditorGUI.h"
+#include "../EditorState.h"
+#include "../LevelTextures.h"
 
 namespace
 {
@@ -211,7 +211,6 @@ std::pair<nlohmann::json, std::string> LevelObject::serialise() const
 {
     return std::visit([&](auto&& object) { return object_serialise(object); }, object_type);
 }
-
 
 bool LevelObject::deserialise_as_wall(const nlohmann::json& json)
 {
