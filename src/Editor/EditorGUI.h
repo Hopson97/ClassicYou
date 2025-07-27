@@ -1,8 +1,8 @@
 #pragma once
 #include <utility>
 
-#include "LevelObject.h"
-#include "ObjectTypes/ObjectTypes.h"
+#include "LevelObjects/LevelObject.h"
+#include "LevelObjects/ObjectTypes.h"
 
 class LevelTextures;
 

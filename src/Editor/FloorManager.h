@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "../Graphics/Mesh.h"
-#include "LevelObject.h"
+#include "LevelObjects/LevelObject.h"
 
 /**
  * @brief A single floor of a given level in the editor.

@@ -5,7 +5,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "../Editor/LevelObject.h"
+#include "../Editor/LevelObjects/LevelObject.h"
 #include "../Graphics/Mesh.h"
 #include "../Graphics/OpenGL/Shader.h"
 #include "FloorManager.h"

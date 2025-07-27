@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "LevelObject.h"
+#include "LevelObjects/LevelObject.h"
 
 class EditorLevel;
 

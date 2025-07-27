@@ -6,7 +6,7 @@
 
 #include "../Graphics/Mesh.h"
 #include "../Util/Maths.h"
-#include "LevelObject.h"
+#include "LevelObjects/LevelObject.h"
 
 class DrawingPad;
 class LevelTextures;
