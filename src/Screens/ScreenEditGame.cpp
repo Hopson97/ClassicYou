@@ -327,6 +327,11 @@ void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
     }
     free_camera_controller(keyboard, camera_, dt, camera_keybinds_, window(), rotation_locked_);
     drawing_pad_.update(keyboard, dt);
+
+    if (editor_settings_.always_center_2d_to_3d_view)
+    {
+        set_2d_to_3d_view();
+    }
 }
 
 void ScreenEditGame::on_fixed_update([[maybe_unused]] sf::Time dt)
@@ -341,7 +346,6 @@ void ScreenEditGame::on_render(bool show_debug)
     //=============================================
     if (editor_settings_.show_2d_view)
     {
-
         glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
 
         level_.render_2d(drawing_pad_, editor_state_.p_active_object, editor_state_.current_floor);
@@ -428,7 +432,11 @@ void ScreenEditGame::on_render(bool show_debug)
     {
         debug_gui();
     }
-    action_manager_.display_action_history();
+
+    if (editor_settings_.show_history)
+    {
+        action_manager_.display_action_history();
+    }
 
     // Dialogs for saving and loading levels from the disk
     if (show_save_dialog_)
@@ -448,8 +456,6 @@ void ScreenEditGame::on_render(bool show_debug)
 
             level_.load(make_level_path(level_name_));
             level_name_actual_ = level_name_;
-
-
         }
     }
 }
@@ -505,10 +511,7 @@ void ScreenEditGame::render_editor_ui()
         ImGui::Separator();
         if (ImGui::Button("Center 2D View To 3D Camera"))
         {
-            drawing_pad_.set_camera_position({
-                camera_.transform.position.x * TILE_SIZE,
-                camera_.transform.position.z * TILE_SIZE,
-            });
+            set_2d_to_3d_view();
         }
     }
     ImGui::End();
@@ -598,6 +601,8 @@ void ScreenEditGame::show_menu_bar()
 
         if (ImGui::BeginMenu("View"))
         {
+            ImGui::Checkbox("Lock 2D To 3D View?", &editor_settings_.always_center_2d_to_3d_view);
+            ImGui::Checkbox("Show History?", &editor_settings_.show_history);
             ImGui::Checkbox("Show Grid?", &editor_settings_.show_grid);
             if (ImGui::Checkbox("Show 2D View? (Full Screen 3D)", &editor_settings_.show_2d_view))
             {
@@ -629,4 +634,12 @@ void ScreenEditGame::debug_gui()
 bool ScreenEditGame::showing_dialog() const
 {
     return show_save_dialog_ || show_load_dialog_;
+}
+
+void ScreenEditGame::set_2d_to_3d_view()
+{
+    drawing_pad_.set_camera_position({
+        camera_.transform.position.x * TILE_SIZE,
+        camera_.transform.position.z * TILE_SIZE,
+    });
 }

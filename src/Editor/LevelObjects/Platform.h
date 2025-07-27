@@ -45,19 +45,26 @@ bool operator!=(const PlatformProps& lhs, const PlatformProps& rhs);
 //      Specialised Functions
 // =======================================
 template <>
-[[nodiscard]] LevelObjectsMesh3D object_to_geometry<PlatformObject>(const PlatformObject& wall,
+[[nodiscard]] LevelObjectsMesh3D object_to_geometry<PlatformObject>(const PlatformObject& platform,
                                                                     int floor_number);
 
 template <>
-[[nodiscard]] std::string object_to_string<PlatformObject>(const PlatformObject& wall);
+[[nodiscard]] std::string object_to_string<PlatformObject>(const PlatformObject& platform);
 
 template <>
-void render_object_2d<PlatformObject>(const PlatformObject& wall, DrawingPad& drawing_pad,
+void render_object_2d<PlatformObject>(const PlatformObject& platform, DrawingPad& drawing_pad,
                                       const glm::vec4& colour, bool is_selected);
 
 template <>
-[[nodiscard]] bool object_try_select_2d<PlatformObject>(const PlatformObject& wall,
+[[nodiscard]] bool object_try_select_2d<PlatformObject>(const PlatformObject& platform,
                                                         glm::vec2 selection_tile);
+
+template <>
+[[nodiscard]] bool object_is_within<PlatformObject>(const PlatformObject& platform,
+                                                  const Rectangle& selection_area);
+
+template <>
+void object_move<PlatformObject>(PlatformObject& platform, glm::vec2 offset);
 
 template <>
 SerialiseResponse object_serialise<PlatformObject>(const PlatformObject& platform);

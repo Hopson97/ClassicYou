@@ -63,6 +63,35 @@ void render_object_2d(const PolygonPlatformObject& poly, DrawingPad& drawing_pad
 }
 
 template <>
+bool object_is_within(const PolygonPlatformObject& poly, const Rectangle& selection_area)
+{
+    auto& params = poly.parameters;
+
+    return Rectangle{
+        .position = {params.corner_top_left.x, params.corner_top_left.y},
+        .size = {params.corner_top_right.x - params.corner_top_left.x,
+                 params.corner_bottom_left.y - params.corner_top_left.y},
+    }
+        .is_entirely_within(selection_area);
+}
+
+template <>
+void object_move(PolygonPlatformObject& poly, glm::vec2 offset)
+{
+    auto& params = poly.parameters;
+
+    // Poly platforms require moving all points, so they are moved relative to the first point
+    auto trd = params.corner_top_right - params.corner_top_left;
+    auto brd = params.corner_bottom_right - params.corner_top_left;
+    auto bld = params.corner_bottom_left - params.corner_top_left;
+
+    params.corner_top_left += offset;
+    params.corner_top_right += offset + trd;
+    params.corner_bottom_right += offset + brd;
+    params.corner_bottom_left += offset + bld;
+}
+
+template <>
 [[nodiscard]] bool object_try_select_2d(const PolygonPlatformObject& poly, glm::vec2 selection_tile)
 
 {

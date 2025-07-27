@@ -27,7 +27,7 @@ struct Line
     glm::vec2 start{0};
     glm::vec2 end{0};
 
-    Rectangle to_bounds();
+    Rectangle to_bounds() const;
 };
 
 glm::mat4 create_model_matrix(const Transform& transform);

@@ -103,7 +103,7 @@ float distance_to_line(const glm::vec2& point, const Line& line)
     return glm::sqrt(dist);
 }
 
-Rectangle Line::to_bounds()
+Rectangle Line::to_bounds() const
 {
     return Rectangle{
         .position = {std::min(start.x, end.x), std::min(start.y, end.y)},

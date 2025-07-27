@@ -9,6 +9,7 @@
 
 class DrawingPad;
 struct LevelObject;
+struct Rectangle;
 
 // =======================================
 //     Object Type Template
@@ -64,6 +65,7 @@ inline TextureProp deserialise_texture(const nlohmann::json& object)
 
 using SerialiseResponse = std::pair<nlohmann::json, std::string>;
 
+//These functions are specialised for each object type for use with std::visit
 template <typename T>
 [[nodiscard]] LevelObjectsMesh3D object_to_geometry(const T& object, int floor_number);
 
@@ -75,6 +77,12 @@ void render_object_2d(const T& object, DrawingPad& pad, const glm::vec4& colour,
 
 template <typename T>
 [[nodiscard]] bool object_try_select_2d(const T& object, glm::vec2 selection_tile);
+
+template <typename T>
+[[nodiscard]] bool object_is_within(const T& object, const Rectangle& selection_area);
+
+template <typename T>
+void object_move(T& object, glm::vec2 offset);
 
 template <typename T>
 SerialiseResponse object_serialise(const T& object);

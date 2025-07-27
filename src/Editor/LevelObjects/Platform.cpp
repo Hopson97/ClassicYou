@@ -75,6 +75,23 @@ template <>
 }
 
 template <>
+bool object_is_within(const PlatformObject& platform, const Rectangle& selection_area)
+{
+    return Rectangle{
+        .position = {platform.parameters.position.x, platform.parameters.position.y},
+        .size = {platform.properties.width * TILE_SIZE_F,
+                 platform.properties.depth * TILE_SIZE_F},
+    }
+        .is_entirely_within(selection_area);
+}
+
+template <>
+void object_move(PlatformObject& platform, glm::vec2 offset)
+{
+    platform.parameters.position += offset;
+}
+
+template <>
 SerialiseResponse object_serialise(const PlatformObject& platform)
 {
     nlohmann::json object;
