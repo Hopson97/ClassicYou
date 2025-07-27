@@ -32,6 +32,9 @@ class ScreenEditGame final : public Screen
     {
         bool show_grid = true;
         bool show_2d_view = true;
+        bool always_center_2d_to_3d_view = true;
+        
+        bool show_history = false;
     } editor_settings_;
 
   private:
@@ -46,6 +49,8 @@ class ScreenEditGame final : public Screen
 
     void debug_gui();
     bool showing_dialog() const;
+
+    void set_2d_to_3d_view();
 
   private:
     Camera camera_;

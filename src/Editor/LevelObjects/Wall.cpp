@@ -57,6 +57,19 @@ template <>
 }
 
 template <>
+bool object_is_within(const WallObject& wall, const Rectangle& selection_area)
+{
+    return wall.parameters.line.to_bounds().is_entirely_within(selection_area);
+}
+
+template <>
+void object_move(WallObject& wall, glm::vec2 offset)
+{
+    wall.parameters.line.start += offset;
+    wall.parameters.line.end += offset;
+}
+
+template <>
 SerialiseResponse object_serialise(const WallObject& wall)
 {
     nlohmann::json object;

@@ -60,4 +60,11 @@ template <>
                                                       glm::vec2 selection_tile);
 
 template <>
+[[nodiscard]] bool object_is_within<PillarObject>(const PillarObject& pillar,
+                                                  const Rectangle& selection_area);
+
+template <>
+void object_move<PillarObject>(PillarObject& pillar, glm::vec2 offset);
+
+template <>
 SerialiseResponse object_serialise<PillarObject>(const PillarObject& pillar);

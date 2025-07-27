@@ -55,4 +55,11 @@ template <>
                                                     glm::vec2 selection_tile);
 
 template <>
+[[nodiscard]] bool object_is_within<WallObject>(const WallObject& wall,
+                                                const Rectangle& selection_area);
+
+template <>
+void object_move<WallObject>(WallObject& wall, glm::vec2 offset);
+
+template <>
 SerialiseResponse object_serialise<WallObject>(const WallObject& wall);

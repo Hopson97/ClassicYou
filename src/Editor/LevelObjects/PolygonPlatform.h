@@ -54,5 +54,13 @@ void render_object_2d<PolygonPlatformObject>(const PolygonPlatformObject& poly,
 template <>
 [[nodiscard]] bool object_try_select_2d<PolygonPlatformObject>(const PolygonPlatformObject& poly,
                                                                glm::vec2 selection_tile);
+
+template <>
+[[nodiscard]] bool object_is_within<PolygonPlatformObject>(const PolygonPlatformObject& poly,
+                                                           const Rectangle& selection_area);
+
+template <>
+void object_move<PolygonPlatformObject>(PolygonPlatformObject& poly, glm::vec2 offset);
+
 template <>
 SerialiseResponse object_serialise<PolygonPlatformObject>(const PolygonPlatformObject& poly);

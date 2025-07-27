@@ -147,64 +147,13 @@ bool LevelObject::try_select_2d(glm::vec2 selection_tile) const
 
 bool LevelObject::is_within(const Rectangle& selection_area)
 {
-    if (auto wall = std::get_if<WallObject>(&object_type))
-    {
-        return wall->parameters.line.to_bounds().is_entirely_within(selection_area);
-    }
-    else if (auto platform = std::get_if<PlatformObject>(&object_type))
-    {
-        return Rectangle{
-            .position = {platform->parameters.position.x, platform->parameters.position.y},
-            .size = {platform->properties.width * TILE_SIZE_F,
-                     platform->properties.depth * TILE_SIZE_F},
-        }
-            .is_entirely_within(selection_area);
-    }
-    else if (auto poly = std::get_if<PolygonPlatformObject>(&object_type))
-    {
-        return Rectangle{
-            .position = {poly->parameters.corner_top_left.x, poly->parameters.corner_top_left.y},
-            .size = {poly->parameters.corner_top_right.x - poly->parameters.corner_top_left.x,
-                     poly->parameters.corner_bottom_left.y - poly->parameters.corner_top_left.y},
-        }
-            .is_entirely_within(selection_area);
-    }
-
-    else if (auto pillar = std::get_if<PillarObject>(&object_type))
-    {
-        return Rectangle{
-            .position = {pillar->parameters.position.x, pillar->parameters.position.y},
-            .size = {pillar->properties.size * TILE_SIZE_F, pillar->properties.size * TILE_SIZE_F},
-        }
-            .is_entirely_within(selection_area);
-    }
-    return false;
+    return std::visit([&](const auto& object) { return object_is_within(object, selection_area); },
+                      object_type);
 }
 
 void LevelObject::move(glm::vec2 offset)
 {
-    if (auto platform = std::get_if<PlatformObject>(&object_type))
-    {
-        platform->parameters.position += offset;
-    }
-    else if (auto poly = std::get_if<PolygonPlatformObject>(&object_type))
-    {
-        auto& params = poly->parameters;
-
-        // Poly platforms require moving all points, so they are moved relative to the first point
-        auto trd = params.corner_top_right - params.corner_top_left;
-        auto brd = params.corner_bottom_right - params.corner_top_left;
-        auto bld = params.corner_bottom_left - params.corner_top_left;
-
-        params.corner_top_left += offset;
-        params.corner_top_right += offset + trd;
-        params.corner_bottom_right += offset + brd;
-        params.corner_bottom_left += offset + bld;
-    }
-    else if (auto pillar = std::get_if<PillarObject>(&object_type))
-    {
-        pillar->parameters.position += offset;
-    }
+    std::visit([&](auto&& object) { object_move(object, offset); }, object_type);
 }
 
 std::pair<nlohmann::json, std::string> LevelObject::serialise() const

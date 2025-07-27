@@ -66,6 +66,22 @@ template <>
 }
 
 template <>
+bool object_is_within(const PillarObject& pillar, const Rectangle& selection_area)
+{
+    return Rectangle{
+        .position = {pillar.parameters.position.x, pillar.parameters.position.y},
+        .size = {pillar.properties.size * TILE_SIZE_F, pillar.properties.size * TILE_SIZE_F}
+    }
+        .is_entirely_within(selection_area);
+}
+
+template <>
+void object_move(PillarObject& pillar, glm::vec2 offset)
+{
+    pillar.parameters.position += offset;
+}
+
+template <>
 SerialiseResponse object_serialise(const PillarObject& pillar)
 {
     nlohmann::json object;
