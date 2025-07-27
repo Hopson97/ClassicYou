@@ -16,6 +16,8 @@ struct Rectangle;
 // =======================================
 enum class ObjectTypeName
 {
+    MissingTypeName,
+
     Wall,
     Platform,
     PolygonPlatform,

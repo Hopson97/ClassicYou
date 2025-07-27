@@ -29,13 +29,14 @@ std::string object_to_string(const WallObject& wall)
 {
     auto& params = wall.parameters;
     auto& props = wall.properties;
-    return std::format("Props:\n Texture 1/2: {} {}: \n Base: {}\n Height: {}\nParameters:\n "
-                       "  Start position: ({:.2f}, {:.2f}) - End Position: ({:.2f}, {:.2f})",
-                       props.texture_front.id, props.texture_back.id, props.start_base_height,
-                       props.start_height, params.line.start.x, params.line.start.y,
-                       params.line.end.x, params.line.end.y, props.start_height,
-                       params.line.start.x, params.line.start.y, params.line.end.x,
-                       params.line.end.y);
+    return std::format(
+        "Props:\n Texture Front: {}\n Texture Back: {}\n Start Base Height: {:.2f}\n Start Height: "
+        "{:.2f}\n End Base Height: {:.2f}\n End Height: {:.2f}\n Tri Wall: {}\n Flip Wall: {}\n"
+        "Parameters:\n Start Position: ({:.2f}, {:.2f})\n End Position: ({:.2f}, {:.2f})",
+        props.texture_front.id, props.texture_back.id, props.start_base_height, props.start_height,
+        props.end_base_height, props.end_height, props.tri_wall ? "true" : "false",
+        props.flip_wall ? "true" : "false", params.line.start.x, params.line.start.y,
+        params.line.end.x, params.line.end.y);
 }
 
 template <>
@@ -72,8 +73,6 @@ void object_move(WallObject& wall, glm::vec2 offset)
 template <>
 SerialiseResponse object_serialise(const WallObject& wall)
 {
-    nlohmann::json object;
-
     auto& params = wall.parameters;
     auto& props = wall.properties;
 
@@ -87,9 +86,7 @@ SerialiseResponse object_serialise(const WallObject& wall)
                       {props.start_height, props.start_base_height, props.end_height,
                        props.end_base_height, props.tri_wall, props.flip_wall});
 
-    object = {json_params, json_props};
-
-    return {object, "wall"};
+    return {{json_params, json_props}, "wall"};
 }
 
 bool object_deserialise(WallObject& wall, const nlohmann::json& json)

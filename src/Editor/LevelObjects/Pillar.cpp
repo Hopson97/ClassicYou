@@ -32,11 +32,12 @@ std::string object_to_string(const PillarObject& pillar)
     auto& params = pillar.parameters;
     auto& props = pillar.properties;
 
-    return std::format(
-        "Props:\n Texture: {}\n Style: {}\n Size: {}\n Base Height: {}\n Height: {}\n "
-        "Angled: {}\nParameters:\n Position: ({:.2f}, {:.2f})",
-        props.texture.id, magic_enum::enum_name(props.style), props.size, props.base_height,
-        props.height, props.angled, params.position.x, params.position.y);
+    return std::format("Props:\n Texture: {}\n Style: {}\n Size: {:.2f}\n Base Height: {:.2f}\n "
+                       "Height: {:.2f}\n Angled: {}\n"
+                       "Parameters:\n Position: ({:.2f}, {:.2f})",
+                       props.texture.id, magic_enum::enum_name(props.style), props.size,
+                       props.base_height, props.height, props.angled ? "true" : "false",
+                       params.position.x, params.position.y);
 }
 
 template <>
@@ -70,8 +71,7 @@ bool object_is_within(const PillarObject& pillar, const Rectangle& selection_are
 {
     return Rectangle{
         .position = {pillar.parameters.position.x, pillar.parameters.position.y},
-        .size = {pillar.properties.size * TILE_SIZE_F, pillar.properties.size * TILE_SIZE_F}
-    }
+        .size = {pillar.properties.size * TILE_SIZE_F, pillar.properties.size * TILE_SIZE_F}}
         .is_entirely_within(selection_area);
 }
 
@@ -84,8 +84,6 @@ void object_move(PillarObject& pillar, glm::vec2 offset)
 template <>
 SerialiseResponse object_serialise(const PillarObject& pillar)
 {
-    nlohmann::json object;
-
     auto& params = pillar.parameters;
     auto& props = pillar.properties;
 
@@ -96,9 +94,7 @@ SerialiseResponse object_serialise(const PillarObject& pillar)
     json_props.insert(json_props.end(), {(int)props.style, props.size, props.base_height,
                                          props.height, props.angled});
 
-    object = {json_params, json_props};
-
-    return {object, "pillar"};
+    return {{json_params, json_props}, "pillar"};
 }
 
 bool object_deserialise(PillarObject& pillar_object, const nlohmann::json& json)

@@ -42,9 +42,15 @@ struct LevelObject
     {
     }
 
+
     /// Displays a GUI for updating the properties of the object.
     void property_gui(EditorState& state, const LevelTextures& textures,
                       ActionManager& action_manager);
+
+    /// Convert the underlying "object_type" to a type name
+    ObjectTypeName to_type() const;
+    std::string to_type_string() const;
+
 
     /// Converts the object to a 3D mesh for rendering.
     [[nodiscard]] LevelObjectsMesh3D to_geometry(int floor_number) const;
