@@ -13,6 +13,8 @@ namespace
 {
     // Padding for surrounding image buttons
     constexpr ImVec2 BORDER_PADDING = {4, 4};
+    constexpr ImVec2 GUI_TEXTURE_SIZE = {32, 32};
+    constexpr int TEXTURES_PER_LINE = 6;
 
     /// Displays a list of available textures as a list of buttons, returns the ID of the given
     /// texture if a button is clicked
@@ -31,7 +33,7 @@ namespace
 
             if (imgui_id != 0)
             {
-                if (imgui_id % 5 != 0)
+                if (imgui_id % TEXTURES_PER_LINE != 0)
                 {
                     ImGui::SameLine();
                 }
@@ -54,7 +56,7 @@ namespace
             }
 
             if (ImGui::ImageButton(button_id.c_str(), static_cast<ImTextureID>(texture.id),
-                                   {32, 32}))
+                                   GUI_TEXTURE_SIZE))
             {
                 if (auto texture_id = textures.get_texture(name))
                 {

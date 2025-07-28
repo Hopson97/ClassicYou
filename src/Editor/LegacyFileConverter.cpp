@@ -53,16 +53,16 @@ namespace
     constexpr std::array<float, 10> MAX_WALL_HEIGHTS = {4, 3, 2, 1, 2, 3, 4, 4, 4, 3};
     constexpr std::array<float, 10> PLATFORM_HEIGHTS = {0, 1, 2, 3};
     constexpr std::array<glm::vec2, 4> TRI_WALL_OFFSETS = {
-        glm::vec2{0, -2 * TILE_SIZE_F},
-        {0, 2 * TILE_SIZE_F},
-        {-2 * TILE_SIZE_F, 0},
-        {2 * TILE_SIZE_F, 0},
+        glm::vec2{0, -4 * TILE_SIZE_F},
+        {0, 4 * TILE_SIZE_F},
+        {-4 * TILE_SIZE_F, 0},
+        {4 * TILE_SIZE_F, 0},
     };
     constexpr std::array<glm::vec2, 4> TRIWALL_START_OFFSETS = {
-        glm::vec2{0, 0},
-        {0, 0},
-        {2 * TILE_SIZE_F, 0},
-        {-2 * TILE_SIZE_F, 0},
+        glm::vec2{0, 4 * TILE_SIZE_F},
+        {0, -4 * TILE_SIZE_F},
+        {4 * TILE_SIZE_F, 0},
+        {-4 * TILE_SIZE_F, 0},
     };
 
     std::pair<float, float> extract_wall_base_and_height(const nlohmann::json& height)
@@ -339,6 +339,79 @@ void from_json(const nlohmann::json& json, LegacyPillar& pillar)
     pillar.floor = (int)json[2] - 1;
 }
 
+// ============================
+//      Ramp Conversion
+// ============================
+struct LegacyRamp
+{
+    RampObject object;
+    int floor = 0;
+};
+
+//[[position_x, position_y], [direction, material], level]
+void from_json(const nlohmann::json& json, LegacyRamp& ramp)
+{
+    auto& position = json[0];
+    auto& props = json[1];
+
+    auto& ramp_params = ramp.object.parameters;
+    auto& ramp_props = ramp.object.properties;
+
+    ramp_params.position = extract_vec2(position[0], position[1]);
+
+    int direction = props[0];
+    switch (direction)
+    {
+        case 1:
+            ramp_props.depth = 4;
+            ramp_props.width = 2;
+            ramp_props.direction = Direction::Forward; // confirmed
+            ramp_params.position.x -= TILE_SIZE_F;
+            break;
+        case 2:
+            ramp_props.depth = 4;
+            ramp_props.width = 2;
+            ramp_props.direction = Direction::Back;
+            ramp_params.position.y -= TILE_SIZE_F * 4;
+            ramp_params.position.x -= TILE_SIZE_F;
+            break;
+        case 3:
+            ramp_props.depth = 2;
+            ramp_props.width = 4;
+            ramp_params.position.y -= TILE_SIZE_F;
+            ramp_props.direction = Direction::Left; // confirmed
+            break;
+        case 4:
+            ramp_props.depth = 2;
+            ramp_props.width = 4;
+            ramp_props.direction = Direction::Right;
+            ramp_params.position.x -= TILE_SIZE_F * 4;
+            ramp_params.position.y -= TILE_SIZE_F;
+            
+            break;
+
+        default:
+            ramp_props.depth = 1;
+            ramp_props.width = 1;
+            ramp_props.direction = Direction::Right;
+            break;
+    }
+
+    if (props.size() > 1)
+    {
+        ramp_props.texture_top = map_texture(props[1]);
+        ramp_props.texture_bottom = map_texture(props[1]);
+    }
+    else
+    {
+        // Default to wood plank
+        ramp_props.texture_top.id = 12;
+        ramp_props.texture_bottom.id = 12;
+    }
+
+    ramp.floor = (int)json[2] - 1;
+}
+
 // =========================================
 //      End of object conversion
 // =========================================
@@ -379,8 +452,8 @@ void convert_legacy_level(const std::filesystem::path& path)
     std::println("Converting to JSON took {}s ({}ms)", time, time * 1000.0f);
 
     // Uncomment to inspect the converted JSON
-    // std::ofstream out_file_og((path.parent_path() / path.stem()).string() + ".json");
-    // out_file_og << legacy_json;
+    std::ofstream out_file_og((path.parent_path() / path.stem()).string() + ".json");
+    out_file_og << legacy_json;
     clock.restart();
 
     // Begin conversion from JSON to new format
@@ -394,6 +467,7 @@ void convert_legacy_level(const std::filesystem::path& path)
     load_objects<LegacyPlatform>(legacy_json, "Plat", new_level);
     load_objects<LegacyPillar>(legacy_json, "Pillar", new_level);
     load_objects<LegacyTriWall>(legacy_json, "TriWall", new_level);
+    load_objects<LegacyRamp>(legacy_json, "Ramp", new_level);
 
     auto output = new_level.serialise();
     time = clock.restart().asSeconds();
