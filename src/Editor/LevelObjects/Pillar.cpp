@@ -116,6 +116,7 @@ bool object_deserialise(PillarObject& pillar_object, const nlohmann::json& json)
     }
 
     params.position = {jparams[0], jparams[1]};
+    params.position *= TILE_SIZE_F;
 
     props.texture = deserialise_texture(jprops[0]);
     props.style = (PillarStyle)(jprops[1]);

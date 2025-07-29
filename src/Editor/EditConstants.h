@@ -4,7 +4,7 @@
 
 #include "../Util/Maths.h"
 
-static constexpr auto WORLD_SIZE = 100;
+static constexpr auto WORLD_SIZE = 80;
 static constexpr auto TILE_SIZE = 32;
 static constexpr auto HALF_TILE_SIZE = TILE_SIZE / 2;
 static constexpr auto TILE_SIZE_F = static_cast<float>(TILE_SIZE); 

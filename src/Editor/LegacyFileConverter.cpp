@@ -53,16 +53,16 @@ namespace
     constexpr std::array<float, 10> MAX_WALL_HEIGHTS = {4, 3, 2, 1, 2, 3, 4, 4, 4, 3};
     constexpr std::array<float, 10> PLATFORM_HEIGHTS = {0, 1, 2, 3};
     constexpr std::array<glm::vec2, 4> TRI_WALL_OFFSETS = {
-        glm::vec2{0, -4 * TILE_SIZE_F},
-        {0, 4 * TILE_SIZE_F},
-        {-4 * TILE_SIZE_F, 0},
-        {4 * TILE_SIZE_F, 0},
+        glm::vec2{0, -4},
+        {0, 4},
+        {-4, 0},
+        {4, 0},
     };
     constexpr std::array<glm::vec2, 4> TRIWALL_START_OFFSETS = {
-        glm::vec2{0, 4 * TILE_SIZE_F},
-        {0, -4 * TILE_SIZE_F},
-        {4 * TILE_SIZE_F, 0},
-        {-4 * TILE_SIZE_F, 0},
+        glm::vec2{0, 4},
+        {0, -4},
+        {4, 0},
+        {-4, 0},
     };
 
     std::pair<float, float> extract_wall_base_and_height(const nlohmann::json& height)
@@ -138,8 +138,7 @@ namespace
     auto extract_vec2(float x, float y)
     {
         // The legacy format has each square as 5 units wide, so the values must be divided by this
-        // before being multiplied to TILE_SIZE to map to the new format
-        return glm::vec2{x, y} / 5.0f * TILE_SIZE_F;
+        return glm::vec2{x, y} / 5.0f;
     }
 
 } // namespace
@@ -230,7 +229,7 @@ void from_json(const nlohmann::json& json, LegacyTriWall& wall)
 
     // TODO: Directions 5,6,7,8 are diagonal and need handling
     int direction = json[1][2];
-    auto offset = direction <= 4 ? TRI_WALL_OFFSETS[direction - 1] : glm::vec2{0, -2 * TILE_SIZE_F};
+    auto offset = direction <= 4 ? TRI_WALL_OFFSETS[direction - 1] : glm::vec2{0, -2};
     start += direction <= 4 ? TRIWALL_START_OFFSETS[direction - 1] : glm::vec2{0, 0};
 
     wall_params.line.start = start;
@@ -273,7 +272,7 @@ void from_json(const nlohmann::json& json, LegacyPlatform& platform)
     platform_props.depth = static_cast<float>(props[0]) * 2;
 
     platform_params.position = extract_vec2(position[0], position[1]) -
-                               glm::vec2{TILE_SIZE_F * platform_props.width / 2.0f};
+                               glm::vec2{platform_props.width / 2.0f};
 
     if (props.size() > 1)
     {
@@ -366,28 +365,28 @@ void from_json(const nlohmann::json& json, LegacyRamp& ramp)
             ramp_props.depth = 4;
             ramp_props.width = 2;
             ramp_props.direction = Direction::Forward; // confirmed
-            ramp_params.position.x -= TILE_SIZE_F;
+            ramp_params.position.x -= 1;
             break;
         case 2:
             ramp_props.depth = 4;
             ramp_props.width = 2;
             ramp_props.direction = Direction::Back;
-            ramp_params.position.y -= TILE_SIZE_F * 4;
-            ramp_params.position.x -= TILE_SIZE_F;
+            ramp_params.position.y -= 4;
+            ramp_params.position.x -= 1;
             break;
         case 3:
             ramp_props.depth = 2;
             ramp_props.width = 4;
-            ramp_params.position.y -= TILE_SIZE_F;
+            ramp_params.position.y -= 1;
             ramp_props.direction = Direction::Left; // confirmed
             break;
         case 4:
             ramp_props.depth = 2;
             ramp_props.width = 4;
             ramp_props.direction = Direction::Right;
-            ramp_params.position.x -= TILE_SIZE_F * 4;
-            ramp_params.position.y -= TILE_SIZE_F;
-            
+            ramp_params.position.x -= 4;
+            ramp_params.position.y -= 1;
+
             break;
 
         default:
@@ -453,7 +452,7 @@ void convert_legacy_level(const std::filesystem::path& path)
 
     // Uncomment to inspect the converted JSON
     std::ofstream out_file_og((path.parent_path() / path.stem()).string() + ".json");
-    out_file_og << legacy_json;
+    // out_file_og << legacy_json;
     clock.restart();
 
     // Begin conversion from JSON to new format

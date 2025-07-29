@@ -125,6 +125,7 @@ bool object_deserialise(RampObject& ramp, const nlohmann::json& json)
     }
 
     params.position = {jparams[0], jparams[1]};
+    params.position *= TILE_SIZE_F;
 
     props.texture_top = deserialise_texture(jprops[0]);
     props.texture_bottom = deserialise_texture(jprops[1]);

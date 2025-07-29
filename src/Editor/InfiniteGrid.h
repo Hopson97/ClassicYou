@@ -3,6 +3,7 @@
 #include "../Graphics/Mesh.h"
 #include "../Graphics/OpenGL/Shader.h"
 
+/// For the infinite grid in the editor.
 class InfiniteGrid
 {
   public:

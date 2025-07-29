@@ -8,12 +8,14 @@
 
 class EditorLevel;
 
+/// For displaying action history in the UI
 struct ActionStrings
 {
     std::string title;
     std::string body;
 };
 
+/// Base class for all actions that can be performed in the editor.
 class Action
 {
   public:
@@ -24,6 +26,7 @@ class Action
     virtual ActionStrings to_string() const = 0;
 };
 
+/// Action to add a new object to the level.
 class AddObjectAction final : public Action
 {
   public:
@@ -35,7 +38,10 @@ class AddObjectAction final : public Action
     ActionStrings to_string() const override;
 
   private:
+    /// The object to add
     LevelObject object_;
+
+    /// The ID of the object added to the level. This for undo/redo to ensure the ID is preserved.
     int id_ = -1;
 
     // Flag for when re-doing this action, it uses the stored props rather than the default
@@ -44,6 +50,7 @@ class AddObjectAction final : public Action
     const int floor_;
 };
 
+/// Action to update an existing object in the level.
 class UpdateObjectAction final : public Action
 {
   public:
@@ -55,12 +62,16 @@ class UpdateObjectAction final : public Action
     ActionStrings to_string() const override;
 
   private:
+    /// The object before the update
     const LevelObject old_object_;
+
+    /// The object after the update
     const LevelObject new_object_;
 
     const int floor_;
 };
 
+/// Action to delete an existing object from the level.
 class DeleteObjectAction final : public Action
 {
   public:
@@ -72,10 +83,12 @@ class DeleteObjectAction final : public Action
     ActionStrings to_string() const override;
 
   private:
+    /// The object to delete
     LevelObject object_;
     const int floor_;
 };
 
+/// Manager for storing the actions and handling undo/redo functionality.
 class ActionManager
 {
   public:

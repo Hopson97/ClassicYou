@@ -196,28 +196,3 @@ std::pair<nlohmann::json, std::string> LevelObject::serialise() const
 {
     return std::visit([&](auto&& object) { return object_serialise(object); }, object_type);
 }
-
-bool LevelObject::deserialise_as_wall(const nlohmann::json& json)
-{
-    return deserialise_as<WallObject>(json);
-}
-
-bool LevelObject::deserialise_as_platform(const nlohmann::json& json)
-{
-    return deserialise_as<PlatformObject>(json);
-}
-
-bool LevelObject::deserialise_as_polygon_platform(const nlohmann::json& json)
-{
-    return deserialise_as<PolygonPlatformObject>(json);
-}
-
-bool LevelObject::deserialise_as_pillar(const nlohmann::json& json)
-{
-    return deserialise_as<PillarObject>(json);
-}
-
-bool LevelObject::deserialise_as_ramp(const nlohmann::json& json)
-{
-    return deserialise_as<RampObject>(json);
-}

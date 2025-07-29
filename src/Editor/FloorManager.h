@@ -6,15 +6,17 @@
 #include "../Graphics/Mesh.h"
 #include "LevelObjects/LevelObject.h"
 
-/**
- * @brief A single floor of a given level in the editor.
- *
- */
+/// Represents a single floor in a level.
 struct Floor
 {
+
     struct LevelMesh
     {
+        /// Reference to the LevelObject's ID such that the mesh can be recreated if the object is
+        /// modified.
         ObjectId id;
+
+        /// The mesh for the level object.
         LevelObjectsMesh3D mesh;
     };
 
@@ -28,9 +30,7 @@ struct Floor
     int real_floor = 0;
 };
 
-/**
- * @brief Wrapper for managing multiple floors in a level.
- */
+/// Wrapper for managing multiple floors in a level.
 struct FloorManager
 {
     std::vector<Floor> floors;
@@ -48,6 +48,7 @@ struct FloorManager
     /// @brief Clears all floors and resets the manager.
     void clear();
 
+    /// Serialises all of the floors into a JSON object.
     std::optional<nlohmann::json> serialise() const;
 };
 

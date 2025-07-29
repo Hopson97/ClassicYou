@@ -294,20 +294,21 @@ bool EditorLevel::load(const std::filesystem::path& path)
         // Load the objects for the current floor
         auto object_types = floor_object["objects"];
 
-        load_objects(object_types, "platform", floor, [&](auto& level_object, auto& json)
-                     { level_object.deserialise_as_platform(json); });
+        load_objects(object_types, "platform", floor, [&](LevelObject& level_object, auto& json)
+                     { level_object.deserialise_as<PlatformObject>(json); });
 
-        load_objects(object_types, "wall", floor, [&](auto& level_object, auto& json)
-                     { level_object.deserialise_as_wall(json); });
+        load_objects(object_types, "wall", floor, [&](LevelObject& level_object, auto& json)
+                     { level_object.deserialise_as<WallObject>(json); });
 
-        load_objects(object_types, "polygon_platform", floor, [&](auto& level_object, auto& json)
-                     { level_object.deserialise_as_polygon_platform(json); });
+        load_objects(object_types, "polygon_platform", floor,
+                     [&](LevelObject& level_object, auto& json)
+                     { level_object.deserialise_as<PolygonPlatformObject>(json); });
 
-        load_objects(object_types, "pillar", floor, [&](auto& level_object, auto& json)
-                     { level_object.deserialise_as_pillar(json); });
+        load_objects(object_types, "pillar", floor, [&](LevelObject& level_object, auto& json)
+                     { level_object.deserialise_as<PillarObject>(json); });
 
-        load_objects(object_types, "ramp", floor, [&](auto& level_object, auto& json)
-                     { level_object.deserialise_as_ramp(json); });
+        load_objects(object_types, "ramp", floor, [&](LevelObject& level_object, auto& json)
+                     { level_object.deserialise_as<RampObject>(json); });
     }
 
     std::println("Successfully loaded {} ", path.string());

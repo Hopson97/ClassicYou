@@ -74,12 +74,6 @@ struct LevelObject
     /// Serialise the object to JSON format.
     std::pair<nlohmann::json, std::string> serialise() const;
 
-    bool deserialise_as_wall(const nlohmann::json& json);
-    bool deserialise_as_platform(const nlohmann::json& json);
-    bool deserialise_as_polygon_platform(const nlohmann::json& json);
-    bool deserialise_as_pillar(const nlohmann::json& json);
-    bool deserialise_as_ramp(const nlohmann::json& json);
-
     template <typename T>
     bool deserialise_as(const nlohmann::json& json)
     {

@@ -108,6 +108,8 @@ bool object_deserialise(WallObject& wall, const nlohmann::json& json)
     }
     params.line.start = {jparams[0], jparams[1]};
     params.line.end = {jparams[2], jparams[3]};
+    params.line.start *= TILE_SIZE_F;
+    params.line.end *= TILE_SIZE_F;
 
     props.texture_back = deserialise_texture(jprops[0]);
     props.texture_front = deserialise_texture(jprops[1]);

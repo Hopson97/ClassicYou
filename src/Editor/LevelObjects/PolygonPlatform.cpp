@@ -140,6 +140,14 @@ bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json)
     params.corner_bottom_right = {jparams[4], jparams[5]};
     params.corner_bottom_left = {jparams[6], jparams[7]};
 
+    params.corner_top_left *= TILE_SIZE_F;
+    params.corner_top_right *= TILE_SIZE_F;
+    params.corner_bottom_right *= TILE_SIZE_F;
+    params.corner_bottom_left *= TILE_SIZE_F;
+
+
+
+
     props.texture_top = deserialise_texture(jprops[0]);
     props.texture_bottom = deserialise_texture(jprops[1]);
     props.base = jprops[2];
