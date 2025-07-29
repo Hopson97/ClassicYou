@@ -5,6 +5,7 @@
 
 #include "../Graphics/OpenGL/Texture.h"
 
+/// Manager for the texture array used for texturing the level objects
 class LevelTextures
 {
   public:
@@ -19,7 +20,6 @@ class LevelTextures
         auto [loaded, id] = textures.add_texture_from_file(texture_file_path, 4, true, false);
         if (loaded)
         {
-            std::println("{} -> {}", name, id);
             texture_map.emplace(name, id);
 
             // Also load the "TEXTURE_2D" for GUIs

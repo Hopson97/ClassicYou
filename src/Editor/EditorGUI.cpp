@@ -160,16 +160,20 @@ namespace
             {
                 int style = static_cast<int>(current);
 
+                if (n != 0)
+                {
+                    if (++n % 3 != 0)
+                    {
+                        ImGui::SameLine();
+                    }
+                }
+                n++;
+
                 if (ImGui::RadioButton(magic_enum::enum_name(value).data(), &style,
                                        static_cast<int>(value)))
                 {
                     result.always_update |= true;
                     new_value = value;
-                }
-
-                if (++n < magic_enum::enum_count<EnumType>())
-                {
-                    ImGui::SameLine();
                 }
             });
     }
@@ -225,7 +229,7 @@ std::pair<UpdateResult, WallProps> wall_gui(const LevelTextures& textures, const
         new_props.end_base_height = base_height;
     }
 
-    if (slider(result, "Wall Height", height, 0.1f, 1.0f - base_height, 0.1f))
+    if (slider(result, "Height", height, 0.1f, 1.0f - base_height, 0.1f))
     {
         new_props.start_height = height;
         new_props.end_height = height;
@@ -275,13 +279,15 @@ std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& texture
 
     PlatformProps new_props = platform.properties;
 
-    enum_gui<PlatformStyle>(result, "Platform Style", platform.properties.style, new_props.style);
 
     slider(result, "Width", new_props.width, 0.5f, 20.0f, 0.5f);
     slider(result, "Depth", new_props.depth, 0.5f, 20.0f, 0.5f);
 
     // Multiplied by 2 when mesh is created
     slider(result, "Base Height", new_props.base, 0.0f, 0.9f, 0.1f);
+
+    enum_gui<PlatformStyle>(result, "Platform Style", platform.properties.style, new_props.style);
+
 
     texture_gui_tabs(result, "Textures_platform", textures,
                      {.name = "Top Texture",
@@ -335,16 +341,17 @@ std::pair<UpdateResult, PillarProps> pillar_gui(const LevelTextures& textures,
     UpdateResult result;
     auto new_props = pillar.properties;
 
-    enum_gui(result, "Platform Style", pillar.properties.style, new_props.style);
-
-    if (ImGui::Checkbox("Angled?", &new_props.angled))
-    {
-        result.always_update |= true;
-    }
-
     slider(result, "Size", new_props.size, 0.1f, 0.8f, 0.1f);
     slider(result, "Base Height", new_props.base_height, 0.0f, 0.9f, 0.1f);
     slider(result, "Height", new_props.height, 0.1f, 1.0f - new_props.base_height, 0.1f);
+
+    // enum_gui(result, "Style", pillar.properties.style, new_props.style);
+    ImGui::Separator();
+    /*
+    if (ImGui::Checkbox("Angled?", &new_props.angled))
+    {
+        result.always_update |= true;
+    }*/
 
     texture_gui(result, "Texture", textures, pillar.properties.texture, new_props.texture);
 
@@ -360,7 +367,6 @@ std::pair<UpdateResult, RampProps> ramp_gui(const LevelTextures& textures, const
 
     auto new_props = ramp.properties;
 
-
     slider(result, "Width", new_props.width, 0.5f, 20.0f, 0.5f);
     slider(result, "Depth", new_props.depth, 0.5f, 20.0f, 0.5f);
 
@@ -368,6 +374,7 @@ std::pair<UpdateResult, RampProps> ramp_gui(const LevelTextures& textures, const
     slider(result, "End Height", new_props.end_height, new_props.start_height + 0.1, 1.0f, 0.1f);
 
     enum_gui(result, "Style", ramp.properties.style, new_props.style);
+    ImGui::Separator();
     enum_gui(result, "Direction", ramp.properties.direction, new_props.direction);
 
     texture_gui_tabs(result, "Textures_Ramp", textures,

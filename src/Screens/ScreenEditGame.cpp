@@ -219,7 +219,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 {
                     std::println("TODO: Implement saving before loading menu");
                 }
-                exit_editor();
+                // exit_editor();
                 break;
 
             default:
@@ -582,7 +582,7 @@ void ScreenEditGame::show_menu_bar()
     {
         if (ImGui::BeginMenu("File"))
         {
-            if (ImGui::MenuItem("New")) {  }
+            // if (ImGui::MenuItem("New")) {  }
             if (ImGui::MenuItem("Open...")) 
             { 
                 if (level_.changes_made_since_last_save())
