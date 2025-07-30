@@ -145,11 +145,9 @@ AddObjectActionV2::AddObjectActionV2(const LevelObject& object, int floor)
 
 void AddObjectActionV2::execute(EditorState& state, EditorLevel& level)
 {
-
     // When redoing the action, this prevents using the default for this object type
     if (!executed_)
     {
-
         auto& level_object = level.add_object(object_, floor_);
         id_ = level_object.object_id;
 
@@ -206,6 +204,46 @@ ActionStrings UpdateObjectAction::to_string() const
         .body = std::format("Before:\n{}\n\nAfter:\n{}", old_object_.to_string(),
                             new_object_.to_string()),
     };
+}
+
+UpdateObjectActionV2::UpdateObjectActionV2(const std::vector<LevelObject>& old_objects,
+                                           const std::vector<LevelObject>& new_objects)
+    : old_objects_(old_objects)
+    , new_objects_(new_objects)
+{
+}
+
+void UpdateObjectActionV2::execute([[maybe_unused]] EditorState& state, EditorLevel& level)
+{
+    for (auto& object : new_objects_)
+    {
+        level.update_object(object, 0);
+    }
+}
+
+void UpdateObjectActionV2::undo([[maybe_unused]] EditorState& state, EditorLevel& level)
+{
+    for (auto& object : old_objects_)
+    {
+        level.update_object(object, 0);
+    }
+}
+
+ActionStrings UpdateObjectActionV2::to_string() const
+{
+    std::string before;
+    std::string after;
+
+    for (auto& object : old_objects_)
+    {
+        before += object.to_string();
+    }
+    for (auto& object : new_objects_)
+    {
+        after += object.to_string();
+    }
+    return {.title = std::format("Update {}", old_objects_.size()), // to_type_string()),
+            .body = std::format("Before:\n{}\n\nAfter:\n{}", before, after)};
 }
 
 // =======================================

@@ -58,7 +58,7 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
             }
             else
             {
-                state.p_active_object = nullptr;
+                state.selection.clear_selection();
             }
         }
     }
@@ -217,7 +217,7 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
             switch (object_type_)
             {
                 case ObjectTypeName::Platform:
-                    actions.push_action(std::make_unique<AddObjectAction>(
+                    actions.push_action(std::make_unique<AddObjectActionV2>(
                         LevelObject{
                             PlatformObject{
                                 .properties = state.platform_default,
@@ -228,7 +228,7 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
                     break;
 
                 case ObjectTypeName::PolygonPlatform:
-                    actions.push_action(std::make_unique<AddObjectAction>(
+                    actions.push_action(std::make_unique<AddObjectActionV2>(
                         LevelObject{
                             PolygonPlatformObject{
                                 .properties = state.polygon_platform_default,
@@ -247,7 +247,7 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
                     break;
 
                 case ObjectTypeName::Pillar:
-                    actions.push_action(std::make_unique<AddObjectAction>(
+                    actions.push_action(std::make_unique<AddObjectActionV2>(
                         LevelObject{
                             PillarObject{
                                 .properties = state.pillar_default,
@@ -258,7 +258,7 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
                     break;
 
                 case ObjectTypeName::Ramp:
-                    actions.push_action(std::make_unique<AddObjectAction>(
+                    actions.push_action(std::make_unique<AddObjectActionV2>(
                         LevelObject{
                             RampObject{
                                 .properties = state.ramp_default,

@@ -231,13 +231,25 @@ void ScreenEditGame::on_event(const sf::Event& event)
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
+            bool moving_selection = false;
+            for (auto object : level_.get_objects(editor_state_.selection.objects))
+            {
+                moving_selection |= object->try_select_2d(editor_state_.node_hovered);
+            }
+
             // Start dragging the selected object
-            if (p_active && p_active->try_select_2d(editor_state_.node_hovered) &&
-                !std::get_if<WallObject>(&p_active->object_type))
+            if (moving_selection)
             {
                 select_position_ = editor_state_.node_hovered;
                 moving_object_ = true;
-                moving_object_cache_ = *p_active;
+
+                moving_object_cache_.clear();
+                moving_objects_.clear();
+                moving_objects_ = level_.get_objects(editor_state_.selection.objects);
+                for (auto object : moving_objects_)
+                {
+                    moving_object_cache_.push_back(*object);
+                }
             }
         }
     }
@@ -248,13 +260,22 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
         if (p_active && moving_object_)
         {
-            auto new_object = *p_active;
-            new_object.move(editor_state_.node_hovered - select_position_);
+
+            std::vector<LevelObject> old_objects;
+            std::vector<LevelObject> new_objects;
+            for (auto object : moving_objects_)
+            {
+                old_objects.push_back(*object);
+                new_objects.push_back(*object);
+            }
+            for (auto& new_object : new_objects)
+            {
+                new_object.move(editor_state_.node_hovered - select_position_);
+            }
             select_position_ = editor_state_.node_hovered;
 
-            action_manager_.push_action(std::make_unique<UpdateObjectAction>(
-                                            *p_active, new_object, editor_state_.current_floor),
-                                        false);
+            action_manager_.push_action(
+                std::make_unique<UpdateObjectActionV2>(old_objects, new_objects), false);
         }
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
@@ -303,6 +324,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
             }
         }
 
+        // Handle left button click
         if (mouse->button == sf::Mouse::Button::Left)
         {
             if (moving_object_)
@@ -310,10 +332,22 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 auto new_object = *p_active;
                 new_object.move(editor_state_.node_hovered - select_position_);
 
+                std::vector<LevelObject> old_objects;
+                std::vector<LevelObject> new_objects;
+                for (auto object : moving_objects_)
+                {
+                    old_objects.push_back(*object);
+                    new_objects.push_back(*object);
+                }
+                for (auto& new_object : new_objects)
+                {
+                    new_object.move(editor_state_.node_hovered - select_position_);
+                }
+
                 action_manager_.push_action(
-                    std::make_unique<UpdateObjectAction>(moving_object_cache_, new_object,
-                                                         editor_state_.current_floor),
+                    std::make_unique<UpdateObjectActionV2>(moving_object_cache_, new_objects),
                     true);
+
                 finish_move = true;
             }
 
@@ -518,16 +552,12 @@ void ScreenEditGame::render_editor_ui()
         if (ImGui::Button("Floor Down"))
         {
             level_.ensure_floor_exists(--editor_state_.current_floor);
-            // TODO maybe don't clear between floors?
-            editor_state_.selection.clear_selection();
             camera_.transform.position.y -= FLOOR_HEIGHT;
         }
         ImGui::SameLine();
         if (ImGui::Button("Floor Up"))
         {
             level_.ensure_floor_exists(++editor_state_.current_floor);
-            // TODO maybe don't clear between floors?
-            editor_state_.selection.clear_selection();
             camera_.transform.position.y += FLOOR_HEIGHT;
         }
         ImGui::Text("Lowest: %d - Current: %d - Highest: %d", level_.get_min_floor(),

@@ -95,6 +95,25 @@ class UpdateObjectAction final : public Action
     const int floor_;
 };
 
+class UpdateObjectActionV2 final : public Action
+{
+  public:
+    UpdateObjectActionV2(const std::vector<LevelObject>& old_objects,
+                         const std::vector<LevelObject>& new_objects);
+
+    void execute(EditorState& state, EditorLevel& level) override;
+    void undo(EditorState& state, EditorLevel& level) override;
+
+    ActionStrings to_string() const override;
+
+  private:
+    /// The object before the update
+    const std::vector<LevelObject> old_objects_;
+
+    /// The object after the update
+    const std::vector<LevelObject> new_objects_;
+};
+
 /// Action to delete an existing object from the level.
 class DeleteObjectAction final : public Action
 {

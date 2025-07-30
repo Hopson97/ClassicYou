@@ -51,17 +51,19 @@ void EditorLevel::update_object(const LevelObject& object, int floor_number)
 
             if (mesh.id == object.object_id)
             {
-                auto new_mesh = object.to_geometry(floor_number);
+                auto new_mesh = object.to_geometry(floor.real_floor);
                 new_mesh.buffer();
                 mesh.mesh = std::move(new_mesh);
                 break;
             }
         }
-        for (auto& w : floor.objects)
+
+        // Copy the new object to the old object
+        for (auto& old_object : floor.objects)
         {
-            if (w.object_id == object.object_id)
+            if (old_object.object_id == object.object_id)
             {
-                w = object;
+                old_object = object;
                 break;
             }
         }
@@ -191,7 +193,8 @@ void EditorLevel::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active
         {
             for (auto& object : floor.objects)
             {
-                auto is_selected = p_active_object && p_active_object->object_id == object.object_id;
+                auto is_selected =
+                    p_active_object && p_active_object->object_id == object.object_id;
                 // The current floor should be rendered using full colour, otherwise a more grey
                 // colour is used to make it obvious it is the floor below
                 object.render_2d(drawing_pad, floor.real_floor == current_floor, is_selected);
@@ -272,6 +275,34 @@ void EditorLevel::try_select_all(const Rectangle& selection_area, int current_fl
         // Found the right floor so can exit early
         break;
     }
+}
+
+std::vector<LevelObject*> EditorLevel::get_objects(const std::unordered_set<ObjectId>& object_ids)
+{
+    // Copy objects with the given ID - maybe there is better way than a triple nested loop :S
+    std::vector<LevelObject*> objects;
+    for (auto& id : object_ids)
+    {
+        bool found = false;
+        for (auto& floor : floors_manager_.floors)
+        {
+            for (auto& object : floor.objects)
+            {
+                if (object.object_id == id)
+                {
+                    objects.push_back(&object);
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found)
+            {
+                break;
+            }
+        }
+    }
+    return objects;
 }
 
 int EditorLevel::get_min_floor() const

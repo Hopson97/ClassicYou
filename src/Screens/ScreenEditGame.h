@@ -33,7 +33,7 @@ class ScreenEditGame final : public Screen
         bool show_grid = true;
         bool show_2d_view = true;
         bool always_center_2d_to_3d_view = true;
-        
+
         bool show_history = false;
     } editor_settings_;
 
@@ -96,7 +96,9 @@ class ScreenEditGame final : public Screen
 
     /// Capture the state of the object being moved at the start such that the inital state can be
     /// returned to when CTRL+Z is done
-    LevelObject moving_object_cache_{-1};
+    std::vector<LevelObject> moving_object_cache_;
+    std::vector<LevelObject*> moving_objects_;
+    // LevelObject moving_object_cache_{-1};
 
     /// Level name is used in the save dialog such that the actual name is not overriden if the save
     /// operation is cancelled

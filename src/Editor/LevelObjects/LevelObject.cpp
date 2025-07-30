@@ -161,8 +161,9 @@ LevelObjectsMesh3D LevelObject::to_geometry(int floor_number) const
 
 std::string LevelObject::to_string() const
 {
-    return std::visit([](auto&& object) -> std::string { return object_to_string(object); },
-                      object_type);
+    return std::format("Type: {}  - ID: {}\n{}", to_type_string(), object_id,
+                       std::visit([](auto&& object) -> std::string
+                                  { return object_to_string(object); }, object_type));
 }
 
 void LevelObject::render_2d(DrawingPad& drawing_pad, bool is_current_floor, bool active) const

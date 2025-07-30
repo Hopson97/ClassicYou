@@ -53,6 +53,9 @@ class EditorLevel
     void try_select_all(const Rectangle& selection_area, int current_floor,
                         std::unordered_set<LevelObject*>& objects);
 
+    std::vector<LevelObject*> get_objects(const std::unordered_set<ObjectId>& object_ids);
+
+
     int get_min_floor() const;
     int get_max_floor() const;
     size_t get_floor_count() const;
@@ -65,6 +68,7 @@ class EditorLevel
     bool load(const std::filesystem::path& path);
 
     bool changes_made_since_last_save() const;
+
 
   private:
     bool do_save(const std::filesystem::path& path) const;
