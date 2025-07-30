@@ -159,6 +159,7 @@
     <ClCompile Include="src\Editor\DrawingPad.cpp" />
     <ClCompile Include="src\Editor\EditorGUI.cpp" />
     <ClCompile Include="src\Editor\EditorLevel.cpp" />
+    <ClCompile Include="src\Editor\EditorState.cpp" />
     <ClCompile Include="src\Editor\FloorManager.cpp" />
     <ClCompile Include="src\Editor\InfiniteGrid.cpp" />
     <ClCompile Include="src\Editor\LegacyFileConverter.cpp" />

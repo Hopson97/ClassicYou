@@ -93,6 +93,9 @@ void ActionManager::clear()
     action_stack_.clear();
 }
 
+// =======================================
+//    Add Action
+// =======================================
 AddObjectAction::AddObjectAction(const LevelObject& object, int floor)
     : object_(object)
     , floor_{floor}
@@ -134,6 +137,50 @@ ActionStrings AddObjectAction::to_string() const
     };
 }
 
+AddObjectActionV2::AddObjectActionV2(const LevelObject& object, int floor)
+    : object_(object)
+    , floor_{floor}
+{
+}
+
+void AddObjectActionV2::execute(EditorState& state, EditorLevel& level)
+{
+
+    // When redoing the action, this prevents using the default for this object type
+    if (!executed_)
+    {
+
+        auto& level_object = level.add_object(object_, floor_);
+        id_ = level_object.object_id;
+
+        executed_ = true;
+        state.selection.set_selection(&level_object);
+    }
+    else
+    {
+        auto& level_object = level.add_object(object_, floor_);
+        level.set_object_id(level_object.object_id, id_);
+        state.selection.set_selection(&level_object);
+    }
+}
+
+void AddObjectActionV2::undo(EditorState& state, EditorLevel& level)
+{
+    state.p_active_object = nullptr;
+    level.remove_object(id_);
+}
+
+ActionStrings AddObjectActionV2::to_string() const
+{
+    return {
+        .title = std::format("Create {}", object_.to_type_string()),
+        .body = object_.to_string(),
+    };
+}
+
+// =======================================
+//    Update Action
+// =======================================
 UpdateObjectAction::UpdateObjectAction(const LevelObject& old_object, const LevelObject& new_object,
                                        int floor)
     : old_object_(old_object)
@@ -161,6 +208,9 @@ ActionStrings UpdateObjectAction::to_string() const
     };
 }
 
+// =======================================
+//    Delete Action
+// =======================================
 DeleteObjectAction::DeleteObjectAction(const LevelObject& object, int floor)
     : object_(object)
     , floor_{floor}

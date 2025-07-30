@@ -139,6 +139,48 @@ void EditorLevel::render(gl::Shader& scene_shader, const LevelObject* p_active_o
     }
 }
 
+void EditorLevel::render_v2(gl::Shader& scene_shader,
+                            const std::unordered_set<ObjectId>& active_objects, int current_floor)
+{
+    std::vector<LevelObjectsMesh3D*> p_active;
+
+    scene_shader.set_uniform("selected", false);
+
+    for (auto& floor : floors_manager_.floors)
+    {
+        // Render floors only from the current floor and below
+        if (floor.real_floor > current_floor)
+        {
+            // continue;
+        }
+
+        for (auto& object : floor.meshes)
+        {
+            if (!object.mesh.has_buffered())
+            {
+                continue;
+            }
+
+            if (active_objects.find(object.id) != active_objects.end())
+            {
+                p_active.push_back(&object.mesh);
+            }
+            else
+            {
+                object.mesh.bind().draw_elements();
+            }
+        }
+    }
+
+    // Render the selected object seperate
+    scene_shader.set_uniform("selected", true);
+    for (auto mesh : p_active)
+    {
+        mesh->bind().draw_elements();
+    }
+    scene_shader.set_uniform("selected", false);
+}
+
 void EditorLevel::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object,
                             int current_floor)
 {
@@ -149,9 +191,31 @@ void EditorLevel::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active
         {
             for (auto& object : floor.objects)
             {
+                auto is_selected = p_active_object && p_active_object->object_id == object.object_id;
                 // The current floor should be rendered using full colour, otherwise a more grey
                 // colour is used to make it obvious it is the floor below
-                object.render_2d(drawing_pad, p_active_object, floor.real_floor == current_floor);
+                object.render_2d(drawing_pad, floor.real_floor == current_floor, is_selected);
+            }
+        }
+    }
+}
+
+void EditorLevel::render_2d_v2(DrawingPad& drawing_pad,
+                               const std::unordered_set<ObjectId>& active_objects,
+                               int current_floor)
+{
+    for (auto& floor : floors_manager_.floors)
+    {
+        // Only render the current floor and the floor below
+        if (floor.real_floor == current_floor || (current_floor == floor.real_floor + 1))
+        {
+            for (auto& object : floor.objects)
+            {
+                auto is_selected = active_objects.find(object.object_id) != active_objects.end();
+
+                // The current floor should be rendered using full colour, otherwise a more grey
+                // colour is used to make it obvious it is the floor below
+                object.render_2d(drawing_pad, floor.real_floor == current_floor, is_selected);
             }
         }
     }

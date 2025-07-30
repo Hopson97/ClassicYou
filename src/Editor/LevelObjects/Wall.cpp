@@ -54,7 +54,15 @@ template <>
 [[nodiscard]] bool object_try_select_2d(const WallObject& wall, glm::vec2 selection_tile)
 
 {
-    return distance_to_line(selection_tile, wall.parameters.line) < 15;
+    // To avoid moving a wall when attempting to create a new wall at either end, the line size is slightly reduced
+    auto line = wall.parameters.line;
+    auto dir = glm::normalize(line.start - line.end);
+
+    line.start -= dir * HALF_TILE_SIZE_F;
+    line.end += dir * HALF_TILE_SIZE_F;
+
+
+    return distance_to_line(selection_tile, line) < 10;
 }
 
 template <>

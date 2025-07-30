@@ -165,13 +165,11 @@ std::string LevelObject::to_string() const
                       object_type);
 }
 
-void LevelObject::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object,
-                            bool is_current_floor) const
+void LevelObject::render_2d(DrawingPad& drawing_pad, bool is_current_floor, bool active) const
 {
-    auto is_selected = p_active_object && p_active_object->object_id == object_id;
-    auto colour = is_selected ? Colour::RED : (is_current_floor ? Colour::WHITE : Colour::GREY);
+    auto colour = active ? Colour::RED : (is_current_floor ? Colour::WHITE : Colour::GREY);
 
-    std::visit([&](auto&& object) { render_object_2d(object, drawing_pad, colour, is_selected); },
+    std::visit([&](auto&& object) { render_object_2d(object, drawing_pad, colour, active); },
                object_type);
 }
 

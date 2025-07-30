@@ -1,8 +1,23 @@
 #pragma once
 
+#include <unordered_set>
+
+#include "EditConstants.h"
 #include "LevelObjects/ObjectTypes.h"
 
 struct LevelObject;
+
+struct Selection
+{
+    std::unordered_set<ObjectId> objects;
+    LevelObject* p_active_object = nullptr;
+
+    void set_selection(LevelObject* object);
+    void add_to_selection(LevelObject* object);
+    void clear_selection();
+
+    bool object_is_selected() const;
+};
 
 /// @brief The state of the editor input, such as the currently hovered node, the selected object
 /// and default object properties.
@@ -26,4 +41,6 @@ struct EditorState
 
     /// The current floor number that the editor is working on.
     int current_floor = 0;
+
+    Selection selection;
 };

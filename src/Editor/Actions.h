@@ -50,6 +50,30 @@ class AddObjectAction final : public Action
     const int floor_;
 };
 
+/// Action to add a new object to the level.
+class AddObjectActionV2 final : public Action
+{
+  public:
+    AddObjectActionV2(const LevelObject& object, int floor);
+
+    void execute(EditorState& state, EditorLevel& level) override;
+    void undo(EditorState& state, EditorLevel& level) override;
+
+    ActionStrings to_string() const override;
+
+  private:
+    /// The object to add
+    LevelObject object_;
+
+    /// The ID of the object added to the level. This for undo/redo to ensure the ID is preserved.
+    int id_ = -1;
+
+    // Flag for when re-doing this action, it uses the stored props rather than the default
+    bool executed_ = false;
+
+    const int floor_;
+};
+
 /// Action to update an existing object in the level.
 class UpdateObjectAction final : public Action
 {

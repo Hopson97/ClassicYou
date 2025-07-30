@@ -49,7 +49,7 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
             active_dragging_ = false;
             if (glm::length(wall_line_.start - wall_line_.end) > 0.25f)
             {
-                actions.push_action(std::make_unique<AddObjectAction>(
+                actions.push_action(std::make_unique<AddObjectActionV2>(
                     LevelObject{WallObject{
                         .properties = state.wall_default,
                         .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
