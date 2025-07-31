@@ -9,14 +9,17 @@ struct LevelObject;
 
 struct Selection
 {
-    std::unordered_set<ObjectId> objects;
+    std::vector<ObjectId> objects;
+    std::vector<int> object_floors;
+
     LevelObject* p_active_object = nullptr;
 
-    void set_selection(LevelObject* object);
-    void add_to_selection(LevelObject* object);
+    void set_selection(LevelObject* object, int floor);
+    void add_to_selection(LevelObject* object, int floor);
+    void add_to_selection(ObjectId id, int floor);
     void clear_selection();
 
-    bool object_is_selected() const;
+    bool single_object_is_selected() const;
 };
 
 /// @brief The state of the editor input, such as the currently hovered node, the selected object

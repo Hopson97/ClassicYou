@@ -4,6 +4,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include "../Util/Util.h"
 #include "../Util/Maths.h"
 #include "DrawingPad.h"
 #include "EditConstants.h"
@@ -141,8 +142,8 @@ void EditorLevel::render(gl::Shader& scene_shader, const LevelObject* p_active_o
     }
 }
 
-void EditorLevel::render_v2(gl::Shader& scene_shader,
-                            const std::unordered_set<ObjectId>& active_objects, int current_floor)
+void EditorLevel::render_v2(gl::Shader& scene_shader, const std::vector<ObjectId>& active_objects,
+                            int current_floor)
 {
     std::vector<LevelObjectsMesh3D*> p_active;
 
@@ -163,7 +164,7 @@ void EditorLevel::render_v2(gl::Shader& scene_shader,
                 continue;
             }
 
-            if (active_objects.find(object.id) != active_objects.end())
+            if (contains(active_objects,object.id))
             {
                 p_active.push_back(&object.mesh);
             }
@@ -204,7 +205,7 @@ void EditorLevel::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active
 }
 
 void EditorLevel::render_2d_v2(DrawingPad& drawing_pad,
-                               const std::unordered_set<ObjectId>& active_objects,
+                               const std::vector<ObjectId>& active_objects,
                                int current_floor)
 {
     for (auto& floor : floors_manager_.floors)
@@ -214,7 +215,7 @@ void EditorLevel::render_2d_v2(DrawingPad& drawing_pad,
         {
             for (auto& object : floor.objects)
             {
-                auto is_selected = active_objects.find(object.object_id) != active_objects.end();
+                auto is_selected = contains(active_objects, object.object_id);
 
                 // The current floor should be rendered using full colour, otherwise a more grey
                 // colour is used to make it obvious it is the floor below
@@ -277,9 +278,9 @@ void EditorLevel::try_select_all(const Rectangle& selection_area, int current_fl
     }
 }
 
-std::vector<LevelObject*> EditorLevel::get_objects(const std::unordered_set<ObjectId>& object_ids)
+std::vector<LevelObject*> EditorLevel::get_objects(const std::vector<ObjectId>& object_ids)
 {
-    // Copy objects with the given ID - maybe there is better way than a triple nested loop :S
+    // Find objects with the given ID - maybe there is better way than a triple nested loop :S
     std::vector<LevelObject*> objects;
     for (auto& id : object_ids)
     {
@@ -303,6 +304,38 @@ std::vector<LevelObject*> EditorLevel::get_objects(const std::unordered_set<Obje
         }
     }
     return objects;
+}
+
+std::pair<std::vector<LevelObject>, std::vector<int>>
+EditorLevel::copy_objects_and_floors(const std::vector<ObjectId>& object_ids)
+{
+    // Copy objects with the given ID - maybe there is better way than a triple nested loop :S
+    std::vector<LevelObject> objects;
+    std::vector<int> floors;
+    for (auto& id : object_ids)
+    {
+        bool found = false;
+        for (auto& floor : floors_manager_.floors)
+        {
+            for (auto& object : floor.objects)
+            {
+                if (object.object_id == id)
+                {
+                    objects.push_back(object);
+                    floors.push_back(floor.real_floor);
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found)
+            {
+                break;
+            }
+        }
+    }
+
+    return std::make_pair(objects, floors);
 }
 
 int EditorLevel::get_min_floor() const

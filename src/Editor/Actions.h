@@ -74,6 +74,30 @@ class AddObjectActionV2 final : public Action
     const int floor_;
 };
 
+// For copy-paste functionality
+class AddBulkObjectsAction final : public Action
+{
+  public:
+    AddBulkObjectsAction(const std::vector<LevelObject>& objects,
+                         const std::vector<int>& floors);
+
+    void execute(EditorState& state, EditorLevel& level) override;
+    void undo(EditorState& state, EditorLevel& level) override;
+
+    ActionStrings to_string() const override;
+
+  private:
+    /// The objects to add
+    std::vector<LevelObject> objects_;
+    std::vector<int> floors_;
+
+    /// The ID of the object added to the level. This for undo/redo to ensure the ID is preserved.
+    std::vector<ObjectId> object_ids;
+
+    // Flag for when re-doing this action, it uses the stored props rather than the default
+    bool executed_ = false;
+};
+
 /// Action to update an existing object in the level.
 class UpdateObjectAction final : public Action
 {

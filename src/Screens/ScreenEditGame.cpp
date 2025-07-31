@@ -292,11 +292,12 @@ void ScreenEditGame::on_event(const sf::Event& event)
             {
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift))
                 {
-                    editor_state_.selection.add_to_selection(selection);
+                    editor_state_.selection.add_to_selection(selection,
+                                                             editor_state_.current_floor);
                 }
                 else
                 {
-                    editor_state_.selection.set_selection(selection);
+                    editor_state_.selection.set_selection(selection, editor_state_.current_floor);
 
                     // Editing a wall requires a special tool to enable resizing, so after a object
                     // it switches between tools
@@ -329,9 +330,6 @@ void ScreenEditGame::on_event(const sf::Event& event)
         {
             if (moving_object_)
             {
-                auto new_object = *p_active;
-                new_object.move(editor_state_.node_hovered - select_position_);
-
                 std::vector<LevelObject> old_objects;
                 std::vector<LevelObject> new_objects;
                 for (auto object : moving_objects_)
@@ -570,12 +568,11 @@ void ScreenEditGame::render_editor_ui()
         }
         ImGui::Separator();
         drawing_pad_.camera_gui();
-
     }
     ImGui::End();
 
     // When an object is selected, its properties is rendered
-    if (editor_state_.selection.object_is_selected())
+    if (editor_state_.selection.single_object_is_selected())
     {
         if (ImGui::Begin("Object Properties"))
         {
@@ -654,6 +651,8 @@ void ScreenEditGame::show_menu_bar()
         {
             if (ImGui::MenuItem("Undo (CTRL + Z)")) { action_manager_.undo_action(); }
             if (ImGui::MenuItem("Redo (CTRL + Y)")) { action_manager_.redo_action(); }
+            if (ImGui::MenuItem("Copy (CTRL + C)")) { copy_selection(); }
+            if (ImGui::MenuItem("Paste (CTRL + V)")) { paste_selection(); }
             ImGui::EndMenu();
         }
 
@@ -700,4 +699,51 @@ void ScreenEditGame::set_2d_to_3d_view()
         camera_.transform.position.x * TILE_SIZE,
         camera_.transform.position.z * TILE_SIZE,
     });
+}
+
+void ScreenEditGame::copy_selection()
+{
+    copied_objects_.clear();
+    copied_objects_floors_.clear();
+
+    auto [objects, floors] = level_.copy_objects_and_floors(editor_state_.selection.objects);
+
+    copied_objects_ = std::move(objects);
+    copied_objects_floors_ = std::move(floors);
+    copy_start_floor_ = editor_state_.current_floor;
+}
+
+void ScreenEditGame::paste_selection()
+{
+    int offset = editor_state_.current_floor - copy_start_floor_;
+
+    // Copy the floors to create an offset if the floor has changed
+    auto floors = copied_objects_floors_;
+    for (auto& floor : floors)
+    {
+        floor += offset;
+    }
+
+    // When copy/pasting across multiple floors, the floors being pasted to must be ensured to exist
+    int max_floor = *std::ranges::max_element(floors);
+    int min_floor = *std::ranges::min_element(floors);
+    if (max_floor > level_.get_max_floor())
+    {
+        for (int i = level_.get_max_floor(); i <= max_floor; i++)
+        {
+            std::println("Ensuring floor {} exists (Above)", i);
+            level_.ensure_floor_exists(i);
+        }
+    }
+    else if (min_floor < level_.get_min_floor())
+    {
+        for (int i = level_.get_min_floor(); i >= min_floor; --i)
+        {
+            std::println("Ensuring floor {} exists (Below)", i);
+            level_.ensure_floor_exists(i);
+        }
+    }
+
+    action_manager_.push_action(std::make_unique<AddBulkObjectsAction>(copied_objects_, floors),
+                                true);
 }

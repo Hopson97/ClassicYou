@@ -52,6 +52,9 @@ class ScreenEditGame final : public Screen
 
     void set_2d_to_3d_view();
 
+    void copy_selection();
+    void paste_selection();
+
   private:
     Camera camera_;
 
@@ -99,6 +102,11 @@ class ScreenEditGame final : public Screen
     std::vector<LevelObject> moving_object_cache_;
     std::vector<LevelObject*> moving_objects_;
     // LevelObject moving_object_cache_{-1};
+
+    // For copy paste, this contains the current "clipboard"
+    std::vector<LevelObject> copied_objects_;
+    std::vector<int> copied_objects_floors_;
+    int copy_start_floor_ = -1;
 
     /// Level name is used in the save dialog such that the actual name is not overriden if the save
     /// operation is cancelled

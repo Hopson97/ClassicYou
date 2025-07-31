@@ -35,14 +35,14 @@ class EditorLevel
     /// Renders the level in 3D using the given shader and highlights the active object.
     /// Assumes the camera, shader, and other OpenGL states are set up correctly.
     void render(gl::Shader& scene_shader, const LevelObject* p_active_object, int current_floor);
-    void render_v2(gl::Shader& scene_shader, const std::unordered_set<ObjectId>& active_objects,
+    void render_v2(gl::Shader& scene_shader, const std::vector<ObjectId>& active_objects,
                    int current_floor);
 
     /// Render the level in 2D using the given drawing pad, highlighting the active object.
     /// Assumes the camera, shader, and other OpenGL states are set up correctly.
     void render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object, int current_floor);
-    void render_2d_v2(DrawingPad& drawing_pad, const std::unordered_set<ObjectId>& active_objects,
-                   int current_floor);
+    void render_2d_v2(DrawingPad& drawing_pad, const std::vector<ObjectId>& active_objects,
+                      int current_floor);
 
     /// Try to select a level object at the given tile position. Returns nullptr if no object is
     /// found.
@@ -53,8 +53,10 @@ class EditorLevel
     void try_select_all(const Rectangle& selection_area, int current_floor,
                         std::unordered_set<LevelObject*>& objects);
 
-    std::vector<LevelObject*> get_objects(const std::unordered_set<ObjectId>& object_ids);
+    std::vector<LevelObject*> get_objects(const std::vector<ObjectId>& object_ids);
 
+    std::pair<std::vector<LevelObject>, std::vector<int>>
+    copy_objects_and_floors(const std::vector<ObjectId>& object_ids);
 
     int get_min_floor() const;
     int get_max_floor() const;
@@ -68,7 +70,6 @@ class EditorLevel
     bool load(const std::filesystem::path& path);
 
     bool changes_made_since_last_save() const;
-
 
   private:
     bool do_save(const std::filesystem::path& path) const;
