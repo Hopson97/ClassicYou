@@ -24,7 +24,13 @@ int main()
     {
         if (entry.is_regular_file() && entry.path().extension() == ".cy")
         {
-           // convert_legacy_level(entry.path());
+            auto original_filename = entry.path().filename().replace_extension(".cly");
+            auto new_path = std::filesystem::path("./levels/") / original_filename;
+
+            if (!std::filesystem::exists(new_path))
+            {
+              //  convert_legacy_level(entry.path());
+            }
         }
     }
 

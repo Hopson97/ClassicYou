@@ -181,6 +181,15 @@ void DrawingPad::set_camera_position(glm::vec2 position)
     };
 }
 
+void DrawingPad::camera_gui()
+{
+    auto scale = camera_.get_orthographic_scale();
+    if (ImGui::SliderFloat("Zoom", &scale, 0.5, 2.5))
+    {
+        camera_.set_orthographic_scale(scale);
+    }
+}
+
 void DrawingPad::display(const Transform& camera_transform)
 {
     // For 2D rendering, depth testing is not required

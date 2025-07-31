@@ -568,6 +568,9 @@ void ScreenEditGame::render_editor_ui()
         {
             set_2d_to_3d_view();
         }
+        ImGui::Separator();
+        drawing_pad_.camera_gui();
+
     }
     ImGui::End();
 

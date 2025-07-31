@@ -54,13 +54,13 @@ template <>
 [[nodiscard]] bool object_try_select_2d(const WallObject& wall, glm::vec2 selection_tile)
 
 {
-    // To avoid moving a wall when attempting to create a new wall at either end, the line size is slightly reduced
+    // To avoid moving a wall when attempting to create a new wall at either end, the line size is
+    // slightly reduced
     auto line = wall.parameters.line;
     auto dir = glm::normalize(line.start - line.end);
 
     line.start -= dir * HALF_TILE_SIZE_F;
     line.end += dir * HALF_TILE_SIZE_F;
-
 
     return distance_to_line(selection_tile, line) < 10;
 }
@@ -84,8 +84,12 @@ SerialiseResponse object_serialise(const WallObject& wall)
     auto& params = wall.parameters;
     auto& props = wall.properties;
 
-    nlohmann::json json_params = {params.line.start.x, params.line.start.y, params.line.end.x,
-                                  params.line.end.y};
+    nlohmann::json json_params = {
+        params.line.start.x / TILE_SIZE_F,
+        params.line.start.y / TILE_SIZE_F,
+        params.line.end.x / TILE_SIZE_F,
+        params.line.end.y / TILE_SIZE_F,
+    };
 
     nlohmann::json json_props = {};
     serialise_texture(json_props, props.texture_back);
