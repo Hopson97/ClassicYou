@@ -16,23 +16,34 @@
 namespace
 {
     void handle_event(const sf::Event& event, bool& show_debug_info, bool& close_requested);
+
+    void load_legacy_levels()
+    {
+        if (!std::filesystem::exists("./levels/legacy/"))
+        {
+            std::println("Unable to convert legacy levels as the legacy folder does not exist.");
+            return;
+        }
+
+        for (const auto& entry : std::filesystem::directory_iterator("./levels/legacy/"))
+        {
+            if (entry.is_regular_file() && entry.path().extension() == ".cy")
+            {
+                auto original_filename = entry.path().filename().replace_extension(".cly");
+                auto new_path = std::filesystem::path("./levels/") / original_filename;
+
+                if (!std::filesystem::exists(new_path))
+                {
+                    convert_legacy_level(entry.path());
+                }
+            }
+        }
+    }
 } // namespace
 
 int main()
 {
-    for (const auto& entry : std::filesystem::directory_iterator("./levels/legacy/"))
-    {
-        if (entry.is_regular_file() && entry.path().extension() == ".cy")
-        {
-            auto original_filename = entry.path().filename().replace_extension(".cly");
-            auto new_path = std::filesystem::path("./levels/") / original_filename;
-
-            if (!std::filesystem::exists(new_path))
-            {
-              //  convert_legacy_level(entry.path());
-            }
-        }
-    }
+    load_legacy_levels();
 
     sf::ContextSettings context_settings;
     context_settings.depthBits = 24;
