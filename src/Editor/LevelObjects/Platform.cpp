@@ -95,7 +95,7 @@ SerialiseResponse object_serialise(const PlatformObject& platform)
     auto& params = platform.parameters;
     auto& props = platform.properties;
 
-    nlohmann::json json_params = {params.position.x, params.position.y};
+    nlohmann::json json_params = {params.position.x / TILE_SIZE_F, params.position.y / TILE_SIZE_F};
 
     nlohmann::json json_props = {};
     serialise_texture(json_props, props.texture_top);

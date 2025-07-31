@@ -104,10 +104,11 @@ SerialiseResponse object_serialise(const PolygonPlatformObject& poly)
     auto& params = poly.parameters;
     auto& props = poly.properties;
 
-    nlohmann::json json_params = {params.corner_top_left.x,     params.corner_top_left.y,
-                                  params.corner_top_right.x,    params.corner_top_right.y,
-                                  params.corner_bottom_right.x, params.corner_bottom_right.y,
-                                  params.corner_bottom_left.x,  params.corner_bottom_left.y};
+   nlohmann::json json_params = {
+        params.corner_top_left.x / TILE_SIZE_F,     params.corner_top_left.y / TILE_SIZE_F,
+        params.corner_top_right.x / TILE_SIZE_F,    params.corner_top_right.y / TILE_SIZE_F,
+        params.corner_bottom_right.x / TILE_SIZE_F, params.corner_bottom_right.y / TILE_SIZE_F,
+        params.corner_bottom_left.x / TILE_SIZE_F,  params.corner_bottom_left.y / TILE_SIZE_F};
 
     nlohmann::json json_props = {};
     serialise_texture(json_props, props.texture_top);

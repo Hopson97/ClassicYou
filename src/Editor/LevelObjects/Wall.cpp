@@ -76,8 +76,12 @@ SerialiseResponse object_serialise(const WallObject& wall)
     auto& params = wall.parameters;
     auto& props = wall.properties;
 
-    nlohmann::json json_params = {params.line.start.x, params.line.start.y, params.line.end.x,
-                                  params.line.end.y};
+    nlohmann::json json_params = {
+        params.line.start.x / TILE_SIZE_F,
+        params.line.start.y / TILE_SIZE_F,
+        params.line.end.x / TILE_SIZE_F,
+        params.line.end.y / TILE_SIZE_F,
+    };
 
     nlohmann::json json_props = {};
     serialise_texture(json_props, props.texture_back);
