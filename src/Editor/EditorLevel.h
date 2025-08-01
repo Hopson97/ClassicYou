@@ -5,11 +5,11 @@
 
 #include <nlohmann/json.hpp>
 
-#include "../Editor/LevelObjects/LevelObject.h"
 #include "../Graphics/Mesh.h"
 #include "../Graphics/OpenGL/Shader.h"
+#include "EditorState.h"
 #include "FloorManager.h"
-#include <unordered_set>
+#include "LevelObjects/LevelObject.h"
 
 class DrawingPad;
 
@@ -50,13 +50,12 @@ class EditorLevel
                             int current_floor);
 
     /// Try to select all objects at the given position, and put into the given set
-    void try_select_all(const Rectangle& selection_area, int current_floor,
-                        std::unordered_set<LevelObject*>& objects);
+    void select_within(const Rectangle& selection_area, Selection& selection, int floor_number);
 
     std::vector<LevelObject*> get_objects(const std::vector<ObjectId>& object_ids);
 
     std::pair<std::vector<LevelObject>, std::vector<int>>
-    copy_objects_and_floors(const std::vector<ObjectId>& object_ids);
+    copy_objects_and_floors(const std::vector<ObjectId>& object_ids) const;
 
     int get_min_floor() const;
     int get_max_floor() const;

@@ -327,13 +327,13 @@ LevelObject* EditorLevel::try_select(glm::vec2 selection_tile, const LevelObject
     return nullptr;
 }
 
-void EditorLevel::try_select_all(const Rectangle& selection_area, int current_floor,
-                                 std::unordered_set<LevelObject*>& objects)
+
+void EditorLevel::select_within(const Rectangle& selection_area, Selection& selection,
+                                int floor_number)
 {
     for (auto& floor : floors_manager_.floors)
     {
-        // 2D Selection can only happen for objects on the current floor
-        if (floor.real_floor != current_floor)
+        if (floor.real_floor != floor_number)
         {
             continue;
         }
@@ -342,7 +342,7 @@ void EditorLevel::try_select_all(const Rectangle& selection_area, int current_fl
         {
             if (object.is_within(selection_area))
             {
-                objects.emplace(&object);
+                selection.add_to_selection(object.object_id, floor_number);
             }
         }
 
@@ -380,7 +380,7 @@ std::vector<LevelObject*> EditorLevel::get_objects(const std::vector<ObjectId>& 
 }
 
 std::pair<std::vector<LevelObject>, std::vector<int>>
-EditorLevel::copy_objects_and_floors(const std::vector<ObjectId>& object_ids)
+EditorLevel::copy_objects_and_floors(const std::vector<ObjectId>& object_ids) const
 {
     // Copy objects with the given ID - maybe there is better way than a triple nested loop :S
     std::vector<LevelObject> objects;

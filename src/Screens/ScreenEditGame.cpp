@@ -27,7 +27,7 @@ namespace
     glm::ivec2 map_pixel_to_tile(glm::vec2 point, const Camera& camera)
     {
         // TODO handle camera zooming
-        auto scale = HALF_TILE_SIZE / 2.0f;
+        auto scale = HALF_TILE_SIZE;
 
         auto& transform = camera.transform.position;
         auto cam_scale = camera.get_orthographic_scale();
@@ -212,6 +212,22 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 {
                     action_manager_.redo_action();
                     try_set_tool_to_wall = true;
+                }
+                break;
+
+                // Copy functionality with CTRL+C
+            case sf::Keyboard::Key::C:
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))
+                {
+                    copy_selection();
+                }
+                break;
+
+                // Paste functionality with CTRL+V
+            case sf::Keyboard::Key::V:
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))
+                {
+                    paste_selection();
                 }
                 break;
 
@@ -454,14 +470,14 @@ void ScreenEditGame::on_render(bool show_debug)
     world_geometry_shader_.set_uniform("use_texture", true);
     world_geometry_shader_.set_uniform("model_matrix", create_model_matrix({}));
 
+    // Render the level itself
+    level_.render_v2(world_geometry_shader_, editor_state_.selection.objects,
+                     editor_state_.current_floor);
+
     if (!moving_object_)
     {
         tool_->render_preview();
     }
-
-    // Render the level itself
-    level_.render_v2(world_geometry_shader_, editor_state_.selection.objects,
-                     editor_state_.current_floor);
 
     // Ensure GUI etc are rendered using fill
     gl::polygon_mode(gl::Face::FrontAndBack, gl::PolygonMode::Fill);
@@ -502,6 +518,11 @@ void ScreenEditGame::on_render(bool show_debug)
             level_name_actual_ = level_name_;
         }
     }
+
+    if (tool_)
+    {
+        tool_->show_gui(editor_state_);
+    }
 }
 
 void ScreenEditGame::render_editor_ui()
@@ -511,29 +532,41 @@ void ScreenEditGame::render_editor_ui()
     {
         // Display the list of objects that can be placed
         ImGui::Text("Tools");
+        ImGui::Separator();
         if (ImGui::Button("Wall"))
         {
             tool_ = std::make_unique<CreateWallTool>();
             editor_state_.selection.clear_selection();
         }
+        ImGui::SameLine();
         if (ImGui::Button("Platform"))
         {
             tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::Platform);
             editor_state_.selection.clear_selection();
         }
-        if (ImGui::Button("Polygon Platform"))
+        ImGui::SameLine();
+        if (ImGui::Button("Polygon"))
         {
             tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::PolygonPlatform);
             editor_state_.selection.clear_selection();
         }
+
         if (ImGui::Button("Pillar"))
         {
             tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::Pillar);
             editor_state_.selection.clear_selection();
         }
+        ImGui::SameLine();
         if (ImGui::Button("Ramp"))
         {
             tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::Ramp);
+            editor_state_.selection.clear_selection();
+        }
+
+        ImGui::Separator();
+        if (ImGui::Button("Area Selection"))
+        {
+            tool_ = std::make_unique<AreaSelectTool>(level_);
             editor_state_.selection.clear_selection();
         }
 
@@ -666,6 +699,7 @@ void ScreenEditGame::show_menu_bar()
         }
         ImGui::EndMainMenuBar();
     }
+
     // clang-format on
 }
 
@@ -711,6 +745,10 @@ void ScreenEditGame::copy_selection()
 
 void ScreenEditGame::paste_selection()
 {
+    if (copied_objects_floors_.empty())
+    {
+        return;
+    }
     int offset = editor_state_.current_floor - copy_start_floor_;
 
     // Copy the floors to create an offset if the floor has changed
@@ -751,7 +789,7 @@ void ScreenEditGame::try_set_tool_to_create_wall()
     // For example, selecting a wall and then moving up a floor, you should not be able to then
     // resize that wall from the "wrong floor"
     // So this explictly prevents that from happening
-    if (tool_->get_tool_type() == ToolType::UpdateWall)
+    if (tool_ && tool_->get_tool_type() == ToolType::UpdateWall)
     {
         tool_ = std::make_unique<CreateWallTool>();
     }

@@ -1,6 +1,7 @@
 #include "EditorState.h"
 
 #include "LevelObjects/LevelObject.h"
+#include "Tool.h"
 
 namespace
 {
@@ -56,6 +57,7 @@ void Selection::add_to_selection(ObjectId id, int floor)
 
 void Selection::clear_selection()
 {
+
     object_floors.clear();
     objects.clear();
     p_active_object = nullptr;

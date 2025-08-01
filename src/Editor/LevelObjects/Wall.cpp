@@ -57,10 +57,11 @@ template <>
     auto line = wall.parameters.line;
     auto dir = glm::normalize(line.start - line.end);
 
-    line.start -= dir * HALF_TILE_SIZE_F;
-    line.end += dir * HALF_TILE_SIZE_F;
+    // Slightly offset from the end of the wall
+    line.start -= dir * HALF_TILE_SIZE_F / 4.0f;
+    line.end += dir * HALF_TILE_SIZE_F / 4.0f;
 
-    return distance_to_line(selection_tile, line) < 10;
+    return distance_to_line(selection_tile, line) < 4.0f;
 }
 
 template <>
