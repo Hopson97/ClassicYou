@@ -106,7 +106,7 @@ void EditorLevel::set_object_id(ObjectId current_id, ObjectId new_id)
 }
 
 void EditorLevel::render(gl::Shader& scene_shader, const std::vector<ObjectId>& active_objects,
-                            int current_floor)
+                         int current_floor, const glm::vec3& selected_offset)
 {
     std::vector<LevelObjectsMesh3D*> p_active;
 
@@ -140,6 +140,8 @@ void EditorLevel::render(gl::Shader& scene_shader, const std::vector<ObjectId>& 
 
     // Render the selected object seperate
     scene_shader.set_uniform("selected", true);
+    scene_shader.set_uniform("model_matrix",
+                             create_model_matrix({.position = selected_offset / TILE_SIZE_F}));
     for (auto mesh : p_active)
     {
         mesh->bind().draw_elements();
@@ -147,9 +149,8 @@ void EditorLevel::render(gl::Shader& scene_shader, const std::vector<ObjectId>& 
     scene_shader.set_uniform("selected", false);
 }
 
-
 void EditorLevel::render_2d(DrawingPad& drawing_pad, const std::vector<ObjectId>& active_objects,
-                               int current_floor)
+                            int current_floor, const glm::vec2& selected_offset)
 {
     // Group lower floor objects to ensure it is always rendered under current floor objects
     // and ensuring selected objects always render on-top
@@ -165,11 +166,12 @@ void EditorLevel::render_2d(DrawingPad& drawing_pad, const std::vector<ObjectId>
     // Render a group of objects, controlling the clour. Objects not on the current floor are
     // renderd using a greyed-out colour
     auto draw_group = [&](const std::vector<const LevelObject*>& group, bool is_current_floor,
-                          bool selected_group)
+                          bool is_selected_objects_group)
     {
         for (auto object : group)
         {
-            object->render_2d(drawing_pad, is_current_floor, selected_group);
+            auto offset = is_selected_objects_group ? selected_offset : glm::vec2{0};
+            object->render_2d(drawing_pad, is_current_floor, is_selected_objects_group, offset);
         }
     };
 
@@ -249,7 +251,6 @@ LevelObject* EditorLevel::try_select(glm::vec2 selection_tile, const LevelObject
     }
     return nullptr;
 }
-
 
 void EditorLevel::select_within(const Rectangle& selection_area, Selection& selection,
                                 int floor_number)

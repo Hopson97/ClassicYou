@@ -40,12 +40,14 @@ std::string object_to_string(const WallObject& wall)
 }
 
 template <>
-void render_object_2d(const WallObject& wall, DrawingPad& drawing_pad, const glm::vec4& colour)
+void render_object_2d(const WallObject& wall, DrawingPad& drawing_pad, const glm::vec4& colour,
+                      const glm::vec2& selected_offset)
 
 {
     // auto thickness = is_selected ? 3.0f : 2.0f;
 
-    drawing_pad.render_line(wall.parameters.line.start, wall.parameters.line.end, colour, 2.0f);
+    drawing_pad.render_line(wall.parameters.line.start + selected_offset,
+                            wall.parameters.line.end + selected_offset, colour, 2.0f);
 }
 
 template <>

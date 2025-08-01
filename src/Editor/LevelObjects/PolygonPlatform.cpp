@@ -40,14 +40,14 @@ std::string object_to_string(const PolygonPlatformObject& poly)
 
 template <>
 void render_object_2d(const PolygonPlatformObject& poly, DrawingPad& drawing_pad,
-                      const glm::vec4& colour)
+                      const glm::vec4& colour, const glm::vec2& selected_offset)
 
 {
     const auto& params = poly.parameters;
-    auto& tl = params.corner_top_left;
-    auto& tr = params.corner_top_right;
-    auto& br = params.corner_bottom_right;
-    auto& bl = params.corner_bottom_left;
+    auto tl = selected_offset + params.corner_top_left;
+    auto tr = selected_offset + params.corner_top_right;
+    auto br = selected_offset + params.corner_bottom_right;
+    auto bl = selected_offset + params.corner_bottom_left;
 
     drawing_pad.render_line(tl, tl + glm::vec2(TILE_SIZE, 0), colour, 5);
     drawing_pad.render_line(tl, tl + glm::vec2(0, TILE_SIZE), colour, 5);

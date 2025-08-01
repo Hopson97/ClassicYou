@@ -163,16 +163,14 @@ bool ScreenEditGame::on_init()
 
 void ScreenEditGame::on_event(const sf::Event& event)
 {
-    auto p_active = editor_state_.selection.p_active_object;
-
     if (showing_dialog())
     {
         return;
     }
 
     // When dragging an object and the final placement is decided, this is set to true. This is to
-    // prevent calls to the tool event fuctions, which can have issues (such as walls appears in odd
-    // place) if their events are handled post-move
+    // prevent calls to the tool event fuctions, which can cause objects to unintentionally placed
+    // where the object was moved to.
     bool finish_move = false;
 
     // Certain events cause issues if the current tool is UpdateWall (such as rendering the 2D
@@ -259,7 +257,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
             // Start dragging the selected object
             if (moving_selection)
             {
-                select_position_ = editor_state_.node_hovered;
+                move_start_tile_ = editor_state_.node_hovered;
                 moving_object_ = true;
 
                 moving_object_cache_.clear();
@@ -279,21 +277,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
         if (editor_state_.selection.has_selection() && moving_object_)
         {
-            std::vector<LevelObject> old_objects;
-            std::vector<LevelObject> new_objects;
-            for (auto object : moving_objects_)
-            {
-                old_objects.push_back(*object);
-                new_objects.push_back(*object);
-            }
-            for (auto& new_object : new_objects)
-            {
-                new_object.move(editor_state_.node_hovered - select_position_);
-            }
-            select_position_ = editor_state_.node_hovered;
-
-            action_manager_.push_action(
-                std::make_unique<BulkUpdateObjectAction>(old_objects, new_objects), false);
+            move_offset_ = editor_state_.node_hovered - move_start_tile_;
         }
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
@@ -341,7 +325,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
             }
         }
 
-        // Handle left button click
+        // Handle left button release
         if (mouse->button == sf::Mouse::Button::Left)
         {
             if (moving_object_)
@@ -355,8 +339,9 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 }
                 for (auto& new_object : new_objects)
                 {
-                    new_object.move(editor_state_.node_hovered - select_position_);
+                    new_object.move(editor_state_.node_hovered - move_start_tile_);
                 }
+                move_offset_ = glm::vec2{0};
 
                 action_manager_.push_action(
                     std::make_unique<BulkUpdateObjectAction>(moving_object_cache_, new_objects),
@@ -371,6 +356,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
     if (!moving_object_ && !finish_move)
     {
+        std::println("\n{} {} ", editor_state_.node_hovered.x, editor_state_.node_hovered.y);
         tool_->on_event(event, editor_state_.node_hovered, editor_state_, action_manager_);
     }
 
@@ -415,8 +401,8 @@ void ScreenEditGame::on_render(bool show_debug)
             tool_->render_preview_2d(drawing_pad_, editor_state_);
         }
 
-        level_.render_2d(drawing_pad_, editor_state_.selection.objects,
-                            editor_state_.current_floor);
+        level_.render_2d(drawing_pad_, editor_state_.selection.objects, editor_state_.current_floor,
+                         move_offset_);
 
         // Finalise 2d rendering
         drawing_pad_.display(camera_.transform);
@@ -474,8 +460,11 @@ void ScreenEditGame::on_render(bool show_debug)
     world_geometry_shader_.set_uniform("model_matrix", create_model_matrix({}));
 
     // Render the level itself
+    // All objects have their positions baked and are rendered where they are created. Selected
+    // objects, however, have their positions moved by the given offset for when they are being
+    // moved around
     level_.render(world_geometry_shader_, editor_state_.selection.objects,
-                     editor_state_.current_floor);
+                  editor_state_.current_floor, {move_offset_.x, 0, move_offset_.y});
 
     if (!moving_object_)
     {

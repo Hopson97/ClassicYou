@@ -43,10 +43,10 @@ std::string object_to_string(const PlatformObject& platform)
 
 template <>
 void render_object_2d(const PlatformObject& platform, DrawingPad& drawing_pad,
-                      const glm::vec4& colour)
+                      const glm::vec4& colour, const glm::vec2& selected_offset)
 
 {
-    const auto& position = platform.parameters.position;
+    const auto& position = platform.parameters.position + selected_offset;
     const auto& width = platform.properties.width * TILE_SIZE;
     const auto& depth = platform.properties.depth * TILE_SIZE;
 
@@ -211,7 +211,7 @@ LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform, int fl
 
     // Offset platform heights by a hair to prevent Z-fighting with PolygonPlatforms which can go
     // underneath
-    float ob = props.base * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT + 0.00025;
+    float ob = props.base * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT + 0.00025f;
     LevelObjectsMesh3D mesh;
     mesh.vertices = [&]()
     {

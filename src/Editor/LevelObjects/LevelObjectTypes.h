@@ -88,7 +88,8 @@ template <typename T>
 [[nodiscard]] std::string object_to_string(const T& object);
 
 template <typename T>
-void render_object_2d(const T& object, DrawingPad& pad, const glm::vec4& colour);
+void render_object_2d(const T& object, DrawingPad& pad, const glm::vec4& colour,
+                      const glm::vec2& selected_offset = {0,0});
 
 template <typename T>
 [[nodiscard]] bool object_try_select_2d(const T& object, glm::vec2 selection_tile);

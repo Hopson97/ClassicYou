@@ -97,7 +97,11 @@ class ScreenEditGame final : public Screen
     bool moving_object_ = false;
 
     /// When moving an object, this is the position to offset from
-    glm::ivec2 select_position_{0};
+    glm::ivec2 move_start_tile_{0};
+
+
+    /// When moving an object, this is how much the selection has been offset from the "select_position"
+    glm::vec2 move_offset_{0};
 
     /// Capture the state of the object being moved at the start such that the inital state can be
     /// returned to when CTRL+Z is done

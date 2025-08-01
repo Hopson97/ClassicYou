@@ -210,7 +210,8 @@ CreateObjectTool::CreateObjectTool(ObjectTypeName object_type)
 void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
                                 ActionManager& actions)
 {
-
+    tile_ = node;
+    std::println("{} {}", node.x, node.y);
     if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
@@ -325,7 +326,6 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
                 break;
         }
         object_preview_.update();
-        tile_ = node;
     }
 }
 

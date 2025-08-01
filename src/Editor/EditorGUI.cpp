@@ -371,7 +371,7 @@ std::pair<UpdateResult, RampProps> ramp_gui(const LevelTextures& textures, const
     slider(result, "Depth", new_props.depth, 0.5f, 20.0f, 0.5f);
 
     slider(result, "Start Height", new_props.start_height, 0.0f, 0.9f, 0.1f);
-    slider(result, "End Height", new_props.end_height, new_props.start_height + 0.1, 1.0f, 0.1f);
+    slider(result, "End Height", new_props.end_height, new_props.start_height + 0.1f, 1.0f, 0.1f);
 
     enum_gui(result, "Style", ramp.properties.style, new_props.style);
     ImGui::Separator();

@@ -41,7 +41,7 @@ std::string object_to_string(const PillarObject& pillar)
 }
 
 template <>
-void render_object_2d(const PillarObject& pillar, DrawingPad& drawing_pad, const glm::vec4& colour)
+void render_object_2d(const PillarObject& pillar, DrawingPad& drawing_pad, const glm::vec4& colour, const glm::vec2& selected_offset)
 
 {
     const auto& position = pillar.parameters.position;
@@ -49,7 +49,7 @@ void render_object_2d(const PillarObject& pillar, DrawingPad& drawing_pad, const
 
     auto offset = size / 2.0f;
 
-    drawing_pad.render_quad(position - offset, {size, size}, colour);
+    drawing_pad.render_quad(position - offset + selected_offset, {size, size}, colour);
 }
 
 template <>

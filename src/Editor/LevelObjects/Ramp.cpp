@@ -44,10 +44,11 @@ std::string object_to_string(const RampObject& ramp)
 }
 
 template <>
-void render_object_2d(const RampObject& ramp, DrawingPad& drawing_pad, const glm::vec4& colour)
+void render_object_2d(const RampObject& ramp, DrawingPad& drawing_pad, const glm::vec4& colour,
+                      const glm::vec2& selected_offset)
 
 {
-    const auto& position = ramp.parameters.position;
+    const auto& position = ramp.parameters.position + selected_offset;
     const auto& width = ramp.properties.width * TILE_SIZE;
     const auto& depth = ramp.properties.depth * TILE_SIZE;
 

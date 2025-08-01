@@ -166,10 +166,11 @@ std::string LevelObject::to_string() const
                                   { return object_to_string(object); }, object_type));
 }
 
-void LevelObject::render_2d(DrawingPad& drawing_pad, bool is_current_floor, bool active) const
+void LevelObject::render_2d(DrawingPad& drawing_pad, bool is_current_floor, bool is_selected,
+                            const glm::vec2& selected_offset) const
 {
     auto colour = is_current_floor ? Colour::WHITE : Colour::GREY;
-    if (active)
+    if (is_selected)
     {
         if (is_current_floor)
         {
@@ -181,9 +182,10 @@ void LevelObject::render_2d(DrawingPad& drawing_pad, bool is_current_floor, bool
         }
     }
 
-    std::visit([&](auto&& object) { render_object_2d(object, drawing_pad, colour); },
+    std::visit([&](auto&& object) { render_object_2d(object, drawing_pad, colour, selected_offset); },
                object_type);
 }
+
 
 bool LevelObject::try_select_2d(glm::vec2 selection_tile) const
 {

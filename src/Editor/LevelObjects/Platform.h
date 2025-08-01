@@ -53,7 +53,7 @@ template <>
 
 template <>
 void render_object_2d<PlatformObject>(const PlatformObject& platform, DrawingPad& drawing_pad,
-                                      const glm::vec4& colour);
+                                      const glm::vec4& colour, const glm::vec2& selected_offset);
 
 template <>
 [[nodiscard]] bool object_try_select_2d<PlatformObject>(const PlatformObject& platform,

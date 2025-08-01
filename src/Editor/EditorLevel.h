@@ -34,13 +34,14 @@ class EditorLevel
 
     /// Renders the level in 3D using the given shader and highlights the active object.
     /// Assumes the camera, shader, and other OpenGL states are set up correctly.
+    /// The "selected_offset" can be used to offset the selected objects
     void render(gl::Shader& scene_shader, const std::vector<ObjectId>& active_objects,
-                   int current_floor);
+                   int current_floor, const glm::vec3& selected_offset );
 
     /// Render the level in 2D using the given drawing pad, highlighting the active object.
     /// Assumes the camera, shader, and other OpenGL states are set up correctly.
     void render_2d(DrawingPad& drawing_pad, const std::vector<ObjectId>& active_objects,
-                      int current_floor);
+                   int current_floor, const glm::vec2& selected_offset);
 
     /// Try to select a level object at the given tile position. Returns nullptr if no object is
     /// found.
@@ -67,6 +68,8 @@ class EditorLevel
     bool load(const std::filesystem::path& path);
 
     bool changes_made_since_last_save() const;
+
+
 
   private:
     bool do_save(const std::filesystem::path& path) const;
