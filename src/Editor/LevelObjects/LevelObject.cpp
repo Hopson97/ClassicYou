@@ -168,9 +168,20 @@ std::string LevelObject::to_string() const
 
 void LevelObject::render_2d(DrawingPad& drawing_pad, bool is_current_floor, bool active) const
 {
-    auto colour = active ? Colour::RED : (is_current_floor ? Colour::WHITE : Colour::GREY);
+    auto colour = is_current_floor ? Colour::WHITE : Colour::GREY;
+    if (active)
+    {
+        if (is_current_floor)
+        {
+            colour = Colour::RED;
+        }
+        else
+        {
+            colour.r = 1.0f;
+        }
+    }
 
-    std::visit([&](auto&& object) { render_object_2d(object, drawing_pad, colour, active); },
+    std::visit([&](auto&& object) { render_object_2d(object, drawing_pad, colour); },
                object_type);
 }
 

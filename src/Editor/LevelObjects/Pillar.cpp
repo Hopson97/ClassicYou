@@ -41,8 +41,7 @@ std::string object_to_string(const PillarObject& pillar)
 }
 
 template <>
-void render_object_2d(const PillarObject& pillar, DrawingPad& drawing_pad, const glm::vec4& colour,
-                      bool is_selected)
+void render_object_2d(const PillarObject& pillar, DrawingPad& drawing_pad, const glm::vec4& colour)
 
 {
     const auto& position = pillar.parameters.position;

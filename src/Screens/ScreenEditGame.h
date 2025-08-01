@@ -55,6 +55,8 @@ class ScreenEditGame final : public Screen
     void copy_selection();
     void paste_selection();
 
+    void try_set_tool_to_create_wall();
+
   private:
     Camera camera_;
 

@@ -27,7 +27,7 @@ namespace
     glm::ivec2 map_pixel_to_tile(glm::vec2 point, const Camera& camera)
     {
         // TODO handle camera zooming
-        auto scale = HALF_TILE_SIZE;
+        auto scale = HALF_TILE_SIZE / 2.0f;
 
         auto& transform = camera.transform.position;
         auto cam_scale = camera.get_orthographic_scale();
@@ -258,9 +258,8 @@ void ScreenEditGame::on_event(const sf::Event& event)
         editor_state_.node_hovered =
             map_pixel_to_tile({mouse->position.x, mouse->position.y}, drawing_pad_.get_camera());
 
-        if (p_active && moving_object_)
+        if (editor_state_.selection.has_selection() && moving_object_)
         {
-
             std::vector<LevelObject> old_objects;
             std::vector<LevelObject> new_objects;
             for (auto object : moving_objects_)
@@ -294,6 +293,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 {
                     editor_state_.selection.add_to_selection(selection,
                                                              editor_state_.current_floor);
+                    try_set_tool_to_create_wall();
                 }
                 else
                 {
@@ -318,10 +318,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 editor_state_.selection.clear_selection();
                 // Nothing was selected, default back to CreateWallTool if currently selecting a
                 // wall
-                if (tool_->get_tool_type() == ToolType::UpdateWall)
-                {
-                    tool_ = std::make_unique<CreateWallTool>();
-                }
+                try_set_tool_to_create_wall();
             }
         }
 
@@ -360,10 +357,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
     if (try_set_tool_to_wall)
     {
-        if (tool_->get_tool_type() == ToolType::UpdateWall)
-        {
-            tool_ = std::make_unique<CreateWallTool>();
-        }
+        try_set_tool_to_create_wall();
     }
 }
 
@@ -396,14 +390,14 @@ void ScreenEditGame::on_render(bool show_debug)
     {
         glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
 
-        level_.render_2d_v2(drawing_pad_, editor_state_.selection.objects,
-                            editor_state_.current_floor);
-
         if (tool_->get_tool_type() == ToolType::UpdateWall ||
             (!ImGui::GetIO().WantCaptureMouse && !moving_object_))
         {
             tool_->render_preview_2d(drawing_pad_, editor_state_);
         }
+
+        level_.render_2d_v2(drawing_pad_, editor_state_.selection.objects,
+                            editor_state_.current_floor);
 
         // Finalise 2d rendering
         drawing_pad_.display(camera_.transform);
@@ -551,12 +545,14 @@ void ScreenEditGame::render_editor_ui()
         {
             level_.ensure_floor_exists(--editor_state_.current_floor);
             camera_.transform.position.y -= FLOOR_HEIGHT;
+            try_set_tool_to_create_wall();
         }
         ImGui::SameLine();
         if (ImGui::Button("Floor Up"))
         {
             level_.ensure_floor_exists(++editor_state_.current_floor);
             camera_.transform.position.y += FLOOR_HEIGHT;
+            try_set_tool_to_create_wall();
         }
         ImGui::Text("Lowest: %d - Current: %d - Highest: %d", level_.get_min_floor(),
                     editor_state_.current_floor, level_.get_max_floor());
@@ -746,4 +742,17 @@ void ScreenEditGame::paste_selection()
 
     action_manager_.push_action(std::make_unique<AddBulkObjectsAction>(copied_objects_, floors),
                                 true);
+}
+
+void ScreenEditGame::try_set_tool_to_create_wall()
+{
+    // When the current tool is updating walls, it can cause be a bit jarring when doing things such
+    // as selecting multiple objects or moving between floors.
+    // For example, selecting a wall and then moving up a floor, you should not be able to then
+    // resize that wall from the "wrong floor"
+    // So this explictly prevents that from happening
+    if (tool_->get_tool_type() == ToolType::UpdateWall)
+    {
+        tool_ = std::make_unique<CreateWallTool>();
+    }
 }

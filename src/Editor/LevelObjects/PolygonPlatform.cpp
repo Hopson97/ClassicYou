@@ -40,7 +40,7 @@ std::string object_to_string(const PolygonPlatformObject& poly)
 
 template <>
 void render_object_2d(const PolygonPlatformObject& poly, DrawingPad& drawing_pad,
-                      const glm::vec4& colour, bool is_selected)
+                      const glm::vec4& colour)
 
 {
     const auto& params = poly.parameters;

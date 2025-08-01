@@ -20,6 +20,7 @@ struct Selection
     void clear_selection();
 
     bool single_object_is_selected() const;
+    bool has_selection() const;
 };
 
 /// @brief The state of the editor input, such as the currently hovered node, the selected object

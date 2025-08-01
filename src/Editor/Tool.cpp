@@ -79,7 +79,7 @@ void CreateWallTool::render_preview_2d(DrawingPad& drawing_pad,
     {
         render_object_2d(
             WallObject{.properties = state.wall_default, .parameters = {.line = wall_line_}},
-            drawing_pad, Colour::RED, true);
+            drawing_pad, Colour::RED);
     }
 }
 
@@ -341,17 +341,15 @@ void CreateObjectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorSt
     switch (object_type_)
     {
         case ObjectTypeName::Platform:
-
             render_object_2d(
                 PlatformObject{
                     .properties = state.platform_default,
                     .parameters = {.position = tile_},
 
                 },
-                drawing_pad, Colour::RED, true);
+                drawing_pad, Colour::RED);
             break;
         case ObjectTypeName::PolygonPlatform:
-        {
             render_object_2d(
                 PolygonPlatformObject{
                     .parameters =
@@ -362,9 +360,9 @@ void CreateObjectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorSt
                             .corner_bottom_left = tile_ + glm::vec2{0, 10.0f} * TILE_SIZE_F,
                         },
                 },
-                drawing_pad, Colour::RED, true);
-        }
-        break;
+                drawing_pad, Colour::RED);
+
+            break;
 
         case ObjectTypeName::Pillar:
             render_object_2d(
@@ -372,7 +370,7 @@ void CreateObjectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorSt
                     .properties = state.pillar_default,
                     .parameters = {.position = tile_},
                 },
-                drawing_pad, Colour::RED, true);
+                drawing_pad, Colour::RED);
             break;
 
         case ObjectTypeName::Ramp:
@@ -381,7 +379,7 @@ void CreateObjectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorSt
                     .properties = state.ramp_default,
                     .parameters = {.position = tile_},
                 },
-                drawing_pad, Colour::RED, true);
+                drawing_pad, Colour::RED);
             break;
 
         default:

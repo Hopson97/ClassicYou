@@ -4,8 +4,8 @@
 
 #include <nlohmann/json.hpp>
 
-#include "../Util/Util.h"
 #include "../Util/Maths.h"
+#include "../Util/Util.h"
 #include "DrawingPad.h"
 #include "EditConstants.h"
 #include "EditorGUI.h"
@@ -164,7 +164,7 @@ void EditorLevel::render_v2(gl::Shader& scene_shader, const std::vector<ObjectId
                 continue;
             }
 
-            if (contains(active_objects,object.id))
+            if (contains(active_objects, object.id))
             {
                 p_active.push_back(&object.mesh);
             }
@@ -187,42 +187,115 @@ void EditorLevel::render_v2(gl::Shader& scene_shader, const std::vector<ObjectId
 void EditorLevel::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object,
                             int current_floor)
 {
+    // Create groups such that lower floor objects are always rendered BELOW current floor objects
+    std::vector<LevelObject*> below_group;
+    below_group.reserve(128);
+
     for (auto& floor : floors_manager_.floors)
     {
         // Only render the current floor and the floor below
-        if (floor.real_floor == current_floor || (current_floor == floor.real_floor + 1))
+        if (floor.real_floor == current_floor)
         {
             for (auto& object : floor.objects)
             {
+
                 auto is_selected =
                     p_active_object && p_active_object->object_id == object.object_id;
-                // The current floor should be rendered using full colour, otherwise a more grey
-                // colour is used to make it obvious it is the floor below
-                object.render_2d(drawing_pad, floor.real_floor == current_floor, is_selected);
+                // The current floor should be rendered using full colour
+                object.render_2d(drawing_pad, true, is_selected);
             }
         }
+        else if (current_floor == floor.real_floor + 1)
+        {
+            for (auto& object : floor.objects)
+            {
+                below_group.push_back(&object);
+            }
+        }
+    }
+
+    // The floor below is rendered using a greyish colour is used to make it obvious it is the floor
+    // below
+    for (auto& object : below_group)
+    {
+        auto is_selected = p_active_object && p_active_object->object_id == object->object_id;
+        // The current floor should be rendered using full colour, otherwise a more grey
+        // colour is used to make it obvious it is the floor below
+        object->render_2d(drawing_pad, false, is_selected);
     }
 }
 
-void EditorLevel::render_2d_v2(DrawingPad& drawing_pad,
-                               const std::vector<ObjectId>& active_objects,
+void EditorLevel::render_2d_v2(DrawingPad& drawing_pad, const std::vector<ObjectId>& active_objects,
                                int current_floor)
 {
+    // Group lower floor objects to ensure it is always rendered under current floor objects
+    // and ensuring selected objects always render on-top
+    static std::vector<const LevelObject*> below_group;
+    static std::vector<const LevelObject*> below_group_selected;
+    static std::vector<const LevelObject*> current_floor_group;
+    static std::vector<const LevelObject*> current_floor_group_selected;
+    below_group.clear();
+    below_group_selected.clear();
+    current_floor_group.clear();
+    current_floor_group_selected.clear();
+
+    // Render a group of objects, controlling the clour. Objects not on the current floor are
+    // renderd using a greyed-out colour
+    auto draw_group = [&](const std::vector<const LevelObject*>& group, bool is_current_floor,
+                          bool selected_group)
+    {
+        for (auto object : group)
+        {
+            object->render_2d(drawing_pad, is_current_floor, selected_group);
+        }
+    };
+
+    // Sort a floor of objects to determine if they are selected or not.
+    auto sort_to_groups = [&](const std::vector<LevelObject>& objects,
+                              std::vector<const LevelObject*>& not_selected,
+                              std::vector<const LevelObject*>& selected)
+    {
+        for (auto& object : objects)
+        {
+            if (contains(active_objects, object.object_id))
+            {
+                selected.push_back(&object);
+            }
+            else
+            {
+                not_selected.push_back(&object);
+            }
+        }
+    };
+
     for (auto& floor : floors_manager_.floors)
     {
         // Only render the current floor and the floor below
-        if (floor.real_floor == current_floor || (current_floor == floor.real_floor + 1))
+        if (floor.real_floor == current_floor)
         {
-            for (auto& object : floor.objects)
-            {
-                auto is_selected = contains(active_objects, object.object_id);
-
-                // The current floor should be rendered using full colour, otherwise a more grey
-                // colour is used to make it obvious it is the floor below
-                object.render_2d(drawing_pad, floor.real_floor == current_floor, is_selected);
-            }
+            sort_to_groups(floor.objects, current_floor_group, current_floor_group_selected);
+        }
+        else if (current_floor == floor.real_floor + 1)
+        {
+            sort_to_groups(floor.objects, below_group, below_group_selected);
         }
     }
+
+    // In 2D, objects rendered first are rendered ontop of objects rendered after.
+    // So the drawing order is:
+    //  1. Current floor selected objects
+    //  2. Current floor NON selected objects
+    //  3. Below floor NON selected objects
+    //  4. Below floor NON selected objects
+
+    // The current floor is rendered using a white colour
+    draw_group(current_floor_group_selected, true, true);
+    draw_group(current_floor_group, true, false);
+
+    // The floor below is rendered using a greyish colour is used to make it obvious it is the floor
+    // below
+    draw_group(below_group_selected, false, true);
+    draw_group(below_group, false, false);
 }
 
 LevelObject* EditorLevel::try_select(glm::vec2 selection_tile, const LevelObject* p_active_object,

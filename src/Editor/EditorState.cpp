@@ -65,3 +65,8 @@ bool Selection::single_object_is_selected() const
 {
     return p_active_object && objects.size() == 1;
 }
+
+bool Selection::has_selection() const
+{
+    return p_active_object || !objects.empty();
+}

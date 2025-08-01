@@ -48,8 +48,7 @@ object_to_string<PolygonPlatformObject>(const PolygonPlatformObject& poly);
 
 template <>
 void render_object_2d<PolygonPlatformObject>(const PolygonPlatformObject& poly,
-                                             DrawingPad& drawing_pad, const glm::vec4& colour,
-                                             bool is_selected);
+                                             DrawingPad& drawing_pad, const glm::vec4& colour);
 
 template <>
 [[nodiscard]] bool object_try_select_2d<PolygonPlatformObject>(const PolygonPlatformObject& poly,
