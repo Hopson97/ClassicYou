@@ -189,10 +189,13 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 break;
 
             case sf::Keyboard::Key::Delete:
-                if (p_active)
+                if (editor_state_.selection.has_selection())
                 {
-                    action_manager_.push_action(std::make_unique<DeleteObjectAction>(
-                        *p_active, editor_state_.current_floor));
+                    auto [objects, floors] =
+                        level_.copy_objects_and_floors(editor_state_.selection.objects);
+
+                    action_manager_.push_action(
+                        std::make_unique<DeleteObjectAction>(objects, floors));
                     try_set_tool_to_wall = true;
                 }
                 break;
@@ -290,7 +293,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
             select_position_ = editor_state_.node_hovered;
 
             action_manager_.push_action(
-                std::make_unique<UpdateObjectActionV2>(old_objects, new_objects), false);
+                std::make_unique<BulkUpdateObjectAction>(old_objects, new_objects), false);
         }
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
@@ -356,7 +359,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 }
 
                 action_manager_.push_action(
-                    std::make_unique<UpdateObjectActionV2>(moving_object_cache_, new_objects),
+                    std::make_unique<BulkUpdateObjectAction>(moving_object_cache_, new_objects),
                     true);
 
                 finish_move = true;
@@ -412,7 +415,7 @@ void ScreenEditGame::on_render(bool show_debug)
             tool_->render_preview_2d(drawing_pad_, editor_state_);
         }
 
-        level_.render_2d_v2(drawing_pad_, editor_state_.selection.objects,
+        level_.render_2d(drawing_pad_, editor_state_.selection.objects,
                             editor_state_.current_floor);
 
         // Finalise 2d rendering
@@ -471,7 +474,7 @@ void ScreenEditGame::on_render(bool show_debug)
     world_geometry_shader_.set_uniform("model_matrix", create_model_matrix({}));
 
     // Render the level itself
-    level_.render_v2(world_geometry_shader_, editor_state_.selection.objects,
+    level_.render(world_geometry_shader_, editor_state_.selection.objects,
                      editor_state_.current_floor);
 
     if (!moving_object_)

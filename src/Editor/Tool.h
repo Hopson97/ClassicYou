@@ -115,12 +115,15 @@ class AreaSelectTool : public ITool
     void select(EditorState& state);
 
     bool active_dragging_ = false;
+    bool render_preview_mesh_ = false;
 
     EditorLevel* p_level_;
 
     // The line refers to the start corner and end corner
     Line selection_area_;
     LevelObjectsMesh3D selection_cube_;
+    glm::ivec3 selection_cube_start_;
+    glm::ivec3 selection_cube_size_;
 
     /// The floors selected - Default is the current floor but this can be extended with Q and E for
     /// lower and upper

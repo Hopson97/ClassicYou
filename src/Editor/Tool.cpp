@@ -29,7 +29,7 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
                     .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
                 },
                 state.current_floor);
-            wall_preview_.buffer();
+            wall_preview_.update();
         }
     }
     else if (event.is<sf::Event::MouseMoved>())
@@ -41,7 +41,7 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
                 .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
             },
             state.current_floor);
-        wall_preview_.buffer();
+        wall_preview_.update();
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
@@ -50,7 +50,7 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
             active_dragging_ = false;
             if (glm::length(wall_line_.start - wall_line_.end) > 0.25f)
             {
-                actions.push_action(std::make_unique<AddObjectActionV2>(
+                actions.push_action(std::make_unique<AddObjectAction>(
                     LevelObject{WallObject{
                         .properties = state.wall_default,
                         .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
@@ -121,7 +121,7 @@ void UpdateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
                 wall_line_.end = wall_.parameters.line.end;
 
                 wall_preview_ = generate_wall_mesh(wall_, state.current_floor);
-                wall_preview_.buffer();
+                wall_preview_.update();
             }
         }
     }
@@ -149,7 +149,7 @@ void UpdateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
                     .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
                 },
                 state.current_floor);
-            wall_preview_.buffer();
+            wall_preview_.update();
         }
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
@@ -218,7 +218,7 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
             switch (object_type_)
             {
                 case ObjectTypeName::Platform:
-                    actions.push_action(std::make_unique<AddObjectActionV2>(
+                    actions.push_action(std::make_unique<AddObjectAction>(
                         LevelObject{
                             PlatformObject{
                                 .properties = state.platform_default,
@@ -229,7 +229,7 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
                     break;
 
                 case ObjectTypeName::PolygonPlatform:
-                    actions.push_action(std::make_unique<AddObjectActionV2>(
+                    actions.push_action(std::make_unique<AddObjectAction>(
                         LevelObject{
                             PolygonPlatformObject{
                                 .properties = state.polygon_platform_default,
@@ -248,7 +248,7 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
                     break;
 
                 case ObjectTypeName::Pillar:
-                    actions.push_action(std::make_unique<AddObjectActionV2>(
+                    actions.push_action(std::make_unique<AddObjectAction>(
                         LevelObject{
                             PillarObject{
                                 .properties = state.pillar_default,
@@ -259,7 +259,7 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
                     break;
 
                 case ObjectTypeName::Ramp:
-                    actions.push_action(std::make_unique<AddObjectActionV2>(
+                    actions.push_action(std::make_unique<AddObjectAction>(
                         LevelObject{
                             RampObject{
                                 .properties = state.ramp_default,
@@ -324,7 +324,7 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
                              magic_enum::enum_name(object_type_));
                 break;
         }
-        object_preview_.buffer();
+        object_preview_.update();
         tile_ = node;
     }
 }
@@ -413,6 +413,7 @@ void AreaSelectTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
             min_floor_ = state.current_floor;
 
             active_dragging_ = true;
+            render_preview_mesh_ = true;
             selection_area_.start = node;
             selection_area_.end = node;
         }
@@ -429,6 +430,7 @@ void AreaSelectTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
             active_dragging_ = false;
+            render_preview_mesh_ = false;
             auto start = glm::ivec2{selection_area_.start};
             auto end = glm::ivec2{selection_area_.end};
 
@@ -454,6 +456,7 @@ void AreaSelectTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
 
 void AreaSelectTool::render_preview()
 {
+
     auto start = glm::ivec2{selection_area_.start};
     auto end = glm::ivec2{selection_area_.end};
     if (glm::length2(glm::vec2{end - start}) < HALF_TILE_SIZE_F * HALF_TILE_SIZE_F)
@@ -471,15 +474,23 @@ void AreaSelectTool::render_preview()
         std::swap(start.y, end.y);
     }
 
-    glm::vec3 cube_begin{start.x / TILE_SIZE, min_floor_ * FLOOR_HEIGHT, start.y / TILE_SIZE};
-    glm::vec3 cube_end{end.x / TILE_SIZE, max_floor_ * FLOOR_HEIGHT + FLOOR_HEIGHT + 0.01,
-                       end.y / TILE_SIZE};
+    glm::ivec3 cube_start{start.x / TILE_SIZE, min_floor_ * FLOOR_HEIGHT, start.y / TILE_SIZE};
+    glm::ivec3 cube_end{end.x / TILE_SIZE, max_floor_ * FLOOR_HEIGHT + FLOOR_HEIGHT + 0.01,
+                        end.y / TILE_SIZE};
 
-    // 16 is the id for a "blank" feature
-    selection_cube_ =
-        generate_cube_mesh_level(cube_begin, cube_end - cube_begin, 16, {255, 255, 255, 150});
+    auto size = cube_end - selection_cube_start_;
 
-    selection_cube_.update();
+    if (cube_start != selection_cube_start_ || size != selection_cube_size_)
+    {
+        selection_cube_start_ = cube_start;
+        selection_cube_size_ = size;
+
+        // 16 is the id for a "blank" feature
+        selection_cube_ = generate_cube_mesh_level(selection_cube_start_, selection_cube_size_, 16,
+                                                   {255, 255, 255, 150});
+
+        selection_cube_.update();
+    }
 
     gl::enable(gl::Capability::Blend);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -493,7 +504,6 @@ void AreaSelectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorStat
 {
     if (active_dragging_)
     {
-
         drawing_pad.render_quad(selection_area_.start, selection_area_.end - selection_area_.start,
                                 Colour::RED);
     }

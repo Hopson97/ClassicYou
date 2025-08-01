@@ -38,13 +38,11 @@ struct EditorState
     /// The currently hovered node/tile in the editor.
     glm::ivec2 node_hovered{0};
 
-    /// @brief The currently selected object in the editor.
-    /// When not nullptr, this object is highlighted in the editor and its properties are displayed
-    /// in the properties GUI.
-    LevelObject* p_active_object = nullptr;
-
     /// The current floor number that the editor is working on.
     int current_floor = 0;
 
+    /// The currently selected objects.
+    /// When not empty, these objects are highlighted in the editor
+    /// If there is  a single oject selected,  its properties are displayed in the properties GUI.
     Selection selection;
 };

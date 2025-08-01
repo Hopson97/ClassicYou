@@ -36,7 +36,7 @@ LevelObject& EditorLevel::add_object(const LevelObject& object, Floor& floor)
         .id = new_object.object_id,
         .mesh = object.to_geometry(floor.real_floor),
     };
-    level_mesh.mesh.buffer();
+    level_mesh.mesh.update();
     floor.meshes.push_back(std::move(level_mesh));
     changes_made_since_last_save_ = true;
 
@@ -52,9 +52,8 @@ void EditorLevel::update_object(const LevelObject& object, int floor_number)
 
             if (mesh.id == object.object_id)
             {
-                auto new_mesh = object.to_geometry(floor.real_floor);
-                new_mesh.buffer();
-                mesh.mesh = std::move(new_mesh);
+                mesh.mesh = object.to_geometry(floor.real_floor);
+                mesh.mesh.update();
                 break;
             }
         }
@@ -106,43 +105,7 @@ void EditorLevel::set_object_id(ObjectId current_id, ObjectId new_id)
     }
 }
 
-void EditorLevel::render(gl::Shader& scene_shader, const LevelObject* p_active_object,
-                         int current_floor)
-{
-    bool rendered_selected = false;
-    scene_shader.set_uniform("selected", false);
-
-    for (auto& floor : floors_manager_.floors)
-    {
-        // Render floors only from the current floor and below
-        if (floor.real_floor > current_floor)
-        {
-            // continue;
-        }
-
-        for (auto& object : floor.meshes)
-        {
-            if (!object.mesh.has_buffered())
-            {
-                continue;
-            }
-
-            if (!rendered_selected && p_active_object && object.id == p_active_object->object_id)
-            {
-                rendered_selected = true;
-                scene_shader.set_uniform("selected", true);
-                object.mesh.bind().draw_elements();
-                scene_shader.set_uniform("selected", false);
-            }
-            else
-            {
-                object.mesh.bind().draw_elements();
-            }
-        }
-    }
-}
-
-void EditorLevel::render_v2(gl::Shader& scene_shader, const std::vector<ObjectId>& active_objects,
+void EditorLevel::render(gl::Shader& scene_shader, const std::vector<ObjectId>& active_objects,
                             int current_floor)
 {
     std::vector<LevelObjectsMesh3D*> p_active;
@@ -184,48 +147,8 @@ void EditorLevel::render_v2(gl::Shader& scene_shader, const std::vector<ObjectId
     scene_shader.set_uniform("selected", false);
 }
 
-void EditorLevel::render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object,
-                            int current_floor)
-{
-    // Create groups such that lower floor objects are always rendered BELOW current floor objects
-    std::vector<LevelObject*> below_group;
-    below_group.reserve(128);
 
-    for (auto& floor : floors_manager_.floors)
-    {
-        // Only render the current floor and the floor below
-        if (floor.real_floor == current_floor)
-        {
-            for (auto& object : floor.objects)
-            {
-
-                auto is_selected =
-                    p_active_object && p_active_object->object_id == object.object_id;
-                // The current floor should be rendered using full colour
-                object.render_2d(drawing_pad, true, is_selected);
-            }
-        }
-        else if (current_floor == floor.real_floor + 1)
-        {
-            for (auto& object : floor.objects)
-            {
-                below_group.push_back(&object);
-            }
-        }
-    }
-
-    // The floor below is rendered using a greyish colour is used to make it obvious it is the floor
-    // below
-    for (auto& object : below_group)
-    {
-        auto is_selected = p_active_object && p_active_object->object_id == object->object_id;
-        // The current floor should be rendered using full colour, otherwise a more grey
-        // colour is used to make it obvious it is the floor below
-        object->render_2d(drawing_pad, false, is_selected);
-    }
-}
-
-void EditorLevel::render_2d_v2(DrawingPad& drawing_pad, const std::vector<ObjectId>& active_objects,
+void EditorLevel::render_2d(DrawingPad& drawing_pad, const std::vector<ObjectId>& active_objects,
                                int current_floor)
 {
     // Group lower floor objects to ensure it is always rendered under current floor objects

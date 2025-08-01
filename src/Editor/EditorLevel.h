@@ -34,14 +34,12 @@ class EditorLevel
 
     /// Renders the level in 3D using the given shader and highlights the active object.
     /// Assumes the camera, shader, and other OpenGL states are set up correctly.
-    void render(gl::Shader& scene_shader, const LevelObject* p_active_object, int current_floor);
-    void render_v2(gl::Shader& scene_shader, const std::vector<ObjectId>& active_objects,
+    void render(gl::Shader& scene_shader, const std::vector<ObjectId>& active_objects,
                    int current_floor);
 
     /// Render the level in 2D using the given drawing pad, highlighting the active object.
     /// Assumes the camera, shader, and other OpenGL states are set up correctly.
-    void render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object, int current_floor);
-    void render_2d_v2(DrawingPad& drawing_pad, const std::vector<ObjectId>& active_objects,
+    void render_2d(DrawingPad& drawing_pad, const std::vector<ObjectId>& active_objects,
                       int current_floor);
 
     /// Try to select a level object at the given tile position. Returns nullptr if no object is
