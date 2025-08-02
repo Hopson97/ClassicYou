@@ -18,7 +18,7 @@ namespace
 
     /// Displays a list of available textures as a list of buttons, returns the ID of the given
     /// texture if a button is clicked
-    std::optional<TextureProp> texture_prop_gui(UpdateResult& result, const char* label,
+    std::optional<TextureProp> texture_prop_gui(PropGUIUpdateResult& result, const char* label,
                                                 TextureProp current_texture,
                                                 const LevelTextures& textures)
     {
@@ -112,7 +112,7 @@ namespace
     }
 
     /// GUI for selecting a texture from the given "LevelTextures" object
-    void texture_gui(UpdateResult& result, const char* label, const LevelTextures& textures,
+    void texture_gui(PropGUIUpdateResult& result, const char* label, const LevelTextures& textures,
                      TextureProp current, TextureProp& new_texture)
     {
         auto texture = texture_prop_gui(result, label, current, textures);
@@ -130,7 +130,7 @@ namespace
         TextureProp* new_texture;
     };
 
-    void texture_gui_tabs(UpdateResult& result, const char* tab_names,
+    void texture_gui_tabs(PropGUIUpdateResult& result, const char* tab_names,
                           const LevelTextures& textures, TextureTab tab_a, TextureTab tab_b)
     {
         if (ImGui::BeginTabBar(tab_names))
@@ -151,7 +151,8 @@ namespace
 
     /// GUI for a enum property such a styles etc
     template <typename EnumType>
-    void enum_gui(UpdateResult& result, const char* label, EnumType current, EnumType& new_value)
+    void enum_gui(PropGUIUpdateResult& result, const char* label, EnumType current,
+                  EnumType& new_value)
     {
         ImGui::Text("%s", label);
         size_t n = 0;
@@ -179,7 +180,7 @@ namespace
     }
 
     /// Wrapper around stepped slider for updating numerical props
-    bool slider(UpdateResult& result, const char* label, float& value, float min, float max,
+    bool slider(PropGUIUpdateResult& result, const char* label, float& value, float min, float max,
                 float interval, const char* fmt = "%.1f")
     {
         bool updated = false;
@@ -202,7 +203,8 @@ namespace
     /// have not actually changed. For example, clicking the same texture, or holding the mouse down
     /// on a slider element.
     template <typename T>
-    UpdateResult check_prop_updated(UpdateResult result, const T& current_props, const T& new_props)
+    PropGUIUpdateResult check_prop_updated(PropGUIUpdateResult result, const T& current_props,
+                                           const T& new_props)
     {
         result.continuous_update =
             (result.continuous_update && current_props != new_props) || result.action;
@@ -214,10 +216,11 @@ namespace
 
 } // namespace
 
-std::pair<UpdateResult, WallProps> wall_gui(const LevelTextures& textures, const WallObject& wall)
+std::pair<PropGUIUpdateResult, WallProps> wall_gui(const LevelTextures& textures,
+                                                   const WallObject& wall)
 
 {
-    UpdateResult result;
+    PropGUIUpdateResult result;
     auto new_props = wall.properties;
 
     // When the wall is generating the mesh, these values are multiplied by 2.0f
@@ -271,14 +274,13 @@ std::pair<UpdateResult, WallProps> wall_gui(const LevelTextures& textures, const
     };
 }
 
-std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& textures,
-                                                    const PlatformObject& platform)
+std::pair<PropGUIUpdateResult, PlatformProps> platform_gui(const LevelTextures& textures,
+                                                           const PlatformObject& platform)
 
 {
-    UpdateResult result;
+    PropGUIUpdateResult result;
 
     PlatformProps new_props = platform.properties;
-
 
     slider(result, "Width", new_props.width, 0.5f, 20.0f, 0.5f);
     slider(result, "Depth", new_props.depth, 0.5f, 20.0f, 0.5f);
@@ -287,7 +289,6 @@ std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& texture
     slider(result, "Base Height", new_props.base, 0.0f, 0.9f, 0.1f);
 
     enum_gui<PlatformStyle>(result, "Platform Style", platform.properties.style, new_props.style);
-
 
     texture_gui_tabs(result, "Textures_platform", textures,
                      {.name = "Top Texture",
@@ -303,10 +304,10 @@ std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& texture
     };
 }
 
-std::pair<UpdateResult, PolygonPlatformProps>
+std::pair<PropGUIUpdateResult, PolygonPlatformProps>
 polygon_platform_gui(const LevelTextures& textures, const PolygonPlatformObject& poly)
 {
-    UpdateResult result;
+    PropGUIUpdateResult result;
 
     PolygonPlatformProps new_props = poly.properties;
 
@@ -335,10 +336,10 @@ polygon_platform_gui(const LevelTextures& textures, const PolygonPlatformObject&
     };
 }
 
-std::pair<UpdateResult, PillarProps> pillar_gui(const LevelTextures& textures,
-                                                const PillarObject& pillar)
+std::pair<PropGUIUpdateResult, PillarProps> pillar_gui(const LevelTextures& textures,
+                                                       const PillarObject& pillar)
 {
-    UpdateResult result;
+    PropGUIUpdateResult result;
     auto new_props = pillar.properties;
 
     slider(result, "Size", new_props.size, 0.1f, 0.8f, 0.1f);
@@ -361,9 +362,10 @@ std::pair<UpdateResult, PillarProps> pillar_gui(const LevelTextures& textures,
     };
 }
 
-std::pair<UpdateResult, RampProps> ramp_gui(const LevelTextures& textures, const RampObject& ramp)
+std::pair<PropGUIUpdateResult, RampProps> ramp_gui(const LevelTextures& textures,
+                                                   const RampObject& ramp)
 {
-    UpdateResult result;
+    PropGUIUpdateResult result;
 
     auto new_props = ramp.properties;
 

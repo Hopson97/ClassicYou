@@ -12,6 +12,9 @@
 #include "EditorLevel.h"
 #include "EditorState.h"
 
+// =======================================
+//          CreateWallTool
+// =======================================
 void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
                               ActionManager& actions)
 {
@@ -89,6 +92,9 @@ ToolType CreateWallTool::get_tool_type() const
     return ToolType::CreateWall;
 }
 
+// =======================================
+//          UpdateWallTool
+// =======================================
 UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall)
     : object_(object)
     , wall_{wall}
@@ -202,6 +208,9 @@ ToolType UpdateWallTool::get_tool_type() const
     return ToolType::UpdateWall;
 }
 
+// =======================================
+//          CreateObjectTool
+// =======================================
 CreateObjectTool::CreateObjectTool(ObjectTypeName object_type)
     : object_type_(object_type)
 {
@@ -211,7 +220,6 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
                                 ActionManager& actions)
 {
     tile_ = node;
-    std::println("{} {}", node.x, node.y);
     if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
@@ -395,6 +403,9 @@ ToolType CreateObjectTool::get_tool_type() const
     return ToolType::CreateObject;
 }
 
+// =======================================
+//          AreaSelectTool
+// =======================================
 AreaSelectTool::AreaSelectTool(EditorLevel& level)
     : p_level_(&level)
 {

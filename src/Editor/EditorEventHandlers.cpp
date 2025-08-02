@@ -5,6 +5,9 @@
 #include "Actions.h"
 #include "EditorLevel.h"
 
+// =======================================
+//          ObjectMoveHandler
+// =======================================
 ObjectMoveHandler::ObjectMoveHandler(EditorLevel& level, ActionManager& action_manager)
     : p_level_(&level)
     , p_action_manager_(&action_manager)
@@ -44,7 +47,7 @@ bool ObjectMoveHandler::handle_move_events(const sf::Event& event, const EditorS
             }
         }
     }
-    else if (auto mouse = event.getIf<sf::Event::MouseMoved>())
+    else if (event.getIf<sf::Event::MouseMoved>())
     {
         if (state.selection.has_selection() && moving_object_)
         {
@@ -58,17 +61,19 @@ bool ObjectMoveHandler::handle_move_events(const sf::Event& event, const EditorS
         {
             if (moving_object_)
             {
-                std::vector<LevelObject> old_objects;
                 std::vector<LevelObject> new_objects;
+                new_objects.reserve(moving_objects_.size());
+
                 for (auto object : moving_objects_)
                 {
-                    old_objects.push_back(*object);
                     new_objects.push_back(*object);
                 }
+
                 for (auto& new_object : new_objects)
                 {
                     new_object.move(state.node_hovered - move_start_tile_);
                 }
+
                 move_offset_ = glm::vec2{0};
 
                 p_action_manager_->push_action(
@@ -123,6 +128,9 @@ void CopyPasteHandler::handle_events(const sf::Event& event, const Selection& se
     }
 }
 
+// =======================================
+//          CopyPasteHandler
+// =======================================
 CopyPasteHandler::CopyPasteHandler(EditorLevel& level, ActionManager& action_manager)
     : p_level_(&level)
     , p_action_manager_(&action_manager)

@@ -290,7 +290,8 @@ void ScreenEditGame::on_event(const sf::Event& event)
         tool_->on_event(event, editor_state_.node_hovered, editor_state_, action_manager_);
     }
 
-    // When updating a wall, this ensures the the start/end render points are drawn in the correct location
+    // When updating a wall, this ensures the the start/end render points are drawn in the correct
+    // location
     if (move_finished && tool_->get_tool_type() == ToolType::UpdateWall)
     {
         if (auto wall =
@@ -339,7 +340,9 @@ void ScreenEditGame::on_render(bool show_debug)
         if (tool_->get_tool_type() == ToolType::UpdateWall || !ImGui::GetIO().WantCaptureMouse)
         {
             if (!object_move_handler_.is_moving_objects())
-            tool_->render_preview_2d(drawing_pad_, editor_state_);
+            {
+                tool_->render_preview_2d(drawing_pad_, editor_state_);
+            }
         }
 
         level_.render_2d(drawing_pad_, editor_state_.selection.objects, editor_state_.current_floor,

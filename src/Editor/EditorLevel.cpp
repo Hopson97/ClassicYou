@@ -277,7 +277,7 @@ void EditorLevel::select_within(const Rectangle& selection_area, Selection& sele
 
 std::vector<LevelObject*> EditorLevel::get_objects(const std::vector<ObjectId>& object_ids)
 {
-    // Find objects with the given ID - maybe there is better way than a triple nested loop :S
+    // Find objects with the given ID - maybe there is better way than a triple nested loop?
     std::vector<LevelObject*> objects;
     for (auto& id : object_ids)
     {
@@ -306,7 +306,7 @@ std::vector<LevelObject*> EditorLevel::get_objects(const std::vector<ObjectId>& 
 std::pair<std::vector<LevelObject>, std::vector<int>>
 EditorLevel::copy_objects_and_floors(const std::vector<ObjectId>& object_ids) const
 {
-    // Copy objects with the given ID - maybe there is better way than a triple nested loop :S
+    // Copy objects with the given ID - maybe there is better way than a triple nested loop?
     std::vector<LevelObject> objects;
     std::vector<int> floors;
     for (auto& id : object_ids)
@@ -332,7 +332,7 @@ EditorLevel::copy_objects_and_floors(const std::vector<ObjectId>& object_ids) co
         }
     }
 
-    return std::make_pair(objects, floors);
+    return {objects, floors};
 }
 
 int EditorLevel::get_min_floor() const

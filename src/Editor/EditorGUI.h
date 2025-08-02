@@ -9,7 +9,7 @@ class LevelTextures;
 /**
  * @brief The return value for the GUI functions.
  */
-struct UpdateResult
+struct PropGUIUpdateResult
 {
     /// Was there a continuous update in the GUI, such a slider being moved?
     bool continuous_update = false;
@@ -26,25 +26,27 @@ struct UpdateResult
 /// @brief Alias for object GUI functions - used in LevelObject.h
 /// @tparam T
 template <typename T>
-using GUIFunction = std::pair<UpdateResult, typename T::PropertiesType> (*)(
+using GUIFunction = std::pair<PropGUIUpdateResult, typename T::PropertiesType> (*)(
     const LevelTextures& textures, const T& object);
 
 /// @brief Properties GUI for a platform object.
-std::pair<UpdateResult, WallProps> wall_gui(const LevelTextures& textures, const WallObject& wall);
+std::pair<PropGUIUpdateResult, WallProps> wall_gui(const LevelTextures& textures,
+                                                   const WallObject& wall);
 
 /// @brief Properties GUI for a platform object.
-std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& textures,
-                                                    const PlatformObject& platform);
+std::pair<PropGUIUpdateResult, PlatformProps> platform_gui(const LevelTextures& textures,
+                                                           const PlatformObject& platform);
 
 /// @brief Properties GUI for a polygon_platform object.
-std::pair<UpdateResult, PolygonPlatformProps>
+std::pair<PropGUIUpdateResult, PolygonPlatformProps>
 polygon_platform_gui(const LevelTextures& textures, const PolygonPlatformObject& platform);
 
-/// @brief Properties GUI for a polygon_platform object.
-std::pair<UpdateResult, PillarProps> pillar_gui(const LevelTextures& textures,
-                                                const PillarObject& pillar);
+/// @brief Properties GUI for a pillar object.
+std::pair<PropGUIUpdateResult, PillarProps> pillar_gui(const LevelTextures& textures,
+                                                       const PillarObject& pillar);
 
-std::pair<UpdateResult, RampProps> ramp_gui(const LevelTextures& textures,
-                                            const RampObject& pillar);
+/// @brief Properties GUI for a ramp object.
+std::pair<PropGUIUpdateResult, RampProps> ramp_gui(const LevelTextures& textures,
+                                                   const RampObject& pillar);
 
 bool display_level_list(bool& show_load_dialog, std::string& name);

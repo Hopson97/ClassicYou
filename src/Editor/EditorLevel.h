@@ -92,7 +92,9 @@ class EditorLevel
 
   private:
     FloorManager floors_manager_;
-    int current_id_ = 0;
+
+    /// Keeps track of the current object id, increments with each object added
+    ObjectId current_id_ = 0;
 
     bool changes_made_since_last_save_ = false;
 };

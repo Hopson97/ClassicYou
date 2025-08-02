@@ -94,7 +94,7 @@ void ActionManager::clear()
 }
 
 // =======================================
-//    Add Action
+//          AddObjectAction
 // =======================================
 AddObjectAction::AddObjectAction(const LevelObject& object, int floor)
     : object_(object)
@@ -135,6 +135,9 @@ ActionStrings AddObjectAction::to_string() const
     };
 }
 
+// =======================================
+//          AddBulkObjectsAction
+// =======================================
 AddBulkObjectsAction::AddBulkObjectsAction(const std::vector<LevelObject>& objects,
                                            const std::vector<int>& floors)
     : objects_(objects)
@@ -183,14 +186,19 @@ void AddBulkObjectsAction::undo(EditorState& state, EditorLevel& level)
 
 ActionStrings AddBulkObjectsAction::to_string() const
 {
+    std::string body;
+    for (auto& object : objects_)
+    {
+        body += object.to_string();
+    }
     return {
         .title = std::format("Adding bulk {}", objects_.size()),
-        .body = "",
+        .body = body,
     };
 }
 
 // =======================================
-//    Update Action
+//          UpdateObjectAction
 // =======================================
 UpdateObjectAction::UpdateObjectAction(const LevelObject& old_object, const LevelObject& new_object,
                                        int floor)
@@ -260,7 +268,7 @@ ActionStrings BulkUpdateObjectAction::to_string() const
 }
 
 // =======================================
-//    Delete Action
+//      DeleteObjectAction
 // =======================================
 DeleteObjectAction::DeleteObjectAction(const std::vector<LevelObject>& objects,
                                        const std::vector<int>& floors)
@@ -295,15 +303,15 @@ void DeleteObjectAction::undo(EditorState& state, EditorLevel& level)
 
 ActionStrings DeleteObjectAction::to_string() const
 {
-    std::string data;
+    std::string body;
 
     for (auto& object : objects_)
     {
-        data += object.to_string();
+        body += object.to_string();
     }
 
     return {
         .title = std::format("Deleted {}", objects_.size()),
-        .body = data,
+        .body = body,
     };
 }
