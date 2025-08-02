@@ -250,6 +250,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
             if (selection)
             {
+                // Holding left shift can be used to select multiple objects
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift))
                 {
                     editor_state_.selection.add_to_selection(selection,
@@ -289,6 +290,17 @@ void ScreenEditGame::on_event(const sf::Event& event)
         tool_->on_event(event, editor_state_.node_hovered, editor_state_, action_manager_);
     }
 
+    // When updating a wall, this ensures the the start/end render points are drawn in the correct location
+    if (move_finished && tool_->get_tool_type() == ToolType::UpdateWall)
+    {
+        if (auto wall =
+                std::get_if<WallObject>(&editor_state_.selection.p_active_object->object_type))
+        {
+            tool_ =
+                std::make_unique<UpdateWallTool>(*editor_state_.selection.p_active_object, *wall);
+        }
+    }
+
     if (try_set_tool_to_wall)
     {
         try_set_tool_to_create_wall();
@@ -324,9 +336,9 @@ void ScreenEditGame::on_render(bool show_debug)
     {
         glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
 
-        if (tool_->get_tool_type() == ToolType::UpdateWall ||
-            (!ImGui::GetIO().WantCaptureMouse && !object_move_handler_.is_moving_objects()))
+        if (tool_->get_tool_type() == ToolType::UpdateWall || !ImGui::GetIO().WantCaptureMouse)
         {
+            if (!object_move_handler_.is_moving_objects())
             tool_->render_preview_2d(drawing_pad_, editor_state_);
         }
 
