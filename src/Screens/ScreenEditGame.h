@@ -3,6 +3,7 @@
 #include "../Editor/Actions.h"
 #include "../Editor/DrawingPad.h"
 #include "../Editor/EditConstants.h"
+#include "../Editor/EditorEventHandlers.h"
 #include "../Editor/EditorLevel.h"
 #include "../Editor/EditorState.h"
 #include "../Editor/InfiniteGrid.h"
@@ -52,9 +53,6 @@ class ScreenEditGame final : public Screen
 
     void set_2d_to_3d_view();
 
-    void copy_selection();
-    void paste_selection();
-
     void try_set_tool_to_create_wall();
 
   private:
@@ -90,29 +88,11 @@ class ScreenEditGame final : public Screen
     /// History of actions performed, has functions to undo/redo
     ActionManager action_manager_;
 
+    ObjectMoveHandler object_move_handler_;
+    CopyPasteHandler copy_paste_handler_;
+
     bool show_save_dialog_ = false;
     bool show_load_dialog_ = false;
-
-    /// If the currently seleceted object being dragged?
-    bool moving_object_ = false;
-
-    /// When moving an object, this is the position to offset from
-    glm::ivec2 move_start_tile_{0};
-
-
-    /// When moving an object, this is how much the selection has been offset from the "select_position"
-    glm::vec2 move_offset_{0};
-
-    /// Capture the state of the object being moved at the start such that the inital state can be
-    /// returned to when CTRL+Z is done
-    std::vector<LevelObject> moving_object_cache_;
-    std::vector<LevelObject*> moving_objects_;
-    // LevelObject moving_object_cache_{-1};
-
-    // For copy paste, this contains the current "clipboard"
-    std::vector<LevelObject> copied_objects_;
-    std::vector<int> copied_objects_floors_;
-    int copy_start_floor_ = -1;
 
     /// Level name is used in the save dialog such that the actual name is not overriden if the save
     /// operation is cancelled
