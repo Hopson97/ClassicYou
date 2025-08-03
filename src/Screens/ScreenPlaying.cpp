@@ -155,11 +155,11 @@ void ScreenPlaying::pause_menu()
                       ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
                           ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize))
     {
-        if (ImGui::CustomButton("Resume"))
+        if (ImGuiExtras::CustomButton("Resume"))
         {
             game_paused_ = false;
         }
-        if (ImGui::CustomButton("Exit"))
+        if (ImGuiExtras::CustomButton("Exit"))
         {
             p_screen_manager_->pop_screen();
         }

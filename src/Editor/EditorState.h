@@ -57,4 +57,6 @@ struct EditorState
     /// When not empty, these objects are highlighted in the editor
     /// If there is  a single oject selected, its properties are displayed in the properties GUI.
     Selection selection;
+
+    EditMode edit_mode = EditMode::Advanced;
 };

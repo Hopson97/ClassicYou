@@ -4,7 +4,7 @@
 
 #include <imgui.h>
 
-namespace ImGui
+namespace ImGuiExtras
 {
     bool CustomButton(const char* text)
     {

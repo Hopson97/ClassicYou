@@ -534,6 +534,14 @@ void ScreenEditGame::render_editor_ui()
         }
         ImGui::Separator();
         drawing_pad_.camera_gui();
+        ImGui::Separator();
+
+        ImGuiExtras::EnumSelect(
+            "Editor Mode", editor_state_.edit_mode,
+                          "-Legacy: Options based on the original ChallengeYou editor.\n-Extended: "
+                          "Adds  options such as custom wall start/end heights, and texturing both "
+                          "sides of  a platform differently.\n-Advanced: Adds advanced options "
+                          "such as extending heights of walls and pillars beyond a single floor.");
     }
     ImGui::End();
 
@@ -575,7 +583,7 @@ void ScreenEditGame::save_level()
 
 void ScreenEditGame::show_save_dialog()
 {
-    if (ImGui::BeginCentredWindow("Save As...", {300, 200}))
+    if (ImGuiExtras::BeginCentredWindow("Save As...", {300, 200}))
     {
         ImGui::InputText("Level Name", &level_name_);
         bool can_save = !level_name_.empty();

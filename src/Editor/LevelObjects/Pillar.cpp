@@ -137,7 +137,9 @@ LevelObjectsMesh3D generate_pillar_mesh(const PillarObject& platform, int floor_
 
     auto size = props.size;
     auto ob = props.base_height * FLOOR_HEIGHT;
-    auto h = std::min(ob + props.height * FLOOR_HEIGHT, FLOOR_HEIGHT);
+    auto h = ob + props.height * FLOOR_HEIGHT;
+    
+    // auto h = std::min(ob + props.height * FLOOR_HEIGHT, FLOOR_HEIGHT);
 
     ob += floor_number * FLOOR_HEIGHT;
     h += floor_number * FLOOR_HEIGHT;

@@ -92,6 +92,7 @@ SerialiseResponse object_serialise(const WallObject& wall)
         params.line.end.y / TILE_SIZE_F,
     };
 
+
     nlohmann::json json_props = {};
     serialise_texture(json_props, props.texture_back);
     serialise_texture(json_props, props.texture_front);
@@ -133,6 +134,7 @@ bool object_deserialise(WallObject& wall, const nlohmann::json& json)
     props.end_base_height = jprops[5];
     props.tri_wall = jprops[6];
     props.flip_wall = jprops[7];
+
     return true;
 }
 
@@ -152,12 +154,14 @@ LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number)
     auto oz = 0.0f;
 
     auto obs = props.start_base_height * FLOOR_HEIGHT;
-    auto hs = std::min(obs + props.start_height * FLOOR_HEIGHT, FLOOR_HEIGHT);
+    //auto hs = std::min(obs + props.start_height * FLOOR_HEIGHT, FLOOR_HEIGHT);
+    auto hs = obs + props.start_height * FLOOR_HEIGHT;
     obs += floor_number * FLOOR_HEIGHT;
     hs += floor_number * FLOOR_HEIGHT;
 
     auto obe = props.end_base_height * FLOOR_HEIGHT;
-    auto he = std::min(obe + props.end_height * FLOOR_HEIGHT, FLOOR_HEIGHT);
+    // auto he = std::min(obe + props.end_height * FLOOR_HEIGHT, FLOOR_HEIGHT);
+    auto he = obe + props.end_height * FLOOR_HEIGHT;
     obe += floor_number * FLOOR_HEIGHT;
     he += floor_number * FLOOR_HEIGHT;
 

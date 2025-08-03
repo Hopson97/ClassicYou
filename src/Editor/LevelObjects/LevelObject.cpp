@@ -19,7 +19,8 @@ namespace
     template <typename T>
     void property_gui(GUIFunction<T> function, const LevelTextures& textures,
                       ActionManager& action_manager, const T& object, LevelObject& current,
-                      typename T::PropertiesType& object_default, int current_floor)
+                      typename T::PropertiesType& object_default, int current_floor,
+                      EditMode edit_mode)
     {
 
         // Caching the object is a work-around due to an ImGui limitation that when the mouse is
@@ -42,7 +43,7 @@ namespace
         // ActionManagerHistory?
         static auto last_store_action = false;
 
-        auto [update, new_props] = function(textures, object);
+        auto [update, new_props] = function(textures, object, edit_mode);
 
         if (update.always_update)
         {
@@ -97,28 +98,29 @@ void LevelObject::property_gui(EditorState& state, const LevelTextures& textures
     if (auto wall = std::get_if<WallObject>(&object_type))
     {
         ::property_gui<WallObject>(&wall_gui, textures, action_manager, *wall, *this,
-                                   state.wall_default, state.current_floor);
+                                   state.wall_default, state.current_floor, state.edit_mode);
     }
     else if (auto platform = std::get_if<PlatformObject>(&object_type))
     {
         ::property_gui<PlatformObject>(&platform_gui, textures, action_manager, *platform, *this,
-                                       state.platform_default, state.current_floor);
+                                       state.platform_default, state.current_floor,
+                                       state.edit_mode);
     }
     else if (auto poly = std::get_if<PolygonPlatformObject>(&object_type))
     {
         ::property_gui<PolygonPlatformObject>(&polygon_platform_gui, textures, action_manager,
                                               *poly, *this, state.polygon_platform_default,
-                                              state.current_floor);
+                                              state.current_floor, state.edit_mode);
     }
     else if (auto pillar = std::get_if<PillarObject>(&object_type))
     {
         ::property_gui<PillarObject>(&pillar_gui, textures, action_manager, *pillar, *this,
-                                     state.pillar_default, state.current_floor);
+                                     state.pillar_default, state.current_floor, state.edit_mode);
     }
     else if (auto ramp = std::get_if<RampObject>(&object_type))
     {
         ::property_gui<RampObject>(&ramp_gui, textures, action_manager, *ramp, *this,
-                                   state.ramp_default, state.current_floor);
+                                   state.ramp_default, state.current_floor, state.edit_mode);
     }
 }
 
@@ -182,10 +184,9 @@ void LevelObject::render_2d(DrawingPad& drawing_pad, bool is_current_floor, bool
         }
     }
 
-    std::visit([&](auto&& object) { render_object_2d(object, drawing_pad, colour, selected_offset); },
-               object_type);
+    std::visit([&](auto&& object)
+               { render_object_2d(object, drawing_pad, colour, selected_offset); }, object_type);
 }
-
 
 bool LevelObject::try_select_2d(glm::vec2 selection_tile) const
 {

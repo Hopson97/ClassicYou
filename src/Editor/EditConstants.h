@@ -4,6 +4,19 @@
 
 #include "../Util/Maths.h"
 
+
+enum class EditMode
+{
+    // The same settings as ChallengeYou had
+    Legacy,
+
+    // Enables extra settings that CY did not have
+    Extended,
+
+    // Enables more advanced options, such as extending through multiple floors for a single object
+    Advanced
+};
+
 static constexpr auto WORLD_SIZE = 80;
 static constexpr auto TILE_SIZE = 32;
 static constexpr auto HALF_TILE_SIZE = TILE_SIZE / 2;
