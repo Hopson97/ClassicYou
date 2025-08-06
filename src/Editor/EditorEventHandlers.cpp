@@ -14,9 +14,9 @@ ObjectMoveHandler::ObjectMoveHandler(EditorLevel& level, ActionManager& action_m
 {
 }
 
-bool ObjectMoveHandler::handle_move_events(const sf::Event& event, const EditorState& state)
+bool ObjectMoveHandler::handle_move_events(const sf::Event& event, const EditorState& state,
+                                           ToolType current_tool)
 {
-
     // When dragging an object and the final placement is decided, this is set to true. This is to
     // prevent calls to the tool event fuctions, which can cause objects to unintentionally placed
     // where the object was moved to.
@@ -25,6 +25,28 @@ bool ObjectMoveHandler::handle_move_events(const sf::Event& event, const EditorS
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
+            // To avoid moving a wall that was just placed when placing an adjacent wall, this
+            // checks if the last object was indeed a wall. If it is, then it cannot be moved.
+            if (state.selection.objects.size() == 1 && current_tool == ToolType::CreateWall)
+            {
+                auto object = p_level_->get_object(state.selection.objects[0]);
+                if (!object)
+                {
+                    return finish_move;
+                }
+
+                if (auto wall = std::get_if<WallObject>(&object->object_type))
+                {
+                    if (object->object_id == p_level_->last_placed_id())
+                    {
+                        std::println("Attempting to move last placed wall - nope.");
+                        return finish_move;
+                    }
+                }
+            }
+
+            // Check if any of the selected objects were clicked - if they were then it means
+            // the whole group can be moved around
             bool moving_selection = false;
             for (auto object : p_level_->get_objects(state.selection.objects))
             {

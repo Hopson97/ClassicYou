@@ -52,18 +52,8 @@ void render_object_2d(const WallObject& wall, DrawingPad& drawing_pad, const glm
 
 template <>
 [[nodiscard]] bool object_try_select_2d(const WallObject& wall, glm::vec2 selection_tile)
-
 {
-    // To avoid moving a wall when attempting to create a new wall at either end, the line size is
-    // slightly reduced
-    auto line = wall.parameters.line;
-    auto dir = glm::normalize(line.start - line.end);
-
-    // Slightly offset from the end of the wall
-    line.start -= dir * HALF_TILE_SIZE_F / 4.0f;
-    line.end += dir * HALF_TILE_SIZE_F / 4.0f;
-
-    return distance_to_line(selection_tile, line) < 4.0f;
+    return distance_to_line(selection_tile, wall.parameters.line) < 8.0f;
 }
 
 template <>
@@ -91,7 +81,6 @@ SerialiseResponse object_serialise(const WallObject& wall)
         params.line.end.x / TILE_SIZE_F,
         params.line.end.y / TILE_SIZE_F,
     };
-
 
     nlohmann::json json_props = {};
     serialise_texture(json_props, props.texture_back);
@@ -154,7 +143,7 @@ LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number)
     auto oz = 0.0f;
 
     auto obs = props.start_base_height * FLOOR_HEIGHT;
-    //auto hs = std::min(obs + props.start_height * FLOOR_HEIGHT, FLOOR_HEIGHT);
+    // auto hs = std::min(obs + props.start_height * FLOOR_HEIGHT, FLOOR_HEIGHT);
     auto hs = obs + props.start_height * FLOOR_HEIGHT;
     obs += floor_number * FLOOR_HEIGHT;
     hs += floor_number * FLOOR_HEIGHT;

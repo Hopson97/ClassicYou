@@ -190,16 +190,16 @@ void UpdateWallTool::render_preview_2d(DrawingPad& drawing_pad,
                                        [[maybe_unused]] const EditorState& state)
 {
 
-    constexpr static glm::vec2 OFFSET{8, 8};
-    drawing_pad.render_quad(wall_.parameters.line.start - OFFSET, glm::vec2{16.0f}, Colour::RED);
-    drawing_pad.render_quad(wall_.parameters.line.end - OFFSET, glm::vec2{16.0f}, Colour::RED);
+    constexpr static glm::vec2 OFFSET{16, 16};
+    drawing_pad.render_quad(wall_.parameters.line.start - OFFSET, glm::vec2{32.0f}, Colour::RED);
+    drawing_pad.render_quad(wall_.parameters.line.end - OFFSET, glm::vec2{32.0f}, Colour::RED);
 
     if (active_dragging_)
     {
         drawing_pad.render_line(wall_line_.start, wall_line_.end, {1, 0.5, 0.5, 0.75}, 4);
 
-        drawing_pad.render_quad(wall_line_.start - OFFSET, glm::vec2{16.0f}, Colour::RED);
-        drawing_pad.render_quad(wall_line_.end - OFFSET, glm::vec2{16.0f}, Colour::RED);
+        drawing_pad.render_quad(wall_line_.start - OFFSET, glm::vec2{32.0f}, Colour::RED);
+        drawing_pad.render_quad(wall_line_.end - OFFSET, glm::vec2{32.0f}, Colour::RED);
     }
 }
 

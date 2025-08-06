@@ -257,10 +257,19 @@ std::pair<PropGUIUpdateResult, WallProps> wall_gui(const LevelTextures& textures
     }
 
     // Ensure all values are clamped
-    new_props.start_height =
-        std::clamp(new_props.start_height, 0.1f, max_height - new_props.start_base_height);
-    new_props.end_height =
-        std::clamp(new_props.end_height, 0.1f, max_height - new_props.end_base_height);
+    float max_start_height = max_height - new_props.start_base_height;
+    if (max_start_height > 0.1f)
+    {
+        new_props.start_height = std::clamp(new_props.start_height, 0.1f, max_start_height);
+    }
+
+    float max_end_height = max_height - new_props.end_base_height;
+    if (max_end_height > 0.1f)
+    {
+        new_props.end_height = std::clamp(new_props.end_height, 0.1f, max_end_height);
+    }
+
+
 
     texture_gui_tabs(result, "Textures_wall", textures,
                      {.name = "Front Texture",
@@ -369,7 +378,12 @@ pillar_gui(const LevelTextures& textures, const PillarObject& pillar, EditMode e
         result.always_update |= true;
     }*/
 
-    new_props.height = std::clamp(new_props.height, 0.1f, max_height - new_props.base_height);
+
+    float max_height_factor = max_height - new_props.base_height;
+    if (max_height_factor > 0.1f)
+    {
+        new_props.height = std::clamp(new_props.height, 0.1f, max_height_factor);
+    }
 
     texture_gui(result, "Texture", textures, pillar.properties.texture, new_props.texture);
 

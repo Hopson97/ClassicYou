@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 
 #include "LevelObjects/LevelObject.h"
+#include "Tool.h"
 
 class EditorLevel;
 class ActionManager;
@@ -19,7 +20,8 @@ class ObjectMoveHandler
     ObjectMoveHandler(EditorLevel& level, ActionManager& action_manager);
 
     /// Handles events related to moving objects. Returns true if an object was moved and placed.
-    bool handle_move_events(const sf::Event& event, const EditorState& state);
+    bool handle_move_events(const sf::Event& event, const EditorState& state,
+                            ToolType current_tool);
 
     glm::vec2 get_move_offset() const;
     bool is_moving_objects() const;

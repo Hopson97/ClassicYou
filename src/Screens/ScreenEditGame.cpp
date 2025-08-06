@@ -26,9 +26,7 @@ namespace
 
     glm::ivec2 map_pixel_to_tile(glm::vec2 point, const Camera& camera)
     {
-        // TODO handle camera zooming
         auto scale = HALF_TILE_SIZE;
-
         auto& transform = camera.transform.position;
         auto cam_scale = camera.get_orthographic_scale();
         return {
@@ -176,7 +174,8 @@ void ScreenEditGame::on_event(const sf::Event& event)
     copy_paste_handler_.handle_events(event, editor_state_.selection, editor_state_.current_floor);
 
     // True when objects are moved - prevents placing objects where objects are moved to
-    auto move_finished = object_move_handler_.handle_move_events(event, editor_state_);
+    auto move_finished = object_move_handler_.handle_move_events(
+        event, editor_state_, tool_ ? tool_->get_tool_type() : ToolType::CreateWall);
 
     // Certain events cause issues if the current tool is UpdateWall (such as rendering the 2D
     // preview of deleting walls) so this prevents that.
@@ -240,8 +239,10 @@ void ScreenEditGame::on_event(const sf::Event& event)
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
+        auto clicked_2d = mouse->position.x < window().getSize().x / 2;
+
         // Try to select an object (2D view)
-        if (mouse->button == sf::Mouse::Button::Right)
+        if (mouse->button == sf::Mouse::Button::Right && clicked_2d)
         {
             auto selection = level_.try_select(
                 map_pixel_to_tile({mouse->position.x, mouse->position.y},
@@ -538,10 +539,10 @@ void ScreenEditGame::render_editor_ui()
 
         ImGuiExtras::EnumSelect(
             "Editor Mode", editor_state_.edit_mode,
-                          "-Legacy: Options based on the original ChallengeYou editor.\n-Extended: "
-                          "Adds  options such as custom wall start/end heights, and texturing both "
-                          "sides of  a platform differently.\n-Advanced: Adds advanced options "
-                          "such as extending heights of walls and pillars beyond a single floor.");
+            "-Legacy: Options based on the original ChallengeYou editor.\n-Extended: "
+            "Adds  options such as custom wall start/end heights, and texturing both "
+            "sides of  a platform differently.\n-Advanced: Adds advanced options "
+            "such as extending heights of walls and pillars beyond a single floor.");
     }
     ImGui::End();
 

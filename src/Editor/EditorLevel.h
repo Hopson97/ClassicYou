@@ -36,7 +36,7 @@ class EditorLevel
     /// Assumes the camera, shader, and other OpenGL states are set up correctly.
     /// The "selected_offset" can be used to offset the selected objects
     void render(gl::Shader& scene_shader, const std::vector<ObjectId>& active_objects,
-                   int current_floor, const glm::vec3& selected_offset );
+                int current_floor, const glm::vec3& selected_offset);
 
     /// Render the level in 2D using the given drawing pad, highlighting the active object.
     /// Assumes the camera, shader, and other OpenGL states are set up correctly.
@@ -52,6 +52,7 @@ class EditorLevel
     void select_within(const Rectangle& selection_area, Selection& selection, int floor_number);
 
     std::vector<LevelObject*> get_objects(const std::vector<ObjectId>& object_ids);
+    LevelObject* get_object(ObjectId object_id);
 
     std::pair<std::vector<LevelObject>, std::vector<int>>
     copy_objects_and_floors(const std::vector<ObjectId>& object_ids) const;
@@ -69,7 +70,8 @@ class EditorLevel
 
     bool changes_made_since_last_save() const;
 
-
+    /// Returns the ID of the last object placed
+    int last_placed_id() const;
 
   private:
     bool do_save(const std::filesystem::path& path) const;

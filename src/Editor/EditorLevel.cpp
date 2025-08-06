@@ -303,6 +303,16 @@ std::vector<LevelObject*> EditorLevel::get_objects(const std::vector<ObjectId>& 
     return objects;
 }
 
+LevelObject* EditorLevel::get_object(ObjectId object_id)
+{
+    auto object = get_objects({object_id});
+    if (!object.empty())
+    {
+        return object[0];
+    }
+    return nullptr;
+}
+
 std::pair<std::vector<LevelObject>, std::vector<int>>
 EditorLevel::copy_objects_and_floors(const std::vector<ObjectId>& object_ids) const
 {
@@ -444,4 +454,9 @@ bool EditorLevel::load(const std::filesystem::path& path)
 bool EditorLevel::changes_made_since_last_save() const
 {
     return changes_made_since_last_save_;
+}
+
+int EditorLevel::last_placed_id() const
+{
+    return current_id_ - 1;
 }
