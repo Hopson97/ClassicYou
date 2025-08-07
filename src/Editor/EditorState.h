@@ -13,20 +13,17 @@ struct Selection
     /// List of object IDs that are currently selected.
     std::vector<ObjectId> objects;
 
-    /// The floors of the selected objects, corresponding to the IDs in `objects`.
-    std::vector<int> object_floors;
-
     /// Pointer to the FIRST object in the selection. Convenience for GUI display, and fast access.
     LevelObject* p_active_object = nullptr;
 
     /// Clear the selection, setting it to the given object.
-    void set_selection(LevelObject* object, int floor);
+    void set_selection(LevelObject* object);
 
     /// Add an object to the selection via the object itself
-    void add_to_selection(LevelObject* object, int floor);
+    void add_to_selection(LevelObject* object);
 
     /// Add an object to the selection via its ID.
-    void add_to_selection(ObjectId id, int floor);
+    void add_to_selection(ObjectId id);
 
     /// Clear the selection, removing all objects and resetting the active object.
     void clear_selection();

@@ -111,13 +111,13 @@ void AddObjectAction::execute(EditorState& state, EditorLevel& level)
         id_ = level_object.object_id;
 
         executed_ = true;
-        state.selection.set_selection(&level_object, floor_);
+        state.selection.set_selection(&level_object);
     }
     else
     {
         auto& level_object = level.add_object(object_, floor_);
         level.set_object_id(level_object.object_id, id_);
-        state.selection.set_selection(&level_object, floor_);
+        state.selection.set_selection(&level_object);
     }
 }
 
@@ -159,7 +159,7 @@ void AddBulkObjectsAction::execute(EditorState& state, EditorLevel& level)
         {
             auto& level_object = level.add_object(objects_[i], floors_[i]);
             object_ids.push_back(level_object.object_id);
-            state.selection.add_to_selection(level_object.object_id, floors_[i]);
+            state.selection.add_to_selection(level_object.object_id);
         }
         executed_ = true;
     }
@@ -169,7 +169,7 @@ void AddBulkObjectsAction::execute(EditorState& state, EditorLevel& level)
         for (int i = 0; i < objects_.size(); i++)
         {
             auto& level_object = level.add_object(objects_[i], floors_[i]);
-            state.selection.add_to_selection(level_object.object_id, floors_[i]);
+            state.selection.add_to_selection(level_object.object_id);
             level.set_object_id(level_object.object_id, object_ids[i]);
         }
     }
@@ -297,7 +297,7 @@ void DeleteObjectAction::undo(EditorState& state, EditorLevel& level)
         assert(new_object.object_id == objects_[i].object_id);
 
         objects_[i] = new_object;
-        state.selection.add_to_selection(new_object.object_id, floors_[i]);
+        state.selection.add_to_selection(new_object.object_id);
     }
 }
 

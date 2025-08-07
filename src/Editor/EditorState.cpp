@@ -19,7 +19,7 @@ namespace
     }
 } // namespace
 
-void Selection::set_selection(LevelObject* object, int floor)
+void Selection::set_selection(LevelObject* object)
 
 {
     p_active_object = object;
@@ -28,11 +28,10 @@ void Selection::set_selection(LevelObject* object, int floor)
     if (object && !exists(object->object_id, objects))
     {
         objects.push_back(object->object_id);
-        object_floors.push_back(floor);
     }
 }
 
-void Selection::add_to_selection(LevelObject* object, int floor)
+void Selection::add_to_selection(LevelObject* object)
 {
     if (objects.empty())
     {
@@ -42,23 +41,20 @@ void Selection::add_to_selection(LevelObject* object, int floor)
     if (object && !exists(object->object_id, objects))
     {
         objects.push_back(object->object_id);
-        object_floors.push_back(floor);
     }
 }
 
-void Selection::add_to_selection(ObjectId id, int floor)
+void Selection::add_to_selection(ObjectId id)
 {
     if (!exists(id, objects))
     {
         objects.push_back(id);
-        object_floors.push_back(floor);
     }
 }
 
 void Selection::clear_selection()
 {
 
-    object_floors.clear();
     objects.clear();
     p_active_object = nullptr;
 }

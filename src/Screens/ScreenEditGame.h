@@ -13,6 +13,7 @@
 #include "../Graphics/CameraController.h"
 #include "../Graphics/Mesh.h"
 #include "../Graphics/OpenGL/BufferObject.h"
+#include "../Graphics/OpenGL/Framebuffer.h"
 #include "../Settings.h"
 #include "Screen.h"
 
@@ -98,4 +99,17 @@ class ScreenEditGame final : public Screen
     /// operation is cancelled
     std::string level_name_;
     std::string level_name_actual_;
+
+    // When doing mouse picking in the 3D view, the scene is rendered to this
+    gl::Framebuffer picker_fbo_;
+    gl::Shader picker_shader_;
+
+    // Must be set to false each frame - set to true when right-clicking the 3D view
+    bool try_pick_3d_ = false;
+
+    // The location where mouse picking was attempted in the 3d view
+    sf::Vector2i mouse_picker_point_;
+
+    // Used for checking if shift is pressed during rendering
+    bool is_shift_down_ = false;
 };

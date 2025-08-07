@@ -54,6 +54,7 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens)
     , action_manager_(editor_state_, level_)
     , object_move_handler_(level_, action_manager_)
     , copy_paste_handler_(level_, action_manager_)
+    , picker_fbo_(window().getSize().x, window().getSize().y)
 {
 }
 
@@ -72,6 +73,7 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens, std::string level_name)
     , copy_paste_handler_(level_, action_manager_)
     , level_name_(level_name)
     , level_name_actual_(level_name)
+    , picker_fbo_(window().getSize().x, window().getSize().y)
 {
 }
 
@@ -122,7 +124,7 @@ bool ScreenEditGame::on_init()
     }
     scene_shader_.set_uniform("diffuse", 0);
 
-    // Load the shader for world geometry. This is a seperate shader
+    // Load the shader for world geometry. This is a separate shader
     // as it needs to use 3D texture coords to work with GL_TEXTURE_2D_ARRAY
     world_geometry_shader_.add_replace_word({"TEX_COORD_LENGTH", "vec3"});
     world_geometry_shader_.add_replace_word({"SAMPLER_TYPE", "sampler2DArray"});
@@ -135,6 +137,24 @@ bool ScreenEditGame::on_init()
         return false;
     }
     world_geometry_shader_.set_uniform("diffuse", 0);
+
+    // -------------------------------------------
+    // ==== Set up the picker FBO and shader  ====
+    // -------------------------------------------
+    picker_fbo_.attach_colour(gl::TextureFormat::R32I).attach_renderbuffer();
+    if (!picker_fbo_.is_complete())
+    {
+        return false;
+    }
+
+    if (!picker_shader_.load_stage("assets/shaders/Scene/PickerVertex.glsl",
+                                   gl::ShaderType::Vertex) ||
+        !picker_shader_.load_stage("assets/shaders/Scene/PickerFragment.glsl",
+                                   gl::ShaderType::Fragment) ||
+        !picker_shader_.link_shaders())
+    {
+        return false;
+    }
 
     // -------------------------
     // ==== Set up the SSBO ====
@@ -239,10 +259,17 @@ void ScreenEditGame::on_event(const sf::Event& event)
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
-        auto clicked_2d = mouse->position.x < window().getSize().x / 2;
+        if (ImGui::GetIO().WantCaptureMouse)
+        {
+            return;
+        }
+        auto window_size = window().getSize();
+        auto clicked_2d = mouse->position.x < window_size.x / 2 && editor_settings_.show_2d_view;
+        auto clicked_3d = !clicked_2d || !editor_settings_.show_2d_view;
 
         // Try to select an object (2D view)
-        if (mouse->button == sf::Mouse::Button::Right && clicked_2d)
+        if (mouse->button == sf::Mouse::Button::Right && clicked_2d &&
+            editor_settings_.show_2d_view)
         {
             auto selection = level_.try_select(
                 map_pixel_to_tile({mouse->position.x, mouse->position.y},
@@ -254,13 +281,12 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 // Holding left shift can be used to select multiple objects
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift))
                 {
-                    editor_state_.selection.add_to_selection(selection,
-                                                             editor_state_.current_floor);
+                    editor_state_.selection.add_to_selection(selection);
                     try_set_tool_to_create_wall();
                 }
                 else
                 {
-                    editor_state_.selection.set_selection(selection, editor_state_.current_floor);
+                    editor_state_.selection.set_selection(selection);
 
                     // Editing a wall requires a special tool to enable resizing, so after a object
                     // it switches between tools
@@ -282,6 +308,27 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 // Nothing was selected, default back to CreateWallTool if currently selecting a
                 // wall
                 try_set_tool_to_create_wall();
+            }
+        }
+        else if (mouse->button == sf::Mouse::Button::Right && clicked_3d)
+        {
+            int x = sf::Mouse::getPosition(window()).x;
+
+            // When the 2D view is showing, the 3D view is half the screen
+            if (editor_settings_.show_2d_view)
+            {
+                x -= window_size.x / 2;
+            }
+
+            // The Y view must be inverted as the mouse click origin is th window top-left, but the
+            // OpenGL texture origin is the bottom left
+            int y = window_size.y - sf::Mouse::getPosition(window()).y - 1;
+
+            int max_x = editor_settings_.show_2d_view ? window_size.x / 2 : window_size.x;
+            if (x >= 0 && x < max_x && y >= 0 && y < window_size.y)
+            {
+                mouse_picker_point_ = {x, y};
+                try_pick_3d_ = true;
             }
         }
     }
@@ -322,6 +369,9 @@ void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
     {
         set_2d_to_3d_view();
     }
+
+    // For 3D mouse picking multiple objects
+    is_shift_down_ = keyboard.is_key_down(sf::Keyboard::Key::LShift);
 }
 
 void ScreenEditGame::on_fixed_update([[maybe_unused]] sf::Time dt)
@@ -419,6 +469,52 @@ void ScreenEditGame::on_render(bool show_debug)
 
     // Ensure GUI etc are rendered using fill
     gl::polygon_mode(gl::Face::FrontAndBack, gl::PolygonMode::Fill);
+
+    //======================================
+    //      3D Mouse Picking Objects
+    // =====================================
+    if (try_pick_3d_)
+    {
+        picker_fbo_.bind(gl::FramebufferTarget::Framebuffer, false);
+        picker_shader_.bind();
+
+        GLint clear_value = -1;
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glClearNamedFramebufferiv(picker_fbo_.id, GL_COLOR, 0, &clear_value);
+
+        auto window_size = window().getSize();
+        glViewport(0, 0, window_size.x / (editor_settings_.show_2d_view ? 2 : 1), window_size.y);
+
+        // Render the scene to texture's single channel texture containing object IDs
+        level_.render_to_picker(picker_shader_, editor_state_.current_floor);
+
+        // The pixel's value on the image maps to a LevelObject's id value
+        GLint picked_object_id = 0;
+        glReadPixels(mouse_picker_point_.x, mouse_picker_point_.y, 1, 1, GL_RED_INTEGER, GL_INT,
+                     &picked_object_id);
+
+        // If the pixel was non-empty, then try to select the corrsponding object
+        if (picked_object_id > -1)
+        {
+            if (auto object = level_.get_object(picked_object_id))
+            {
+                if (is_shift_down_)
+                {
+                    editor_state_.selection.add_to_selection(picked_object_id);
+                }
+                else
+                {
+                    editor_state_.selection.set_selection(object);
+                }
+            }
+        }
+        else
+        {
+            editor_state_.selection.clear_selection();
+        }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+    try_pick_3d_ = false;
 
     //=============================
     //     Render the ImGUI

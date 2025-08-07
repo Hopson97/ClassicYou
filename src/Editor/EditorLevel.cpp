@@ -149,6 +149,23 @@ void EditorLevel::render(gl::Shader& scene_shader, const std::vector<ObjectId>& 
     scene_shader.set_uniform("selected", false);
 }
 
+void EditorLevel::render_to_picker(gl::Shader& picker_shader, int current_floor)
+{
+    for (auto& floor : floors_manager_.floors)
+    {
+        for (auto& object : floor.meshes)
+        {
+            if (!object.mesh.has_buffered())
+            {
+                continue;
+            }
+
+            picker_shader.set_uniform("object_id", object.id);
+            object.mesh.bind().draw_elements();
+        }
+    }
+}
+
 void EditorLevel::render_2d(DrawingPad& drawing_pad, const std::vector<ObjectId>& active_objects,
                             int current_floor, const glm::vec2& selected_offset)
 {
@@ -266,7 +283,7 @@ void EditorLevel::select_within(const Rectangle& selection_area, Selection& sele
         {
             if (object.is_within(selection_area))
             {
-                selection.add_to_selection(object.object_id, floor_number);
+                selection.add_to_selection(object.object_id);
             }
         }
 

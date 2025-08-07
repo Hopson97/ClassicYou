@@ -26,7 +26,9 @@ namespace gl
         RGBA16 = GL_RGBA16,
 
         RGBA16F = GL_RGBA16F,
-        RGBA32F = GL_RGBA32F
+        RGBA32F = GL_RGBA32F,
+
+        R32I = GL_R32I
     };
 
     enum class TextureMinFilter

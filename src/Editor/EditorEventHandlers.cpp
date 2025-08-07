@@ -35,11 +35,11 @@ bool ObjectMoveHandler::handle_move_events(const sf::Event& event, const EditorS
                     return finish_move;
                 }
 
-                if (auto wall = std::get_if<WallObject>(&object->object_type))
+                // Return early when attempting to move the last placed wall
+                if (std::get_if<WallObject>(&object->object_type))
                 {
                     if (object->object_id == p_level_->last_placed_id())
                     {
-                        std::println("Attempting to move last placed wall - nope.");
                         return finish_move;
                     }
                 }
