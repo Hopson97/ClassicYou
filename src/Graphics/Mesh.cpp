@@ -52,8 +52,8 @@ LevelObjectsMesh3D generate_cube_mesh_level(const glm::vec3& start, const glm::v
     mesh.vertices = {
         {{x + w, y + h, z + d}, {w, 0.0f, texture}, FORWARD,  colour},
         {{x    , y + h, z + d}, {0.0f, 0.0f, texture}, FORWARD,  colour},
-        {{x    , y    , z + d}, {0.0f, h,texture}, FORWARD,  colour},
-        {{x + w, y    , z + d}, {w, h,texture}, FORWARD,  colour},
+        {{x    , y    , z + d}, {0.0f, h, texture}, FORWARD,  colour},
+        {{x + w, y    , z + d}, {w, h, texture}, FORWARD,  colour},
 
         {{x    , y + h, z + d}, {w, 0.0f, texture}, LEFT,     colour},
         {{x    , y + h, z    }, {0.0f, 0.0f, texture}, LEFT,     colour},
@@ -110,35 +110,35 @@ Mesh3D generate_cube_mesh(const glm::vec3& size, bool repeat_texture, glm::u8vec
 
     // clang-format off
     mesh.vertices = {
-        {{w, h, d}, {txrx, 0.0f}, {0.0f, 0.0f, 1.0f}, colour},  
-        {{0, h, d}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, colour},
-        {{0, 0, d}, {0.0f, txry}, {0.0f, 0.0f, 1.0f}, colour},  
-        {{w, 0, d}, {txrx, txry}, {0.0f, 0.0f, 1.0f}, colour},
+        {{w, h, d}, {txrx, 0.0f}, FORWARD, colour},  
+        {{0, h, d}, {0.0f, 0.0f}, FORWARD, colour},
+        {{0, 0, d}, {0.0f, txry}, FORWARD, colour},  
+        {{w, 0, d}, {txrx, txry}, FORWARD, colour},
                             
-        {{0, h, d}, {txrx, 0.0f}, {-1.0f, 0.0f, 0.0f}, colour}, 
-        {{0, h, 0}, {0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, colour},
-        {{0, 0, 0}, {0.0f, txry}, {-1.0f, 0.0f, 0.0f}, colour}, 
-        {{0, 0, d}, {txrx, txry}, {-1.0f, 0.0f, 0.0f}, colour},
+        {{0, h, d}, {txrx, 0.0f}, LEFT, colour}, 
+        {{0, h, 0}, {0.0f, 0.0f}, LEFT, colour},
+        {{0, 0, 0}, {0.0f, txry}, LEFT, colour}, 
+        {{0, 0, d}, {txrx, txry}, LEFT, colour},
                                
-        {{0, h, 0}, {txrx, 0.0f}, {0.0f, 0.0f, -1.0f}, colour}, 
-        {{w, h, 0}, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, colour},
-        {{w, 0, 0}, {0.0f, txry}, {0.0f, 0.0f, -1.0f}, colour}, 
-        {{0, 0, 0}, {txrx, txry}, {0.0f, 0.0f, -1.0f}, colour},
+        {{0, h, 0}, {txrx, 0.0f}, BACKWARD, colour}, 
+        {{w, h, 0}, {0.0f, 0.0f}, BACKWARD, colour},
+        {{w, 0, 0}, {0.0f, txry}, BACKWARD, colour}, 
+        {{0, 0, 0}, {txrx, txry}, BACKWARD, colour},
                              
-        {{w, h, 0}, {txrx, 0.0f}, {1.0f, 0.0f, 0.0f}, colour},  
-        {{w, h, d}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, colour},
-        {{w, 0, d}, {0.0f, txry}, {1.0f, 0.0f, 0.0f}, colour},  
-        {{w, 0, 0}, {txrx, txry}, {1.0f, 0.0f, 0.0f}, colour},
+        {{w, h, 0}, {txrx, 0.0f}, RIGHT, colour},  
+        {{w, h, d}, {0.0f, 0.0f}, RIGHT, colour},
+        {{w, 0, d}, {0.0f, txry}, RIGHT, colour},  
+        {{w, 0, 0}, {txrx, txry}, RIGHT, colour},
                               
-        {{w, h, 0}, {txrx, 0.0f}, {0.0f, 1.0f, 0.0f}, colour},  
-        {{0, h, 0}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, colour},
-        {{0, h, d}, {0.0f, txry}, {0.0f, 1.0f, 0.0f}, colour},  
-        {{w, h, d}, {txrx, txry}, {0.0f, 1.0f, 0.0f}, colour},
+        {{w, h, 0}, {txrx, 0.0f}, UP, colour},  
+        {{0, h, 0}, {0.0f, 0.0f}, UP, colour},
+        {{0, h, d}, {0.0f, txry}, UP, colour},  
+        {{w, h, d}, {txrx, txry}, UP, colour},
                               
-        {{0, 0, 0}, {txrx, 0.0f}, {0.0f, -1.0f, 0.0f}, colour}, 
-        {{w, 0, 0}, {0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, colour},
-        {{w, 0, d}, {0.0f, txry}, {0.0f, -1.0f, 0.0f}, colour}, 
-        {{0, 0, d}, {txrx, txry}, {0.0f, -1.0f, 0.0f}, colour},
+        {{0, 0, 0}, {txrx, 0.0f}, DOWN, colour}, 
+        {{w, 0, 0}, {0.0f, 0.0f}, DOWN, colour},
+        {{w, 0, d}, {0.0f, txry}, DOWN, colour}, 
+        {{0, 0, d}, {txrx, txry}, DOWN, colour},
     };
     // clang-format on
 
@@ -167,35 +167,35 @@ Mesh3D generate_centered_cube_mesh(const glm::vec3& dimensions)
 
     // clang-format off
     mesh.vertices = {
-        {{w, h, d}, {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},  
-        {{-w, h, d}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-        {{-w, -h, d}, {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},  
-        {{w, -h, d}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+        {{w, h, d}, {1.0f, 0.0f}, FORWARD},  
+        {{-w, h, d}, {0.0f, 0.0f}, FORWARD},
+        {{-w, -h, d}, {0.0f, 1.0f}, FORWARD},  
+        {{w, -h, d}, {1.0f, 1.0f}, FORWARD},
 
-        {{-w, h, d}, {1.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}}, 
-        {{-w, h, -d}, {0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}},
-        {{-w, -h, -d}, {0.0f, 1.0f}, {-1.0f, 0.0f, 0.0f}}, 
-        {{-w, -h, d}, {1.0f, 1.0f}, {-1.0f, 0.0f, 0.0f}},
+        {{-w, h, d}, {1.0f, 0.0f}, LEFT}, 
+        {{-w, h, -d}, {0.0f, 0.0f}, LEFT},
+        {{-w, -h, -d}, {0.0f, 1.0f}, LEFT}, 
+        {{-w, -h, d}, {1.0f, 1.0f}, LEFT},
 
-        {{-w, h, -d}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}}, 
-        {{w, h, -d}, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},
-        {{w, -h, -d}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}}, 
-        {{-w, -h, -d}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}},
+        {{-w, h, -d}, {1.0f, 0.0f}, BACKWARD}, 
+        {{w, h, -d}, {0.0f, 0.0f}, BACKWARD},
+        {{w, -h, -d}, {0.0f, 1.0f}, BACKWARD}, 
+        {{-w, -h, -d}, {1.0f, 1.0f}, BACKWARD},
 
-        {{w, h, -d}, {1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},  
-        {{w, h, d}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-        {{w, -h, d}, {0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},  
-        {{w, -h, -d}, {1.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
+        {{w, h, -d}, {1.0f, 0.0f}, RIGHT},  
+        {{w, h, d}, {0.0f, 0.0f}, RIGHT},
+        {{w, -h, d}, {0.0f, 1.0f}, RIGHT},  
+        {{w, -h, -d}, {1.0f, 1.0f}, RIGHT},
 
-        {{w, h, -d}, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},  
-        {{-w, h, -d}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-        {{-w, h, d}, {0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}},  
-        {{w, h, d}, {1.0f, 1.0f}, {0.0f, 1.0f, 0.0f}},
+        {{w, h, -d}, {1.0f, 0.0f}, UP},  
+        {{-w, h, -d}, {0.0f, 0.0f}, UP},
+        {{-w, h, d}, {0.0f, 1.0f}, UP},  
+        {{w, h, d}, {1.0f, 1.0f}, UP},
 
-        {{-w, -h, -d}, {1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}}, 
-        {{w, -h, -d}, {0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}},
-        {{w, -h, d}, {0.0f, 1.0f}, {0.0f, -1.0f, 0.0f}}, 
-        {{-w, -h, d}, {1.0f, 1.0f}, {0.0f, -1.0f, 0.0f}},
+        {{-w, -h, -d}, {1.0f, 0.0f}, DOWN}, 
+        {{w, -h, -d}, {0.0f, 0.0f}, DOWN},
+        {{w, -h, d}, {0.0f, 1.0f}, DOWN}, 
+        {{-w, -h, d}, {1.0f, 1.0f}, DOWN},
     };
     // clang-format on
 

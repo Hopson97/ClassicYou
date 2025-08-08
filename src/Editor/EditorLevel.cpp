@@ -296,6 +296,7 @@ std::vector<LevelObject*> EditorLevel::get_objects(const std::vector<ObjectId>& 
 {
     // Find objects with the given ID - maybe there is better way than a triple nested loop?
     std::vector<LevelObject*> objects;
+    objects.reserve(object_ids.size());
     for (auto& id : object_ids)
     {
         bool found = false;
@@ -322,12 +323,21 @@ std::vector<LevelObject*> EditorLevel::get_objects(const std::vector<ObjectId>& 
 
 LevelObject* EditorLevel::get_object(ObjectId object_id)
 {
-    auto object = get_objects({object_id});
-    if (!object.empty())
+    if (auto object = find_object_and_floor(object_id))
     {
-        return object[0];
+        return object->first;
     }
     return nullptr;
+}
+
+// TODO - is there is
+std::optional<int> EditorLevel::get_object_floor(ObjectId object_id)
+{
+    if (auto object = find_object_and_floor(object_id))
+    {
+        return object->second;
+    }
+    return std::nullopt;
 }
 
 std::pair<std::vector<LevelObject>, std::vector<int>>
@@ -397,6 +407,20 @@ bool EditorLevel::save(const std::filesystem::path& path)
         return true;
     }
     return false;
+}
+
+std::optional<std::pair<LevelObject*, int>> EditorLevel::find_object_and_floor(ObjectId object_id)
+{
+    for (auto& floor : floors_manager_.floors)
+    {
+        for (auto& object : floor.objects)
+        {
+            if (object.object_id == object_id)
+                return {{&object, floor.real_floor}};
+        }
+    }
+
+    return std::nullopt;
 }
 
 bool EditorLevel::do_save(const std::filesystem::path& path) const

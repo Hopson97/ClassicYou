@@ -37,9 +37,15 @@ class ScreenEditGame final : public Screen
         bool always_center_2d_to_3d_view = true;
 
         bool show_history = false;
+
+        bool jump_to_selection_floor = false;
     } editor_settings_;
 
   private:
+    /// Sets or adds the given object to the selection (Such as when right clicking an object).
+    /// Selecting walls sets the tool type to be "UpdateWallTool" such that it can be resized
+    void select_object(LevelObject* object);
+
     void render_editor_ui();
 
     void exit_editor();

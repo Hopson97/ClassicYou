@@ -278,29 +278,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
             if (selection)
             {
-                // Holding left shift can be used to select multiple objects
-                if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift))
-                {
-                    editor_state_.selection.add_to_selection(selection);
-                    try_set_tool_to_create_wall();
-                }
-                else
-                {
-                    editor_state_.selection.set_selection(selection);
-
-                    // Editing a wall requires a special tool to enable resizing, so after a object
-                    // it switches between tools
-                    if (auto wall = std::get_if<WallObject>(
-                            &editor_state_.selection.p_active_object->object_type))
-                    {
-                        tool_ = std::make_unique<UpdateWallTool>(
-                            *editor_state_.selection.p_active_object, *wall);
-                    }
-                    else
-                    {
-                        tool_ = std::make_unique<CreateWallTool>();
-                    }
-                }
+                select_object(selection);
             }
             else
             {
@@ -338,15 +316,25 @@ void ScreenEditGame::on_event(const sf::Event& event)
         tool_->on_event(event, editor_state_.node_hovered, editor_state_, action_manager_);
     }
 
-    // When updating a wall, this ensures the the start/end render points are drawn in the correct
-    // location
-    if (move_finished && tool_->get_tool_type() == ToolType::UpdateWall)
+    if (move_finished)
     {
-        if (auto wall =
-                std::get_if<WallObject>(&editor_state_.selection.p_active_object->object_type))
+        if (tool_->get_tool_type() == ToolType::UpdateWall)
         {
-            tool_ =
-                std::make_unique<UpdateWallTool>(*editor_state_.selection.p_active_object, *wall);
+            // When updating a wall, this ensures the the start/end render points are drawn in the
+            // correct location
+            assert(editor_state_.selection.p_active_object);
+            auto object = editor_state_.selection.p_active_object;
+            if (auto wall = std::get_if<WallObject>(&object->object_type))
+            {
+                auto floor = level_.get_object_floor(object->object_id);
+                tool_ = std::make_unique<UpdateWallTool>(*object, *wall, *floor);
+            }
+        }
+        else if (tool_->get_tool_type() == ToolType::AreaSelectTool)
+        {
+            // After the selection has been moved, the old selection area is invalidated
+            // TOOD: Find a way to move the selection rather than just set to wall
+            tool_ = std::make_unique<CreateWallTool>();
         }
     }
 
@@ -498,14 +486,7 @@ void ScreenEditGame::on_render(bool show_debug)
         {
             if (auto object = level_.get_object(picked_object_id))
             {
-                if (is_shift_down_)
-                {
-                    editor_state_.selection.add_to_selection(picked_object_id);
-                }
-                else
-                {
-                    editor_state_.selection.set_selection(object);
-                }
+                select_object(object);
             }
         }
         else
@@ -555,6 +536,39 @@ void ScreenEditGame::on_render(bool show_debug)
     if (tool_)
     {
         tool_->show_gui(editor_state_);
+    }
+}
+
+void ScreenEditGame::select_object(LevelObject* object)
+{
+    if (is_shift_down_)
+    {
+        editor_state_.selection.add_to_selection(object);
+        try_set_tool_to_create_wall();
+    }
+    else
+    {
+        editor_state_.selection.set_selection(object);
+
+        if (editor_settings_.jump_to_selection_floor)
+        {
+            if (auto floor = level_.get_object_floor(object->object_id))
+            {
+                editor_state_.current_floor = *floor;
+            }
+        }
+
+        // Editing a wall requires a special tool to enable resizing, so after a object
+        // it switches between tools
+        if (auto wall = std::get_if<WallObject>(&object->object_type))
+        {
+            auto floor = level_.get_object_floor(object->object_id);
+            tool_ = std::make_unique<UpdateWallTool>(*object, *wall, *floor);
+        }
+        else
+        {
+            tool_ = std::make_unique<CreateWallTool>();
+        }
     }
 }
 
@@ -611,14 +625,12 @@ void ScreenEditGame::render_editor_ui()
         {
             level_.ensure_floor_exists(--editor_state_.current_floor);
             camera_.transform.position.y -= FLOOR_HEIGHT;
-            try_set_tool_to_create_wall();
         }
         ImGui::SameLine();
         if (ImGui::Button("Floor Up"))
         {
             level_.ensure_floor_exists(++editor_state_.current_floor);
             camera_.transform.position.y += FLOOR_HEIGHT;
-            try_set_tool_to_create_wall();
         }
         ImGui::Text("Lowest: %d - Current: %d - Highest: %d", level_.get_min_floor(),
                     editor_state_.current_floor, level_.get_max_floor());
@@ -744,6 +756,8 @@ void ScreenEditGame::show_menu_bar()
                 auto factor = editor_settings_.show_2d_view ? 2 : 1;
                 camera_.set_viewport_size({window().getSize().x / factor, window().getSize().y});
             }
+            ImGui::Checkbox("Auto-Jump to selection floor?", &editor_settings_.jump_to_selection_floor);
+
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();

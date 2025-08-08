@@ -35,7 +35,7 @@ bool ObjectMoveHandler::handle_move_events(const sf::Event& event, const EditorS
                     return finish_move;
                 }
 
-                // Return early when attempting to move the last placed wall
+                // Return early to prevent unintentioanl repositioning.
                 if (std::get_if<WallObject>(&object->object_type))
                 {
                     if (object->object_id == p_level_->last_placed_id())

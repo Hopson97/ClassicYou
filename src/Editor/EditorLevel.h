@@ -56,6 +56,7 @@ class EditorLevel
 
     std::vector<LevelObject*> get_objects(const std::vector<ObjectId>& object_ids);
     LevelObject* get_object(ObjectId object_id);
+    std::optional<int> get_object_floor(ObjectId object_id);
 
     std::pair<std::vector<LevelObject>, std::vector<int>>
     copy_objects_and_floors(const std::vector<ObjectId>& object_ids) const;
@@ -77,6 +78,8 @@ class EditorLevel
     int last_placed_id() const;
 
   private:
+    std::optional<std::pair<LevelObject*, int>> find_object_and_floor(ObjectId object_id);
+
     bool do_save(const std::filesystem::path& path) const;
 
     /// Loads the level from the given JSON object, where "LoadFunc" should be a function

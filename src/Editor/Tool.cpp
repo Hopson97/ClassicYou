@@ -95,15 +95,22 @@ ToolType CreateWallTool::get_tool_type() const
 // =======================================
 //          UpdateWallTool
 // =======================================
-UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall)
+UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall, int wall_floor)
     : object_(object)
     , wall_{wall}
+    , wall_floor_(wall_floor)
 {
 }
 
 void UpdateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
                               ActionManager& actions)
 {
+    // Walls should only be edited on the same floor
+    if (state.current_floor != wall_floor_)
+    {
+        return;
+    }
+
     const float MIN_DISTANCE = 32.0f;
 
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
@@ -186,20 +193,22 @@ void UpdateWallTool::render_preview()
     }
 }
 
-void UpdateWallTool::render_preview_2d(DrawingPad& drawing_pad,
-                                       [[maybe_unused]] const EditorState& state)
+void UpdateWallTool::render_preview_2d(DrawingPad& drawing_pad, const EditorState& state)
 {
-
-    constexpr static glm::vec2 OFFSET{16, 16};
-    drawing_pad.render_quad(wall_.parameters.line.start - OFFSET, glm::vec2{32.0f}, Colour::RED);
-    drawing_pad.render_quad(wall_.parameters.line.end - OFFSET, glm::vec2{32.0f}, Colour::RED);
-
-    if (active_dragging_)
+    if (state.current_floor == wall_floor_)
     {
-        drawing_pad.render_line(wall_line_.start, wall_line_.end, {1, 0.5, 0.5, 0.75}, 4);
+        constexpr static glm::vec2 OFFSET{16, 16};
+        drawing_pad.render_quad(wall_.parameters.line.start - OFFSET, glm::vec2{32.0f},
+                                Colour::RED);
+        drawing_pad.render_quad(wall_.parameters.line.end - OFFSET, glm::vec2{32.0f}, Colour::RED);
 
-        drawing_pad.render_quad(wall_line_.start - OFFSET, glm::vec2{32.0f}, Colour::RED);
-        drawing_pad.render_quad(wall_line_.end - OFFSET, glm::vec2{32.0f}, Colour::RED);
+        if (active_dragging_)
+        {
+            drawing_pad.render_line(wall_line_.start, wall_line_.end, {1, 0.5, 0.5, 0.75}, 4);
+
+            drawing_pad.render_quad(wall_line_.start - OFFSET, glm::vec2{32.0f}, Colour::RED);
+            drawing_pad.render_quad(wall_line_.end - OFFSET, glm::vec2{32.0f}, Colour::RED);
+        }
     }
 }
 

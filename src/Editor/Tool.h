@@ -56,7 +56,7 @@ class CreateWallTool : public ITool
 class UpdateWallTool : public ITool
 {
   public:
-    UpdateWallTool(LevelObject object, WallObject& wall);
+    UpdateWallTool(LevelObject object, WallObject& wall, int wall_floor);
     void on_event(sf::Event event, glm::vec2 node, EditorState& state,
                   ActionManager& actions) override;
     void render_preview() override;
@@ -68,6 +68,9 @@ class UpdateWallTool : public ITool
     LevelObjectsMesh3D wall_preview_;
     LevelObject object_;
     WallObject wall_;
+
+    /// Used to ensure walls can only be resized on the current floor as the editor
+    const int wall_floor_;
 
     Line wall_line_;
 
@@ -103,7 +106,8 @@ class AreaSelectTool : public ITool
   public:
     AreaSelectTool(EditorLevel& level);
 
-    void on_event(sf::Event event, glm::vec2 node, EditorState& state, ActionManager& actions) override;
+    void on_event(sf::Event event, glm::vec2 node, EditorState& state,
+                  ActionManager& actions) override;
     void render_preview() override;
     void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) override;
 
@@ -122,8 +126,8 @@ class AreaSelectTool : public ITool
     // The line refers to the start corner and end corner
     Line selection_area_;
     LevelObjectsMesh3D selection_cube_;
-    glm::ivec3 selection_cube_start_;
-    glm::ivec3 selection_cube_size_;
+    glm::ivec3 selection_cube_start_{0};
+    glm::ivec3 selection_cube_size_{0};
 
     /// The floors selected - Default is the current floor but this can be extended with Q and E for
     /// lower and upper

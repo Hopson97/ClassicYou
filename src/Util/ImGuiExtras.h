@@ -22,12 +22,12 @@ namespace ImGuiExtras
         ImGui::Text("%s", label);
         if (tooltip)
         {
+            ImGui::SameLine();
             ImGui::Text("[?]");
             if (ImGui::IsItemHovered())
             {
                 ImGui::SetTooltip("%s", tooltip);
             }
-            ImGui::SameLine();
         }
 
         size_t n = 0;
@@ -55,4 +55,4 @@ namespace ImGuiExtras
             });
         return option_selected;
     }
-} // namespace ImGui
+} // namespace ImGuiExtras

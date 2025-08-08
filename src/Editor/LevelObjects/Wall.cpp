@@ -3,6 +3,12 @@
 #include "../DrawingPad.h"
 #include "../EditConstants.h"
 
+namespace
+{
+    // Minimum distance the selection is required to be to select a wall.
+    constexpr float SELECTION_DISTANCE = 8.0f;
+} // namespace
+
 bool operator==(const WallProps& lhs, const WallProps& rhs)
 {
     return lhs.texture_front == rhs.texture_front && lhs.texture_back == rhs.texture_back &&
@@ -44,8 +50,6 @@ void render_object_2d(const WallObject& wall, DrawingPad& drawing_pad, const glm
                       const glm::vec2& selected_offset)
 
 {
-    // auto thickness = is_selected ? 3.0f : 2.0f;
-
     drawing_pad.render_line(wall.parameters.line.start + selected_offset,
                             wall.parameters.line.end + selected_offset, colour, 2.0f);
 }
@@ -53,7 +57,7 @@ void render_object_2d(const WallObject& wall, DrawingPad& drawing_pad, const glm
 template <>
 [[nodiscard]] bool object_try_select_2d(const WallObject& wall, glm::vec2 selection_tile)
 {
-    return distance_to_line(selection_tile, wall.parameters.line) < 8.0f;
+    return distance_to_line(selection_tile, wall.parameters.line) < SELECTION_DISTANCE;
 }
 
 template <>
