@@ -33,10 +33,7 @@ void Selection::set_selection(LevelObject* object)
 
 void Selection::add_to_selection(LevelObject* object)
 {
-    if (objects.empty())
-    {
-        p_active_object = objects.empty() ? object : nullptr;
-    }
+    p_active_object = objects.empty() ? object : nullptr;
 
     if (object && !exists(object->object_id, objects))
     {
@@ -54,7 +51,6 @@ void Selection::add_to_selection(ObjectId id)
 
 void Selection::clear_selection()
 {
-
     objects.clear();
     p_active_object = nullptr;
 }

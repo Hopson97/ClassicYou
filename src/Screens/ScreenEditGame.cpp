@@ -546,7 +546,6 @@ void ScreenEditGame::on_render(bool show_debug)
             // Reset the state
             action_manager_.clear();
             editor_state_.selection.clear_selection();
-            // editor_state_.p_active_object = nullptr;
 
             level_.load(make_level_path(level_name_));
             level_name_actual_ = level_name_;

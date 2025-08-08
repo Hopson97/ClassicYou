@@ -24,8 +24,6 @@ Mesh3D generate_quad_mesh(float w, float h)
 {
     Mesh3D mesh;
 
-    constexpr glm::vec3 FORWARD = {0.0f, 0.0f, 1.0f};
-
     mesh.vertices = {{{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, FORWARD},
                      {{w, 0.0f, 0.0f}, {1.0f, 0.0f}, FORWARD},
                      {{w, h, 0.0f}, {1.0f, 1.0f}, FORWARD},
@@ -49,7 +47,6 @@ LevelObjectsMesh3D generate_cube_mesh_level(const glm::vec3& start, const glm::v
     float x = start.x;
     float y = start.y;
     float z = start.z;
-
 
     // clang-format off
     mesh.vertices = {

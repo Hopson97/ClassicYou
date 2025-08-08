@@ -193,7 +193,6 @@ void CopyPasteHandler::paste_selection(int current_floor)
     {
         for (int i = p_level_->get_max_floor(); i <= max_floor; i++)
         {
-            std::println("Ensuring floor {} exists (Above)", i);
             p_level_->ensure_floor_exists(i);
         }
     }
@@ -201,7 +200,6 @@ void CopyPasteHandler::paste_selection(int current_floor)
     {
         for (int i = p_level_->get_min_floor(); i >= min_floor; --i)
         {
-            std::println("Ensuring floor {} exists (Below)", i);
             p_level_->ensure_floor_exists(i);
         }
     }
