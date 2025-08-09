@@ -150,6 +150,10 @@ void AddBulkObjectsAction::execute(EditorState& state, EditorLevel& level)
     // New objects are selected - so clear the old selection
 
     state.selection.clear_selection();
+
+    // When adding a single object, this ensures that the active object is one added
+    LevelObject* last_object = nullptr;
+
     // When redoing the action, this prevents using the default for this object type
     if (!executed_)
     {
@@ -160,6 +164,8 @@ void AddBulkObjectsAction::execute(EditorState& state, EditorLevel& level)
             auto& level_object = level.add_object(objects_[i], floors_[i]);
             object_ids.push_back(level_object.object_id);
             state.selection.add_to_selection(level_object.object_id);
+
+            last_object = &level_object;
         }
         executed_ = true;
     }
@@ -171,7 +177,13 @@ void AddBulkObjectsAction::execute(EditorState& state, EditorLevel& level)
             auto& level_object = level.add_object(objects_[i], floors_[i]);
             state.selection.add_to_selection(level_object.object_id);
             level.set_object_id(level_object.object_id, object_ids[i]);
+            last_object = &level_object;
         }
+    }
+
+    if (objects_.size() == 1)
+    {
+        state.selection.set_selection(last_object);
     }
 }
 

@@ -20,7 +20,6 @@ namespace
 } // namespace
 
 void Selection::set_selection(LevelObject* object)
-
 {
     p_active_object = object;
 
