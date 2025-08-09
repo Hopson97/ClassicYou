@@ -93,6 +93,9 @@ void ActionManager::clear()
     action_stack_.clear();
 }
 
+// =======================================
+//          AddObjectAction
+// =======================================
 AddObjectAction::AddObjectAction(const LevelObject& object, int floor)
     : object_(object)
     , floor_{floor}
@@ -101,28 +104,26 @@ AddObjectAction::AddObjectAction(const LevelObject& object, int floor)
 
 void AddObjectAction::execute(EditorState& state, EditorLevel& level)
 {
-
     // When redoing the action, this prevents using the default for this object type
     if (!executed_)
     {
-
         auto& level_object = level.add_object(object_, floor_);
         id_ = level_object.object_id;
 
         executed_ = true;
-        state.p_active_object = &level_object;
+        state.selection.set_selection(&level_object);
     }
     else
     {
         auto& level_object = level.add_object(object_, floor_);
         level.set_object_id(level_object.object_id, id_);
-        state.p_active_object = &level_object;
+        state.selection.set_selection(&level_object);
     }
 }
 
 void AddObjectAction::undo(EditorState& state, EditorLevel& level)
 {
-    state.p_active_object = nullptr;
+    state.selection.clear_selection();
     level.remove_object(id_);
 }
 
@@ -134,6 +135,71 @@ ActionStrings AddObjectAction::to_string() const
     };
 }
 
+// =======================================
+//          AddBulkObjectsAction
+// =======================================
+AddBulkObjectsAction::AddBulkObjectsAction(const std::vector<LevelObject>& objects,
+                                           const std::vector<int>& floors)
+    : objects_(objects)
+    , floors_{floors}
+{
+}
+
+void AddBulkObjectsAction::execute(EditorState& state, EditorLevel& level)
+{
+    // New objects are selected - so clear the old selection
+
+    state.selection.clear_selection();
+    // When redoing the action, this prevents using the default for this object type
+    if (!executed_)
+    {
+        state.selection.clear_selection();
+        object_ids.clear();
+        for (int i = 0; i < objects_.size(); i++)
+        {
+            auto& level_object = level.add_object(objects_[i], floors_[i]);
+            object_ids.push_back(level_object.object_id);
+            state.selection.add_to_selection(level_object.object_id);
+        }
+        executed_ = true;
+    }
+    else
+    {
+        state.selection.clear_selection();
+        for (int i = 0; i < objects_.size(); i++)
+        {
+            auto& level_object = level.add_object(objects_[i], floors_[i]);
+            state.selection.add_to_selection(level_object.object_id);
+            level.set_object_id(level_object.object_id, object_ids[i]);
+        }
+    }
+}
+
+void AddBulkObjectsAction::undo(EditorState& state, EditorLevel& level)
+{
+    state.selection.clear_selection();
+    for (auto id : object_ids)
+    {
+        level.remove_object(id);
+    }
+}
+
+ActionStrings AddBulkObjectsAction::to_string() const
+{
+    std::string body;
+    for (auto& object : objects_)
+    {
+        body += object.to_string();
+    }
+    return {
+        .title = std::format("Adding bulk {}", objects_.size()),
+        .body = body,
+    };
+}
+
+// =======================================
+//          UpdateObjectAction
+// =======================================
 UpdateObjectAction::UpdateObjectAction(const LevelObject& old_object, const LevelObject& new_object,
                                        int floor)
     : old_object_(old_object)
@@ -161,34 +227,91 @@ ActionStrings UpdateObjectAction::to_string() const
     };
 }
 
-DeleteObjectAction::DeleteObjectAction(const LevelObject& object, int floor)
-    : object_(object)
-    , floor_{floor}
+BulkUpdateObjectAction::BulkUpdateObjectAction(const std::vector<LevelObject>& old_objects,
+                                               const std::vector<LevelObject>& new_objects)
+    : old_objects_(old_objects)
+    , new_objects_(new_objects)
+{
+}
+
+void BulkUpdateObjectAction::execute([[maybe_unused]] EditorState& state, EditorLevel& level)
+{
+    for (auto& object : new_objects_)
+    {
+        level.update_object(object, 0);
+    }
+}
+
+void BulkUpdateObjectAction::undo([[maybe_unused]] EditorState& state, EditorLevel& level)
+{
+    for (auto& object : old_objects_)
+    {
+        level.update_object(object, 0);
+    }
+}
+
+ActionStrings BulkUpdateObjectAction::to_string() const
+{
+    std::string before;
+    std::string after;
+
+    for (auto& object : old_objects_)
+    {
+        before += object.to_string();
+    }
+    for (auto& object : new_objects_)
+    {
+        after += object.to_string();
+    }
+    return {.title = std::format("Update {}", old_objects_.size()), // to_type_string()),
+            .body = std::format("Before:\n{}\n\nAfter:\n{}", before, after)};
+}
+
+// =======================================
+//      DeleteObjectAction
+// =======================================
+DeleteObjectAction::DeleteObjectAction(const std::vector<LevelObject>& objects,
+                                       const std::vector<int>& floors)
+    : objects_(objects)
+    , floors_{floors}
 {
 }
 
 void DeleteObjectAction::execute(EditorState& state, EditorLevel& level)
 {
-    state.p_active_object = nullptr;
-    level.remove_object(object_.object_id);
+    state.selection.clear_selection();
+    for (auto& object : objects_)
+    {
+        level.remove_object(object.object_id);
+    }
 }
 
 void DeleteObjectAction::undo(EditorState& state, EditorLevel& level)
 {
-    auto& new_object = level.add_object(object_, floor_);
+    state.selection.clear_selection();
+    for (int i = 0; i < objects_.size(); i++)
+    {
+        auto& new_object = level.add_object(objects_[i], floors_[i]);
 
-    // new_object.p = object_.props;
+        level.set_object_id(new_object.object_id, objects_[i].object_id);
+        assert(new_object.object_id == objects_[i].object_id);
 
-    state.p_active_object = &new_object;
-
-    level.set_object_id(new_object.object_id, object_.object_id);
-    object_ = new_object;
+        objects_[i] = new_object;
+        state.selection.add_to_selection(new_object.object_id);
+    }
 }
 
 ActionStrings DeleteObjectAction::to_string() const
 {
+    std::string body;
+
+    for (auto& object : objects_)
+    {
+        body += object.to_string();
+    }
+
     return {
-        .title = std::format("Delete {}", object_.to_type_string()),
-        .body = std::format("ID: {} ", object_.object_id),
+        .title = std::format("Deleted {}", objects_.size()),
+        .body = body,
     };
 }

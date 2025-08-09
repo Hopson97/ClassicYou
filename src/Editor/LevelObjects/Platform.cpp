@@ -43,14 +43,16 @@ std::string object_to_string(const PlatformObject& platform)
 
 template <>
 void render_object_2d(const PlatformObject& platform, DrawingPad& drawing_pad,
-                      const glm::vec4& colour, bool is_selected)
+                      const glm::vec4& colour, const glm::vec2& selected_offset)
 
 {
-    const auto& position = platform.parameters.position;
+    const auto& position = platform.parameters.position + selected_offset;
     const auto& width = platform.properties.width * TILE_SIZE;
     const auto& depth = platform.properties.depth * TILE_SIZE;
 
-    if (platform.properties.style == PlatformStyle::Quad)
+    // TODO: 2D drawing for triangles
+    if (platform.properties.style == PlatformStyle::Quad ||
+        platform.properties.style == PlatformStyle::Triangle)
     {
         drawing_pad.render_quad(position, {width, depth}, colour);
     }
@@ -209,13 +211,14 @@ LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform, int fl
 
     // Offset platform heights by a hair to prevent Z-fighting with PolygonPlatforms which can go
     // underneath
-    float ob = props.base * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT + 0.00025;
+    float ob = props.base * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT + 0.00025f;
     LevelObjectsMesh3D mesh;
     mesh.vertices = [&]()
     {
         // TODO: triangle platforms
         switch (props.style)
         {
+            case PlatformStyle::Triangle:
             case PlatformStyle::Quad:
                 return create_quad_platform_vertices(platform, ob);
 
@@ -225,10 +228,20 @@ LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform, int fl
         return std::vector<VertexLevelObjects>{};
     }();
 
-    mesh.indices = {// Front
-                    0, 1, 2, 2, 3, 0,
-                    // Back
-                    6, 5, 4, 4, 7, 6};
+    if (props.style == PlatformStyle::Triangle)
+    {
+        mesh.indices = {// Front
+                        0, 1, 2,
+                        // Back
+                        6, 5, 4};
+    }
+    else
+    {
+        mesh.indices = {// Front
+                        0, 1, 2, 2, 3, 0,
+                        // Back
+                        6, 5, 4, 4, 7, 6};
+    }
 
     return mesh;
 }

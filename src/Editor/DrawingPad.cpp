@@ -181,22 +181,20 @@ void DrawingPad::set_camera_position(glm::vec2 position)
     };
 }
 
+void DrawingPad::camera_gui()
+{
+    auto scale = camera_.get_orthographic_scale();
+    if (ImGui::SliderFloat("Zoom", &scale, 0.5, 2.5))
+    {
+        camera_.set_orthographic_scale(scale);
+    }
+}
+
 void DrawingPad::display(const Transform& camera_transform)
 {
     // For 2D rendering, depth testing is not required
-    gl::disable(gl::Capability::DepthTest);
     gl::disable(gl::Capability::CullFace);
     gl::cull_face(gl::Face::Back);
-
-    // Render the background grid
-    // Update the shaders
-    grid_shader_.bind();
-    grid_shader_.set_uniform("projection_matrix", camera_.get_projection_matrix());
-    grid_shader_.set_uniform("view_matrix", camera_.get_view_matrix());
-    grid_shader_.set_uniform("camera_position", camera_.transform.position);
-    glLineWidth(1);
-    grid_mesh_.sub_grid.bind().draw_elements(GL_LINES);
-    grid_mesh_.main_grid.bind().draw_elements(GL_LINES);
 
     // Update the shaders
     scene_shader_.bind();
@@ -236,4 +234,14 @@ void DrawingPad::display(const Transform& camera_transform)
     model = glm::scale(model, {2, 2, 4});
     scene_shader_.set_uniform("model_matrix", model);
     selection_mesh_.bind().draw_elements();
+
+    // Render the background grid
+    // Update the shaders
+    grid_shader_.bind();
+    grid_shader_.set_uniform("projection_matrix", camera_.get_projection_matrix());
+    grid_shader_.set_uniform("view_matrix", camera_.get_view_matrix());
+    grid_shader_.set_uniform("camera_position", camera_.transform.position);
+    glLineWidth(1);
+    grid_mesh_.sub_grid.bind().draw_elements(GL_LINES);
+    grid_mesh_.main_grid.bind().draw_elements(GL_LINES);
 }

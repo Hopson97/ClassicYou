@@ -41,8 +41,7 @@ std::string object_to_string(const PillarObject& pillar)
 }
 
 template <>
-void render_object_2d(const PillarObject& pillar, DrawingPad& drawing_pad, const glm::vec4& colour,
-                      bool is_selected)
+void render_object_2d(const PillarObject& pillar, DrawingPad& drawing_pad, const glm::vec4& colour, const glm::vec2& selected_offset)
 
 {
     const auto& position = pillar.parameters.position;
@@ -50,7 +49,7 @@ void render_object_2d(const PillarObject& pillar, DrawingPad& drawing_pad, const
 
     auto offset = size / 2.0f;
 
-    drawing_pad.render_quad(position - offset, {size, size}, colour);
+    drawing_pad.render_quad(position - offset + selected_offset, {size, size}, colour);
 }
 
 template <>
@@ -138,7 +137,9 @@ LevelObjectsMesh3D generate_pillar_mesh(const PillarObject& platform, int floor_
 
     auto size = props.size;
     auto ob = props.base_height * FLOOR_HEIGHT;
-    auto h = std::min(ob + props.height * FLOOR_HEIGHT, FLOOR_HEIGHT);
+    auto h = ob + props.height * FLOOR_HEIGHT;
+    
+    // auto h = std::min(ob + props.height * FLOOR_HEIGHT, FLOOR_HEIGHT);
 
     ob += floor_number * FLOOR_HEIGHT;
     h += floor_number * FLOOR_HEIGHT;

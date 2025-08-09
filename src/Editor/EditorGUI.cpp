@@ -16,9 +16,12 @@ namespace
     constexpr ImVec2 GUI_TEXTURE_SIZE = {32, 32};
     constexpr int TEXTURES_PER_LINE = 6;
 
+    // Advanced edit mode enables editing "taller" than the actual floor height
+    constexpr float ADVANCED_MODE_MAX_HEIGHT = 5.0f;
+
     /// Displays a list of available textures as a list of buttons, returns the ID of the given
     /// texture if a button is clicked
-    std::optional<TextureProp> texture_prop_gui(UpdateResult& result, const char* label,
+    std::optional<TextureProp> texture_prop_gui(PropGUIUpdateResult& result, const char* label,
                                                 TextureProp current_texture,
                                                 const LevelTextures& textures)
     {
@@ -112,15 +115,16 @@ namespace
     }
 
     /// GUI for selecting a texture from the given "LevelTextures" object
-    void texture_gui(UpdateResult& result, const char* label, const LevelTextures& textures,
+    bool texture_gui(PropGUIUpdateResult& result, const char* label, const LevelTextures& textures,
                      TextureProp current, TextureProp& new_texture)
     {
         auto texture = texture_prop_gui(result, label, current, textures);
         if (texture)
         {
-
             new_texture = *texture;
+            return true;
         }
+        return false;
     }
 
     struct TextureTab
@@ -130,7 +134,7 @@ namespace
         TextureProp* new_texture;
     };
 
-    void texture_gui_tabs(UpdateResult& result, const char* tab_names,
+    void texture_gui_tabs(PropGUIUpdateResult& result, const char* tab_names,
                           const LevelTextures& textures, TextureTab tab_a, TextureTab tab_b)
     {
         if (ImGui::BeginTabBar(tab_names))
@@ -151,39 +155,20 @@ namespace
 
     /// GUI for a enum property such a styles etc
     template <typename EnumType>
-    void enum_gui(UpdateResult& result, const char* label, EnumType current, EnumType& new_value)
+    void enum_gui(PropGUIUpdateResult& result, const char* label, EnumType& value)
     {
-        ImGui::Text("%s", label);
-        size_t n = 0;
-        magic_enum::enum_for_each<EnumType>(
-            [&](EnumType value)
-            {
-                int style = static_cast<int>(current);
-
-                if (n != 0)
-                {
-                    if (++n % 3 != 0)
-                    {
-                        ImGui::SameLine();
-                    }
-                }
-                n++;
-
-                if (ImGui::RadioButton(magic_enum::enum_name(value).data(), &style,
-                                       static_cast<int>(value)))
-                {
-                    result.always_update |= true;
-                    new_value = value;
-                }
-            });
+        if (ImGuiExtras::EnumSelect(label, value))
+        {
+            result.always_update |= true;
+        }
     }
 
     /// Wrapper around stepped slider for updating numerical props
-    bool slider(UpdateResult& result, const char* label, float& value, float min, float max,
+    bool slider(PropGUIUpdateResult& result, const char* label, float& value, float min, float max,
                 float interval, const char* fmt = "%.1f")
     {
         bool updated = false;
-        if (ImGui::SliderFloatStepped(label, value, min, max, interval, fmt))
+        if (ImGuiExtras::SliderFloatStepped(label, value, min, max, interval, fmt))
         {
             updated = true;
             result.continuous_update |= true;
@@ -202,7 +187,7 @@ namespace
     /// have not actually changed. For example, clicking the same texture, or holding the mouse down
     /// on a slider element.
     template <typename T>
-    UpdateResult check_prop_updated(UpdateResult result, const T& current_props, const T& new_props)
+    auto check_prop_updated(PropGUIUpdateResult result, const T& current_props, const T& new_props)
     {
         result.continuous_update =
             (result.continuous_update && current_props != new_props) || result.action;
@@ -212,24 +197,32 @@ namespace
         return result;
     }
 
+    auto get_max_height(EditMode mode)
+    {
+        return mode == EditMode::Advanced ? ADVANCED_MODE_MAX_HEIGHT : 1.0f;
+    }
+
 } // namespace
 
-std::pair<UpdateResult, WallProps> wall_gui(const LevelTextures& textures, const WallObject& wall)
+std::pair<PropGUIUpdateResult, WallProps> wall_gui(const LevelTextures& textures,
+                                                   const WallObject& wall, EditMode edit_mode)
 
 {
-    UpdateResult result;
+    PropGUIUpdateResult result;
     auto new_props = wall.properties;
+    auto max_height = get_max_height(edit_mode);
 
     // When the wall is generating the mesh, these values are multiplied by 2.0f
     auto base_height = new_props.start_base_height;
     auto height = new_props.start_height;
-    if (slider(result, "Base Height", base_height, 0.0f, 0.9f, 0.1f))
+
+    if (slider(result, "Base Height", base_height, 0.0f, max_height - 0.1f, 0.1f))
     {
         new_props.start_base_height = base_height;
         new_props.end_base_height = base_height;
     }
 
-    if (slider(result, "Height", height, 0.1f, 1.0f - base_height, 0.1f))
+    if (slider(result, "Height", height, 0.1f, max_height - base_height, 0.1f))
     {
         new_props.start_height = height;
         new_props.end_height = height;
@@ -246,16 +239,37 @@ std::pair<UpdateResult, WallProps> wall_gui(const LevelTextures& textures, const
             result.always_update |= true;
         }
     }
-    if (ImGui::CollapsingHeader("Advanced Wall Options"))
-    {
-        slider(result, "Start Base Height", new_props.start_base_height, 0.0f, 0.9f, 0.1f);
-        slider(result, "Start Wall Height", new_props.start_height, 0.1f,
-               1.0f - new_props.start_base_height, 0.1f);
 
-        slider(result, "End Base Height", new_props.end_base_height, 0.0f, 0.9f, 0.1f);
-        slider(result, "End Wall Height", new_props.end_height, 0.1f,
-               1.0f - new_props.end_base_height, 0.1f);
+    if (edit_mode > EditMode::Legacy)
+    {
+        if (ImGui::CollapsingHeader("Extended Wall Options"))
+        {
+            slider(result, "Start Base Height", new_props.start_base_height, 0.0f, 0.9f, 0.1f);
+            slider(result, "Start Wall Height", new_props.start_height, 0.1f,
+                   max_height - new_props.start_base_height, 0.1f);
+
+            slider(result, "End Base Height", new_props.end_base_height, 0.0f, max_height - 0.1f,
+                   0.1f);
+
+            slider(result, "End Wall Height", new_props.end_height, 0.1f,
+                   max_height - new_props.end_base_height, 0.1f);
+        }
     }
+
+    // Ensure all values are clamped
+    float max_start_height = max_height - new_props.start_base_height;
+    if (max_start_height > 0.1f)
+    {
+        new_props.start_height = std::clamp(new_props.start_height, 0.1f, max_start_height);
+    }
+
+    float max_end_height = max_height - new_props.end_base_height;
+    if (max_end_height > 0.1f)
+    {
+        new_props.end_height = std::clamp(new_props.end_height, 0.1f, max_end_height);
+    }
+
+
 
     texture_gui_tabs(result, "Textures_wall", textures,
                      {.name = "Front Texture",
@@ -271,12 +285,11 @@ std::pair<UpdateResult, WallProps> wall_gui(const LevelTextures& textures, const
     };
 }
 
-std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& textures,
-                                                    const PlatformObject& platform)
+std::pair<PropGUIUpdateResult, PlatformProps>
+platform_gui(const LevelTextures& textures, const PlatformObject& platform, EditMode edit_mode)
 
 {
-    UpdateResult result;
-
+    PropGUIUpdateResult result;
     PlatformProps new_props = platform.properties;
 
 
@@ -284,18 +297,29 @@ std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& texture
     slider(result, "Depth", new_props.depth, 0.5f, 20.0f, 0.5f);
 
     // Multiplied by 2 when mesh is created
-    slider(result, "Base Height", new_props.base, 0.0f, 0.9f, 0.1f);
+    slider(result, "Base Height", new_props.base, 0.0f,  0.9f, 0.1f);
 
-    enum_gui<PlatformStyle>(result, "Platform Style", platform.properties.style, new_props.style);
+    enum_gui<PlatformStyle>(result, "Platform Style", new_props.style);
 
+    if (edit_mode > EditMode::Legacy)
+    {
 
-    texture_gui_tabs(result, "Textures_platform", textures,
-                     {.name = "Top Texture",
-                      .current = platform.properties.texture_top,
-                      .new_texture = &new_props.texture_top},
-                     {.name = "Bottom Texture",
-                      .current = platform.properties.texture_bottom,
-                      .new_texture = &new_props.texture_bottom});
+        texture_gui_tabs(result, "Textures_platform", textures,
+                         {.name = "Top Texture",
+                          .current = platform.properties.texture_top,
+                          .new_texture = &new_props.texture_top},
+                         {.name = "Bottom Texture",
+                          .current = platform.properties.texture_bottom,
+                          .new_texture = &new_props.texture_bottom});
+    }
+    else
+    {
+        if (texture_gui(result, "Texture", textures, platform.properties.texture_top,
+                        new_props.texture_top))
+        {
+            new_props.texture_bottom = new_props.texture_top;
+        }
+    }
 
     return {
         check_prop_updated(result, platform.properties, new_props),
@@ -303,11 +327,11 @@ std::pair<UpdateResult, PlatformProps> platform_gui(const LevelTextures& texture
     };
 }
 
-std::pair<UpdateResult, PolygonPlatformProps>
-polygon_platform_gui(const LevelTextures& textures, const PolygonPlatformObject& poly)
+std::pair<PropGUIUpdateResult, PolygonPlatformProps>
+polygon_platform_gui(const LevelTextures& textures, const PolygonPlatformObject& poly,
+                     EditMode edit_mode)
 {
-    UpdateResult result;
-
+    PropGUIUpdateResult result;
     PolygonPlatformProps new_props = poly.properties;
 
     if (ImGui::Checkbox("Show Floor?", &new_props.visible))
@@ -335,15 +359,16 @@ polygon_platform_gui(const LevelTextures& textures, const PolygonPlatformObject&
     };
 }
 
-std::pair<UpdateResult, PillarProps> pillar_gui(const LevelTextures& textures,
-                                                const PillarObject& pillar)
+std::pair<PropGUIUpdateResult, PillarProps>
+pillar_gui(const LevelTextures& textures, const PillarObject& pillar, EditMode edit_mode)
 {
-    UpdateResult result;
+    PropGUIUpdateResult result;
     auto new_props = pillar.properties;
+    auto max_height = get_max_height(edit_mode);
 
     slider(result, "Size", new_props.size, 0.1f, 0.8f, 0.1f);
     slider(result, "Base Height", new_props.base_height, 0.0f, 0.9f, 0.1f);
-    slider(result, "Height", new_props.height, 0.1f, 1.0f - new_props.base_height, 0.1f);
+    slider(result, "Height", new_props.height, 0.1f, max_height - new_props.base_height, 0.1f);
 
     // enum_gui(result, "Style", pillar.properties.style, new_props.style);
     ImGui::Separator();
@@ -353,6 +378,13 @@ std::pair<UpdateResult, PillarProps> pillar_gui(const LevelTextures& textures,
         result.always_update |= true;
     }*/
 
+
+    float max_height_factor = max_height - new_props.base_height;
+    if (max_height_factor > 0.1f)
+    {
+        new_props.height = std::clamp(new_props.height, 0.1f, max_height_factor);
+    }
+
     texture_gui(result, "Texture", textures, pillar.properties.texture, new_props.texture);
 
     return {
@@ -361,29 +393,46 @@ std::pair<UpdateResult, PillarProps> pillar_gui(const LevelTextures& textures,
     };
 }
 
-std::pair<UpdateResult, RampProps> ramp_gui(const LevelTextures& textures, const RampObject& ramp)
+std::pair<PropGUIUpdateResult, RampProps> ramp_gui(const LevelTextures& textures,
+                                                   const RampObject& ramp, EditMode edit_mode)
 {
-    UpdateResult result;
-
+    PropGUIUpdateResult result;
     auto new_props = ramp.properties;
+    auto max_height = get_max_height(edit_mode);
 
     slider(result, "Width", new_props.width, 0.5f, 20.0f, 0.5f);
     slider(result, "Depth", new_props.depth, 0.5f, 20.0f, 0.5f);
 
-    slider(result, "Start Height", new_props.start_height, 0.0f, 0.9f, 0.1f);
-    slider(result, "End Height", new_props.end_height, new_props.start_height + 0.1, 1.0f, 0.1f);
+    if (edit_mode > EditMode::Extended)
+    {
+        slider(result, "Start Height", new_props.start_height, 0.0f, 0.9f, 0.1f);
+        slider(result, "End Height", new_props.end_height, new_props.start_height + 0.1f,
+               max_height, 0.1f);
+    }
 
-    enum_gui(result, "Style", ramp.properties.style, new_props.style);
+    enum_gui(result, "Style", new_props.style);
     ImGui::Separator();
-    enum_gui(result, "Direction", ramp.properties.direction, new_props.direction);
+    enum_gui(result, "Direction", new_props.direction);
 
-    texture_gui_tabs(result, "Textures_Ramp", textures,
-                     {.name = "Top Texture",
-                      .current = ramp.properties.texture_top,
-                      .new_texture = &new_props.texture_top},
-                     {.name = "Bottom Texture",
-                      .current = ramp.properties.texture_bottom,
-                      .new_texture = &new_props.texture_bottom});
+    if (edit_mode > EditMode::Legacy)
+    {
+
+        texture_gui_tabs(result, "Textures_platform", textures,
+                         {.name = "Top Texture",
+                          .current = ramp.properties.texture_top,
+                          .new_texture = &new_props.texture_top},
+                         {.name = "Bottom Texture",
+                          .current = ramp.properties.texture_bottom,
+                          .new_texture = &new_props.texture_bottom});
+    }
+    else
+    {
+        if (texture_gui(result, "Texture", textures, ramp.properties.texture_top,
+                        new_props.texture_top))
+        {
+            new_props.texture_bottom = new_props.texture_top;
+        }
+    }
 
     return {
         check_prop_updated(result, ramp.properties, new_props),
@@ -395,7 +444,7 @@ bool display_level_list(bool& show_load_dialog, std::string& name)
 {
     bool result = false;
 
-    if (ImGui::BeginCentredWindow("Load Level", {800, 800}))
+    if (ImGuiExtras::BeginCentredWindow("Load Level", {800, 800}))
     {
         ImGui::Text("Select a level to load:");
         ImGui::Separator();

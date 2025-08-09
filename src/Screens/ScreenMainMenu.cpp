@@ -53,17 +53,17 @@ void ScreenMainMenu::on_render([[maybe_unused]] bool show_debug)
 void ScreenMainMenu::main_menu()
 {
 
-    if (ImGui::CustomButton("Create Game"))
+    if (ImGuiExtras::CustomButton("Create Game"))
     {
         p_screen_manager_->push_screen(std::make_unique<ScreenEditGame>(*p_screen_manager_));
         // current_menu_ = Menu::CreateMenu;
     }
-    if (ImGui::CustomButton("Load Edit Game"))
+    if (ImGuiExtras::CustomButton("Load Edit Game"))
     {
         show_load_dialog_ = true;
         // p_screen_manager_->push_screen(std::make_unique<ScreenPlaying>(*p_screen_manager_));
     }
-    if (ImGui::CustomButton("Exit"))
+    if (ImGuiExtras::CustomButton("Exit"))
     {
         p_screen_manager_->pop_screen();
     }
@@ -81,12 +81,12 @@ void ScreenMainMenu::main_menu()
 
 void ScreenMainMenu::create_game_menu()
 {
-    if (ImGui::CustomButton("Begin Creating"))
+    if (ImGuiExtras::CustomButton("Begin Creating"))
     {
         p_screen_manager_->push_screen(std::make_unique<ScreenEditGame>(*p_screen_manager_));
         current_menu_ = Menu::CreateMenu;
     }
-    if (ImGui::CustomButton("Back"))
+    if (ImGuiExtras::CustomButton("Back"))
     {
         current_menu_ = Menu::MainMenu;
     }

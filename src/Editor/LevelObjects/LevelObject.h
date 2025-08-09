@@ -7,14 +7,13 @@
 #include <nlohmann/json.hpp>
 
 #include "../../Graphics/Mesh.h"
+#include "../EditConstants.h"
 #include "ObjectTypes.h"
 
 class LevelTextures;
 struct EditorState;
 class ActionManager;
 class DrawingPad;
-
-using ObjectId = std::int32_t;
 
 /**
  * @brief A single object in the level editor.
@@ -59,8 +58,8 @@ struct LevelObject
 
     /// Renders the object to the 2D drawing pad. The selected object is highlighted in red, and
     /// objects on the floor below are rendered slightly greyed out for easier editing.
-    void render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object,
-                   bool is_current_floor) const;
+    void render_2d(DrawingPad& drawing_pad, bool is_current_floor, bool is_selected,
+                   const glm::vec2& selected_offset) const;
 
     /// Try to select the object in the 2D view based on the given selection tile.
     bool try_select_2d(glm::vec2 selection_tile) const;

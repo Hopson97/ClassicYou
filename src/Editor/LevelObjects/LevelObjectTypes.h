@@ -77,7 +77,10 @@ inline TextureProp deserialise_texture(const nlohmann::json& object)
 
 using SerialiseResponse = std::pair<nlohmann::json, std::string>;
 
-// These functions are specialised for each object type for use with std::visit
+/**
+* All Level objects must specialize these functions. These are called via std::visit in LevelObject.cpp
+*/
+
 template <typename T>
 [[nodiscard]] LevelObjectsMesh3D object_to_geometry(const T& object, int floor_number);
 
@@ -85,7 +88,8 @@ template <typename T>
 [[nodiscard]] std::string object_to_string(const T& object);
 
 template <typename T>
-void render_object_2d(const T& object, DrawingPad& pad, const glm::vec4& colour, bool is_selected);
+void render_object_2d(const T& object, DrawingPad& pad, const glm::vec4& colour,
+                      const glm::vec2& selected_offset = {0,0});
 
 template <typename T>
 [[nodiscard]] bool object_try_select_2d(const T& object, glm::vec2 selection_tile);

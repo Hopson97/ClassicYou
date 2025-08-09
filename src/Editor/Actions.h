@@ -50,7 +50,29 @@ class AddObjectAction final : public Action
     const int floor_;
 };
 
-/// Action to update an existing object in the level.
+// For copy-paste functionality
+class AddBulkObjectsAction final : public Action
+{
+  public:
+    AddBulkObjectsAction(const std::vector<LevelObject>& objects, const std::vector<int>& floors);
+
+    void execute(EditorState& state, EditorLevel& level) override;
+    void undo(EditorState& state, EditorLevel& level) override;
+
+    ActionStrings to_string() const override;
+
+  private:
+    /// The objects to add
+    std::vector<LevelObject> objects_;
+    std::vector<int> floors_;
+
+    /// The ID of the object added to the level. This for undo/redo to ensure the ID is preserved.
+    std::vector<ObjectId> object_ids;
+
+    // Flag for when re-doing this action, it uses the stored props rather than the default
+    bool executed_ = false;
+};
+
 class UpdateObjectAction final : public Action
 {
   public:
@@ -70,12 +92,30 @@ class UpdateObjectAction final : public Action
 
     const int floor_;
 };
+class BulkUpdateObjectAction final : public Action
+{
+  public:
+    BulkUpdateObjectAction(const std::vector<LevelObject>& old_objects,
+                           const std::vector<LevelObject>& new_objects);
+
+    void execute(EditorState& state, EditorLevel& level) override;
+    void undo(EditorState& state, EditorLevel& level) override;
+
+    ActionStrings to_string() const override;
+
+  private:
+    /// The object before the update
+    const std::vector<LevelObject> old_objects_;
+
+    /// The object after the update
+    const std::vector<LevelObject> new_objects_;
+};
 
 /// Action to delete an existing object from the level.
 class DeleteObjectAction final : public Action
 {
   public:
-    DeleteObjectAction(const LevelObject& object, int floor);
+    DeleteObjectAction(const std::vector<LevelObject>& objects, const std::vector<int>& floors);
 
     void execute(EditorState& state, EditorLevel& level) override;
     void undo(EditorState& state, EditorLevel& level) override;
@@ -84,8 +124,8 @@ class DeleteObjectAction final : public Action
 
   private:
     /// The object to delete
-    LevelObject object_;
-    const int floor_;
+    std::vector<LevelObject> objects_;
+    std::vector<int> floors_;
 };
 
 /// Manager for storing the actions and handling undo/redo functionality.

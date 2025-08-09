@@ -174,7 +174,14 @@ using LevelObjectsMesh3D = Mesh<VertexLevelObjects>;
 using Mesh2D = Mesh<Vertex2D>;
 
 [[nodiscard]] Mesh3D generate_quad_mesh(float w, float h);
-[[nodiscard]] Mesh3D generate_cube_mesh(const glm::vec3& size, bool repeat_texture = false);
+
+[[nodiscard]] LevelObjectsMesh3D
+generate_cube_mesh_level(const glm::vec3& start, const glm::vec3& size, int texture,
+                         glm::u8vec4 colour = {255, 255, 255, 255});
+
+[[nodiscard]] Mesh3D generate_cube_mesh(const glm::vec3& size, bool repeat_texture = false,
+                                        glm::u8vec4 colour = {255, 255, 255, 255});
+
 [[nodiscard]] Mesh3D generate_centered_cube_mesh(const glm::vec3& size);
 [[nodiscard]] Mesh3D generate_terrain_mesh(int size, int edgeVertices);
 [[nodiscard]] Mesh3D generate_grid_mesh(int width, int height);

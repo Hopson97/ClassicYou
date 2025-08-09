@@ -157,8 +157,10 @@
     <ClCompile Include="deps\imgui_sfml\imgui_impl_opengl3.cpp" />
     <ClCompile Include="src\Editor\Actions.cpp" />
     <ClCompile Include="src\Editor\DrawingPad.cpp" />
+    <ClCompile Include="src\Editor\EditorEventHandlers.cpp" />
     <ClCompile Include="src\Editor\EditorGUI.cpp" />
     <ClCompile Include="src\Editor\EditorLevel.cpp" />
+    <ClCompile Include="src\Editor\EditorState.cpp" />
     <ClCompile Include="src\Editor\FloorManager.cpp" />
     <ClCompile Include="src\Editor\InfiniteGrid.cpp" />
     <ClCompile Include="src\Editor\LegacyFileConverter.cpp" />
@@ -230,6 +232,7 @@
     <ClInclude Include="src\Editor\Actions.h" />
     <ClInclude Include="src\Editor\DrawingPad.h" />
     <ClInclude Include="src\Editor\EditConstants.h" />
+    <ClInclude Include="src\Editor\EditorEventHandlers.h" />
     <ClInclude Include="src\Editor\EditorGUI.h" />
     <ClInclude Include="src\Editor\EditorLevel.h" />
     <ClInclude Include="src\Editor\EditorState.h" />

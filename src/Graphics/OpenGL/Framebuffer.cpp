@@ -91,8 +91,8 @@ namespace gl
 
         GLuint& rbo = renderbuffers_.emplace_back();
         glCreateRenderbuffers(1, &rbo);
-        glNamedRenderbufferStorageMultisample(rbo, 2, GL_DEPTH24_STENCIL8, width, height);
-        glNamedFramebufferRenderbuffer(id, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+        glNamedRenderbufferStorageMultisample(rbo, 2, GL_DEPTH_COMPONENT24, width, height);
+        glNamedFramebufferRenderbuffer(id, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
         textures_.push_back(std::move(texture));
         return *this;
@@ -102,8 +102,8 @@ namespace gl
     {
         GLuint& rbo = renderbuffers_.emplace_back();
         glCreateRenderbuffers(1, &rbo);
-        glNamedRenderbufferStorage(rbo, GL_DEPTH24_STENCIL8, width, height);
-        glNamedFramebufferRenderbuffer(id, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+        glNamedRenderbufferStorage(rbo, GL_DEPTH_COMPONENT24, width, height);
+        glNamedFramebufferRenderbuffer(id, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
         return *this;
     }
 

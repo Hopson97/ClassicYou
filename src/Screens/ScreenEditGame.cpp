@@ -26,13 +26,12 @@ namespace
 
     glm::ivec2 map_pixel_to_tile(glm::vec2 point, const Camera& camera)
     {
-        // TODO handle camera zooming
         auto scale = HALF_TILE_SIZE;
-
         auto& transform = camera.transform.position;
+        auto cam_scale = camera.get_orthographic_scale();
         return {
-            std::round((point.x + transform.x) / scale) * scale,
-            std::round((point.y + transform.y) / scale) * scale,
+            std::round((point.x * cam_scale + transform.x) / scale) * scale,
+            std::round((point.y * cam_scale + transform.y) / scale) * scale,
         };
     }
 
@@ -53,6 +52,9 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens)
       })
     , drawing_pad_({window().getSize().x / 2, window().getSize().y}, editor_state_.node_hovered)
     , action_manager_(editor_state_, level_)
+    , object_move_handler_(level_, action_manager_)
+    , copy_paste_handler_(level_, action_manager_)
+    , picker_fbo_(window().getSize().x, window().getSize().y)
 {
 }
 
@@ -67,8 +69,11 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens, std::string level_name)
       })
     , drawing_pad_({window().getSize().x / 2, window().getSize().y}, editor_state_.node_hovered)
     , action_manager_(editor_state_, level_)
+    , object_move_handler_(level_, action_manager_)
+    , copy_paste_handler_(level_, action_manager_)
     , level_name_(level_name)
     , level_name_actual_(level_name)
+    , picker_fbo_(window().getSize().x, window().getSize().y)
 {
 }
 
@@ -119,7 +124,7 @@ bool ScreenEditGame::on_init()
     }
     scene_shader_.set_uniform("diffuse", 0);
 
-    // Load the shader for world geometry. This is a seperate shader
+    // Load the shader for world geometry. This is a separate shader
     // as it needs to use 3D texture coords to work with GL_TEXTURE_2D_ARRAY
     world_geometry_shader_.add_replace_word({"TEX_COORD_LENGTH", "vec3"});
     world_geometry_shader_.add_replace_word({"SAMPLER_TYPE", "sampler2DArray"});
@@ -132,6 +137,24 @@ bool ScreenEditGame::on_init()
         return false;
     }
     world_geometry_shader_.set_uniform("diffuse", 0);
+
+    // -------------------------------------------
+    // ==== Set up the picker FBO and shader  ====
+    // -------------------------------------------
+    picker_fbo_.attach_colour(gl::TextureFormat::R32I).attach_renderbuffer();
+    if (!picker_fbo_.is_complete())
+    {
+        return false;
+    }
+
+    if (!picker_shader_.load_stage("assets/shaders/Scene/PickerVertex.glsl",
+                                   gl::ShaderType::Vertex) ||
+        !picker_shader_.load_stage("assets/shaders/Scene/PickerFragment.glsl",
+                                   gl::ShaderType::Fragment) ||
+        !picker_shader_.link_shaders())
+    {
+        return false;
+    }
 
     // -------------------------
     // ==== Set up the SSBO ====
@@ -162,17 +185,17 @@ bool ScreenEditGame::on_init()
 
 void ScreenEditGame::on_event(const sf::Event& event)
 {
-    auto p_active = editor_state_.p_active_object;
-
     if (showing_dialog())
     {
         return;
     }
 
-    // When dragging an object and the final placement is decided, this is set to true. This is to
-    // prevent calls to the tool event fuctions, which can have issues (such as walls appears in odd
-    // place) if their events are handled post-move
-    bool finish_move = false;
+    // CTRL C and CTRL V handling
+    copy_paste_handler_.handle_events(event, editor_state_.selection, editor_state_.current_floor);
+
+    // True when objects are moved - prevents placing objects where objects are moved to
+    auto move_finished = object_move_handler_.handle_move_events(
+        event, editor_state_, tool_ ? tool_->get_tool_type() : ToolType::CreateWall);
 
     // Certain events cause issues if the current tool is UpdateWall (such as rendering the 2D
     // preview of deleting walls) so this prevents that.
@@ -188,10 +211,13 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 break;
 
             case sf::Keyboard::Key::Delete:
-                if (p_active)
+                if (editor_state_.selection.has_selection())
                 {
-                    action_manager_.push_action(std::make_unique<DeleteObjectAction>(
-                        *p_active, editor_state_.current_floor));
+                    auto [objects, floors] =
+                        level_.copy_objects_and_floors(editor_state_.selection.objects);
+
+                    action_manager_.push_action(
+                        std::make_unique<DeleteObjectAction>(objects, floors));
                     try_set_tool_to_wall = true;
                 }
                 break;
@@ -219,103 +245,102 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 {
                     std::println("TODO: Implement saving before loading menu");
                 }
-                // exit_editor();
+                exit_editor();
                 break;
 
             default:
                 break;
         }
     }
-    else if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
-    {
-        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
-        {
-            // Start dragging the selected object
-            if (p_active && p_active->try_select_2d(editor_state_.node_hovered) &&
-                !std::get_if<WallObject>(&p_active->object_type))
-            {
-                select_position_ = editor_state_.node_hovered;
-                moving_object_ = true;
-                moving_object_cache_ = *p_active;
-            }
-        }
-    }
     else if (auto mouse = event.getIf<sf::Event::MouseMoved>())
     {
         editor_state_.node_hovered =
             map_pixel_to_tile({mouse->position.x, mouse->position.y}, drawing_pad_.get_camera());
-
-        if (p_active && moving_object_)
-        {
-            auto new_object = *p_active;
-            new_object.move(editor_state_.node_hovered - select_position_);
-            select_position_ = editor_state_.node_hovered;
-
-            action_manager_.push_action(std::make_unique<UpdateObjectAction>(
-                                            *p_active, new_object, editor_state_.current_floor),
-                                        false);
-        }
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
-        // Try to select an object (2D view)
-        if (mouse->button == sf::Mouse::Button::Right)
+        if (ImGui::GetIO().WantCaptureMouse)
         {
-            editor_state_.p_active_object =
-                level_.try_select(map_pixel_to_tile({mouse->position.x, mouse->position.y},
-                                                    drawing_pad_.get_camera()),
-                                  p_active, editor_state_.current_floor);
+            return;
+        }
+        auto window_size = window().getSize();
+        auto clicked_2d = mouse->position.x < window_size.x / 2 && editor_settings_.show_2d_view;
+        auto clicked_3d = !clicked_2d || !editor_settings_.show_2d_view;
 
-            // Editing a wall requires a special tool to enable resizing, so after a object it
-            // switches between tools
-            if (editor_state_.p_active_object)
+        // Try to select an object (2D view)
+        if (mouse->button == sf::Mouse::Button::Right && clicked_2d &&
+            editor_settings_.show_2d_view)
+        {
+            auto selection = level_.try_select(
+                map_pixel_to_tile({mouse->position.x, mouse->position.y},
+                                  drawing_pad_.get_camera()),
+                editor_state_.selection.p_active_object, editor_state_.current_floor);
+
+            if (selection)
             {
-                if (auto wall =
-                        std::get_if<WallObject>(&editor_state_.p_active_object->object_type))
-                {
-                    tool_ = std::make_unique<UpdateWallTool>(*editor_state_.p_active_object, *wall);
-                }
-                else
-                {
-                    tool_ = std::make_unique<CreateWallTool>();
-                }
+                select_object(selection);
             }
-            else if (tool_->get_tool_type() == ToolType::UpdateWall)
+            else
             {
+                editor_state_.selection.clear_selection();
                 // Nothing was selected, default back to CreateWallTool if currently selecting a
                 // wall
-                tool_ = std::make_unique<CreateWallTool>();
+                try_set_tool_to_create_wall();
             }
         }
-        if (mouse->button == sf::Mouse::Button::Left)
+        else if (mouse->button == sf::Mouse::Button::Right && clicked_3d)
         {
-            if (moving_object_)
-            {
-                auto new_object = *p_active;
-                new_object.move(editor_state_.node_hovered - select_position_);
+            int x = sf::Mouse::getPosition(window()).x;
 
-                action_manager_.push_action(
-                    std::make_unique<UpdateObjectAction>(moving_object_cache_, new_object,
-                                                         editor_state_.current_floor),
-                    true);
-                finish_move = true;
+            // When the 2D view is showing, the 3D view is half the screen
+            if (editor_settings_.show_2d_view)
+            {
+                x -= window_size.x / 2;
             }
 
-            moving_object_ = false;
+            // The Y view must be inverted as the mouse click origin is th window top-left, but the
+            // OpenGL texture origin is the bottom left
+            int y = window_size.y - sf::Mouse::getPosition(window()).y - 1;
+
+            int max_x = editor_settings_.show_2d_view ? window_size.x / 2 : window_size.x;
+            if (x >= 0 && x < max_x && y >= 0 && y < window_size.y)
+            {
+                mouse_picker_point_ = {x, y};
+                try_pick_3d_ = true;
+            }
         }
     }
 
-    if (!moving_object_ && !finish_move)
+    if (!object_move_handler_.is_moving_objects() && !move_finished)
     {
         tool_->on_event(event, editor_state_.node_hovered, editor_state_, action_manager_);
     }
 
-    if (try_set_tool_to_wall)
+    if (move_finished)
     {
         if (tool_->get_tool_type() == ToolType::UpdateWall)
         {
+            // When updating a wall, this ensures the the start/end render points are drawn in the
+            // correct location
+            assert(editor_state_.selection.p_active_object);
+            auto object = editor_state_.selection.p_active_object;
+            if (auto wall = std::get_if<WallObject>(&object->object_type))
+            {
+                auto floor = level_.get_object_floor(object->object_id);
+                tool_ = std::make_unique<UpdateWallTool>(*object, *wall, *floor);
+            }
+        }
+        else if (tool_->get_tool_type() == ToolType::AreaSelectTool)
+        {
+            // After the selection has been moved, the old selection area is invalidated
+            // TOOD: Find a way to move the selection rather than just set to wall
             tool_ = std::make_unique<CreateWallTool>();
         }
+    }
+
+    if (try_set_tool_to_wall)
+    {
+        try_set_tool_to_create_wall();
     }
 }
 
@@ -332,6 +357,9 @@ void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
     {
         set_2d_to_3d_view();
     }
+
+    // For 3D mouse picking multiple objects
+    is_shift_down_ = keyboard.is_key_down(sf::Keyboard::Key::LShift);
 }
 
 void ScreenEditGame::on_fixed_update([[maybe_unused]] sf::Time dt)
@@ -348,13 +376,16 @@ void ScreenEditGame::on_render(bool show_debug)
     {
         glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
 
-        level_.render_2d(drawing_pad_, editor_state_.p_active_object, editor_state_.current_floor);
-
-        if (tool_->get_tool_type() == ToolType::UpdateWall ||
-            (!ImGui::GetIO().WantCaptureMouse && !moving_object_))
+        if (tool_->get_tool_type() == ToolType::UpdateWall || !ImGui::GetIO().WantCaptureMouse)
         {
-            tool_->render_preview_2d(drawing_pad_, editor_state_);
+            if (!object_move_handler_.is_moving_objects())
+            {
+                tool_->render_preview_2d(drawing_pad_, editor_state_);
+            }
         }
+
+        level_.render_2d(drawing_pad_, editor_state_.selection.objects, editor_state_.current_floor,
+                         object_move_handler_.get_move_offset());
 
         // Finalise 2d rendering
         drawing_pad_.display(camera_.transform);
@@ -411,17 +442,60 @@ void ScreenEditGame::on_render(bool show_debug)
     world_geometry_shader_.set_uniform("use_texture", true);
     world_geometry_shader_.set_uniform("model_matrix", create_model_matrix({}));
 
-    if (!moving_object_)
+    // Render the level itself
+    // All objects have their positions baked and are rendered where they are created. Selected
+    // objects, however, have their positions moved by the given offset for when they are being
+    // moved around
+    auto offset = object_move_handler_.get_move_offset();
+    level_.render(world_geometry_shader_, editor_state_.selection.objects,
+                  editor_state_.current_floor, {offset.x, 0, offset.y});
+
+    if (!object_move_handler_.is_moving_objects())
     {
         tool_->render_preview();
     }
 
-    // Render the level itself
-    level_.render(world_geometry_shader_, editor_state_.p_active_object,
-                  editor_state_.current_floor);
-
     // Ensure GUI etc are rendered using fill
     gl::polygon_mode(gl::Face::FrontAndBack, gl::PolygonMode::Fill);
+
+    //======================================
+    //      3D Mouse Picking Objects
+    // =====================================
+    if (try_pick_3d_)
+    {
+        picker_fbo_.bind(gl::FramebufferTarget::Framebuffer, false);
+        picker_shader_.bind();
+
+        GLint clear_value = -1;
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glClearNamedFramebufferiv(picker_fbo_.id, GL_COLOR, 0, &clear_value);
+
+        auto window_size = window().getSize();
+        glViewport(0, 0, window_size.x / (editor_settings_.show_2d_view ? 2 : 1), window_size.y);
+
+        // Render the scene to texture's single channel texture containing object IDs
+        level_.render_to_picker(picker_shader_, editor_state_.current_floor);
+
+        // The pixel's value on the image maps to a LevelObject's id value
+        GLint picked_object_id = 0;
+        glReadPixels(mouse_picker_point_.x, mouse_picker_point_.y, 1, 1, GL_RED_INTEGER, GL_INT,
+                     &picked_object_id);
+
+        // If the pixel was non-empty, then try to select the corrsponding object
+        if (picked_object_id > -1)
+        {
+            if (auto object = level_.get_object(picked_object_id))
+            {
+                select_object(object);
+            }
+        }
+        else
+        {
+            editor_state_.selection.clear_selection();
+        }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+    try_pick_3d_ = false;
 
     //=============================
     //     Render the ImGUI
@@ -452,10 +526,48 @@ void ScreenEditGame::on_render(bool show_debug)
 
             // Reset the state
             action_manager_.clear();
-            editor_state_.p_active_object = nullptr;
+            editor_state_.selection.clear_selection();
 
             level_.load(make_level_path(level_name_));
             level_name_actual_ = level_name_;
+        }
+    }
+
+    if (tool_)
+    {
+        tool_->show_gui(editor_state_);
+    }
+}
+
+void ScreenEditGame::select_object(LevelObject* object)
+{
+    if (is_shift_down_)
+    {
+        editor_state_.selection.add_to_selection(object);
+        try_set_tool_to_create_wall();
+    }
+    else
+    {
+        editor_state_.selection.set_selection(object);
+
+        if (editor_settings_.jump_to_selection_floor)
+        {
+            if (auto floor = level_.get_object_floor(object->object_id))
+            {
+                editor_state_.current_floor = *floor;
+            }
+        }
+
+        // Editing a wall requires a special tool to enable resizing, so after a object
+        // it switches between tools
+        if (auto wall = std::get_if<WallObject>(&object->object_type))
+        {
+            auto floor = level_.get_object_floor(object->object_id);
+            tool_ = std::make_unique<UpdateWallTool>(*object, *wall, *floor);
+        }
+        else
+        {
+            tool_ = std::make_unique<CreateWallTool>();
         }
     }
 }
@@ -467,30 +579,42 @@ void ScreenEditGame::render_editor_ui()
     {
         // Display the list of objects that can be placed
         ImGui::Text("Tools");
+        ImGui::Separator();
         if (ImGui::Button("Wall"))
         {
             tool_ = std::make_unique<CreateWallTool>();
-            editor_state_.p_active_object = nullptr;
+            editor_state_.selection.clear_selection();
         }
+        ImGui::SameLine();
         if (ImGui::Button("Platform"))
         {
             tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::Platform);
-            editor_state_.p_active_object = nullptr;
+            editor_state_.selection.clear_selection();
         }
-        if (ImGui::Button("Polygon Platform"))
+        ImGui::SameLine();
+        if (ImGui::Button("Polygon"))
         {
             tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::PolygonPlatform);
-            editor_state_.p_active_object = nullptr;
+            editor_state_.selection.clear_selection();
         }
+
         if (ImGui::Button("Pillar"))
         {
             tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::Pillar);
-            editor_state_.p_active_object = nullptr;
+            editor_state_.selection.clear_selection();
         }
+        ImGui::SameLine();
         if (ImGui::Button("Ramp"))
         {
             tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::Ramp);
-            editor_state_.p_active_object = nullptr;
+            editor_state_.selection.clear_selection();
+        }
+
+        ImGui::Separator();
+        if (ImGui::Button("Area Selection"))
+        {
+            tool_ = std::make_unique<AreaSelectTool>(level_);
+            editor_state_.selection.clear_selection();
         }
 
         ImGui::Separator();
@@ -500,14 +624,12 @@ void ScreenEditGame::render_editor_ui()
         if (ImGui::Button("Floor Down"))
         {
             level_.ensure_floor_exists(--editor_state_.current_floor);
-            editor_state_.p_active_object = nullptr;
             camera_.transform.position.y -= FLOOR_HEIGHT;
         }
         ImGui::SameLine();
         if (ImGui::Button("Floor Up"))
         {
             level_.ensure_floor_exists(++editor_state_.current_floor);
-            editor_state_.p_active_object = nullptr;
             camera_.transform.position.y += FLOOR_HEIGHT;
         }
         ImGui::Text("Lowest: %d - Current: %d - Highest: %d", level_.get_min_floor(),
@@ -518,16 +640,26 @@ void ScreenEditGame::render_editor_ui()
         {
             set_2d_to_3d_view();
         }
+        ImGui::Separator();
+        drawing_pad_.camera_gui();
+        ImGui::Separator();
+
+        ImGuiExtras::EnumSelect(
+            "Editor Mode", editor_state_.edit_mode,
+            "-Legacy: Options based on the original ChallengeYou editor.\n-Extended: "
+            "Adds  options such as custom wall start/end heights, and texturing both "
+            "sides of  a platform differently.\n-Advanced: Adds advanced options "
+            "such as extending heights of walls and pillars beyond a single floor.");
     }
     ImGui::End();
 
     // When an object is selected, its properties is rendered
-    if (editor_state_.p_active_object)
+    if (editor_state_.selection.single_object_is_selected())
     {
         if (ImGui::Begin("Object Properties"))
         {
-            editor_state_.p_active_object->property_gui(editor_state_, level_textures_,
-                                                        action_manager_);
+            editor_state_.selection.p_active_object->property_gui(editor_state_, level_textures_,
+                                                                  action_manager_);
         }
         ImGui::End();
     }
@@ -559,7 +691,7 @@ void ScreenEditGame::save_level()
 
 void ScreenEditGame::show_save_dialog()
 {
-    if (ImGui::BeginCentredWindow("Save As...", {300, 200}))
+    if (ImGuiExtras::BeginCentredWindow("Save As...", {300, 200}))
     {
         ImGui::InputText("Level Name", &level_name_);
         bool can_save = !level_name_.empty();
@@ -601,6 +733,16 @@ void ScreenEditGame::show_menu_bar()
         {
             if (ImGui::MenuItem("Undo (CTRL + Z)")) { action_manager_.undo_action(); }
             if (ImGui::MenuItem("Redo (CTRL + Y)")) { action_manager_.redo_action(); }
+
+            if (ImGui::MenuItem("Copy (CTRL + C)")) 
+            { 
+                copy_paste_handler_.copy_selection(editor_state_.selection, editor_state_.current_floor); 
+            }
+            if (ImGui::MenuItem("Paste (CTRL + V)")) 
+            { 
+                copy_paste_handler_.paste_selection(editor_state_.current_floor); 
+            }
+
             ImGui::EndMenu();
         }
 
@@ -614,10 +756,13 @@ void ScreenEditGame::show_menu_bar()
                 auto factor = editor_settings_.show_2d_view ? 2 : 1;
                 camera_.set_viewport_size({window().getSize().x / factor, window().getSize().y});
             }
+            ImGui::Checkbox("Auto-Jump to selection floor?", &editor_settings_.jump_to_selection_floor);
+
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
     }
+
     // clang-format on
 }
 
@@ -647,4 +792,17 @@ void ScreenEditGame::set_2d_to_3d_view()
         camera_.transform.position.x * TILE_SIZE,
         camera_.transform.position.z * TILE_SIZE,
     });
+}
+
+void ScreenEditGame::try_set_tool_to_create_wall()
+{
+    // When the current tool is updating walls, it can cause be a bit jarring when doing things such
+    // as selecting multiple objects or moving between floors.
+    // For example, selecting a wall and then moving up a floor, you should not be able to then
+    // resize that wall from the "wrong floor"
+    // So this explictly prevents that from happening
+    if (tool_ && tool_->get_tool_type() == ToolType::UpdateWall)
+    {
+        tool_ = std::make_unique<CreateWallTool>();
+    }
 }

@@ -5,11 +5,11 @@
 
 #include <nlohmann/json.hpp>
 
-#include "../Editor/LevelObjects/LevelObject.h"
 #include "../Graphics/Mesh.h"
 #include "../Graphics/OpenGL/Shader.h"
+#include "EditorState.h"
 #include "FloorManager.h"
-#include <unordered_set>
+#include "LevelObjects/LevelObject.h"
 
 class DrawingPad;
 
@@ -34,11 +34,17 @@ class EditorLevel
 
     /// Renders the level in 3D using the given shader and highlights the active object.
     /// Assumes the camera, shader, and other OpenGL states are set up correctly.
-    void render(gl::Shader& scene_shader, const LevelObject* p_active_object, int current_floor);
+    /// The "selected_offset" can be used to offset the selected objects
+    void render(gl::Shader& scene_shader, const std::vector<ObjectId>& active_objects,
+                int current_floor, const glm::vec3& selected_offset);
+
+    // Render the scene to the pickder texture, using the object ID as the single-colour channel
+    void render_to_picker(gl::Shader& picker_shader, int current_floor);
 
     /// Render the level in 2D using the given drawing pad, highlighting the active object.
     /// Assumes the camera, shader, and other OpenGL states are set up correctly.
-    void render_2d(DrawingPad& drawing_pad, const LevelObject* p_active_object, int current_floor);
+    void render_2d(DrawingPad& drawing_pad, const std::vector<ObjectId>& active_objects,
+                   int current_floor, const glm::vec2& selected_offset);
 
     /// Try to select a level object at the given tile position. Returns nullptr if no object is
     /// found.
@@ -46,8 +52,14 @@ class EditorLevel
                             int current_floor);
 
     /// Try to select all objects at the given position, and put into the given set
-    void try_select_all(const Rectangle& selection_area, int current_floor,
-                        std::unordered_set<LevelObject*>& objects);
+    void select_within(const Rectangle& selection_area, Selection& selection, int floor_number);
+
+    std::vector<LevelObject*> get_objects(const std::vector<ObjectId>& object_ids);
+    LevelObject* get_object(ObjectId object_id);
+    std::optional<int> get_object_floor(ObjectId object_id);
+
+    std::pair<std::vector<LevelObject>, std::vector<int>>
+    copy_objects_and_floors(const std::vector<ObjectId>& object_ids) const;
 
     int get_min_floor() const;
     int get_max_floor() const;
@@ -62,7 +74,12 @@ class EditorLevel
 
     bool changes_made_since_last_save() const;
 
+    /// Returns the ID of the last object placed
+    int last_placed_id() const;
+
   private:
+    std::optional<std::pair<LevelObject*, int>> find_object_and_floor(ObjectId object_id);
+
     bool do_save(const std::filesystem::path& path) const;
 
     /// Loads the level from the given JSON object, where "LoadFunc" should be a function
@@ -83,7 +100,9 @@ class EditorLevel
 
   private:
     FloorManager floors_manager_;
-    int current_id_ = 0;
+
+    /// Keeps track of the current object id, increments with each object added
+    ObjectId current_id_ = 0;
 
     bool changes_made_since_last_save_ = false;
 };

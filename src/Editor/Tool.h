@@ -19,6 +19,7 @@ enum class ToolType
     CreateWall,
     UpdateWall,
     CreateObject,
+    AreaSelectTool
 };
 
 class ITool
@@ -32,6 +33,8 @@ class ITool
     virtual void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) = 0;
 
     virtual ToolType get_tool_type() const = 0;
+
+    virtual void show_gui(EditorState& state) {};
 };
 
 class CreateWallTool : public ITool
@@ -53,7 +56,7 @@ class CreateWallTool : public ITool
 class UpdateWallTool : public ITool
 {
   public:
-    UpdateWallTool(LevelObject object, WallObject& wall);
+    UpdateWallTool(LevelObject object, WallObject& wall, int wall_floor);
     void on_event(sf::Event event, glm::vec2 node, EditorState& state,
                   ActionManager& actions) override;
     void render_preview() override;
@@ -65,6 +68,9 @@ class UpdateWallTool : public ITool
     LevelObjectsMesh3D wall_preview_;
     LevelObject object_;
     WallObject wall_;
+
+    /// Used to ensure walls can only be resized on the current floor as the editor
+    const int wall_floor_;
 
     Line wall_line_;
 
@@ -95,25 +101,37 @@ class CreateObjectTool : public ITool
     glm::vec2 tile_{0.0f};
 };
 
-/*
-class SelectTool
+class AreaSelectTool : public ITool
 {
   public:
-    SelectTool(EditorLevel& level);
+    AreaSelectTool(EditorLevel& level);
 
-    void on_event(sf::Event event, glm::vec2 node, EditorState& state, ActionManager& actions);
-    void render_preview();
-    void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state);
+    void on_event(sf::Event event, glm::vec2 node, EditorState& state,
+                  ActionManager& actions) override;
+    void render_preview() override;
+    void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) override;
 
-    void move_all(glm::vec2 offset, ActionManager& actions, int floor);
+    ToolType get_tool_type() const override;
 
-    bool has_selection() const;
+    void show_gui(EditorState& state) override;
 
   private:
-    EditorLevel* p_level_;
-    std::unordered_set<LevelObject*> selected_objects_;
+    void select(EditorState& state);
 
     bool active_dragging_ = false;
+    bool render_preview_mesh_ = false;
+
+    EditorLevel* p_level_;
+
+    // The line refers to the start corner and end corner
     Line selection_area_;
+    LevelObjectsMesh3D selection_cube_;
+    glm::ivec3 selection_cube_start_{0};
+    glm::ivec3 selection_cube_size_{0};
+
+    /// The floors selected - Default is the current floor but this can be extended with Q and E for
+    /// lower and upper
+    int start_floor_ = 0;
+    int max_floor_ = 0;
+    int min_floor_ = 0;
 };
-*/

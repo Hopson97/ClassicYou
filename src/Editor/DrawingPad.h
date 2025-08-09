@@ -26,6 +26,8 @@ class DrawingPad
 
     void set_camera_position(glm::vec2 position);
 
+    void camera_gui();
+
   private:
     gl::Shader scene_shader_;
     gl::Shader grid_shader_;

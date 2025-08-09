@@ -3,6 +3,12 @@
 #include "../DrawingPad.h"
 #include "../EditConstants.h"
 
+namespace
+{
+    // Minimum distance the selection is required to be to select a wall.
+    constexpr float SELECTION_DISTANCE = 8.0f;
+} // namespace
+
 bool operator==(const WallProps& lhs, const WallProps& rhs)
 {
     return lhs.texture_front == rhs.texture_front && lhs.texture_back == rhs.texture_back &&
@@ -41,20 +47,17 @@ std::string object_to_string(const WallObject& wall)
 
 template <>
 void render_object_2d(const WallObject& wall, DrawingPad& drawing_pad, const glm::vec4& colour,
-                      bool is_selected)
+                      const glm::vec2& selected_offset)
 
 {
-    auto thickness = is_selected ? 3.0f : 2.0f;
-
-    drawing_pad.render_line(wall.parameters.line.start, wall.parameters.line.end, colour,
-                            thickness);
+    drawing_pad.render_line(wall.parameters.line.start + selected_offset,
+                            wall.parameters.line.end + selected_offset, colour, 2.0f);
 }
 
 template <>
 [[nodiscard]] bool object_try_select_2d(const WallObject& wall, glm::vec2 selection_tile)
-
 {
-    return distance_to_line(selection_tile, wall.parameters.line) < 15;
+    return distance_to_line(selection_tile, wall.parameters.line) < SELECTION_DISTANCE;
 }
 
 template <>
@@ -124,6 +127,7 @@ bool object_deserialise(WallObject& wall, const nlohmann::json& json)
     props.end_base_height = jprops[5];
     props.tri_wall = jprops[6];
     props.flip_wall = jprops[7];
+
     return true;
 }
 
@@ -143,12 +147,14 @@ LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number)
     auto oz = 0.0f;
 
     auto obs = props.start_base_height * FLOOR_HEIGHT;
-    auto hs = std::min(obs + props.start_height * FLOOR_HEIGHT, FLOOR_HEIGHT);
+    // auto hs = std::min(obs + props.start_height * FLOOR_HEIGHT, FLOOR_HEIGHT);
+    auto hs = obs + props.start_height * FLOOR_HEIGHT;
     obs += floor_number * FLOOR_HEIGHT;
     hs += floor_number * FLOOR_HEIGHT;
 
     auto obe = props.end_base_height * FLOOR_HEIGHT;
-    auto he = std::min(obe + props.end_height * FLOOR_HEIGHT, FLOOR_HEIGHT);
+    // auto he = std::min(obe + props.end_height * FLOOR_HEIGHT, FLOOR_HEIGHT);
+    auto he = obe + props.end_height * FLOOR_HEIGHT;
     obe += floor_number * FLOOR_HEIGHT;
     he += floor_number * FLOOR_HEIGHT;
 

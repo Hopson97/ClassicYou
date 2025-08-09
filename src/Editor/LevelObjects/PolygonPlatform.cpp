@@ -40,14 +40,14 @@ std::string object_to_string(const PolygonPlatformObject& poly)
 
 template <>
 void render_object_2d(const PolygonPlatformObject& poly, DrawingPad& drawing_pad,
-                      const glm::vec4& colour, bool is_selected)
+                      const glm::vec4& colour, const glm::vec2& selected_offset)
 
 {
     const auto& params = poly.parameters;
-    auto& tl = params.corner_top_left;
-    auto& tr = params.corner_top_right;
-    auto& br = params.corner_bottom_right;
-    auto& bl = params.corner_bottom_left;
+    auto tl = selected_offset + params.corner_top_left;
+    auto tr = selected_offset + params.corner_top_right;
+    auto br = selected_offset + params.corner_bottom_right;
+    auto bl = selected_offset + params.corner_bottom_left;
 
     drawing_pad.render_line(tl, tl + glm::vec2(TILE_SIZE, 0), colour, 5);
     drawing_pad.render_line(tl, tl + glm::vec2(0, TILE_SIZE), colour, 5);
@@ -104,7 +104,7 @@ SerialiseResponse object_serialise(const PolygonPlatformObject& poly)
     auto& params = poly.parameters;
     auto& props = poly.properties;
 
-   nlohmann::json json_params = {
+    nlohmann::json json_params = {
         params.corner_top_left.x / TILE_SIZE_F,     params.corner_top_left.y / TILE_SIZE_F,
         params.corner_top_right.x / TILE_SIZE_F,    params.corner_top_right.y / TILE_SIZE_F,
         params.corner_bottom_right.x / TILE_SIZE_F, params.corner_bottom_right.y / TILE_SIZE_F,
@@ -145,9 +145,6 @@ bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json)
     params.corner_top_right *= TILE_SIZE_F;
     params.corner_bottom_right *= TILE_SIZE_F;
     params.corner_bottom_left *= TILE_SIZE_F;
-
-
-
 
     props.texture_top = deserialise_texture(jprops[0]);
     props.texture_bottom = deserialise_texture(jprops[1]);
