@@ -67,4 +67,10 @@ template <>
 void object_move<PillarObject>(PillarObject& pillar, glm::vec2 offset);
 
 template <>
+void object_rotate(PillarObject& pillar, glm::vec2 rotation_origin, float degrees);
+
+template <>
+[[nodiscard]] glm::vec2 object_get_position(const PillarObject& pillar);
+
+template <>
 SerialiseResponse object_serialise<PillarObject>(const PillarObject& pillar);

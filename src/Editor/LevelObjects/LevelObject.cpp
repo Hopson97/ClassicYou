@@ -205,6 +205,12 @@ void LevelObject::move(glm::vec2 offset)
     std::visit([&](auto&& object) { object_move(object, offset); }, object_type);
 }
 
+void LevelObject::rotate(glm::vec2 point)
+{
+    float degrees = 90.0f;
+    std::visit([&](auto&& object) { object_rotate(object, point, degrees); }, object_type);
+}
+
 std::pair<nlohmann::json, std::string> LevelObject::serialise() const
 {
     return std::visit([&](auto&& object) { return object_serialise(object); }, object_type);

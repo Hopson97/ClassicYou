@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-#include "../Util/Maths.h"
+#include "../Util/Util.h"
 
 
 enum class EditMode

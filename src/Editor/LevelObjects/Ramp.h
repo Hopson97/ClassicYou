@@ -70,4 +70,10 @@ template <>
 void object_move<RampObject>(RampObject& ramp, glm::vec2 offset);
 
 template <>
+void object_rotate(RampObject& ramp, glm::vec2 rotation_origin, float degrees);
+
+template <>
+[[nodiscard]] glm::vec2 object_get_position(const RampObject& ramp);
+
+template <>
 SerialiseResponse object_serialise<RampObject>(const RampObject& ramp);

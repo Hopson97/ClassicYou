@@ -8,11 +8,12 @@
 // =======================================
 struct PolygonPlatformParameters
 {
+    constexpr static auto DEFAULT_SIZE = 10.0f * TILE_SIZE_F;
     // std::vector<glm::vec2> points{4};
     glm::vec2 corner_top_left{0};
-    glm::vec2 corner_top_right{0, WORLD_SIZE* TILE_SIZE};
-    glm::vec2 corner_bottom_right{WORLD_SIZE * TILE_SIZE, WORLD_SIZE* TILE_SIZE};
-    glm::vec2 corner_bottom_left{WORLD_SIZE * TILE_SIZE, 0};
+    glm::vec2 corner_top_right{0, DEFAULT_SIZE};
+    glm::vec2 corner_bottom_right{DEFAULT_SIZE, DEFAULT_SIZE};
+    glm::vec2 corner_bottom_left{DEFAULT_SIZE, 0};
 };
 
 struct PolygonPlatformProps
@@ -61,6 +62,12 @@ template <>
 
 template <>
 void object_move<PolygonPlatformObject>(PolygonPlatformObject& poly, glm::vec2 offset);
+
+template <>
+void object_rotate(PolygonPlatformObject& poly, glm::vec2 rotation_origin, float degrees);
+
+template <>
+[[nodiscard]] glm::vec2 object_get_position(const PolygonPlatformObject& poly);
 
 template <>
 SerialiseResponse object_serialise<PolygonPlatformObject>(const PolygonPlatformObject& poly);

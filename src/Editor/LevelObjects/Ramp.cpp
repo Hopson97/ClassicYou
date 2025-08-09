@@ -1,5 +1,6 @@
 #include "Ramp.h"
 
+#include <glm/gtx/rotate_vector.hpp>
 #include <magic_enum/magic_enum.hpp>
 
 #include "../DrawingPad.h"
@@ -89,6 +90,46 @@ template <>
 void object_move(RampObject& ramp, glm::vec2 offset)
 {
     ramp.parameters.position += offset;
+}
+
+template <>
+void object_rotate(RampObject& ramp, glm::vec2 rotation_origin, float degrees)
+{
+    auto copy = ramp.properties;
+    auto& props = ramp.properties;
+    auto& position = ramp.parameters.position;
+
+    position = rotate_around(position, rotation_origin, degrees);
+
+    // Swap width and depth
+    props.depth = copy.width;
+    props.width = copy.depth;
+    position.x -= props.width * TILE_SIZE_F;
+
+    switch (props.direction)
+    {
+        case Direction::Right:
+            props.direction = Direction::Back;
+            break;
+
+        case Direction::Back:
+            props.direction = Direction::Left;
+            break;
+
+        case Direction::Left:
+            props.direction = Direction::Forward;
+            break;
+
+        case Direction::Forward:
+            props.direction = Direction::Right;
+            break;
+    }
+}
+
+template <>
+[[nodiscard]] glm::vec2 object_get_position(const RampObject& ramp)
+{
+    return ramp.parameters.position;
 }
 
 template <>

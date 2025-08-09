@@ -26,6 +26,7 @@ bool InfiniteGrid::init()
         return false;
     }
     scene_grid_shader_.set_uniform("floor_height", FLOOR_HEIGHT);
+    return true;
 }
 
 void InfiniteGrid::render(const glm::vec3& camera_position, int current_floor)

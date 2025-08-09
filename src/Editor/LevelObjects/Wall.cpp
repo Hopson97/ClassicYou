@@ -74,6 +74,27 @@ void object_move(WallObject& wall, glm::vec2 offset)
 }
 
 template <>
+void object_rotate(WallObject& wall, glm::vec2 rotation_origin, float degrees)
+{
+    auto& begin = wall.parameters.line.start;
+    auto& end = wall.parameters.line.end;
+
+    begin = rotate_around(begin, rotation_origin, degrees);
+    end = rotate_around(end, rotation_origin, degrees);
+}
+
+template <>
+[[nodiscard]] glm::vec2 object_get_position(const WallObject& wall)
+{
+    return wall.parameters.line.start;
+
+    /*
+        auto x = std::midpoint(line.start.x, line.end.x);
+        auto y = std::midpoint(line.start.y, line.end.y);
+    */
+}
+
+template <>
 SerialiseResponse object_serialise(const WallObject& wall)
 {
     auto& params = wall.parameters;

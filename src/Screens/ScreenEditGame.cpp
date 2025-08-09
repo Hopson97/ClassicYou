@@ -248,6 +248,24 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 exit_editor();
                 break;
 
+            // Rotate
+            case sf::Keyboard::Key::R:
+
+                if (editor_state_.selection.has_selection())
+                {
+                    auto [objects, _] =
+                        level_.copy_objects_and_floors(editor_state_.selection.objects);
+                    auto cached = objects;
+                    for (auto& object : objects)
+                    {
+                        object.rotate(editor_state_.node_hovered);
+                    }
+                    action_manager_.push_action(
+                        std::make_unique<BulkUpdateObjectAction>(cached, objects));
+                }
+
+                break;
+
             default:
                 break;
         }
@@ -263,7 +281,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
         {
             return;
         }
-        auto window_size = window().getSize();
+        auto window_size = sf::Vector2i{window().getSize()};
         auto clicked_2d = mouse->position.x < window_size.x / 2 && editor_settings_.show_2d_view;
         auto clicked_3d = !clicked_2d || !editor_settings_.show_2d_view;
 

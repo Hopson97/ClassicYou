@@ -27,7 +27,10 @@ class EditorLevel
     LevelObject& add_object(const LevelObject& object, int floor_number);
     LevelObject& add_object(const LevelObject& object, Floor& floor);
 
+    /// Update an object. This looks up the matching object ID and replaces it with the given
+    /// 'object'
     void update_object(const LevelObject& object, int floor_number);
+
     void remove_object(ObjectId id);
 
     void set_object_id(ObjectId current_id, ObjectId new_id);

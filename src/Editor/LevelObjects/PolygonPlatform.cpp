@@ -87,6 +87,24 @@ void object_move(PolygonPlatformObject& poly, glm::vec2 offset)
 }
 
 template <>
+void object_rotate(PolygonPlatformObject& poly, glm::vec2 rotation_origin, float degrees)
+{
+    auto& params = poly.parameters;
+
+    params.corner_bottom_left = rotate_around(params.corner_bottom_left, rotation_origin, degrees);
+    params.corner_bottom_right =
+        rotate_around(params.corner_bottom_right, rotation_origin, degrees);
+    params.corner_top_right = rotate_around(params.corner_top_right, rotation_origin, degrees);
+    params.corner_top_left = rotate_around(params.corner_top_left, rotation_origin, degrees);
+}
+
+template <>
+[[nodiscard]] glm::vec2 object_get_position(const PolygonPlatformObject& poly)
+{
+    return poly.parameters.corner_top_left;
+}
+
+template <>
 [[nodiscard]] bool object_try_select_2d(const PolygonPlatformObject& poly, glm::vec2 selection_tile)
 
 {

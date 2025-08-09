@@ -62,4 +62,10 @@ template <>
 void object_move<WallObject>(WallObject& wall, glm::vec2 offset);
 
 template <>
+void object_rotate(WallObject& wall, glm::vec2 rotation_origin, float degrees);
+
+template <>
+[[nodiscard]] glm::vec2 object_get_position(const WallObject& wall);
+
+template <>
 SerialiseResponse object_serialise<WallObject>(const WallObject& wall);

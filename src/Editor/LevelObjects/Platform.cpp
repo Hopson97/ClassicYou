@@ -92,6 +92,27 @@ void object_move(PlatformObject& platform, glm::vec2 offset)
 }
 
 template <>
+void object_rotate(PlatformObject& platform, glm::vec2 rotation_origin, float degrees)
+{
+    auto copy = platform.properties;
+    auto& props = platform.properties;
+    auto& position = platform.parameters.position;
+
+    position = rotate_around(position, rotation_origin, degrees);
+
+    // Swap width and depth
+    props.depth = copy.width;
+    props.width = copy.depth;
+    position.x -= props.width * TILE_SIZE_F;
+}
+
+template <>
+[[nodiscard]] glm::vec2 object_get_position(const PlatformObject& platform)
+{
+    return platform.parameters.position;
+}
+
+template <>
 SerialiseResponse object_serialise(const PlatformObject& platform)
 {
     auto& params = platform.parameters;

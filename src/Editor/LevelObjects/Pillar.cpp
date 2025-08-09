@@ -41,7 +41,8 @@ std::string object_to_string(const PillarObject& pillar)
 }
 
 template <>
-void render_object_2d(const PillarObject& pillar, DrawingPad& drawing_pad, const glm::vec4& colour, const glm::vec2& selected_offset)
+void render_object_2d(const PillarObject& pillar, DrawingPad& drawing_pad, const glm::vec4& colour,
+                      const glm::vec2& selected_offset)
 
 {
     const auto& position = pillar.parameters.position;
@@ -78,6 +79,19 @@ template <>
 void object_move(PillarObject& pillar, glm::vec2 offset)
 {
     pillar.parameters.position += offset;
+}
+
+template <>
+void object_rotate(PillarObject& pillar, glm::vec2 rotation_origin, float degrees)
+{
+    auto& position = pillar.parameters.position;
+    position = rotate_around(position, rotation_origin, degrees);
+}
+
+template <>
+[[nodiscard]] glm::vec2 object_get_position(const PillarObject& pillar)
+{
+    return pillar.parameters.position;
 }
 
 template <>
@@ -138,7 +152,7 @@ LevelObjectsMesh3D generate_pillar_mesh(const PillarObject& platform, int floor_
     auto size = props.size;
     auto ob = props.base_height * FLOOR_HEIGHT;
     auto h = ob + props.height * FLOOR_HEIGHT;
-    
+
     // auto h = std::min(ob + props.height * FLOOR_HEIGHT, FLOOR_HEIGHT);
 
     ob += floor_number * FLOOR_HEIGHT;

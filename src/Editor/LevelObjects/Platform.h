@@ -61,10 +61,16 @@ template <>
 
 template <>
 [[nodiscard]] bool object_is_within<PlatformObject>(const PlatformObject& platform,
-                                                  const Rectangle& selection_area);
+                                                    const Rectangle& selection_area);
 
 template <>
 void object_move<PlatformObject>(PlatformObject& platform, glm::vec2 offset);
+
+template <>
+void object_rotate(PlatformObject& platform, glm::vec2 rotation_origin, float degrees);
+
+template <>
+[[nodiscard]] glm::vec2 object_get_position(const PlatformObject& platform);
 
 template <>
 SerialiseResponse object_serialise<PlatformObject>(const PlatformObject& platform);

@@ -1,5 +1,23 @@
 #include "Maths.h"
 
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/rotate_vector.hpp>
+
+Rectangle Line::to_bounds() const
+{
+    return Rectangle{
+        .position = {std::min(start.x, end.x), std::min(start.y, end.y)},
+        .size = {std::abs(start.x - end.x), std::abs(start.y - end.y)},
+    };
+}
+
+bool Rectangle::is_entirely_within(const Rectangle& other)
+{
+    return other.position.x <= position.x && other.position.y <= position.y &&
+           other.position.x + other.size.x >= position.x + size.x &&
+           other.position.y + other.size.y >= position.y + size.y;
+}
+
 glm::mat4 create_model_matrix(const Transform& transform)
 {
     glm::mat4 matrix{1.0f};
@@ -26,7 +44,6 @@ glm::mat4 create_model_matrix_orbit(const Transform& transform, const glm::vec3&
     matrix = glm::rotate(matrix, glm::radians(transform.rotation.y), {0, 1, 0});
     matrix = glm::rotate(matrix, glm::radians(transform.rotation.z), {0, 0, 1});
     matrix = glm::translate(matrix, -origin);
-
 
     return matrix;
 }
@@ -103,17 +120,10 @@ float distance_to_line(const glm::vec2& point, const Line& line)
     return glm::sqrt(dist);
 }
 
-Rectangle Line::to_bounds() const
+glm::vec2 rotate_around(glm::vec2 point, glm::vec2 rotation_origin, float degrees)
 {
-    return Rectangle{
-        .position = {std::min(start.x, end.x), std::min(start.y, end.y)},
-        .size = {std::abs(start.x - end.x), std::abs(start.y - end.y)},
-    };
-}
+    // Note: to make anti-clockwise rotation, swap point and rotation_origin
+    // glm::rotate(rotation_origin - point, glm::radians(degrees)) + rotation_origin;
 
-bool Rectangle::is_entirely_within(const Rectangle& other)
-{
-    return other.position.x <= position.x && other.position.y <= position.y &&
-           other.position.x + other.size.x >= position.x + size.x &&
-           other.position.y + other.size.y >= position.y + size.y;
+    return glm::rotate(point - rotation_origin, glm::radians(degrees)) + rotation_origin;
 }

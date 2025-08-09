@@ -47,8 +47,8 @@ struct LevelObject
                       ActionManager& action_manager);
 
     /// Convert the underlying "object_type" to a type name
-    ObjectTypeName to_type() const;
-    std::string to_type_string() const;
+    [[nodiscard]] ObjectTypeName to_type() const;
+    [[nodiscard]] std::string to_type_string() const;
 
     /// Converts the object to a 3D mesh for rendering.
     [[nodiscard]] LevelObjectsMesh3D to_geometry(int floor_number) const;
@@ -62,16 +62,19 @@ struct LevelObject
                    const glm::vec2& selected_offset) const;
 
     /// Try to select the object in the 2D view based on the given selection tile.
-    bool try_select_2d(glm::vec2 selection_tile) const;
+    [[nodiscard]] bool try_select_2d(glm::vec2 selection_tile) const;
 
     /// Checks if the object is entirely within the given selection area.
-    bool is_within(const Rectangle& selection_area);
+    [[nodiscard]] bool is_within(const Rectangle& selection_area);
 
     /// Moves the object by the given offset.
     void move(glm::vec2 offset);
 
+    /// Moves the object 90-degrees clockwise around the given point
+    void rotate(glm::vec2 point);
+
     /// Serialise the object to JSON format.
-    std::pair<nlohmann::json, std::string> serialise() const;
+    [[nodiscard]] std::pair<nlohmann::json, std::string> serialise() const;
 
     template <typename T>
     bool deserialise_as(const nlohmann::json& json)
