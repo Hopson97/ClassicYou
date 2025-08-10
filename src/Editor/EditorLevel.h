@@ -12,6 +12,7 @@
 #include "LevelObjects/LevelObject.h"
 
 class DrawingPad;
+class LevelFileIO;
 
 /**
  * @brief The editor representation of a level.
@@ -72,8 +73,8 @@ class EditorLevel
     /// @brief  Clears all floors and their objects, and resetting the level.
     void clear_level();
 
-    bool save(const std::filesystem::path& path);
-    bool load(const std::filesystem::path& path);
+    bool serialise(LevelFileIO& level_file_io);
+    bool deserialise(const LevelFileIO& level_file_io);
 
     bool changes_made_since_last_save() const;
 
@@ -83,7 +84,7 @@ class EditorLevel
   private:
     std::optional<std::pair<LevelObject*, int>> find_object_and_floor(ObjectId object_id);
 
-    bool do_save(const std::filesystem::path& path) const;
+    bool do_serialise(LevelFileIO& level_file_io) const;
 
     /// Loads the level from the given JSON object, where "LoadFunc" should be a function
     /// deserialises the given json to an object.

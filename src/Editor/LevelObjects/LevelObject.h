@@ -14,6 +14,7 @@ class LevelTextures;
 struct EditorState;
 class ActionManager;
 class DrawingPad;
+class LevelFileIO;
 
 /**
  * @brief A single object in the level editor.
@@ -74,13 +75,14 @@ struct LevelObject
     void rotate(glm::vec2 point);
 
     /// Serialise the object to JSON format.
-    [[nodiscard]] std::pair<nlohmann::json, std::string> serialise() const;
+    [[nodiscard]] std::pair<nlohmann::json, std::string>
+    serialise(LevelFileIO& level_file_io) const;
 
     template <typename T>
-    bool deserialise_as(const nlohmann::json& json)
+    bool deserialise_as(const nlohmann::json& json, const LevelFileIO& level_file_io)
     {
         T object;
-        if (!object_deserialise(object, json))
+        if (!object_deserialise(object, json, level_file_io))
         {
             return false;
         }

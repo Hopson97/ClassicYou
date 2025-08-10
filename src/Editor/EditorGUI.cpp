@@ -269,8 +269,6 @@ std::pair<PropGUIUpdateResult, WallProps> wall_gui(const LevelTextures& textures
         new_props.end_height = std::clamp(new_props.end_height, 0.1f, max_end_height);
     }
 
-
-
     texture_gui_tabs(result, "Textures_wall", textures,
                      {.name = "Front Texture",
                       .current = wall.properties.texture_front,
@@ -292,12 +290,11 @@ platform_gui(const LevelTextures& textures, const PlatformObject& platform, Edit
     PropGUIUpdateResult result;
     PlatformProps new_props = platform.properties;
 
-
     slider(result, "Width", new_props.width, 0.5f, 20.0f, 0.5f);
     slider(result, "Depth", new_props.depth, 0.5f, 20.0f, 0.5f);
 
     // Multiplied by 2 when mesh is created
-    slider(result, "Base Height", new_props.base, 0.0f,  0.9f, 0.1f);
+    slider(result, "Base Height", new_props.base, 0.0f, 0.9f, 0.1f);
 
     enum_gui<PlatformStyle>(result, "Platform Style", new_props.style);
 
@@ -378,7 +375,6 @@ pillar_gui(const LevelTextures& textures, const PillarObject& pillar, EditMode e
         result.always_update |= true;
     }*/
 
-
     float max_height_factor = max_height - new_props.base_height;
     if (max_height_factor > 0.1f)
     {
@@ -451,7 +447,7 @@ bool display_level_list(bool& show_load_dialog, std::string& name)
 
         for (const auto& entry : std::filesystem::directory_iterator("./levels"))
         {
-            if (entry.is_regular_file() && entry.path().extension() == ".cly")
+            if (entry.is_regular_file() && entry.path().extension() == ".cly2")
             {
                 std::string filename = entry.path().stem().string();
                 if (ImGui::Button(filename.c_str()))

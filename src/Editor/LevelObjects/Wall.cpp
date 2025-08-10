@@ -2,6 +2,7 @@
 
 #include "../DrawingPad.h"
 #include "../EditConstants.h"
+#include "../LevelFileIO.h"
 
 namespace
 {
@@ -95,7 +96,7 @@ template <>
 }
 
 template <>
-SerialiseResponse object_serialise(const WallObject& wall)
+SerialiseResponse object_serialise(const WallObject& wall, LevelFileIO& level_file_io)
 {
     auto& params = wall.parameters;
     auto& props = wall.properties;
@@ -108,8 +109,8 @@ SerialiseResponse object_serialise(const WallObject& wall)
     };
 
     nlohmann::json json_props = {};
-    serialise_texture(json_props, props.texture_back);
-    serialise_texture(json_props, props.texture_front);
+    level_file_io.serialise_texture(json_props, props.texture_back);
+    level_file_io.serialise_texture(json_props, props.texture_front);
     json_props.insert(json_props.end(),
                       {props.start_height, props.start_base_height, props.end_height,
                        props.end_base_height, props.tri_wall, props.flip_wall});
@@ -117,7 +118,7 @@ SerialiseResponse object_serialise(const WallObject& wall)
     return {{json_params, json_props}, "wall"};
 }
 
-bool object_deserialise(WallObject& wall, const nlohmann::json& json)
+bool object_deserialise(WallObject& wall, const nlohmann::json& json, const LevelFileIO& level_file_io)
 {
     auto& params = wall.parameters;
     auto& props = wall.properties;
@@ -139,8 +140,8 @@ bool object_deserialise(WallObject& wall, const nlohmann::json& json)
     params.line.start *= TILE_SIZE_F;
     params.line.end *= TILE_SIZE_F;
 
-    props.texture_back = deserialise_texture(jprops[0]);
-    props.texture_front = deserialise_texture(jprops[1]);
+    props.texture_back = level_file_io.deserialise_texture(jprops[0]);
+    props.texture_front = level_file_io.deserialise_texture(jprops[1]);
 
     props.start_height = jprops[2];
     props.start_base_height = jprops[3];

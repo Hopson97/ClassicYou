@@ -39,7 +39,8 @@ bool operator!=(const PlatformProps& lhs, const PlatformProps& rhs);
 // =======================================
 [[nodiscard]] LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform,
                                                         int floor_number);
-[[nodiscard]] bool object_deserialise(PlatformObject& pillar, const nlohmann::json& json);
+[[nodiscard]] bool object_deserialise(PlatformObject& pillar, const nlohmann::json& json,
+                                      const LevelFileIO& level_file_io);
 
 // =======================================
 //      Specialised Functions
@@ -73,4 +74,5 @@ template <>
 [[nodiscard]] glm::vec2 object_get_position(const PlatformObject& platform);
 
 template <>
-SerialiseResponse object_serialise<PlatformObject>(const PlatformObject& platform);
+SerialiseResponse object_serialise<PlatformObject>(const PlatformObject& platform,
+                                                   LevelFileIO& level_file_io);

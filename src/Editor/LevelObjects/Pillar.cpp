@@ -4,6 +4,7 @@
 
 #include "../DrawingPad.h"
 #include "../EditConstants.h"
+#include "../LevelFileIO.h"
 
 bool operator==(const PillarProps& lhs, const PillarProps& rhs)
 
@@ -95,7 +96,7 @@ template <>
 }
 
 template <>
-SerialiseResponse object_serialise(const PillarObject& pillar)
+SerialiseResponse object_serialise(const PillarObject& pillar, LevelFileIO& level_file_io)
 {
     auto& params = pillar.parameters;
     auto& props = pillar.properties;
@@ -103,14 +104,15 @@ SerialiseResponse object_serialise(const PillarObject& pillar)
     nlohmann::json json_params = {params.position.x / TILE_SIZE_F, params.position.y / TILE_SIZE_F};
 
     nlohmann::json json_props = {};
-    serialise_texture(json_props, props.texture);
+    level_file_io.serialise_texture(json_props, props.texture);
     json_props.insert(json_props.end(), {(int)props.style, props.size, props.base_height,
                                          props.height, props.angled});
 
     return {{json_params, json_props}, "pillar"};
 }
 
-bool object_deserialise(PillarObject& pillar_object, const nlohmann::json& json)
+bool object_deserialise(PillarObject& pillar_object, const nlohmann::json& json,
+                        const LevelFileIO& level_file_io)
 {
     auto& params = pillar_object.parameters;
     auto& props = pillar_object.properties;
@@ -131,7 +133,7 @@ bool object_deserialise(PillarObject& pillar_object, const nlohmann::json& json)
     params.position = {jparams[0], jparams[1]};
     params.position *= TILE_SIZE_F;
 
-    props.texture = deserialise_texture(jprops[0]);
+    props.texture = level_file_io.deserialise_texture(jprops[0]);
     props.style = (PillarStyle)(jprops[1]);
     props.size = jprops[2];
     props.base_height = jprops[3];

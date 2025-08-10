@@ -5,6 +5,7 @@
 
 #include "../DrawingPad.h"
 #include "../EditConstants.h"
+#include "../LevelFileIO.h"
 
 bool operator==(const RampProps& lhs, const RampProps& rhs)
 
@@ -133,7 +134,7 @@ template <>
 }
 
 template <>
-SerialiseResponse object_serialise(const RampObject& ramp)
+SerialiseResponse object_serialise(const RampObject& ramp, LevelFileIO& level_file_io)
 {
     auto& params = ramp.parameters;
     auto& props = ramp.properties;
@@ -141,15 +142,16 @@ SerialiseResponse object_serialise(const RampObject& ramp)
     nlohmann::json json_params = {params.position.x / TILE_SIZE_F, params.position.y / TILE_SIZE_F};
 
     nlohmann::json json_props = {};
-    serialise_texture(json_props, props.texture_top);
-    serialise_texture(json_props, props.texture_bottom);
+    level_file_io.serialise_texture(json_props, props.texture_top);
+    level_file_io.serialise_texture(json_props, props.texture_bottom);
     json_props.insert(json_props.end(), {props.width, props.depth, props.start_height,
                                          props.end_height, (int)props.direction, (int)props.style});
 
     return {{json_params, json_props}, "ramp"};
 }
 
-bool object_deserialise(RampObject& ramp, const nlohmann::json& json)
+bool object_deserialise(RampObject& ramp, const nlohmann::json& json,
+                        const LevelFileIO& level_file_io)
 {
     auto& params = ramp.parameters;
     auto& props = ramp.properties;
@@ -168,8 +170,8 @@ bool object_deserialise(RampObject& ramp, const nlohmann::json& json)
     params.position = {jparams[0], jparams[1]};
     params.position *= TILE_SIZE_F;
 
-    props.texture_top = deserialise_texture(jprops[0]);
-    props.texture_bottom = deserialise_texture(jprops[1]);
+    props.texture_top = level_file_io.deserialise_texture(jprops[0]);
+    props.texture_bottom = level_file_io.deserialise_texture(jprops[1]);
     props.width = jprops[2];
     props.depth = jprops[3];
     props.start_height = jprops[4];

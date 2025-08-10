@@ -211,7 +211,8 @@ void LevelObject::rotate(glm::vec2 point)
     std::visit([&](auto&& object) { object_rotate(object, point, degrees); }, object_type);
 }
 
-std::pair<nlohmann::json, std::string> LevelObject::serialise() const
+std::pair<nlohmann::json, std::string> LevelObject::serialise(LevelFileIO& level_file_io) const
 {
-    return std::visit([&](auto&& object) { return object_serialise(object); }, object_type);
+    return std::visit([&](auto&& object) { return object_serialise(object, level_file_io); },
+                      object_type);
 }

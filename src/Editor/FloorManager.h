@@ -6,6 +6,8 @@
 #include "../Graphics/Mesh.h"
 #include "LevelObjects/LevelObject.h"
 
+class LevelFileIO;
+
 /// Represents a single floor in a level.
 struct Floor
 {
@@ -48,8 +50,8 @@ struct FloorManager
     /// @brief Clears all floors and resets the manager.
     void clear();
 
-    /// Serialises all of the floors into a JSON object.
-    std::optional<nlohmann::json> serialise() const;
+    /// Serialise all of the floors into a JSON object.
+    std::optional<nlohmann::json> serialise(LevelFileIO& level_file_io) const;
 };
 
 /**
