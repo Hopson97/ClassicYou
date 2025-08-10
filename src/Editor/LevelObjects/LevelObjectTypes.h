@@ -10,6 +10,7 @@
 class DrawingPad;
 struct LevelObject;
 struct Rectangle;
+class LevelFileIO;
 
 // =======================================
 //     Object Type Template
@@ -62,19 +63,6 @@ inline bool operator==(const TextureProp& lhs, const TextureProp& rhs)
     return lhs.id == rhs.id && lhs.colour == rhs.colour;
 }
 
-inline void serialise_texture(nlohmann::json& object, const TextureProp& prop)
-{
-    object.push_back({prop.id, prop.colour.r, prop.colour.g, prop.colour.b, prop.colour.a});
-}
-
-inline TextureProp deserialise_texture(const nlohmann::json& object)
-{
-    return {
-        .id = object[0],
-        .colour = {object[1], object[2], object[3], object[4]},
-    };
-}
-
 using SerialiseResponse = std::pair<nlohmann::json, std::string>;
 
 /**
@@ -108,4 +96,4 @@ template <typename T>
 [[nodiscard]] glm::vec2 object_get_position(const T& object);
 
 template <typename T>
-SerialiseResponse object_serialise(const T& object);
+SerialiseResponse object_serialise(const T& object, LevelFileIO& level_file_io);

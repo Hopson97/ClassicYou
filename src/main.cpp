@@ -29,7 +29,7 @@ namespace
         {
             if (entry.is_regular_file() && entry.path().extension() == ".cy")
             {
-                auto original_filename = entry.path().filename().replace_extension(".cly");
+                auto original_filename = entry.path().filename().replace_extension(".cly2");
                 auto new_path = std::filesystem::path("./levels/") / original_filename;
 
                 if (!std::filesystem::exists(new_path))

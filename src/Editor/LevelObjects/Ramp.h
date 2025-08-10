@@ -42,7 +42,8 @@ bool operator!=(const RampProps& lhs, const RampProps& rhs);
 //     Free functions
 // =======================================
 [[nodiscard]] LevelObjectsMesh3D generate_ramp_mesh(const RampObject& ramp, int floor_number);
-[[nodiscard]] bool object_deserialise(RampObject& pillar, const nlohmann::json& json);
+[[nodiscard]] bool object_deserialise(RampObject& pillar, const nlohmann::json& json,
+                                      const LevelFileIO& level_file_io);
 
 // =======================================
 //      Specialised Functions
@@ -76,4 +77,5 @@ template <>
 [[nodiscard]] glm::vec2 object_get_position(const RampObject& ramp);
 
 template <>
-SerialiseResponse object_serialise<RampObject>(const RampObject& ramp);
+SerialiseResponse object_serialise<RampObject>(const RampObject& ramp,
+                                               LevelFileIO& level_file_io);

@@ -60,11 +60,9 @@ void FloorManager::clear()
     max_floor = 0;
 }
 
-std::optional<nlohmann::json> FloorManager::serialise() const
+std::optional<nlohmann::json> FloorManager::serialise(LevelFileIO& level_file_io) const
 {
     nlohmann::json output;
-    output["version"] = 1;
-    output["floors"] = {};
 
     // Floors are saved from bottom to top
     for (int floor_number = min_floor; floor_number < max_floor + 1; floor_number++)
@@ -88,7 +86,7 @@ std::optional<nlohmann::json> FloorManager::serialise() const
         // Iterate through all objects on the floor and group them by type
         for (auto& object : floor.objects)
         {
-            auto [data, type] = object.serialise();
+            auto [data, type] = object.serialise(level_file_io);
             if (object_map.find(type) == object_map.end())
             {
                 object_map[type] = {};
@@ -98,7 +96,7 @@ std::optional<nlohmann::json> FloorManager::serialise() const
 
         // Add the grouped objects to the current floor json
         current_floor["objects"] = object_map;
-        output["floors"].push_back(current_floor);
+        output.push_back(current_floor);
     }
 
     return output;

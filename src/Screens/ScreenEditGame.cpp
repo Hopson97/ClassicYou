@@ -7,6 +7,7 @@
 
 #include "../Editor/EditConstants.h"
 #include "../Editor/EditorGUI.h"
+#include "../Editor/LevelFileIO.h"
 #include "../Graphics/OpenGL/GLUtils.h"
 #include "../Util/ImGuiExtras.h"
 #include "../Util/Keyboard.h"
@@ -37,7 +38,7 @@ namespace
 
     std::filesystem::path make_level_path(const std::string& level_name)
     {
-        return "levels/" + level_name + ".cly";
+        return "levels/" + level_name + ".cly2";
     }
 } // namespace
 
@@ -168,13 +169,25 @@ bool ScreenEditGame::on_init()
     camera_.transform = {.position = {WORLD_SIZE / 2, 12, WORLD_SIZE + 3},
                          .rotation = {-40, 270.0f, 0.0f}};
 
-    // Load the level if the name has been set already
+    // -----------------------------
+    // ==== Optional load level ====
+    // -----------------------------
     if (!level_name_.empty())
     {
-        level_.load(make_level_path(level_name_));
+        LevelFileIO level_file_io;
+        if (!level_file_io.open(make_level_path(level_name_), false))
+        {
+            return false;
+        }
+        if (!level_.deserialise(level_file_io))
+        {
+            return false;
+        }
     }
 
-    // Misc
+    // --------------
+    // ==== Misc ====
+    // --------------
     if (!grid_.init())
     {
         return false;
@@ -546,8 +559,19 @@ void ScreenEditGame::on_render(bool show_debug)
             action_manager_.clear();
             editor_state_.selection.clear_selection();
 
-            level_.load(make_level_path(level_name_));
+            sf::Clock clock;
+            LevelFileIO level_file_io;
+            if (!level_file_io.open(make_level_path(level_name_), false))
+            {
+                return;
+            }
+            if (!level_.deserialise(level_file_io))
+            {
+                return;
+            }
             level_name_actual_ = level_name_;
+            auto time = clock.getElapsedTime().asSeconds();
+            std::println("Level loaded in {} seconds. ({} ms)", time, time * 1000.0f);
         }
     }
 
@@ -685,13 +709,21 @@ void ScreenEditGame::render_editor_ui()
 
 void ScreenEditGame::exit_editor()
 {
-    level_.save(make_level_path("backup"));
+    LevelFileIO level_file_io;
+
+    if (level_.serialise(level_file_io))
+    {
+        level_file_io.save(make_level_path("backup"), false);
+        level_name_actual_ = level_name_;
+    }
+
     p_screen_manager_->pop_screen();
     window().setMouseCursorVisible(true);
 }
 
 void ScreenEditGame::save_level()
 {
+    sf::Clock clock;
     // Ensure a level name is actually set before saving
     if (level_name_.empty())
     {
@@ -699,12 +731,17 @@ void ScreenEditGame::save_level()
     }
     else
     {
-        if (level_.save(make_level_path(level_name_)))
+        LevelFileIO level_file_io;
+
+        if (level_.serialise(level_file_io))
         {
+            level_file_io.save(make_level_path(level_name_), false);
             level_name_actual_ = level_name_;
         }
         show_save_dialog_ = false;
     }
+    auto time = clock.getElapsedTime().asSeconds();
+    std::println("Level saved in {} seconds. ({} ms)", time, time * 1000.0f);
 }
 
 void ScreenEditGame::show_save_dialog()

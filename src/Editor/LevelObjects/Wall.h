@@ -34,7 +34,8 @@ bool operator!=(const WallProps& lhs, const WallProps& rhs);
 //     Free functions
 // =======================================
 [[nodiscard]] LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number);
-[[nodiscard]] bool object_deserialise(WallObject& wall, const nlohmann::json& json);
+[[nodiscard]] bool object_deserialise(WallObject& wall, const nlohmann::json& json,
+                                      const LevelFileIO& level_file_io);
 
 // =======================================
 //      Specialised Functions
@@ -68,4 +69,4 @@ template <>
 [[nodiscard]] glm::vec2 object_get_position(const WallObject& wall);
 
 template <>
-SerialiseResponse object_serialise<WallObject>(const WallObject& wall);
+SerialiseResponse object_serialise<WallObject>(const WallObject& wall, LevelFileIO& level_file_io);

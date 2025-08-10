@@ -4,6 +4,7 @@
 
 #include "../DrawingPad.h"
 #include "../EditConstants.h"
+#include "../LevelFileIO.h"
 
 bool operator==(const PlatformProps& lhs, const PlatformProps& rhs)
 
@@ -113,7 +114,7 @@ template <>
 }
 
 template <>
-SerialiseResponse object_serialise(const PlatformObject& platform)
+SerialiseResponse object_serialise(const PlatformObject& platform, LevelFileIO& level_file_io)
 {
     auto& params = platform.parameters;
     auto& props = platform.properties;
@@ -121,14 +122,15 @@ SerialiseResponse object_serialise(const PlatformObject& platform)
     nlohmann::json json_params = {params.position.x / TILE_SIZE_F, params.position.y / TILE_SIZE_F};
 
     nlohmann::json json_props = {};
-    serialise_texture(json_props, props.texture_top);
-    serialise_texture(json_props, props.texture_bottom);
+    level_file_io.serialise_texture(json_props, props.texture_top);
+    level_file_io.serialise_texture(json_props, props.texture_bottom);
     json_props.insert(json_props.end(), {props.width, props.depth, props.base, (int)props.style});
 
     return {{json_params, json_props}, "platform"};
 }
 
-bool object_deserialise(PlatformObject& platform, const nlohmann::json& json)
+bool object_deserialise(PlatformObject& platform, const nlohmann::json& json,
+                        const LevelFileIO& level_file_io)
 {
     auto& params = platform.parameters;
     auto& props = platform.properties;
@@ -147,8 +149,8 @@ bool object_deserialise(PlatformObject& platform, const nlohmann::json& json)
     params.position = {jparams[0], jparams[1]};
     params.position *= TILE_SIZE_F;
 
-    props.texture_top = deserialise_texture(jprops[0]);
-    props.texture_bottom = deserialise_texture(jprops[1]);
+    props.texture_top = level_file_io.deserialise_texture(jprops[0]);
+    props.texture_bottom = level_file_io.deserialise_texture(jprops[1]);
     props.width = jprops[2];
     props.depth = jprops[3];
     props.base = jprops[4];

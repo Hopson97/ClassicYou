@@ -3,6 +3,8 @@
 #include <fstream>
 #include <unordered_map>
 
+#include "LevelFileIO.h"
+
 #include <SFML/System/Clock.hpp>
 #include <SFML/System/Time.hpp>
 #include <ctre.hpp>
@@ -11,6 +13,9 @@
 
 namespace
 {
+    // Must be global to work with the "from_json" functions
+    LevelFileIO g_level_file_io;
+
     // Map for colour from the legacy format to the new format
     // For platforms, floors
     const std::unordered_map<int, int> TEXTURE_MAP = {
@@ -441,6 +446,9 @@ void load_floors(const nlohmann::json& json, FloorManager& new_level)
 
 void convert_legacy_level(const std::filesystem::path& path)
 {
+    // Reset the level file io object
+    g_level_file_io = LevelFileIO{};
+
     std::println("Converting {}", path.string());
     sf::Clock clock;
 
@@ -468,17 +476,19 @@ void convert_legacy_level(const std::filesystem::path& path)
     load_objects<LegacyTriWall>(legacy_json, "TriWall", new_level);
     load_objects<LegacyRamp>(legacy_json, "Ramp", new_level);
 
-    auto output = new_level.serialise();
+    // After level is loaded, write it the JSON object
+    auto output = new_level.serialise(g_level_file_io);
+
     time = clock.restart().asSeconds();
     std::println("Converting to ClassicYou format took {}s ({}ms)", time, time * 1000.0f);
 
+    // And finally, save it to the file.
     if (output)
     {
+        g_level_file_io.write_floors(output);
+        g_level_file_io.save(("levels" / path.stem()).string() + ".cly2", false);
+
         std::println("Successfully serialised {}\n\n", path.string());
-
-        std::ofstream out_file(("levels" / path.stem()).string() + ".cly");
-
-        out_file << output;
     }
 
     // auto tri_platforms = legacy_json["TriPlat"];

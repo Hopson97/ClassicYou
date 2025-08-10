@@ -7,6 +7,7 @@
 #include "../Util/Maths.h"
 #include "../Util/Util.h"
 #include "DrawingPad.h"
+#include "LevelFileIO.h"
 #include "EditConstants.h"
 #include "EditorGUI.h"
 
@@ -399,9 +400,9 @@ void EditorLevel::clear_level()
     floors_manager_.clear();
 }
 
-bool EditorLevel::save(const std::filesystem::path& path)
+bool EditorLevel::serialise(LevelFileIO& level_file_io)
 {
-    if (do_save(path))
+    if (do_serialise(level_file_io))
     {
         changes_made_since_last_save_ = false;
         return true;
@@ -423,16 +424,13 @@ std::optional<std::pair<LevelObject*, int>> EditorLevel::find_object_and_floor(O
     return std::nullopt;
 }
 
-bool EditorLevel::do_save(const std::filesystem::path& path) const
+bool EditorLevel::do_serialise(LevelFileIO& level_file_io) const
 {
-    auto output = floors_manager_.serialise();
+    auto output = floors_manager_.serialise(level_file_io);
 
     if (output)
     {
-        // Write the output to the file
-        std::ofstream output_file(path);
-        output_file << output << std::endl;
-        std::println("Level has been saved to: {}", path.string());
+        level_file_io.write_floors(output);
         return true;
     }
     else
@@ -441,22 +439,13 @@ bool EditorLevel::do_save(const std::filesystem::path& path) const
     }
 }
 
-bool EditorLevel::load(const std::filesystem::path& path)
+bool EditorLevel::deserialise(const LevelFileIO& level_file_io)
 {
-    std::ifstream f(path);
-    if (!f.is_open())
-    {
-        std::println(std::cerr, "Could not open file {}", path.string());
-        return false;
-    }
-
-    auto input = nlohmann::json::parse(f);
-
     // Clear the current level
     clear_level();
 
     // Iterate through the floors in the input json
-    for (auto& floor_object : input["floors"])
+    for (auto& floor_object : level_file_io.get_floors())
     {
         if (!floor_object.contains("floor") || !floor_object.contains("objects"))
         {
@@ -471,23 +460,22 @@ bool EditorLevel::load(const std::filesystem::path& path)
         auto object_types = floor_object["objects"];
 
         load_objects(object_types, "platform", floor, [&](LevelObject& level_object, auto& json)
-                     { level_object.deserialise_as<PlatformObject>(json); });
+                     { level_object.deserialise_as<PlatformObject>(json, level_file_io); });
 
         load_objects(object_types, "wall", floor, [&](LevelObject& level_object, auto& json)
-                     { level_object.deserialise_as<WallObject>(json); });
+                     { level_object.deserialise_as<WallObject>(json, level_file_io); });
 
         load_objects(object_types, "polygon_platform", floor,
                      [&](LevelObject& level_object, auto& json)
-                     { level_object.deserialise_as<PolygonPlatformObject>(json); });
+                     { level_object.deserialise_as<PolygonPlatformObject>(json, level_file_io); });
 
         load_objects(object_types, "pillar", floor, [&](LevelObject& level_object, auto& json)
-                     { level_object.deserialise_as<PillarObject>(json); });
+                     { level_object.deserialise_as<PillarObject>(json, level_file_io); });
 
         load_objects(object_types, "ramp", floor, [&](LevelObject& level_object, auto& json)
-                     { level_object.deserialise_as<RampObject>(json); });
+                     { level_object.deserialise_as<RampObject>(json, level_file_io); });
     }
 
-    std::println("Successfully loaded {} ", path.string());
     changes_made_since_last_save_ = false;
     return true;
 }

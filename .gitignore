@@ -25,6 +25,7 @@ classic-you/
 
 *.cly
 
+
 ClassicYou/
 
 
@@ -32,6 +33,14 @@ ClassicYou/
 levels/legacy/*.json
 levels/legacy2/*.json
 levels/*.json
+levels/*.dat
+levels/*.dat2
+levels/**.cly
+levels/*.cly2
+levels/*.cly22
+levels/old2
+backup
 
 #WIP
 docs
+

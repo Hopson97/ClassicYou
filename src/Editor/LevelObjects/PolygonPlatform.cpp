@@ -1,6 +1,7 @@
 #include "PolygonPlatform.h"
 
 #include "../DrawingPad.h"
+#include "../LevelFileIO.h"
 
 bool operator==(const PolygonPlatformProps& lhs, const PolygonPlatformProps& rhs)
 
@@ -117,7 +118,8 @@ template <>
 }
 
 template <>
-SerialiseResponse object_serialise(const PolygonPlatformObject& poly)
+SerialiseResponse object_serialise(const PolygonPlatformObject& poly,
+                                   LevelFileIO& level_file_io)
 {
     auto& params = poly.parameters;
     auto& props = poly.properties;
@@ -129,14 +131,15 @@ SerialiseResponse object_serialise(const PolygonPlatformObject& poly)
         params.corner_bottom_left.x / TILE_SIZE_F,  params.corner_bottom_left.y / TILE_SIZE_F};
 
     nlohmann::json json_props = {};
-    serialise_texture(json_props, props.texture_top);
-    serialise_texture(json_props, props.texture_bottom);
+    level_file_io.serialise_texture(json_props, props.texture_top);
+    level_file_io.serialise_texture(json_props, props.texture_bottom);
     json_props.push_back(props.base);
     json_props.push_back(props.visible);
     return {{json_params, json_props}, "polygon_platform"};
 }
 
-bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json)
+bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json,
+                        const LevelFileIO& level_file_io)
 {
     auto& params = poly.parameters;
     auto& props = poly.properties;
@@ -164,8 +167,8 @@ bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json)
     params.corner_bottom_right *= TILE_SIZE_F;
     params.corner_bottom_left *= TILE_SIZE_F;
 
-    props.texture_top = deserialise_texture(jprops[0]);
-    props.texture_bottom = deserialise_texture(jprops[1]);
+    props.texture_top = level_file_io.deserialise_texture(jprops[0]);
+    props.texture_bottom = level_file_io.deserialise_texture(jprops[1]);
     props.base = jprops[2];
     props.visible = jprops[3];
     return true;

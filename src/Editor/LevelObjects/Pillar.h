@@ -39,7 +39,8 @@ bool operator!=(const PillarProps& lhs, const PillarProps& rhs);
 //     Free functions
 // =======================================
 [[nodiscard]] LevelObjectsMesh3D generate_pillar_mesh(const PillarObject& pillar, int floor_number);
-[[nodiscard]] bool object_deserialise(PillarObject& pillar, const nlohmann::json& json);
+[[nodiscard]] bool object_deserialise(PillarObject& pillar, const nlohmann::json& json,
+                                      const LevelFileIO& level_file_io);
 
 // =======================================
 //      Specialised Functions
@@ -73,4 +74,5 @@ template <>
 [[nodiscard]] glm::vec2 object_get_position(const PillarObject& pillar);
 
 template <>
-SerialiseResponse object_serialise<PillarObject>(const PillarObject& pillar);
+SerialiseResponse object_serialise<PillarObject>(const PillarObject& pillar,
+                        LevelFileIO& level_file_io);
