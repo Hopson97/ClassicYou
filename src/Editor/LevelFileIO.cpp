@@ -7,78 +7,124 @@
 
 namespace
 {
+    std::optional<std::string> compress_data(const std::string& json_dump)
+    {
+        // Get the size of the compressed data
+        std::string compressed;
+        auto size = static_cast<uLong>(json_dump.size());
+        auto compressed_length = compressBound(size);
+        compressed.resize(compressed_length);
+
+        int result = compress(reinterpret_cast<Bytef*>(&compressed[0]), &compressed_length,
+                              reinterpret_cast<const Bytef*>(json_dump.c_str()), size);
+        if (result != Z_OK)
+        {
+            std::cerr << "Error compressing data" << std::endl;
+            return {};
+        }
+        compressed.resize(compressed_length);
+        return compressed;
+    }
+
+    std::optional<std::string> decompress_from_file(const std::filesystem::path& path,
+                                                    std::size_t size)
+    {
+        // Open the binary file
+        std::ifstream compressed_file(path.string(), std::ios::binary);
+        if (!compressed_file.is_open())
+        {
+            std::println(std::cerr, "Could not open level file for {}", path.string());
+            return {};
+        }
+
+        // Read the contents to a string
+        std::string contents((std::istreambuf_iterator<char>(compressed_file)),
+                             std::istreambuf_iterator<char>());
+
+        // Decompress the data a string
+        std::string decompressed;
+        decompressed.resize(size);
+        auto size_zlib = static_cast<uLongf>(size);
+        int result = uncompress(reinterpret_cast<Bytef*>(&decompressed[0]), &size_zlib,
+                                reinterpret_cast<const Bytef*>(contents.c_str()),
+                                static_cast<uLongf>(contents.size()));
+        // Checks
+        if (result != Z_OK)
+        {
+            std::println(std::cerr, "Error decompressing file: {}", path.string());
+            return {};
+        }
+        return decompressed;
+    }
+
     std::filesystem::path make_level_path(const std::string& level_name)
     {
         return "levels/" + level_name + ".cly2";
+    }
+
+    std::filesystem::path make_uncompressed_level_path(const std::string& level_name)
+    {
+        return "levels/" + level_name + ".cly";
     }
 
     std::filesystem::path make_meta_path(const std::string& level_name)
     {
         return "levels/" + level_name + "_meta.json";
     }
-
-    void write_meta_file(const std::string& level_file_name, nlohmann::json& meta_object)
-    {
-        std::ofstream meta_file(make_meta_path(level_file_name));
-        meta_file << meta_object;
-    }
-
-    std::optional<nlohmann::json> read_meta_file(const std::string& level_file_name)
-    {
-        auto path = make_meta_path(level_file_name);
-        std::ifstream meta_file(path);
-        if (!meta_file.is_open())
-        {
-            std::println(std::cerr, "Could not open metafile {}", path.string());
-            return {};
-        }
-        return nlohmann::json::parse(meta_file);
-    }
 } // namespace
 
 bool LevelFileIO::open(const std::string& level_file_name, bool load_uncompressed)
 {
-    auto path = make_level_path(level_file_name);
+    //====================================
+    //  Helper to load metadata
+    // ===================================
+    size_t size = 0;
+    auto load_metadata = [&](const nlohmann::json& meta)
+    {
+        version_ = meta["version"];
+        size = meta["size"];
+        for (auto& object : meta["colours"])
+        {
+            colours_.push_back({object[0], object[1], object[2], object[3]});
+        }
+    };
+
+    //====================================
+    //  Load from the uncompressed format
+    // ===================================
     if (load_uncompressed)
     {
+        auto path = make_uncompressed_level_path(level_file_name);
         std::ifstream file(path);
         if (!file.is_open())
         {
             std::println(std::cerr, "Could not open file {}", path.string());
             return false;
         }
-
         json_ = nlohmann::json::parse(file);
-
-        // Load the metadata
-        auto meta = json_["meta"];
-        for (auto& object : meta["colours"])
-        {
-            colours_.push_back({object[0], object[1], object[2], object[3]});
-        }
+        load_metadata(json_["meta"]);
         return true;
     }
 
+    //====================================
+    //  Load from the compressed format
+    // ===================================
+    auto path = make_level_path(level_file_name);
+
     // Load metadata from the metafile
-    auto meta_json = read_meta_file(level_file_name);
-    if (!meta_json)
+    std::ifstream meta_file(make_meta_path(level_file_name));
+    if (!meta_file.is_open())
     {
+        std::println(std::cerr, "Could not open metafile for {}", level_file_name);
         return false;
     }
-    auto& meta = *meta_json;
-    version_ = meta["version"];
-    size_t size = meta["size"];
-    for (auto& object : meta["colours"])
-    {
-        colours_.push_back({object[0], object[1], object[2], object[3]});
-    }
+    load_metadata(nlohmann::json::parse(meta_file));
 
-    // Open the binary file
+    // Load objects frpm the binary file
     if (auto decompressed = decompress_from_file(path, size))
     {
         json_ = nlohmann::json::parse(*decompressed);
         std::println("Successfully opened {}", path.string());
-
         return true;
     }
     return false;
@@ -89,7 +135,9 @@ bool LevelFileIO::save(const std::string& level_file_name, bool save_uncompresse
     auto path = make_level_path(level_file_name);
     auto json_dump = json_.dump();
 
-    // Write the meta
+    //===========================
+    //      Write the metadata
+    // ==========================
     nlohmann::json meta;
     meta["colours"] = {};
     meta["version"] = version_;
@@ -98,15 +146,22 @@ bool LevelFileIO::save(const std::string& level_file_name, bool save_uncompresse
     {
         meta["colours"].push_back({colour.r, colour.g, colour.b, colour.a});
     }
-    json_["meta"] = meta;
-    write_meta_file(level_file_name, meta);
+    std::ofstream meta_file(make_meta_path(level_file_name));
+    meta_file << meta;
 
+    //==================================
+    //  Save to the uncompressed format
+    // =================================
     if (save_uncompressed)
     {
-        std::ofstream basic_file(path.string());
+        std::ofstream basic_file(make_uncompressed_level_path(level_file_name.c_str()));
+        json_["meta"] = meta;
         basic_file << json_;
     }
 
+    //================================
+    //  Save to the compressed format
+    // ===============================
     auto compressed = compress_data(json_dump);
     if (compressed)
     {
@@ -144,61 +199,13 @@ TextureProp LevelFileIO::deserialise_texture(const nlohmann::json& object) const
     };
 }
 
-std::optional<std::string> LevelFileIO::compress_data(const std::string& json_dump)
-{
-    std::string compressed;
-    auto compressed_length = compressBound(json_dump.size());
-    compressed.resize(compressed_length);
-
-    int result = compress(reinterpret_cast<Bytef*>(&compressed[0]), &compressed_length,
-                          reinterpret_cast<const Bytef*>(json_dump.c_str()), json_dump.size());
-    if (result != Z_OK)
-    {
-        std::cerr << "Error compressing data" << std::endl;
-        return {};
-    }
-    compressed.resize(compressed_length);
-    return compressed;
-}
-
-std::optional<std::string> LevelFileIO::decompress_from_file(const std::filesystem::path& path,
-                                                             std::size_t size)
-{
-    // Open the binary file
-    std::ifstream compressed_file(path.string(), std::ios::binary);
-    if (!compressed_file.is_open())
-    {
-        std::println(std::cerr, "Could not open level file for {}", path.string());
-        return {};
-    }
-
-    std::stringstream buffer;
-    buffer << compressed_file.rdbuf();
-    std::string contents(buffer.str());
-
-    std::string decompressed;
-    decompressed.resize(size);
-
-    uLongf size_zlib = size;
-    int result = uncompress(reinterpret_cast<Bytef*>(&decompressed[0]), &size_zlib,
-                            reinterpret_cast<const Bytef*>(contents.c_str()),
-                            static_cast<uLongf>(contents.size()));
-
-    if (result != Z_OK)
-    {
-        std::println(std::cerr, "Error decompressing file: {}", path.string());
-        return {};
-    }
-    return decompressed;
-}
-
 int LevelFileIO::find_colour_index(glm::u8vec4 colour) const
 {
     for (auto const [index, cached_colour] : std::views::enumerate(colours_))
     {
         if (cached_colour == colour)
         {
-            return index;
+            return static_cast<int>(index);
         }
     }
     return -1;
@@ -207,7 +214,7 @@ int LevelFileIO::find_colour_index(glm::u8vec4 colour) const
 int LevelFileIO::add_colour(glm::u8vec4 colour)
 {
     colours_.push_back(colour);
-    return colours_.size() - 1;
+    return static_cast<int>(colours_.size() - 1);
 }
 
 void LevelFileIO::write_floors(const nlohmann::json& floors)

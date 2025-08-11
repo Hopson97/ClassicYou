@@ -7,19 +7,28 @@
 class LevelFileIO
 {
   public:
+    /// Opens the given file ready to be deserialised
     bool open(const std::string& level_file_name, bool load_uncompressed);
+
+    /// Save the current seriliased json to disk + metadata about the level. "write_floors" should
+    /// be called first.
     bool save(const std::string& level_file_name, bool save_uncompressed);
 
+    /// Writes the floors to the current json. This assumes floors is an arry of floors and their
+    /// objects (See FloorManager)
     void write_floors(const nlohmann::json& floors);
+
+    /// Gets the "floors" object from the json object.
     nlohmann::json get_floors() const;
 
+    /// Write a TextureProp to the current JSON. This caches the colour if is a new one, otherwise
+    /// it saves the index of a previously saved colour.
     void serialise_texture(nlohmann::json& object, const TextureProp& prop);
+
+    /// Gets a TextureProp, loading the colour from the cache
     TextureProp deserialise_texture(const nlohmann::json& object) const;
 
   private:
-    std::optional<std::string> compress_data(const std::string& json_dump);
-    std::optional<std::string> decompress_from_file(const std::filesystem::path& path, std::size_t size);
-
     int find_colour_index(glm::u8vec4 colour) const;
     int add_colour(glm::u8vec4 colour);
 

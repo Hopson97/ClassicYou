@@ -48,6 +48,7 @@ The easiest way to build is to use [vcpkg](https://vcpkg.io/en/index.html) and i
 	vcpkg install ctre
 	vcpkg install nlohmann-json
 	vcpkg install magic-enum
+	vcpkg install zlib
 
 	# Integrate with Visual Studio
 	vcpkg integrate install

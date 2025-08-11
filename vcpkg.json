@@ -5,6 +5,7 @@
     "imgui",
     "magic-enum",
     "nlohmann-json",
-    "sfml"
+    "sfml",
+    "zlib"
   ]
 }
