@@ -349,13 +349,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
         {
             // When updating a wall, this ensures the the start/end render points are drawn in the
             // correct location
-            assert(editor_state_.selection.p_active_object);
-            auto object = editor_state_.selection.p_active_object;
-            if (auto wall = std::get_if<WallObject>(&object->object_type))
-            {
-                auto floor = level_.get_object_floor(object->object_id);
-                tool_ = std::make_unique<UpdateWallTool>(*object, *wall, *floor);
-            }
+            try_reset_update_wall_tool();
         }
         else if (tool_->get_tool_type() == ToolType::AreaSelectTool)
         {
@@ -555,7 +549,6 @@ void ScreenEditGame::on_render(bool show_debug)
             action_manager_.clear();
             editor_state_.selection.clear_selection();
 
-            sf::Clock clock;
             LevelFileIO level_file_io;
             if (!level_file_io.open(level_name_, false))
             {
@@ -566,8 +559,6 @@ void ScreenEditGame::on_render(bool show_debug)
                 return;
             }
             level_name_actual_ = level_name_;
-            auto time = clock.getElapsedTime().asSeconds();
-            std::println("Level loaded in {} seconds. ({} ms)", time, time * 1000.0f);
         }
     }
 
@@ -696,8 +687,17 @@ void ScreenEditGame::render_editor_ui()
     {
         if (ImGui::Begin("Object Properties"))
         {
-            editor_state_.selection.p_active_object->property_gui(editor_state_, level_textures_,
-                                                                  action_manager_);
+            auto object_updated = editor_state_.selection.p_active_object->property_gui(
+                editor_state_, level_textures_, action_manager_);
+
+            if (object_updated)
+            {
+                // The UpdateWallTool caches the wall when it is right-clicked. This means that
+                // updating a wall and then moving its start/end resets the walls props to how it
+                // was before.
+                // This ensures that the wall props stay correct
+                try_reset_update_wall_tool();
+            }
         }
         ImGui::End();
     }
@@ -719,7 +719,6 @@ void ScreenEditGame::exit_editor()
 
 void ScreenEditGame::save_level()
 {
-    sf::Clock clock;
     // Ensure a level name is actually set before saving
     if (level_name_.empty())
     {
@@ -736,8 +735,6 @@ void ScreenEditGame::save_level()
         }
         show_save_dialog_ = false;
     }
-    auto time = clock.getElapsedTime().asSeconds();
-    std::println("Level saved in {} seconds. ({} ms)", time, time * 1000.0f);
 }
 
 void ScreenEditGame::show_save_dialog()
@@ -855,5 +852,21 @@ void ScreenEditGame::try_set_tool_to_create_wall()
     if (tool_ && tool_->get_tool_type() == ToolType::UpdateWall)
     {
         tool_ = std::make_unique<CreateWallTool>();
+    }
+}
+
+void ScreenEditGame::try_reset_update_wall_tool()
+{
+    if (tool_->get_tool_type() == ToolType::UpdateWall)
+    {
+        // When updating a wall, this ensures the the start/end render points are drawn in
+        // the correct location and that the wall is the correct if props get updated
+        assert(editor_state_.selection.p_active_object);
+        auto object = editor_state_.selection.p_active_object;
+        if (auto wall = std::get_if<WallObject>(&object->object_type))
+        {
+            auto floor = level_.get_object_floor(object->object_id);
+            tool_ = std::make_unique<UpdateWallTool>(*object, *wall, *floor);
+        }
     }
 }

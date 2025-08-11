@@ -61,6 +61,7 @@ class ScreenEditGame final : public Screen
     void set_2d_to_3d_view();
 
     void try_set_tool_to_create_wall();
+    void try_reset_update_wall_tool();
 
   private:
     Camera camera_;
