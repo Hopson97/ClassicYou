@@ -170,12 +170,7 @@ bool ScreenEditGame::on_init()
     // -----------------------------
     if (!level_name_.empty())
     {
-        LevelFileIO level_file_io;
-        if (!level_file_io.open(level_name_, false))
-        {
-            return false;
-        }
-        if (!level_.deserialise(level_file_io))
+        if (!load_level(level_name_))
         {
             return false;
         }
@@ -521,11 +516,11 @@ void ScreenEditGame::on_render(bool show_debug)
     //=============================
     //     Render the ImGUI
     // ============================
-    show_menu_bar();
-    render_editor_ui();
+    display_menu_bar_gui();
+    display_editor_gui();
     if (show_debug)
     {
-        debug_gui();
+        display_debug_gui();
     }
 
     if (editor_settings_.show_history)
@@ -536,7 +531,7 @@ void ScreenEditGame::on_render(bool show_debug)
     // Dialogs for saving and loading levels from the disk
     if (show_save_dialog_)
     {
-        show_save_dialog();
+        display_save_as_gui();
     }
 
     if (show_load_dialog_)
@@ -549,16 +544,7 @@ void ScreenEditGame::on_render(bool show_debug)
             action_manager_.clear();
             editor_state_.selection.clear_selection();
 
-            LevelFileIO level_file_io;
-            if (!level_file_io.open(level_name_, false))
-            {
-                return;
-            }
-            if (!level_.deserialise(level_file_io))
-            {
-                return;
-            }
-            level_name_actual_ = level_name_;
+            load_level(level_name_);
         }
     }
 
@@ -601,7 +587,7 @@ void ScreenEditGame::select_object(LevelObject* object)
     }
 }
 
-void ScreenEditGame::render_editor_ui()
+void ScreenEditGame::display_editor_gui()
 {
     // Draw the editor gui itself, such as property editors, changing floors, etc
     if (ImGui::Begin("Editor"))
@@ -709,7 +695,7 @@ void ScreenEditGame::exit_editor()
 
     if (level_.serialise(level_file_io))
     {
-        level_file_io.save("backup", false);
+        save_level("backup");
         level_name_actual_ = level_name_;
     }
 
@@ -726,36 +712,32 @@ void ScreenEditGame::save_level()
     }
     else
     {
-        LevelFileIO level_file_io;
+        save_level(level_name_);
+        level_name_actual_ = level_name_;
 
-        if (level_.serialise(level_file_io))
-        {
-            level_file_io.save(level_name_, false);
-            level_name_actual_ = level_name_;
-        }
         show_save_dialog_ = false;
     }
 }
 
-void ScreenEditGame::show_save_dialog()
+void ScreenEditGame::display_save_as_gui()
 {
+    // clang-format off
     if (ImGuiExtras::BeginCentredWindow("Save As...", {300, 200}))
     {
         ImGui::InputText("Level Name", &level_name_);
         bool can_save = !level_name_.empty();
 
         // Only enable the save button if a name is actually set
-        // clang-format off
         if (!can_save)                  { ImGui::BeginDisabled();    } 
         if (ImGui::Button("Save Game")) { save_level();              }
         if (!can_save)                  { ImGui::EndDisabled();      }
         if (ImGui::Button("Cancel"))    { show_save_dialog_ = false; }
-        // clang-format on
     }
     ImGui::End();
+    // clang-format on
 }
 
-void ScreenEditGame::show_menu_bar()
+void ScreenEditGame::display_menu_bar_gui()
 {
     // clang-format off
     if (ImGui::BeginMainMenuBar())
@@ -810,23 +792,20 @@ void ScreenEditGame::show_menu_bar()
         }
         ImGui::EndMainMenuBar();
     }
-
     // clang-format on
 }
 
-void ScreenEditGame::debug_gui()
+void ScreenEditGame::display_debug_gui()
 {
-    camera_.gui("Camera");
-
     // clang-format off
+    camera_.gui("Camera");
     if (ImGui::Begin("Camera Kind"))
     {
         if (ImGui::Button("Perspective"))   { camera_.set_type(CameraType::Perspective);        }
         if (ImGui::Button("Orthographic"))  { camera_.set_type(CameraType::OrthographicWorld);  }
     }
-
-    // clang-format on
     ImGui::End();
+    // clang-format on
 }
 
 bool ScreenEditGame::showing_dialog() const
@@ -868,5 +847,30 @@ void ScreenEditGame::try_reset_update_wall_tool()
             auto floor = level_.get_object_floor(object->object_id);
             tool_ = std::make_unique<UpdateWallTool>(*object, *wall, *floor);
         }
+    }
+}
+
+bool ScreenEditGame::load_level(const std::string& name)
+{
+    LevelFileIO level_file_io;
+    if (!level_file_io.open(level_name_, false))
+    {
+        return false;
+    }
+
+    if (!level_.deserialise(level_file_io))
+    {
+        return false;
+    }
+    return true;
+}
+
+void ScreenEditGame::save_level(const std::string& name)
+{
+    LevelFileIO level_file_io;
+
+    if (level_.serialise(level_file_io))
+    {
+        level_file_io.save(name, false);
     }
 }

@@ -46,22 +46,37 @@ class ScreenEditGame final : public Screen
     /// Selecting walls sets the tool type to be "UpdateWallTool" such that it can be resized
     void select_object(LevelObject* object);
 
-    void render_editor_ui();
-
-    void exit_editor();
-
-    // Dialog GUIs for loading/editing etc
-    void show_menu_bar();
-    void save_level();
-    void show_save_dialog();
-
-    void debug_gui();
-    bool showing_dialog() const;
-
+    /// Set the position of the 2D camera to be the same position as the 3D camera
     void set_2d_to_3d_view();
 
+    // Sets the tool to create wall if the current tool is "UpdateWallTool"
     void try_set_tool_to_create_wall();
+
+    /// If the current tool is UpdateWallTool, then this resets it to be the current selected
+    /// object. This is done as if the wall properties change while it is selected, and then the
+    /// wall is moved, then the moved wall will have "old" props as it is cached when the tool is
+    /// created.
     void try_reset_update_wall_tool();
+
+    void display_menu_bar_gui();
+    void display_editor_gui();
+    void display_save_as_gui();
+    void display_debug_gui();
+
+    /// Exit to ehe main menu, saving the current level to "backup.cly"
+    void exit_editor();
+
+    // Saves the level or opens the save dialog if a level name has not been seleted
+    void save_level();
+
+    // Returns true if ANY dialog is showing (saving, loading)
+    bool showing_dialog() const;
+
+    /// Loads a level from disk
+    bool load_level(const std::string& name);
+
+    /// Saves the current level to disk
+    void save_level(const std::string& name);
 
   private:
     Camera camera_;
