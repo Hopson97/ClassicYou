@@ -7,8 +7,8 @@
 class LevelFileIO
 {
   public:
-    bool open(const std::filesystem::path& path, bool load_uncompressed);
-    bool save(const std::filesystem::path& path, bool save_uncompressed);
+    bool open(const std::string& level_file_name, bool load_uncompressed);
+    bool save(const std::string& level_file_name, bool save_uncompressed);
 
     void write_floors(const nlohmann::json& floors);
     nlohmann::json get_floors() const;
@@ -18,6 +18,7 @@ class LevelFileIO
 
   private:
     std::optional<std::string> compress_data(const std::string& json_dump);
+    std::optional<std::string> decompress_from_file(const std::filesystem::path& path, std::size_t size);
 
     int find_colour_index(glm::u8vec4 colour) const;
     int add_colour(glm::u8vec4 colour);

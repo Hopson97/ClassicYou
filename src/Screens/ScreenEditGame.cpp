@@ -36,10 +36,6 @@ namespace
         };
     }
 
-    std::filesystem::path make_level_path(const std::string& level_name)
-    {
-        return "levels/" + level_name + ".cly2";
-    }
 } // namespace
 
 ScreenEditGame::ScreenEditGame(ScreenManager& screens)
@@ -175,7 +171,7 @@ bool ScreenEditGame::on_init()
     if (!level_name_.empty())
     {
         LevelFileIO level_file_io;
-        if (!level_file_io.open(make_level_path(level_name_), false))
+        if (!level_file_io.open(level_name_, false))
         {
             return false;
         }
@@ -561,7 +557,7 @@ void ScreenEditGame::on_render(bool show_debug)
 
             sf::Clock clock;
             LevelFileIO level_file_io;
-            if (!level_file_io.open(make_level_path(level_name_), false))
+            if (!level_file_io.open(level_name_, false))
             {
                 return;
             }
@@ -713,7 +709,7 @@ void ScreenEditGame::exit_editor()
 
     if (level_.serialise(level_file_io))
     {
-        level_file_io.save(make_level_path("backup"), false);
+        level_file_io.save("backup", false);
         level_name_actual_ = level_name_;
     }
 
@@ -735,7 +731,7 @@ void ScreenEditGame::save_level()
 
         if (level_.serialise(level_file_io))
         {
-            level_file_io.save(make_level_path(level_name_), false);
+            level_file_io.save(level_name_, false);
             level_name_actual_ = level_name_;
         }
         show_save_dialog_ = false;

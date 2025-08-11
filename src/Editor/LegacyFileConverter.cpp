@@ -486,7 +486,7 @@ void convert_legacy_level(const std::filesystem::path& path)
     if (output)
     {
         g_level_file_io.write_floors(output);
-        g_level_file_io.save(("levels" / path.stem()).string() + ".cly2", false);
+        g_level_file_io.save(path.stem().string(), false);
 
         std::println("Successfully serialised {}\n\n", path.string());
     }
