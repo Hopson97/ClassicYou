@@ -44,7 +44,7 @@ struct LevelObject
     }
 
     /// Displays a GUI for updating the properties of the object.
-    void property_gui(EditorState& state, const LevelTextures& textures,
+    bool property_gui(EditorState& state, const LevelTextures& textures,
                       ActionManager& action_manager);
 
     /// Convert the underlying "object_type" to a type name

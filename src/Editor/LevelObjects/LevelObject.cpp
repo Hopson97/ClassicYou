@@ -17,7 +17,7 @@ namespace
 {
 
     template <typename T>
-    void property_gui(GUIFunction<T> function, const LevelTextures& textures,
+    bool property_gui(GUIFunction<T> function, const LevelTextures& textures,
                       ActionManager& action_manager, const T& object, LevelObject& current,
                       typename T::PropertiesType& object_default, int current_floor,
                       EditMode edit_mode)
@@ -87,41 +87,45 @@ namespace
         {
             object_default = object.properties;
         }
+
+        return update.always_update || update.action;
     }
 } // namespace
 
-void LevelObject::property_gui(EditorState& state, const LevelTextures& textures,
+bool LevelObject::property_gui(EditorState& state, const LevelTextures& textures,
                                ActionManager& action_manager)
 {
     ImGui::Text("Properties");
     ImGui::Separator();
+
+    // clang-format off
     if (auto wall = std::get_if<WallObject>(&object_type))
     {
-        ::property_gui<WallObject>(&wall_gui, textures, action_manager, *wall, *this,
-                                   state.wall_default, state.current_floor, state.edit_mode);
+        return ::property_gui<WallObject>(&wall_gui, textures, action_manager, *wall, *this,
+                                          state.wall_default, state.current_floor, state.edit_mode);
     }
     else if (auto platform = std::get_if<PlatformObject>(&object_type))
     {
-        ::property_gui<PlatformObject>(&platform_gui, textures, action_manager, *platform, *this,
-                                       state.platform_default, state.current_floor,
-                                       state.edit_mode);
+        return ::property_gui<PlatformObject>(&platform_gui, textures, action_manager, *platform, *this, 
+                                               state.platform_default, state.current_floor, state.edit_mode);
     }
     else if (auto poly = std::get_if<PolygonPlatformObject>(&object_type))
     {
-        ::property_gui<PolygonPlatformObject>(&polygon_platform_gui, textures, action_manager,
-                                              *poly, *this, state.polygon_platform_default,
-                                              state.current_floor, state.edit_mode);
+        return ::property_gui<PolygonPlatformObject>(&polygon_platform_gui, textures, action_manager, *poly, *this,
+                                                      state.polygon_platform_default, state.current_floor, state.edit_mode);
     }
     else if (auto pillar = std::get_if<PillarObject>(&object_type))
     {
-        ::property_gui<PillarObject>(&pillar_gui, textures, action_manager, *pillar, *this,
-                                     state.pillar_default, state.current_floor, state.edit_mode);
+        return ::property_gui<PillarObject>(&pillar_gui, textures, action_manager, *pillar, *this,
+                                            state.pillar_default, state.current_floor, state.edit_mode);
     }
     else if (auto ramp = std::get_if<RampObject>(&object_type))
     {
-        ::property_gui<RampObject>(&ramp_gui, textures, action_manager, *ramp, *this,
-                                   state.ramp_default, state.current_floor, state.edit_mode);
+        return ::property_gui<RampObject>(&ramp_gui, textures, action_manager, *ramp, *this,
+                                          state.ramp_default, state.current_floor, state.edit_mode);
     }
+    // clang-format on
+    return false;
 }
 
 ObjectTypeName LevelObject::to_type() const
