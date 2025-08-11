@@ -6,6 +6,13 @@
 // =======================================
 //      Wall Object Types
 // =======================================
+enum class WallStyle
+{
+    Normal,
+    TriWall,
+    FlippedTriWall,
+};
+
 struct WallProps
 {
     TextureProp texture_front;
@@ -17,8 +24,7 @@ struct WallProps
     float end_base_height = 0.0f;
     float end_height = 1.0f;
 
-    bool tri_wall = false;
-    bool flip_wall = false;
+    WallStyle style = WallStyle::Normal;
 };
 
 struct WallParameters

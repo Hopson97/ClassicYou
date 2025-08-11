@@ -7,7 +7,6 @@
 
 namespace
 {
-
     std::filesystem::path make_level_path(const std::string& level_name)
     {
         return "levels/" + level_name + ".cly2";
@@ -75,7 +74,6 @@ bool LevelFileIO::open(const std::string& level_file_name, bool load_uncompresse
     }
 
     // Open the binary file
-
     if (auto decompressed = decompress_from_file(path, size))
     {
         json_ = nlohmann::json::parse(*decompressed);
@@ -102,7 +100,6 @@ bool LevelFileIO::save(const std::string& level_file_name, bool save_uncompresse
     }
     json_["meta"] = meta;
     write_meta_file(level_file_name, meta);
-
 
     if (save_uncompressed)
     {

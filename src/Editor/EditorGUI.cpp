@@ -228,17 +228,7 @@ std::pair<PropGUIUpdateResult, WallProps> wall_gui(const LevelTextures& textures
         new_props.end_height = height;
     }
 
-    if (ImGui::Checkbox("Tri-wall", &new_props.tri_wall))
-    {
-        result.always_update |= true;
-    }
-    if (new_props.tri_wall)
-    {
-        if (ImGui::Checkbox("Flip tri-wall?", &new_props.flip_wall))
-        {
-            result.always_update |= true;
-        }
-    }
+    enum_gui<WallStyle>(result, "Wall Type", new_props.style);
 
     if (edit_mode > EditMode::Legacy)
     {

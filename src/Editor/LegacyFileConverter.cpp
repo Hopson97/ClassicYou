@@ -240,8 +240,8 @@ void from_json(const nlohmann::json& json, LegacyTriWall& wall)
     wall_params.line.start = start;
     wall_params.line.end = start + offset;
 
-    wall_props.tri_wall = true;
-    wall_props.flip_wall = json[1][0] == 2;
+    bool flip_wall = json[1][0] == 2;
+    wall_props.style = flip_wall ? WallStyle::FlippedTriWall : WallStyle::TriWall;
 
     wall_props.texture_front = map_wall_texture(json[1][1]);
     wall_props.texture_back = map_wall_texture(json[1][1]);

@@ -1,5 +1,7 @@
 #include "Wall.h"
 
+#include <magic_enum/magic_enum.hpp>
+
 #include "../DrawingPad.h"
 #include "../EditConstants.h"
 #include "../LevelFileIO.h"
@@ -15,7 +17,7 @@ bool operator==(const WallProps& lhs, const WallProps& rhs)
     return lhs.texture_front == rhs.texture_front && lhs.texture_back == rhs.texture_back &&
            lhs.start_base_height == rhs.start_base_height && lhs.start_height == rhs.start_height &&
            lhs.end_base_height == rhs.end_base_height && lhs.end_height == rhs.end_height &&
-           lhs.tri_wall == rhs.tri_wall && lhs.flip_wall == rhs.flip_wall;
+           lhs.style == rhs.style;
 }
 
 bool operator!=(const WallProps& lhs, const WallProps& rhs)
@@ -38,12 +40,11 @@ std::string object_to_string(const WallObject& wall)
     auto& props = wall.properties;
     return std::format(
         "Props:\n Texture Front: {}\n Texture Back: {}\n Start Base Height: {:.2f}\n Start Height: "
-        "{:.2f}\n End Base Height: {:.2f}\n End Height: {:.2f}\n Tri Wall: {}\n Flip Wall: {}\n"
+        "{:.2f}\n End Base Height: {:.2f}\n End Height: {:.2f}\n Style: {}\n"
         "Parameters:\n Start Position: ({:.2f}, {:.2f})\n End Position: ({:.2f}, {:.2f})",
         props.texture_front.id, props.texture_back.id, props.start_base_height, props.start_height,
-        props.end_base_height, props.end_height, props.tri_wall ? "true" : "false",
-        props.flip_wall ? "true" : "false", params.line.start.x, params.line.start.y,
-        params.line.end.x, params.line.end.y);
+        props.end_base_height, props.end_height, magic_enum::enum_name(props.style),
+        params.line.start.x, params.line.start.y, params.line.end.x, params.line.end.y);
 }
 
 template <>
@@ -113,12 +114,13 @@ SerialiseResponse object_serialise(const WallObject& wall, LevelFileIO& level_fi
     level_file_io.serialise_texture(json_props, props.texture_front);
     json_props.insert(json_props.end(),
                       {props.start_height, props.start_base_height, props.end_height,
-                       props.end_base_height, props.tri_wall, props.flip_wall});
+                       props.end_base_height, (int)props.style});
 
     return {{json_params, json_props}, "wall"};
 }
 
-bool object_deserialise(WallObject& wall, const nlohmann::json& json, const LevelFileIO& level_file_io)
+bool object_deserialise(WallObject& wall, const nlohmann::json& json,
+                        const LevelFileIO& level_file_io)
 {
     auto& params = wall.parameters;
     auto& props = wall.properties;
@@ -130,9 +132,9 @@ bool object_deserialise(WallObject& wall, const nlohmann::json& json, const Leve
         std::println("Invalid wall parameters, expected 4 values");
         return false;
     }
-    if (jprops.size() < 8)
+    if (jprops.size() < 7)
     {
-        std::println("Invalid wall properties, expected 8 values");
+        std::println("Invalid wall properties, expected 7 values");
         return false;
     }
     params.line.start = {jparams[0], jparams[1]};
@@ -147,8 +149,7 @@ bool object_deserialise(WallObject& wall, const nlohmann::json& json, const Leve
     props.start_base_height = jprops[3];
     props.end_height = jprops[4];
     props.end_base_height = jprops[5];
-    props.tri_wall = jprops[6];
-    props.flip_wall = jprops[7];
+    props.style = (WallStyle)jprops[6];
 
     return true;
 }
@@ -208,29 +209,32 @@ LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number)
     };
     // clang-format on
 
-    if (props.tri_wall)
+    switch (props.style)
     {
-        if (props.flip_wall)
-        {
+        case WallStyle::Normal:
             mesh.indices = {// Front
-                            0, 1, 2,
+                            0, 1, 2, 2, 3, 0,
                             // Back
-                            6, 5, 4};
-        }
-        else
-        {
+                            6, 5, 4, 4, 7, 6};
+            break;
+
+        case WallStyle::TriWall:
             mesh.indices = {// Front
                             2, 3, 0,
                             // Back
                             4, 7, 6};
-        }
-    }
-    else
-    {
-        mesh.indices = {// Front
-                        0, 1, 2, 2, 3, 0,
-                        // Back
-                        6, 5, 4, 4, 7, 6};
+            break;
+
+        case WallStyle::FlippedTriWall:
+            mesh.indices = {// Front
+                            0, 1, 2,
+                            // Back
+                            6, 5, 4};
+            break;
+
+        default:
+            std::println("Missing wall style indices for {}", magic_enum::enum_name(props.style));
+            break;
     }
 
     return mesh;
