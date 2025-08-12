@@ -5,6 +5,7 @@
 #include <glad/glad.h>
 
 #include "Editor/FloorManager.h"
+#include "Editor/LevelFileIO.h"
 #include "GUI.h"
 #include "Graphics/OpenGL/GLUtils.h"
 #include "Screens/Screen.h"
@@ -27,15 +28,10 @@ namespace
 
         for (const auto& entry : std::filesystem::directory_iterator("./levels/legacy/"))
         {
-            if (entry.is_regular_file() && entry.path().extension() == ".cy")
+            if (entry.is_regular_file() && entry.path().extension() == ".cy" &&
+                !level_file_exists(entry.path().filename()))
             {
-                auto original_filename = entry.path().filename().replace_extension(".cly2");
-                auto new_path = std::filesystem::path("./levels/") / original_filename;
-
-                if (!std::filesystem::exists(new_path))
-                {
-                    convert_legacy_level(entry.path());
-                }
+                convert_legacy_level(entry.path());
             }
         }
     }

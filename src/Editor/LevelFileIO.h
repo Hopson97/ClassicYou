@@ -3,6 +3,13 @@
 #include "LevelObjects/LevelObjectTypes.h"
 #include <nlohmann/json.hpp>
 
+/// Checks if the given level file exists. Assumes the file is in the "levels" directory, and
+/// without any file extension.
+bool level_file_exists(const std::string level_file_name);
+
+/// @brief  Checks if the given level file exists. Assumes the file is in the "levels" directory.
+bool level_file_exists(const std::filesystem::path level_file_name);
+
 /// Helper class for loading and saving editor level files.
 class LevelFileIO
 {
@@ -10,11 +17,11 @@ class LevelFileIO
     /// Opens the given file ready to be deserialised
     bool open(const std::string& level_file_name, bool load_uncompressed);
 
-    /// Save the current seriliased json to disk + metadata about the level. "write_floors" should
+    /// Save the current serialised json to disk + metadata about the level. "write_floors" should
     /// be called first.
     bool save(const std::string& level_file_name, bool save_uncompressed);
 
-    /// Writes the floors to the current json. This assumes floors is an arry of floors and their
+    /// Writes the floors to the current json. This assumes floors is an array of floors and their
     /// objects (See FloorManager)
     void write_floors(const nlohmann::json& floors);
 
@@ -37,4 +44,19 @@ class LevelFileIO
     int version_ = 0;
 
     nlohmann::json json_;
+};
+
+class LevelFileSelectGUI
+{
+  public:
+    void show();
+    void hide();
+    bool is_showing() const;
+
+    std::optional<std::string> display_level_select_gui();
+
+  private:
+    std::vector<std::string> levels_;
+
+    bool is_showing_ = false;
 };
