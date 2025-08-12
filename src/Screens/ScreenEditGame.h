@@ -7,6 +7,7 @@
 #include "../Editor/EditorLevel.h"
 #include "../Editor/EditorState.h"
 #include "../Editor/InfiniteGrid.h"
+#include "../Editor/LevelFileIO.h"
 #include "../Editor/LevelTextures.h"
 #include "../Editor/Tool.h"
 #include "../Graphics/Camera.h"
@@ -115,7 +116,6 @@ class ScreenEditGame final : public Screen
     CopyPasteHandler copy_paste_handler_;
 
     bool show_save_dialog_ = false;
-    bool show_load_dialog_ = false;
 
     /// Level name is used in the save dialog such that the actual name is not overriden if the save
     /// operation is cancelled
@@ -134,4 +134,6 @@ class ScreenEditGame final : public Screen
 
     // Used for checking if shift is pressed during rendering
     bool is_shift_down_ = false;
+
+    LevelFileSelectGUI level_file_selector_;
 };

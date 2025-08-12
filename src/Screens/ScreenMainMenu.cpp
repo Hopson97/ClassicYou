@@ -60,7 +60,7 @@ void ScreenMainMenu::main_menu()
     }
     if (ImGuiExtras::CustomButton("Load Edit Game"))
     {
-        show_load_dialog_ = true;
+        level_file_selector_.show();
         // p_screen_manager_->push_screen(std::make_unique<ScreenPlaying>(*p_screen_manager_));
     }
     if (ImGuiExtras::CustomButton("Exit"))
@@ -68,14 +68,10 @@ void ScreenMainMenu::main_menu()
         p_screen_manager_->pop_screen();
     }
 
-    if (show_load_dialog_)
+    if (auto level = level_file_selector_.display_level_select_gui())
     {
-        if (display_level_list(show_load_dialog_, load_level_name_))
-        {
-            show_load_dialog_ = false;
-            p_screen_manager_->push_screen(
-                std::make_unique<ScreenEditGame>(*p_screen_manager_, load_level_name_));
-        }
+        p_screen_manager_->push_screen(
+            std::make_unique<ScreenEditGame>(*p_screen_manager_, *level));
     }
 }
 

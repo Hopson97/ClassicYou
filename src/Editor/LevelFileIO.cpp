@@ -1,5 +1,6 @@
 #include "LevelFileIO.h"
 
+#include "../Util/ImGuiExtras.h"
 #include <SFML/System/Clock.hpp>
 #include <SFML/System/Time.hpp>
 #include <fstream>
@@ -59,19 +60,30 @@ namespace
 
     std::filesystem::path make_level_path(const std::string& level_name)
     {
-        return "levels/" + level_name + ".cly2";
+        return "levels/" + level_name + ".cly";
     }
 
     std::filesystem::path make_uncompressed_level_path(const std::string& level_name)
     {
-        return "levels/" + level_name + ".cly";
+        return "levels/" + level_name + ".cly.json";
     }
 
     std::filesystem::path make_meta_path(const std::string& level_name)
     {
         return "levels/" + level_name + "_meta.json";
     }
+
 } // namespace
+
+bool level_file_exists(const std::string level_file_name)
+{
+    return std::filesystem::exists(make_level_path(level_file_name));
+}
+
+bool level_file_exists(const std::filesystem::path level_file_name)
+{
+    return level_file_exists(level_file_name.stem().string());
+}
 
 bool LevelFileIO::open(const std::string& level_file_name, bool load_uncompressed)
 {
@@ -149,13 +161,14 @@ bool LevelFileIO::save(const std::string& level_file_name, bool save_uncompresse
     std::ofstream meta_file(make_meta_path(level_file_name));
     meta_file << meta;
 
+    json_["meta"] = meta;
+
     //==================================
     //  Save to the uncompressed format
     // =================================
     if (save_uncompressed)
     {
         std::ofstream basic_file(make_uncompressed_level_path(level_file_name.c_str()));
-        json_["meta"] = meta;
         basic_file << json_;
     }
 
@@ -175,7 +188,8 @@ bool LevelFileIO::save(const std::string& level_file_name, bool save_uncompresse
 
 void LevelFileIO::serialise_texture(nlohmann::json& object, const TextureProp& prop)
 {
-    // object.push_back({prop.id, prop.colour.r, prop.colour.g, prop.colour.b, prop.colour.a});
+    // object.push_back({prop.id, prop.colour.r, prop.colour.g, prop.colour.b,
+    // prop.colour.a});
     auto colour_index = find_colour_index(prop.colour);
     if (colour_index == -1)
     {
@@ -225,4 +239,62 @@ void LevelFileIO::write_floors(const nlohmann::json& floors)
 nlohmann::json LevelFileIO::get_floors() const
 {
     return json_["floors"];
+}
+
+void LevelFileSelectGUI::show()
+{
+    is_showing_ = true;
+
+    // When showing, the level list must reset in case levels have been saved or
+    // deleted since it was open last
+    levels_.clear();
+    for (const auto& entry : std::filesystem::directory_iterator("./levels"))
+    {
+        if (entry.is_regular_file() && level_file_exists(entry.path()))
+        {
+            levels_.push_back(entry.path().stem().string());
+        }
+    }
+}
+
+void LevelFileSelectGUI::hide()
+{
+    is_showing_ = false;
+}
+
+bool LevelFileSelectGUI::is_showing() const
+{
+    return is_showing_;
+}
+
+std::optional<std::string> LevelFileSelectGUI::display_level_select_gui()
+{
+    if (!is_showing())
+    {
+        return std::nullopt;
+    }
+
+    std::optional<std::string> selection = std::nullopt;
+
+    if (ImGuiExtras::BeginCentredWindow("Load Level", {800, 800}))
+    {
+        ImGui::Text("Select a level to load:");
+        ImGui::Separator();
+
+        for (const auto& level_name : levels_)
+        {
+            if (ImGui::Button(level_name.c_str()))
+            {
+                selection = level_name;
+                hide();
+            }
+        }
+
+        if (ImGui::Button("Cancel"))
+        {
+            hide();
+        }
+    }
+    ImGui::End();
+    return selection;
 }

@@ -425,35 +425,3 @@ std::pair<PropGUIUpdateResult, RampProps> ramp_gui(const LevelTextures& textures
         new_props,
     };
 }
-
-bool display_level_list(bool& show_load_dialog, std::string& name)
-{
-    bool result = false;
-
-    if (ImGuiExtras::BeginCentredWindow("Load Level", {800, 800}))
-    {
-        ImGui::Text("Select a level to load:");
-        ImGui::Separator();
-
-        for (const auto& entry : std::filesystem::directory_iterator("./levels"))
-        {
-            if (entry.is_regular_file() && entry.path().extension() == ".cly2")
-            {
-                std::string filename = entry.path().stem().string();
-                if (ImGui::Button(filename.c_str()))
-                {
-                    name = filename;
-                    result = true;
-                    break;
-                }
-            }
-        }
-
-        if (ImGui::Button("Cancel"))
-        {
-            show_load_dialog = false;
-        }
-    }
-    ImGui::End();
-    return result;
-}

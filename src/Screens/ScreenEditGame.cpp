@@ -349,7 +349,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
         else if (tool_->get_tool_type() == ToolType::AreaSelectTool)
         {
             // After the selection has been moved, the old selection area is invalidated
-            // TOOD: Find a way to move the selection rather than just set to wall
+            // TODO: Find a way to move the selection rather than just set to wall
             tool_ = std::make_unique<CreateWallTool>();
         }
     }
@@ -534,18 +534,14 @@ void ScreenEditGame::on_render(bool show_debug)
         display_save_as_gui();
     }
 
-    if (show_load_dialog_)
+    if (auto level = level_file_selector_.display_level_select_gui())
     {
-        if (display_level_list(show_load_dialog_, level_name_))
-        {
-            show_load_dialog_ = false;
+        level_name_ = *level;
+        // Reset the state
+        action_manager_.clear();
+        editor_state_.selection.clear_selection();
 
-            // Reset the state
-            action_manager_.clear();
-            editor_state_.selection.clear_selection();
-
-            load_level(level_name_);
-        }
+        load_level(level_name_);
     }
 
     if (tool_)
@@ -751,7 +747,7 @@ void ScreenEditGame::display_menu_bar_gui()
                 {
                     std::println("TODO: Implement saving before loading menu");
                 }
-                show_load_dialog_ = true;
+                level_file_selector_.show();
             }
             if (ImGui::MenuItem("Save"))        { save_level();             }
             if (ImGui::MenuItem("Save As..."))  { show_save_dialog_ = true; }
@@ -810,7 +806,7 @@ void ScreenEditGame::display_debug_gui()
 
 bool ScreenEditGame::showing_dialog() const
 {
-    return show_save_dialog_ || show_load_dialog_;
+    return show_save_dialog_ || level_file_selector_.is_showing();
 }
 
 void ScreenEditGame::set_2d_to_3d_view()
@@ -827,7 +823,7 @@ void ScreenEditGame::try_set_tool_to_create_wall()
     // as selecting multiple objects or moving between floors.
     // For example, selecting a wall and then moving up a floor, you should not be able to then
     // resize that wall from the "wrong floor"
-    // So this explictly prevents that from happening
+    // So this explicitly prevents that from happening
     if (tool_ && tool_->get_tool_type() == ToolType::UpdateWall)
     {
         tool_ = std::make_unique<CreateWallTool>();
