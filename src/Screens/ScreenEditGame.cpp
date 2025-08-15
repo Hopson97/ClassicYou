@@ -15,7 +15,7 @@
 
 namespace
 {
-    constexpr std::array<const char*, 26> TEXTURE_NAMES = {
+    constexpr std::array TEXTURE_NAMES = {
         "Red Bricks", "Grey Bricks", "Stone Bricks", "Stone Bricks Mossy",
         "Bars",       "Chain Fence", "Grass",        "Dirt",
         "Glass",      "Sand",        "Bark",         "Leaf",
@@ -720,8 +720,16 @@ void ScreenEditGame::display_save_as_gui()
     // clang-format off
     if (ImGuiExtras::BeginCentredWindow("Save As...", {300, 200}))
     {
+
+        bool bad_file_name = level_name_.starts_with(INTERNAL_FILE_ID);
+        bool can_save = !level_name_.empty() && !bad_file_name;
+
+        if (bad_file_name)
+        {
+            ImGui::Text("Level names cannot start with '{}'", INTERNAL_FILE_ID);
+        }
+
         ImGui::InputText("Level Name", &level_name_);
-        bool can_save = !level_name_.empty();
 
         // Only enable the save button if a name is actually set
         if (!can_save)                  { ImGui::BeginDisabled();    } 

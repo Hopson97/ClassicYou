@@ -1,7 +1,12 @@
 #include "Util.h"
 
+#include <algorithm>
+#include <array>
+#include <cctype>
 #include <fstream>
 #include <iostream>
+#include <ranges>
+#include <string>
 
 std::string read_file_to_string(const std::filesystem::path& file_path)
 {

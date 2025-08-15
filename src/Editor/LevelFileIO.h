@@ -3,6 +3,10 @@
 #include "LevelObjects/LevelObjectTypes.h"
 #include <nlohmann/json.hpp>
 
+
+/// Suffix to determine folders that may be in the user data that are for internal use only
+const static std::string INTERNAL_FILE_ID = "_#";
+
 /// Checks if the given level file exists. Assumes the file is in the "levels" directory, and
 /// without any file extension.
 bool level_file_exists(const std::string level_file_name);

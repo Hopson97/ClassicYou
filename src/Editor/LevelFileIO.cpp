@@ -58,26 +58,32 @@ namespace
         return decompressed;
     }
 
+    std::filesystem::path make_level_directory_path(const std::string& level_name)
+    {
+        return "levels/" + level_name + "/";
+    }
+
     std::filesystem::path make_level_path(const std::string& level_name)
     {
-        return "levels/" + level_name + ".cly";
+        return make_level_directory_path(level_name) / std::string(level_name + ".cly");
     }
 
     std::filesystem::path make_uncompressed_level_path(const std::string& level_name)
     {
-        return "levels/" + level_name + ".cly.json";
+        return make_level_directory_path(level_name) /
+               std::string(level_name + level_name + ".cly.json");
     }
 
     std::filesystem::path make_meta_path(const std::string& level_name)
     {
+        return make_level_directory_path(level_name) / std::string(level_name + "_meta.json");
         return "levels/" + level_name + "_meta.json";
     }
-
 } // namespace
 
 bool level_file_exists(const std::string level_file_name)
 {
-    return std::filesystem::exists(make_level_path(level_file_name));
+    return std::filesystem::exists(make_level_directory_path(level_file_name));
 }
 
 bool level_file_exists(const std::filesystem::path level_file_name)
@@ -147,11 +153,18 @@ bool LevelFileIO::save(const std::string& level_file_name, bool save_uncompresse
     auto path = make_level_path(level_file_name);
     auto json_dump = json_.dump();
 
+    auto directory = path.parent_path();
+    if (!std::filesystem::exists(directory))
+    {
+        std::filesystem::create_directories(directory);
+    }
+
     //===========================
     //      Write the metadata
     // ==========================
     nlohmann::json meta;
     meta["colours"] = {};
+    meta["level_name"] = level_file_name;
     meta["version"] = version_;
     meta["size"] = json_dump.size();
     for (auto& colour : colours_)
@@ -250,9 +263,10 @@ void LevelFileSelectGUI::show()
     levels_.clear();
     for (const auto& entry : std::filesystem::directory_iterator("./levels"))
     {
-        if (entry.is_regular_file() && level_file_exists(entry.path()))
+        auto dirname = entry.path().filename().string();
+        if (entry.is_directory() && !dirname.starts_with(INTERNAL_FILE_ID))
         {
-            levels_.push_back(entry.path().stem().string());
+            levels_.push_back(dirname);
         }
     }
 }
