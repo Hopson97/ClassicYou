@@ -20,13 +20,17 @@ namespace
 
     void load_legacy_levels()
     {
-        if (!std::filesystem::exists("./levels/legacy/"))
+        auto legacy_path = "./levels/" + INTERNAL_FILE_ID + "legacy/";
+        if (!std::filesystem::exists(legacy_path))
         {
-            std::println("Unable to convert legacy levels as the legacy folder does not exist.");
+            std::println(
+                std::cerr,
+                "Unable to convert legacy levels as the legacy folder does not exist. ('{}')",
+                legacy_path);
             return;
         }
 
-        for (const auto& entry : std::filesystem::directory_iterator("./levels/legacy/"))
+        for (const auto& entry : std::filesystem::directory_iterator(legacy_path))
         {
             if (entry.is_regular_file() && entry.path().extension() == ".cy" &&
                 !level_file_exists(entry.path().filename()))
