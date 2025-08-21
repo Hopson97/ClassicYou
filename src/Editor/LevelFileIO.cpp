@@ -1,10 +1,12 @@
 #include "LevelFileIO.h"
 
-#include "../Util/ImGuiExtras.h"
 #include <SFML/System/Clock.hpp>
 #include <SFML/System/Time.hpp>
 #include <fstream>
 #include <zlib.h>
+
+#include "../Util/ImGuiExtras.h"
+#include "../Util/Util.h"
 
 namespace
 {
@@ -79,6 +81,19 @@ namespace
         return make_level_directory_path(level_name) / std::string(level_name + "_meta.json");
         return "levels/" + level_name + "_meta.json";
     }
+
+    std::optional<nlohmann::json> get_metafile_content(const std::string level_file_name)
+    {
+        // Load metadata from the metafile
+        std::ifstream meta_file(make_meta_path(level_file_name));
+        if (!meta_file.is_open())
+        {
+            std::println(std::cerr, "Could not open metafile for {}", level_file_name);
+            return {};
+        }
+        return nlohmann::json::parse(meta_file);
+    }
+
 } // namespace
 
 bool level_file_exists(const std::string level_file_name)
@@ -130,22 +145,24 @@ bool LevelFileIO::open(const std::string& level_file_name, bool load_uncompresse
     auto path = make_level_path(level_file_name);
 
     // Load metadata from the metafile
-    std::ifstream meta_file(make_meta_path(level_file_name));
-    if (!meta_file.is_open())
+    if (auto metadata = get_metafile_content(level_file_name))
+    {
+        load_metadata(*metadata);
+
+        // Load objects from the binary file
+        if (auto decompressed = decompress_from_file(path, size))
+        {
+            json_ = nlohmann::json::parse(*decompressed);
+            std::println("Successfully opened {}", path.string());
+            return true;
+        }
+        return false;
+    }
+    else
     {
         std::println(std::cerr, "Could not open metafile for {}", level_file_name);
         return false;
     }
-    load_metadata(nlohmann::json::parse(meta_file));
-
-    // Load objects frpm the binary file
-    if (auto decompressed = decompress_from_file(path, size))
-    {
-        json_ = nlohmann::json::parse(*decompressed);
-        std::println("Successfully opened {}", path.string());
-        return true;
-    }
-    return false;
 }
 
 bool LevelFileIO::save(const std::string& level_file_name, bool save_uncompressed)
@@ -167,6 +184,7 @@ bool LevelFileIO::save(const std::string& level_file_name, bool save_uncompresse
     meta["level_name"] = level_file_name;
     meta["version"] = version_;
     meta["size"] = json_dump.size();
+    meta["saved_date"] = get_epoch();
     for (auto& colour : colours_)
     {
         meta["colours"].push_back({colour.r, colour.g, colour.b, colour.a});
@@ -193,7 +211,7 @@ bool LevelFileIO::save(const std::string& level_file_name, bool save_uncompresse
     {
         std::ofstream compressed_file(path.string(), std::ios::binary);
         compressed_file << *compressed;
-        std::println("Succesfully saved to {}", path.string());
+        std::println("Successfully saved to {}", path.string());
         return true;
     }
     return false;
@@ -258,15 +276,28 @@ void LevelFileSelectGUI::show()
 {
     is_showing_ = true;
 
-    // When showing, the level list must reset in case levels have been saved or
-    // deleted since it was open last
+    // When showing, the level list must reset in case levels have been saved, deleted, renamed etc
+    // since it was last opened
     levels_.clear();
     for (const auto& entry : std::filesystem::directory_iterator("./levels"))
     {
         auto dirname = entry.path().filename().string();
         if (entry.is_directory() && !dirname.starts_with(INTERNAL_FILE_ID))
         {
-            levels_.push_back(dirname);
+            if (auto meta = get_metafile_content(dirname))
+            {
+                levels_.push_back({.directory = dirname,
+                                   .display_name = meta->at("level_name"),
+                                   .saved_date = epoch_to_datetime_string(meta->at("saved_date"))});
+            }
+            else
+            {
+                std::println(std::cerr,
+                             "Could not find a metafile for {} - defaulting to folder name.",
+                             dirname.c_str());
+                levels_.push_back(
+                    {.directory = dirname, .display_name = dirname, .saved_date = "???"});
+            }
         }
     }
 }
@@ -295,11 +326,14 @@ std::optional<std::string> LevelFileSelectGUI::display_level_select_gui()
         ImGui::Text("Select a level to load:");
         ImGui::Separator();
 
-        for (const auto& level_name : levels_)
+        for (const auto& level : levels_)
         {
-            if (ImGui::Button(level_name.c_str()))
+
+            if (ImGui::Button(
+                    std::format("Name: {} - Last Saved: {}", level.display_name, level.saved_date)
+                        .c_str()))
             {
-                selection = level_name;
+                selection = level.directory;
                 hide();
             }
         }
