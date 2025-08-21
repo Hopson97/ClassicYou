@@ -8,6 +8,8 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
+using epoch_t = long long;
+
 [[nodiscard]] std::string read_file_to_string(const std::filesystem::path& file_path);
 [[nodiscard]] std::vector<std::string> split_string(const std::string& string, char delim = ' ');
 
@@ -21,3 +23,6 @@ constexpr inline auto rgb_to_normalised(const glm::vec3& rgb)
 {
     return glm::vec4(rgb / 255.0f, 1.0f);
 }
+
+epoch_t get_epoch();
+std::string epoch_to_datetime_string(epoch_t epoch);

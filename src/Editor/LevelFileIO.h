@@ -52,6 +52,18 @@ class LevelFileIO
 
 class LevelFileSelectGUI
 {
+    struct LevelOptions
+    {
+        // Directory within the levels/ folder where the level data is
+        const std::string directory;
+
+        // Display name of the level - might be different from the directory name
+        const std::string display_name;
+
+        // Datetime string for when the level was last saved.
+        const std::string saved_date;
+    };
+
   public:
     void show();
     void hide();
@@ -60,7 +72,7 @@ class LevelFileSelectGUI
     std::optional<std::string> display_level_select_gui();
 
   private:
-    std::vector<std::string> levels_;
+    std::vector<LevelOptions> levels_;
 
     bool is_showing_ = false;
 };

@@ -726,7 +726,7 @@ void ScreenEditGame::display_save_as_gui()
 
         if (bad_file_name)
         {
-            ImGui::Text("Level names cannot start with '{}'", INTERNAL_FILE_ID);
+            ImGui::Text("Level names cannot start with '%s'", INTERNAL_FILE_ID.c_str());
         }
 
         ImGui::InputText("Level Name", &level_name_);

@@ -36,3 +36,16 @@ std::vector<std::string> split_string(const std::string& string, char delim)
     }
     return tokens;
 }
+
+epoch_t get_epoch()
+{
+    using namespace std::chrono;
+    return duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
+}
+
+std::string epoch_to_datetime_string(epoch_t epoch)
+{
+    using namespace std::chrono;
+    return std::format("{:%Y-%m-%d %H:%M:%S}",
+                       floor<seconds>(system_clock::time_point{seconds{epoch}}));
+}
