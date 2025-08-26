@@ -82,13 +82,13 @@ namespace
         return "levels/" + level_name + "_meta.json";
     }
 
-    std::optional<nlohmann::json> get_metafile_content(const std::string level_file_name)
+    std::optional<nlohmann::json> get_metafile_content(const std::string level_name)
     {
         // Load metadata from the metafile
-        std::ifstream meta_file(make_meta_path(level_file_name));
+        std::ifstream meta_file(make_meta_path(level_name));
         if (!meta_file.is_open())
         {
-            std::println(std::cerr, "Could not open metafile for {}", level_file_name);
+            std::println(std::cerr, "Could not open metafile for {}", level_name);
             return {};
         }
         return nlohmann::json::parse(meta_file);
@@ -96,27 +96,31 @@ namespace
 
 } // namespace
 
-bool level_file_exists(const std::string level_file_name)
+bool level_file_exists(const std::string level_name)
 {
-    return std::filesystem::exists(make_level_directory_path(level_file_name));
+    return std::filesystem::exists(make_level_directory_path(level_name));
 }
 
-bool level_file_exists(const std::filesystem::path level_file_name)
+bool level_file_exists(const std::filesystem::path level_name)
 {
-    return level_file_exists(level_file_name.stem().string());
+    return level_file_exists(level_name.stem().string());
 }
 
-bool LevelFileIO::open(const std::string& level_file_name, bool load_uncompressed)
+bool LevelFileIO::open(const std::string& level_name, bool load_uncompressed)
 {
-    //====================================
-    //  Helper to load metadata
-    // ===================================
+    //==========
+    //  Helpers
+    // =========
     size_t size = 0;
     auto load_metadata = [&](const nlohmann::json& meta)
     {
         version_ = meta["version"];
         size = meta["size"];
-        for (auto& object : meta["colours"])
+    };
+
+    auto load_colours = [&]()
+    {
+        for (auto& object : json_["colours"])
         {
             colours_.push_back({object[0], object[1], object[2], object[3]});
         }
@@ -127,7 +131,7 @@ bool LevelFileIO::open(const std::string& level_file_name, bool load_uncompresse
     // ===================================
     if (load_uncompressed)
     {
-        auto path = make_uncompressed_level_path(level_file_name);
+        auto path = make_uncompressed_level_path(level_name);
         std::ifstream file(path);
         if (!file.is_open())
         {
@@ -136,16 +140,18 @@ bool LevelFileIO::open(const std::string& level_file_name, bool load_uncompresse
         }
         json_ = nlohmann::json::parse(file);
         load_metadata(json_["meta"]);
+        load_colours();
+
         return true;
     }
 
     //====================================
     //  Load from the compressed format
     // ===================================
-    auto path = make_level_path(level_file_name);
+    auto path = make_level_path(level_name);
 
     // Load metadata from the metafile
-    if (auto metadata = get_metafile_content(level_file_name))
+    if (auto metadata = get_metafile_content(level_name))
     {
         load_metadata(*metadata);
 
@@ -153,6 +159,10 @@ bool LevelFileIO::open(const std::string& level_file_name, bool load_uncompresse
         if (auto decompressed = decompress_from_file(path, size))
         {
             json_ = nlohmann::json::parse(*decompressed);
+
+            // Load additional data
+            load_colours();
+
             std::println("Successfully opened {}", path.string());
             return true;
         }
@@ -160,16 +170,28 @@ bool LevelFileIO::open(const std::string& level_file_name, bool load_uncompresse
     }
     else
     {
-        std::println(std::cerr, "Could not open metafile for {}", level_file_name);
+        std::println(std::cerr, "Could not open metafile for {}", level_name);
         return false;
     }
 }
 
-bool LevelFileIO::save(const std::string& level_file_name, bool save_uncompressed)
+bool LevelFileIO::save(const std::string& level_name, bool save_uncompressed)
 {
-    auto path = make_level_path(level_file_name);
+    auto path = make_level_path(level_name);
+
+    // Add additional data to the compressed JSON prior to saving
+    json_["colours"] = {};
+    for (auto& colour : colours_)
+    {
+        json_["colours"].push_back({colour.r, colour.g, colour.b, colour.a});
+    }
+
+    // Convert to a string ready for saving
     auto json_dump = json_.dump();
 
+    // All level files are saved to a a directory.
+    // TODO: Sanatise the level name to ensure the directory is a valid filename across all
+    // platforms
     auto directory = path.parent_path();
     if (!std::filesystem::exists(directory))
     {
@@ -180,18 +202,23 @@ bool LevelFileIO::save(const std::string& level_file_name, bool save_uncompresse
     //      Write the metadata
     // ==========================
     nlohmann::json meta;
-    meta["colours"] = {};
-    meta["level_name"] = level_file_name;
+    meta["level_name"] = level_name;
     meta["version"] = version_;
     meta["size"] = json_dump.size();
     meta["saved_date"] = get_epoch();
-    for (auto& colour : colours_)
-    {
-        meta["colours"].push_back({colour.r, colour.g, colour.b, colour.a});
-    }
-    std::ofstream meta_file(make_meta_path(level_file_name));
-    meta_file << meta;
 
+    // Persistent data between saves
+    if (auto current_meta = get_metafile_content(level_name))
+    {
+        meta["created_date"] = (*current_meta)["created_date"];
+    }
+    else
+    {
+        meta["created_date"] = meta["saved_date"];
+    }
+
+    std::ofstream meta_file(make_meta_path(level_name));
+    meta_file << meta;
     json_["meta"] = meta;
 
     //==================================
@@ -199,7 +226,7 @@ bool LevelFileIO::save(const std::string& level_file_name, bool save_uncompresse
     // =================================
     if (save_uncompressed)
     {
-        std::ofstream basic_file(make_uncompressed_level_path(level_file_name.c_str()));
+        std::ofstream basic_file(make_uncompressed_level_path(level_name.c_str()));
         basic_file << json_;
     }
 
@@ -219,8 +246,6 @@ bool LevelFileIO::save(const std::string& level_file_name, bool save_uncompresse
 
 void LevelFileIO::serialise_texture(nlohmann::json& object, const TextureProp& prop)
 {
-    // object.push_back({prop.id, prop.colour.r, prop.colour.g, prop.colour.b,
-    // prop.colour.a});
     auto colour_index = find_colour_index(prop.colour);
     if (colour_index == -1)
     {
@@ -231,10 +256,6 @@ void LevelFileIO::serialise_texture(nlohmann::json& object, const TextureProp& p
 
 TextureProp LevelFileIO::deserialise_texture(const nlohmann::json& object) const
 {
-    // return {
-    //     .id = object[0],
-    //     .colour = {object[1], object[2], object[3], object[4]},
-    // };
     auto texture_id = object[0];
     auto colour_index = (int)object[1];
 
