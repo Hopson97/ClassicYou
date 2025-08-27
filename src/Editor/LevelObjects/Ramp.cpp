@@ -8,7 +8,6 @@
 #include "../LevelFileIO.h"
 
 bool operator==(const RampProps& lhs, const RampProps& rhs)
-
 {
     return lhs.texture_top.id == rhs.texture_top.id &&
            lhs.texture_bottom.id == rhs.texture_bottom.id && lhs.width == rhs.width &&
@@ -161,7 +160,7 @@ bool object_deserialise(RampObject& ramp, const nlohmann::json& json,
     {
         std::println("Invalid ramp parameters, expected 2 values");
     }
-    if (jprops.size() < 6)
+    if (jprops.size() < 8)
     {
         std::println("Invalid ramp properties, expected 8 values");
         return false;

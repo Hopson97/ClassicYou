@@ -283,10 +283,15 @@ platform_gui(const LevelTextures& textures, const PlatformObject& platform, Edit
     slider(result, "Width", new_props.width, 0.5f, 20.0f, 0.5f);
     slider(result, "Depth", new_props.depth, 0.5f, 20.0f, 0.5f);
 
-    // Multiplied by 2 when mesh is created
+    // Multiplied by "FLOOR_HEIGHT" when mesh is created
     slider(result, "Base Height", new_props.base, 0.0f, 0.9f, 0.1f);
 
-    enum_gui<PlatformStyle>(result, "Platform Style", new_props.style);
+    enum_gui<PlatformStyle>(result, "Style", new_props.style);
+
+    if (new_props.style == PlatformStyle::Triangle)
+    {
+        enum_gui<Direction>(result, "Direction", new_props.direction);
+    }
 
     if (edit_mode > EditMode::Legacy)
     {
