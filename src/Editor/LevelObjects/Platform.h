@@ -26,7 +26,7 @@ struct PlatformProps
     float base = 0.0f;
 
     PlatformStyle style = PlatformStyle::Quad;
-    Direction direction = Direction::Left;
+    Direction direction = Direction::Right;
 };
 
 using PlatformObject = ObjectType<PlatformProps, PlatformParameters>;

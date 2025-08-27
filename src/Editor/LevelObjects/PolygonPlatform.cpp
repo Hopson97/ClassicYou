@@ -4,7 +4,6 @@
 #include "../LevelFileIO.h"
 
 bool operator==(const PolygonPlatformProps& lhs, const PolygonPlatformProps& rhs)
-
 {
     return lhs.texture_top == rhs.texture_top && lhs.texture_bottom == rhs.texture_bottom &&
            lhs.visible == rhs.visible && lhs.base == rhs.base;

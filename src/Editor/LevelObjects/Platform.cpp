@@ -7,12 +7,10 @@
 #include "../LevelFileIO.h"
 
 bool operator==(const PlatformProps& lhs, const PlatformProps& rhs)
-
 {
     return lhs.texture_top == rhs.texture_top && lhs.texture_bottom == rhs.texture_bottom &&
            lhs.width == rhs.width && lhs.depth == rhs.depth && lhs.base == rhs.base &&
-           lhs.style == rhs.style;
-    // &&lhs.direction == rhs.direction;
+           lhs.style == rhs.style && lhs.direction == rhs.direction;
 }
 
 bool operator!=(const PlatformProps& lhs, const PlatformProps& rhs)
@@ -124,7 +122,8 @@ SerialiseResponse object_serialise(const PlatformObject& platform, LevelFileIO& 
     nlohmann::json json_props = {};
     level_file_io.serialise_texture(json_props, props.texture_top);
     level_file_io.serialise_texture(json_props, props.texture_bottom);
-    json_props.insert(json_props.end(), {props.width, props.depth, props.base, (int)props.style});
+    json_props.insert(json_props.end(), {props.width, props.depth, props.base, (int)props.style,
+                                         (int)props.direction});
 
     return {{json_params, json_props}, "platform"};
 }
@@ -140,9 +139,9 @@ bool object_deserialise(PlatformObject& platform, const nlohmann::json& json,
     {
         std::println("Invalid platform parameters, expected 2 values");
     }
-    if (jprops.size() < 6)
+    if (jprops.size() < 7)
     {
-        std::println("Invalid platform properties, expected 6 values");
+        std::println("Invalid platform properties, expected 7 values");
         return false;
     }
 
@@ -155,6 +154,7 @@ bool object_deserialise(PlatformObject& platform, const nlohmann::json& json,
     props.depth = jprops[3];
     props.base = jprops[4];
     props.style = (PlatformStyle)(jprops[5]);
+    props.direction = (Direction)(jprops[6]);
 
     return true;
 }
@@ -170,8 +170,8 @@ namespace
         float width = props.width;
         float depth = props.depth;
 
-        GLfloat texture_bottom = static_cast<float>(props.texture_bottom.id);
-        GLfloat texture_top = static_cast<float>(props.texture_top.id);
+        auto texture_bottom = static_cast<GLfloat>(props.texture_bottom.id);
+        auto texture_top = static_cast<GLfloat>(props.texture_top.id);
         auto colour_bottom = props.texture_bottom.colour;
         auto colour_top = props.texture_top.colour;
 
@@ -202,8 +202,8 @@ namespace
         float width = props.width;
         float depth = props.depth;
 
-        GLfloat texture_bottom = static_cast<float>(props.texture_bottom.id);
-        GLfloat texture_top = static_cast<float>(props.texture_top.id);
+        auto texture_bottom = static_cast<GLfloat>(props.texture_bottom.id);
+        auto texture_top = static_cast<GLfloat>(props.texture_top.id);
         auto colour_bottom = props.texture_bottom.colour;
         auto colour_top = props.texture_top.colour;
 
