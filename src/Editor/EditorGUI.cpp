@@ -206,7 +206,6 @@ namespace
 
 std::pair<PropGUIUpdateResult, WallProps> wall_gui(const LevelTextures& textures,
                                                    const WallObject& wall, EditMode edit_mode)
-
 {
     PropGUIUpdateResult result;
     auto new_props = wall.properties;
@@ -275,7 +274,6 @@ std::pair<PropGUIUpdateResult, WallProps> wall_gui(const LevelTextures& textures
 
 std::pair<PropGUIUpdateResult, PlatformProps>
 platform_gui(const LevelTextures& textures, const PlatformObject& platform, EditMode edit_mode)
-
 {
     PropGUIUpdateResult result;
     PlatformProps new_props = platform.properties;
