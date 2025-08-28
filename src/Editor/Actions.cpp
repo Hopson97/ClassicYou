@@ -18,7 +18,6 @@ void ActionManager::push_action(std::unique_ptr<Action> action, bool store_actio
     action->execute(*p_state_, *p_level_);
     if (store_action)
     {
-
         if (action_index_ < action_stack_.size())
         {
             action_stack_.resize(action_index_);

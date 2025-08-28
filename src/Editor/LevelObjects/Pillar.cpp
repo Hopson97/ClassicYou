@@ -106,7 +106,7 @@ SerialiseResponse object_serialise(const PillarObject& pillar, LevelFileIO& leve
     nlohmann::json json_props = {};
     level_file_io.serialise_texture(json_props, props.texture);
     json_props.insert(json_props.end(), {(int)props.style, props.size, props.base_height,
-                                         props.height, props.angled});
+                                         props.height, (int)props.angled});
 
     return {{json_params, json_props}, "pillar"};
 }
@@ -134,11 +134,11 @@ bool object_deserialise(PillarObject& pillar_object, const nlohmann::json& json,
     params.position *= TILE_SIZE_F;
 
     props.texture = level_file_io.deserialise_texture(jprops[0]);
-    props.style = (PillarStyle)(jprops[1]);
+    props.style = (PillarStyle)jprops[1];
     props.size = jprops[2];
     props.base_height = jprops[3];
     props.height = jprops[4];
-    props.angled = jprops[5];
+    props.angled = (int)jprops[5];
 
     return true;
 }
