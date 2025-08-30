@@ -72,14 +72,12 @@ namespace
 
     std::filesystem::path make_uncompressed_level_path(const std::string& level_name)
     {
-        return make_level_directory_path(level_name) /
-               std::string(level_name + level_name + ".cly.json");
+        return make_level_directory_path(level_name) / std::string(level_name + ".cly.json");
     }
 
     std::filesystem::path make_meta_path(const std::string& level_name)
     {
         return make_level_directory_path(level_name) / std::string(level_name + "_meta.json");
-        return "levels/" + level_name + "_meta.json";
     }
 
     std::optional<nlohmann::json> get_metafile_content(const std::string level_name)
