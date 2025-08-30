@@ -81,15 +81,17 @@ class ScreenEditGame final : public Screen
 
   private:
     Camera camera_;
+    Camera camera_2d_;
 
     gl::BufferObject matrices_ssbo_;
     gl::Shader scene_shader_;
+    gl::Shader drawing_pad_shader_;
     gl::Shader world_geometry_shader_;
     CameraKeybinds camera_keybinds_;
 
-    Mesh3D selection_mesh_ = generate_cube_mesh({0.1, 1.0f, 0.1});
+    CameraKeybinds keybinds_2d_;
 
-    DrawingPad drawing_pad_;
+    Mesh3D selection_mesh_ = generate_cube_mesh({0.1, 1.0f, 0.1});
 
     bool rotation_locked_ = true;
     Settings settings_;

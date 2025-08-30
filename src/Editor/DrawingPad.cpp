@@ -208,7 +208,7 @@ void DrawingPad::display(const Transform& camera_transform)
     {
         glLineWidth(thickness);
         mesh.update();
-        mesh.bind().draw_elements(GL_LINES);
+        mesh.bind().draw_elements(gl::PrimitiveType::Lines);
         mesh.vertices.clear();
         mesh.indices.clear();
     }
@@ -242,6 +242,6 @@ void DrawingPad::display(const Transform& camera_transform)
     grid_shader_.set_uniform("view_matrix", camera_.get_view_matrix());
     grid_shader_.set_uniform("camera_position", camera_.transform.position);
     glLineWidth(1);
-    grid_mesh_.sub_grid.bind().draw_elements(GL_LINES);
-    grid_mesh_.main_grid.bind().draw_elements(GL_LINES);
+    grid_mesh_.sub_grid.bind().draw_elements(gl::PrimitiveType::Lines);
+    grid_mesh_.main_grid.bind().draw_elements(gl::PrimitiveType::Lines);
 }

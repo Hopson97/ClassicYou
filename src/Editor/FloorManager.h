@@ -11,7 +11,7 @@ class LevelFileIO;
 /// Represents a single floor in a level.
 struct Floor
 {
-
+    template <typename MeshType>
     struct LevelMesh
     {
         /// Reference to the LevelObject's ID such that the mesh can be recreated if the object is
@@ -19,7 +19,9 @@ struct Floor
         ObjectId id;
 
         /// The mesh for the level object.
-        LevelObjectsMesh3D mesh;
+        MeshType mesh;
+
+        gl::PrimitiveType primitive = gl::PrimitiveType::Triangles;
     };
 
     Floor(int floor)
@@ -28,7 +30,8 @@ struct Floor
     }
 
     std::vector<LevelObject> objects;
-    std::vector<LevelMesh> meshes;
+    std::vector<LevelMesh<LevelObjectsMesh3D>> meshes;
+    std::vector<LevelMesh<Mesh2D>> meshes_2d;
     int real_floor = 0;
 };
 

@@ -153,7 +153,6 @@ bool object_deserialise(WallObject& wall, const nlohmann::json& json,
 
 LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number)
 {
-
     const auto& params = wall.parameters;
     const auto& props = wall.properties;
     // Begin

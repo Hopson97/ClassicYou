@@ -162,6 +162,34 @@ LevelObjectsMesh3D LevelObject::to_geometry(int floor_number) const
                       { return object_to_geometry(object, floor_number); }, object_type);
 }
 
+std::pair<Mesh2D, gl::PrimitiveType> LevelObject::to_2d_geometry(int floor_number) const
+{
+    Mesh2D mesh_2d;
+
+    // As the majority of objects are rendered using textured quads of varying sizes, there is only
+    // need to write special cases for some objects
+    if (auto wall = std::get_if<WallObject>(&object_type))
+    {
+        return {generate_line_mesh(wall->parameters.line.start, wall->parameters.line.end,
+                                   Colour::WHITE),
+                gl::PrimitiveType::Lines};
+    }
+    else if (auto platform = std::get_if<PlatformObject>(&object_type))
+    {
+    }
+    else if (auto poly = std::get_if<PolygonPlatformObject>(&object_type))
+    {
+    }
+    else if (auto pillar = std::get_if<PillarObject>(&object_type))
+    {
+    }
+    else if (auto ramp = std::get_if<RampObject>(&object_type))
+    {
+    }
+
+    return {generate_line_mesh({0, 0}, {1, 1}, Colour::WHITE), gl::PrimitiveType::Lines};
+}
+
 std::string LevelObject::to_string() const
 {
     return std::format("Type: {} - ID: {}\n{}", to_type_string(), object_id,

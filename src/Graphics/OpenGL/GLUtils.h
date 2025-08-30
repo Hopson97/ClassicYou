@@ -27,6 +27,16 @@ namespace gl
         Fill = GL_FILL
     };
 
+    enum class PrimitiveType
+    {
+        Points = GL_POINTS,
+        Lines = GL_LINES,
+        LineStrip = GL_LINE_STRIP,
+        Triangles = GL_TRIANGLES,
+        TriangleStrip = GL_TRIANGLE_STRIP,
+        TriangleFan = GL_TRIANGLE_FAN
+    };
+
     void enable_debugging();
 
     /**

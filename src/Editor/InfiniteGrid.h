@@ -17,3 +17,5 @@ class InfiniteGrid
     gl::Shader grid_shader_;
     gl::Shader scene_grid_shader_;
 };
+
+    

@@ -42,13 +42,13 @@ class EditorLevel
     void render(gl::Shader& scene_shader, const std::vector<ObjectId>& active_objects,
                 int current_floor, const glm::vec3& selected_offset);
 
-    // Render the scene to the pickder texture, using the object ID as the single-colour channel
-    void render_to_picker(gl::Shader& picker_shader, int current_floor);
-
-    /// Render the level in 2D using the given drawing pad, highlighting the active object.
+    /// Render the 2D view of the level using the given shader and highlight the active object.
     /// Assumes the camera, shader, and other OpenGL states are set up correctly.
-    void render_2d(DrawingPad& drawing_pad, const std::vector<ObjectId>& active_objects,
+    void render_2d(gl::Shader& scene_shader, const std::vector<ObjectId>& active_objects,
                    int current_floor, const glm::vec2& selected_offset);
+
+    // Render the scene to the picker texture, using the object ID as the single-colour channel
+    void render_to_picker(gl::Shader& picker_shader, int current_floor);
 
     /// Try to select a level object at the given tile position. Returns nullptr if no object is
     /// found.

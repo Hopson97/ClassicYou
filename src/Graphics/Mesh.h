@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "OpenGL/VertexArrayObject.h"
+#include "OpenGL/GLUtils.h"
 
 /**
  * @brief A vertex structure for 3D meshes
@@ -61,7 +62,7 @@ class Mesh
     bool buffer();
     bool update();
     const Mesh& bind() const;
-    void draw_elements(GLenum draw_mode = GL_TRIANGLES) const;
+    void draw_elements(gl::PrimitiveType primitive = gl::PrimitiveType::Triangles) const;
 
     gl::VertexArrayObject& vao()
     {
@@ -146,11 +147,11 @@ const Mesh<Vertex>& Mesh<Vertex>::bind() const
 }
 
 template <typename Vertex>
-void Mesh<Vertex>::draw_elements(GLenum draw_mode) const
+void Mesh<Vertex>::draw_elements(gl::PrimitiveType primitive) const
 {
     assert(indices_ > 0);
 
-    glDrawElements(draw_mode, indices_, GL_UNSIGNED_INT, nullptr);
+    glDrawElements(static_cast<GLenum>(primitive), indices_, GL_UNSIGNED_INT, nullptr);
 }
 
 /**
@@ -185,3 +186,5 @@ generate_cube_mesh_level(const glm::vec3& start, const glm::vec3& size, int text
 [[nodiscard]] Mesh3D generate_centered_cube_mesh(const glm::vec3& size);
 [[nodiscard]] Mesh3D generate_terrain_mesh(int size, int edgeVertices);
 [[nodiscard]] Mesh3D generate_grid_mesh(int width, int height);
+
+[[nodiscard]] Mesh2D generate_line_mesh(glm::vec2 from, glm::vec2 to, const glm::vec4& colour);

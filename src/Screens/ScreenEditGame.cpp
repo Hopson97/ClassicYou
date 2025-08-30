@@ -47,7 +47,18 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens)
           .far = 1000.0f,
           .fov = 90.0f,
       })
-    , drawing_pad_({window().getSize().x / 2, window().getSize().y}, editor_state_.node_hovered)
+    , camera_2d_(CameraConfig{
+          .type = CameraType::OrthographicScreen,
+          .viewport_size = {window().getSize().x / 2, window().getSize().y},
+          .near = 0.5f,
+          .far = 1000.0f,
+      })
+      , keybinds_2d_{
+          .forward = sf::Keyboard::Key::Down,
+          .left = sf::Keyboard::Key::Left,
+          .right = sf::Keyboard::Key::Right,
+          .back = sf::Keyboard::Key::Up,
+      }
     , action_manager_(editor_state_, level_)
     , object_move_handler_(level_, action_manager_)
     , copy_paste_handler_(level_, action_manager_)
@@ -64,7 +75,18 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens, std::string level_name)
           .far = 1000.0f,
           .fov = 90.0f,
       })
-    , drawing_pad_({window().getSize().x / 2, window().getSize().y}, editor_state_.node_hovered)
+    , camera_2d_(CameraConfig{
+          .type = CameraType::OrthographicScreen,
+          .viewport_size = {window().getSize().x / 2, window().getSize().y},
+          .near = 0.5f,
+          .far = 1000.0f,
+      })
+      , keybinds_2d_{
+          .forward = sf::Keyboard::Key::Down,
+          .left = sf::Keyboard::Key::Left,
+          .right = sf::Keyboard::Key::Right,
+          .back = sf::Keyboard::Key::Up,
+      }
     , action_manager_(editor_state_, level_)
     , object_move_handler_(level_, action_manager_)
     , copy_paste_handler_(level_, action_manager_)
@@ -78,10 +100,6 @@ bool ScreenEditGame::on_init()
 {
 
     tool_ = std::make_unique<CreateWallTool>();
-    if (!drawing_pad_.init())
-    {
-        return false;
-    }
 
     // -----------------------
     // ==== Load textures ====
@@ -134,6 +152,15 @@ bool ScreenEditGame::on_init()
         return false;
     }
     world_geometry_shader_.set_uniform("diffuse", 0);
+
+    if (!drawing_pad_shader_.load_stage("assets/shaders/Scene/Scene2DVertex.glsl",
+                                        gl::ShaderType::Vertex) ||
+        !drawing_pad_shader_.load_stage("assets/shaders/Scene/Scene2DFragment.glsl",
+                                        gl::ShaderType::Fragment) ||
+        !drawing_pad_shader_.link_shaders())
+    {
+        return false;
+    }
 
     // -------------------------------------------
     // ==== Set up the picker FBO and shader  ====
@@ -277,7 +304,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
     else if (auto mouse = event.getIf<sf::Event::MouseMoved>())
     {
         editor_state_.node_hovered =
-            map_pixel_to_tile({mouse->position.x, mouse->position.y}, drawing_pad_.get_camera());
+            map_pixel_to_tile({mouse->position.x, mouse->position.y}, camera_2d_);
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
@@ -294,8 +321,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
             editor_settings_.show_2d_view)
         {
             auto selection = level_.try_select(
-                map_pixel_to_tile({mouse->position.x, mouse->position.y},
-                                  drawing_pad_.get_camera()),
+                map_pixel_to_tile({mouse->position.x, mouse->position.y}, camera_2d_),
                 editor_state_.selection.p_active_object, editor_state_.current_floor);
 
             if (selection)
@@ -367,7 +393,7 @@ void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
         return;
     }
     free_camera_controller(keyboard, camera_, dt, camera_keybinds_, window(), rotation_locked_);
-    drawing_pad_.update(keyboard, dt);
+    free_camera_controller_2d(keyboard, camera_2d_, dt, keybinds_2d_);
 
     if (editor_settings_.always_center_2d_to_3d_view)
     {
@@ -390,21 +416,31 @@ void ScreenEditGame::on_render(bool show_debug)
     //=============================================
     if (editor_settings_.show_2d_view)
     {
+        // For 2D rendering, depth testing is not required
+        gl::disable(gl::Capability::CullFace);
+        gl::cull_face(gl::Face::Back);
+
+        // Update the shaders
+        drawing_pad_shader_.bind();
+        drawing_pad_shader_.set_uniform("projection_matrix", camera_2d_.get_projection_matrix());
+        drawing_pad_shader_.set_uniform("view_matrix", camera_2d_.get_view_matrix());
+        drawing_pad_shader_.set_uniform("model_matrix", create_model_matrix({}));
+        drawing_pad_shader_.set_uniform("use_texture", false);
+
         glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
 
         if (tool_->get_tool_type() == ToolType::UpdateWall || !ImGui::GetIO().WantCaptureMouse)
         {
             if (!object_move_handler_.is_moving_objects())
             {
-                tool_->render_preview_2d(drawing_pad_, editor_state_);
+                // tool_->render_preview_2d(drawing_pad_, editor_state_);
             }
         }
-
-        level_.render_2d(drawing_pad_, editor_state_.selection.objects, editor_state_.current_floor,
-                         object_move_handler_.get_move_offset());
+        level_.render_2d(drawing_pad_shader_, editor_state_.selection.objects,
+                         editor_state_.current_floor, object_move_handler_.get_move_offset());
 
         // Finalise 2d rendering
-        drawing_pad_.display(camera_.transform);
+        // drawing_pad_.display(camera_.transform);
 
         // When showing the 2D view, the 3D view is half width
         glViewport(window().getSize().x / 2, 0, window().getSize().x / 2, window().getSize().y);
@@ -418,11 +454,10 @@ void ScreenEditGame::on_render(bool show_debug)
     //=============================================
     //      Render the 3D View
     // ============================================
+    scene_shader_.bind();
     // Update the shader buffers
     matrices_ssbo_.buffer_sub_data(0, camera_.get_projection_matrix());
     matrices_ssbo_.buffer_sub_data(sizeof(glm::mat4), camera_.get_view_matrix());
-
-    scene_shader_.bind();
 
     // Set up the capabilities/ render states
     gl::enable(gl::Capability::DepthTest);
@@ -652,7 +687,7 @@ void ScreenEditGame::display_editor_gui()
             set_2d_to_3d_view();
         }
         ImGui::Separator();
-        drawing_pad_.camera_gui();
+        // drawing_pad_.camera_gui();
         ImGui::Separator();
 
         ImGuiExtras::EnumSelect(
@@ -819,10 +854,12 @@ bool ScreenEditGame::showing_dialog() const
 
 void ScreenEditGame::set_2d_to_3d_view()
 {
-    drawing_pad_.set_camera_position({
-        camera_.transform.position.x * TILE_SIZE,
-        camera_.transform.position.z * TILE_SIZE,
-    });
+    const auto& viewport = camera_.get_config().viewport_size;
+    camera_2d_.transform.position = {
+        camera_.transform.position.x * TILE_SIZE - viewport.x / 2,
+        camera_.transform.position.z * TILE_SIZE - viewport.y / 2,
+        camera_.transform.position.z,
+    };
 }
 
 void ScreenEditGame::try_set_tool_to_create_wall()
