@@ -5,7 +5,6 @@
 
 #include "../Graphics/OpenGL/GLUtils.h"
 #include "EditConstants.h"
-#include "InfiniteGrid.h"
 
 namespace
 {

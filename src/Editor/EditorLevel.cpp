@@ -218,6 +218,7 @@ void EditorLevel::render_2d(gl::Shader& scene_shader, const std::vector<ObjectId
     }
 
     // Render the selected objects
+    glLineWidth(3);
     scene_shader.set_uniform("below", false);
     scene_shader.set_uniform("selected", true);
     scene_shader.set_uniform(
@@ -226,6 +227,7 @@ void EditorLevel::render_2d(gl::Shader& scene_shader, const std::vector<ObjectId
     render_group(p_active);
 
     // Render objects on the current floor
+    glLineWidth(2);
     scene_shader.set_uniform("model_matrix", create_model_matrix({}));
     scene_shader.set_uniform("selected", false);
     render_group(p_current);

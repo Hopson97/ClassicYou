@@ -211,6 +211,11 @@ bool ScreenEditGame::on_init()
         return false;
     }
 
+    if (!grid_2d_.init())
+    {
+        return false;
+    }
+
     return true;
 }
 
@@ -416,6 +421,8 @@ void ScreenEditGame::on_render(bool show_debug)
     //=============================================
     if (editor_settings_.show_2d_view)
     {
+        glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
+
         // For 2D rendering, depth testing is not required
         gl::disable(gl::Capability::CullFace);
         gl::cull_face(gl::Face::Back);
@@ -427,8 +434,7 @@ void ScreenEditGame::on_render(bool show_debug)
         drawing_pad_shader_.set_uniform("model_matrix", create_model_matrix({}));
         drawing_pad_shader_.set_uniform("use_texture", false);
 
-        glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
-
+        // Render the tool preview
         if (tool_->get_tool_type() == ToolType::UpdateWall || !ImGui::GetIO().WantCaptureMouse)
         {
             if (!object_move_handler_.is_moving_objects())
@@ -436,8 +442,13 @@ void ScreenEditGame::on_render(bool show_debug)
                 // tool_->render_preview_2d(drawing_pad_, editor_state_);
             }
         }
+
+        // Render level
         level_.render_2d(drawing_pad_shader_, editor_state_.selection.objects,
                          editor_state_.current_floor, object_move_handler_.get_move_offset());
+
+        // ...and then the grid
+        grid_2d_.render(camera_2d_);
 
         // Finalise 2d rendering
         // drawing_pad_.display(camera_.transform);
@@ -755,7 +766,6 @@ void ScreenEditGame::display_save_as_gui()
     // clang-format off
     if (ImGuiExtras::BeginCentredWindow("Save As...", {300, 200}))
     {
-
         bool bad_file_name = level_name_.starts_with(INTERNAL_FILE_ID);
         bool can_save = !level_name_.empty() && !bad_file_name;
 
@@ -763,9 +773,7 @@ void ScreenEditGame::display_save_as_gui()
         {
             ImGui::Text("Level names cannot start with '%s'", INTERNAL_FILE_ID.c_str());
         }
-
         ImGui::InputText("Level Name", &level_name_);
-
         // Only enable the save button if a name is actually set
         if (!can_save)                  { ImGui::BeginDisabled();    } 
         if (ImGui::Button("Save Game")) { save_level();              }
@@ -854,7 +862,7 @@ bool ScreenEditGame::showing_dialog() const
 
 void ScreenEditGame::set_2d_to_3d_view()
 {
-    const auto& viewport = camera_.get_config().viewport_size;
+    const auto& viewport = camera_2d_.get_config().viewport_size;
     camera_2d_.transform.position = {
         camera_.transform.position.x * TILE_SIZE - viewport.x / 2,
         camera_.transform.position.z * TILE_SIZE - viewport.y / 2,

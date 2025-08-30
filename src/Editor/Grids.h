@@ -3,6 +3,8 @@
 #include "../Graphics/Mesh.h"
 #include "../Graphics/OpenGL/Shader.h"
 
+struct Camera;
+
 /// For the infinite grid in the editor.
 class InfiniteGrid
 {
@@ -18,4 +20,21 @@ class InfiniteGrid
     gl::Shader scene_grid_shader_;
 };
 
-    
+/// For the 2D grid
+class Grid2D
+{
+  public:
+    bool init();
+
+    void render(const Camera& camera);
+
+  private:
+    gl::Shader grid_shader_;
+    std::unordered_map<GLfloat, Mesh2D> line_meshes_;
+
+    struct GridMesh
+    {
+        Mesh2D sub_grid;
+        Mesh2D main_grid;
+    } grid_mesh_;
+};
