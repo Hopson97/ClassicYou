@@ -7,9 +7,9 @@
 #include "../Util/Maths.h"
 #include "../Util/Util.h"
 #include "DrawingPad.h"
-#include "LevelFileIO.h"
 #include "EditConstants.h"
 #include "EditorGUI.h"
+#include "LevelFileIO.h"
 
 EditorLevel::EditorLevel()
 {
@@ -30,17 +30,27 @@ LevelObject& EditorLevel::add_object(const LevelObject& object, int floor_number
 
 LevelObject& EditorLevel::add_object(const LevelObject& object, Floor& floor)
 {
+    changes_made_since_last_save_ = true;
+
     LevelObject new_object = object;
     new_object.object_id = current_id_++;
 
+    // Add the 3D mesh
     Floor::LevelMesh level_mesh = {
         .id = new_object.object_id,
         .mesh = object.to_geometry(floor.real_floor),
     };
     level_mesh.mesh.update();
     floor.meshes.push_back(std::move(level_mesh));
-    changes_made_since_last_save_ = true;
 
+    // Add the 2D mesh
+    auto [mesh, primitive] = object.to_2d_geometry(floor.real_floor);
+    Floor::LevelMesh level_mesh_2d = {
+        .id = new_object.object_id, .mesh = std::move(mesh), .primitive = primitive};
+    level_mesh_2d.mesh.update();
+    floor.meshes_2d.push_back(std::move(level_mesh_2d));
+
+    // Return the new object
     return floor.objects.emplace_back(new_object);
 }
 
@@ -50,10 +60,19 @@ void EditorLevel::update_object(const LevelObject& object, int floor_number)
     {
         for (auto& mesh : floor.meshes)
         {
-
             if (mesh.id == object.object_id)
             {
                 mesh.mesh = object.to_geometry(floor.real_floor);
+                mesh.mesh.update();
+                break;
+            }
+        }
+
+        for (auto& mesh : floor.meshes_2d)
+        {
+            if (mesh.id == object.object_id)
+            {
+                mesh.mesh = object.to_2d_geometry(floor.real_floor).first;
                 mesh.mesh.update();
                 break;
             }
@@ -77,6 +96,7 @@ void EditorLevel::remove_object(ObjectId id)
     for (auto& floor : floors_manager_.floors)
     {
         std::erase_if(floor.meshes, [id](const auto& mesh) { return mesh.id == id; });
+        std::erase_if(floor.meshes_2d, [id](const auto& mesh) { return mesh.id == id; });
         std::erase_if(floor.objects, [id](const auto& object) { return object.object_id == id; });
     }
     changes_made_since_last_save_ = true;
@@ -150,6 +170,71 @@ void EditorLevel::render(gl::Shader& scene_shader, const std::vector<ObjectId>& 
     scene_shader.set_uniform("selected", false);
 }
 
+void EditorLevel::render_2d(gl::Shader& scene_shader, const std::vector<ObjectId>& active_objects,
+                            int current_floor, const glm::vec2& selected_offset)
+{
+    auto render_group = [&](const std::vector<Floor::LevelMesh<Mesh2D>*>& group)
+    {
+        for (auto object : group)
+        {
+            object->mesh.bind().draw_elements(object->primitive);
+        }
+    };
+
+    // Sort the objects into groups
+    std::vector<Floor::LevelMesh<Mesh2D>*> p_active;
+    std::vector<Floor::LevelMesh<Mesh2D>*> p_below;
+    std::vector<Floor::LevelMesh<Mesh2D>*> p_current;
+
+    for (auto& floor : floors_manager_.floors)
+    {
+        // Render floors only from the current floor and below
+        if (floor.real_floor == current_floor - 1)
+        {
+            for (auto& object : floor.meshes_2d)
+            {
+                p_below.push_back(&object);
+            }
+        }
+        else if (floor.real_floor == current_floor)
+        {
+            for (auto& object : floor.meshes_2d)
+            {
+                if (!object.mesh.has_buffered())
+                {
+                    continue;
+                }
+
+                if (contains(active_objects, object.id))
+                {
+                    p_active.push_back(&object);
+                }
+                else
+                {
+                    p_current.push_back(&object);
+                }
+            }
+        }
+    }
+
+    // Render the selected objects
+    scene_shader.set_uniform("below", false);
+    scene_shader.set_uniform("selected", true);
+    scene_shader.set_uniform(
+        "model_matrix",
+        create_model_matrix({.position = {selected_offset.x, selected_offset.y, 0}}));
+    render_group(p_active);
+
+    // Render objects on the current floor
+    scene_shader.set_uniform("model_matrix", create_model_matrix({}));
+    scene_shader.set_uniform("selected", false);
+    render_group(p_current);
+
+    // Render the objects on the floor below
+    scene_shader.set_uniform("below", true);
+    render_group(p_below);
+}
+
 void EditorLevel::render_to_picker(gl::Shader& picker_shader, int current_floor)
 {
     for (auto& floor : floors_manager_.floors)
@@ -165,80 +250,6 @@ void EditorLevel::render_to_picker(gl::Shader& picker_shader, int current_floor)
             object.mesh.bind().draw_elements();
         }
     }
-}
-
-void EditorLevel::render_2d(DrawingPad& drawing_pad, const std::vector<ObjectId>& active_objects,
-                            int current_floor, const glm::vec2& selected_offset)
-{
-    // Group lower floor objects to ensure it is always rendered under current floor objects
-    // and ensuring selected objects always render on-top
-    static std::vector<const LevelObject*> below_group;
-    static std::vector<const LevelObject*> below_group_selected;
-    static std::vector<const LevelObject*> current_floor_group;
-    static std::vector<const LevelObject*> current_floor_group_selected;
-    below_group.clear();
-    below_group_selected.clear();
-    current_floor_group.clear();
-    current_floor_group_selected.clear();
-
-    // Render a group of objects, controlling the clour. Objects not on the current floor are
-    // renderd using a greyed-out colour
-    auto draw_group = [&](const std::vector<const LevelObject*>& group, bool is_current_floor,
-                          bool is_selected_objects_group)
-    {
-        for (auto object : group)
-        {
-            auto offset = is_selected_objects_group ? selected_offset : glm::vec2{0};
-            object->render_2d(drawing_pad, is_current_floor, is_selected_objects_group, offset);
-        }
-    };
-
-    // Sort a floor of objects to determine if they are selected or not.
-    auto sort_to_groups = [&](const std::vector<LevelObject>& objects,
-                              std::vector<const LevelObject*>& not_selected,
-                              std::vector<const LevelObject*>& selected)
-    {
-        for (auto& object : objects)
-        {
-            if (contains(active_objects, object.object_id))
-            {
-                selected.push_back(&object);
-            }
-            else
-            {
-                not_selected.push_back(&object);
-            }
-        }
-    };
-
-    for (auto& floor : floors_manager_.floors)
-    {
-        // Only render the current floor and the floor below
-        if (floor.real_floor == current_floor)
-        {
-            sort_to_groups(floor.objects, current_floor_group, current_floor_group_selected);
-        }
-        else if (current_floor == floor.real_floor + 1)
-        {
-            sort_to_groups(floor.objects, below_group, below_group_selected);
-        }
-    }
-
-    // In 2D, objects rendered first are rendered ontop of objects rendered after.
-    // So the drawing order is:
-    //  1. Current floor selected objects
-    //  2. Current floor NON selected objects
-    //  3. Below floor NON selected objects
-    //  4. Below floor NON selected objects
-
-    // The current floor is rendered using a white colour
-    draw_group(current_floor_group_selected, true, true);
-    draw_group(current_floor_group, true, false);
-
-    // The floor below is rendered using a greyish colour is used to make it obvious it is the floor
-    // below
-    draw_group(below_group_selected, false, true);
-    draw_group(below_group, false, false);
 }
 
 LevelObject* EditorLevel::try_select(glm::vec2 selection_tile, const LevelObject* p_active_object,

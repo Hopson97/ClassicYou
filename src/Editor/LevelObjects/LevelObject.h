@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 
 #include "../../Graphics/Mesh.h"
+#include "../../Graphics/OpenGL/GLUtils.h"
 #include "../EditConstants.h"
 #include "ObjectTypes.h"
 
@@ -53,6 +54,9 @@ struct LevelObject
 
     /// Converts the object to a 3D mesh for rendering.
     [[nodiscard]] LevelObjectsMesh3D to_geometry(int floor_number) const;
+
+    /// Converts the object to a 2D mesh for rendering.
+    [[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType> to_2d_geometry(int floor_number) const;
 
     /// Converts the object to a string representation.
     [[nodiscard]] std::string to_string() const;

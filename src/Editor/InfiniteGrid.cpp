@@ -53,6 +53,6 @@ void InfiniteGrid::render(const glm::vec3& camera_position, int current_floor)
         scene_grid_shader_.bind();
         scene_grid_shader_.set_uniform("camera_position", camera_position);
         scene_grid_shader_.set_uniform("floor_number", current_floor);
-        grid_mesh_.bind().draw_elements(GL_LINES);
+        grid_mesh_.bind().draw_elements(gl::PrimitiveType::Lines);
     }
 }

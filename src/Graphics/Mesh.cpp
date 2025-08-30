@@ -288,3 +288,16 @@ Mesh3D generate_grid_mesh(int width, int height)
 
     return mesh;
 }
+
+Mesh2D generate_line_mesh(glm::vec2 from, glm::vec2 to, const glm::vec4& colour)
+{
+    Mesh2D mesh;
+
+    mesh.vertices.push_back(Vertex2D{.position = from, .colour = colour});
+    mesh.vertices.push_back(Vertex2D{.position = to, .colour = colour});
+
+    mesh.indices.push_back(static_cast<GLuint>(0));
+    mesh.indices.push_back(static_cast<GLuint>(1));
+
+    return mesh;
+}
