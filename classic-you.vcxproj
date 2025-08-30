@@ -166,7 +166,7 @@
     <ClCompile Include="src\Editor\EditorLevel.cpp" />
     <ClCompile Include="src\Editor\EditorState.cpp" />
     <ClCompile Include="src\Editor\FloorManager.cpp" />
-    <ClCompile Include="src\Editor\InfiniteGrid.cpp" />
+    <ClCompile Include="src\Editor\Grids.cpp" />
     <ClCompile Include="src\Editor\LegacyFileConverter.cpp" />
     <ClCompile Include="src\Editor\LevelFileIO.cpp" />
     <ClCompile Include="src\Editor\LevelObjects\LevelObject.cpp" />
@@ -254,7 +254,7 @@
     <ClInclude Include="src\Editor\LevelObjects\LevelObject.h" />
     <ClInclude Include="src\Graphics\CameraController.h" />
     <ClInclude Include="src\Graphics\Camera.h" />
-    <ClInclude Include="src\Editor\InfiniteGrid.h" />
+    <ClInclude Include="src\Editor\Grids.h" />
     <ClInclude Include="src\Graphics\ShadowMap.h" />
     <ClInclude Include="src\Graphics\Model.h" />
     <ClInclude Include="src\Graphics\OpenGL\BufferObject.h" />

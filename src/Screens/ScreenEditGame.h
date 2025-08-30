@@ -6,7 +6,7 @@
 #include "../Editor/EditorEventHandlers.h"
 #include "../Editor/EditorLevel.h"
 #include "../Editor/EditorState.h"
-#include "../Editor/InfiniteGrid.h"
+#include "../Editor/Grids.h"
 #include "../Editor/LevelFileIO.h"
 #include "../Editor/LevelTextures.h"
 #include "../Editor/Tool.h"
@@ -98,6 +98,7 @@ class ScreenEditGame final : public Screen
 
     /// Grid Mesh
     InfiniteGrid grid_;
+    Grid2D grid_2d_;
 
     /// State of the editor such as the currently selected object and defaults
     EditorState editor_state_;
