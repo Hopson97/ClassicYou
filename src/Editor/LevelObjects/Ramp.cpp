@@ -23,14 +23,12 @@ bool operator!=(const RampProps& lhs, const RampProps& rhs)
 
 template <>
 LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
-
 {
     return generate_ramp_mesh(ramp, floor_number);
 }
 
 template <>
 std::string object_to_string(const RampObject& ramp)
-
 {
     auto& params = ramp.parameters;
     auto& props = ramp.properties;
@@ -47,7 +45,6 @@ std::string object_to_string(const RampObject& ramp)
 template <>
 void render_object_2d(const RampObject& ramp, DrawingPad& drawing_pad, const glm::vec4& colour,
                       const glm::vec2& selected_offset)
-
 {
     const auto& position = ramp.parameters.position + selected_offset;
     const auto& width = ramp.properties.width * TILE_SIZE;
@@ -65,7 +62,6 @@ void render_object_2d(const RampObject& ramp, DrawingPad& drawing_pad, const glm
 
 template <>
 [[nodiscard]] bool object_try_select_2d(const RampObject& ramp, glm::vec2 selection_tile)
-
 {
     const auto& params = ramp.parameters;
     const auto& props = ramp.properties;
@@ -156,11 +152,11 @@ bool object_deserialise(RampObject& ramp, const nlohmann::json& json,
     auto& props = ramp.properties;
     auto jparams = json[0];
     auto jprops = json[1];
-    if (jparams.size() < 2)
+    if (jparams.size() != 2)
     {
         std::println("Invalid ramp parameters, expected 2 values");
     }
-    if (jprops.size() < 8)
+    if (jprops.size() != 8)
     {
         std::println("Invalid ramp properties, expected 8 values");
         return false;

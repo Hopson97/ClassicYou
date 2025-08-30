@@ -16,14 +16,12 @@ bool operator!=(const PolygonPlatformProps& lhs, const PolygonPlatformProps& rhs
 
 template <>
 LevelObjectsMesh3D object_to_geometry(const PolygonPlatformObject& poly, int floor_number)
-
 {
     return generate_polygon_platform_mesh(poly, floor_number);
 }
 
 template <>
 std::string object_to_string(const PolygonPlatformObject& poly)
-
 {
     auto& params = poly.parameters;
     auto& props = poly.properties;
@@ -41,7 +39,6 @@ std::string object_to_string(const PolygonPlatformObject& poly)
 template <>
 void render_object_2d(const PolygonPlatformObject& poly, DrawingPad& drawing_pad,
                       const glm::vec4& colour, const glm::vec2& selected_offset)
-
 {
     const auto& params = poly.parameters;
     auto tl = selected_offset + params.corner_top_left;
@@ -106,7 +103,6 @@ template <>
 
 template <>
 [[nodiscard]] bool object_try_select_2d(const PolygonPlatformObject& poly, glm::vec2 selection_tile)
-
 {
     const auto& params = poly.parameters;
 
@@ -117,8 +113,7 @@ template <>
 }
 
 template <>
-SerialiseResponse object_serialise(const PolygonPlatformObject& poly,
-                                   LevelFileIO& level_file_io)
+SerialiseResponse object_serialise(const PolygonPlatformObject& poly, LevelFileIO& level_file_io)
 {
     auto& params = poly.parameters;
     auto& props = poly.properties;
@@ -127,7 +122,8 @@ SerialiseResponse object_serialise(const PolygonPlatformObject& poly,
         params.corner_top_left.x / TILE_SIZE_F,     params.corner_top_left.y / TILE_SIZE_F,
         params.corner_top_right.x / TILE_SIZE_F,    params.corner_top_right.y / TILE_SIZE_F,
         params.corner_bottom_right.x / TILE_SIZE_F, params.corner_bottom_right.y / TILE_SIZE_F,
-        params.corner_bottom_left.x / TILE_SIZE_F,  params.corner_bottom_left.y / TILE_SIZE_F};
+        params.corner_bottom_left.x / TILE_SIZE_F,  params.corner_bottom_left.y / TILE_SIZE_F,
+    };
 
     nlohmann::json json_props = {};
     level_file_io.serialise_texture(json_props, props.texture_top);
@@ -145,12 +141,12 @@ bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json,
 
     auto jparams = json[0];
     auto jprops = json[1];
-    if (jparams.size() < 8)
+    if (jparams.size() != 8)
     {
         std::println("Invalid polygon_platform parameters, expected 8 values");
         return false;
     }
-    if (jprops.size() < 4)
+    if (jprops.size() != 4)
     {
         std::println("Invalid polygon_platform properties, expected 4 values");
         return false;

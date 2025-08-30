@@ -20,14 +20,12 @@ bool operator!=(const PlatformProps& lhs, const PlatformProps& rhs)
 
 template <>
 LevelObjectsMesh3D object_to_geometry(const PlatformObject& platform, int floor_number)
-
 {
     return generate_platform_mesh(platform, floor_number);
 }
 
 template <>
 std::string object_to_string(const PlatformObject& platform)
-
 {
     auto& params = platform.parameters;
     auto& props = platform.properties;
@@ -43,7 +41,6 @@ std::string object_to_string(const PlatformObject& platform)
 template <>
 void render_object_2d(const PlatformObject& platform, DrawingPad& drawing_pad,
                       const glm::vec4& colour, const glm::vec2& selected_offset)
-
 {
     const auto& position = platform.parameters.position + selected_offset;
     const auto& width = platform.properties.width * TILE_SIZE;
@@ -63,7 +60,6 @@ void render_object_2d(const PlatformObject& platform, DrawingPad& drawing_pad,
 
 template <>
 [[nodiscard]] bool object_try_select_2d(const PlatformObject& platform, glm::vec2 selection_tile)
-
 {
     const auto& params = platform.parameters;
     const auto& props = platform.properties;
@@ -135,11 +131,11 @@ bool object_deserialise(PlatformObject& platform, const nlohmann::json& json,
     auto& props = platform.properties;
     auto jparams = json[0];
     auto jprops = json[1];
-    if (jparams.size() < 2)
+    if (jparams.size() != 2)
     {
         std::println("Invalid platform parameters, expected 2 values");
     }
-    if (jprops.size() < 7)
+    if (jprops.size() != 7)
     {
         std::println("Invalid platform properties, expected 7 values");
         return false;
@@ -265,6 +261,5 @@ LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform, int fl
                         // Back
                         6, 5, 4, 4, 7, 6};
     }
-
     return mesh;
 }

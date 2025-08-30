@@ -15,14 +15,12 @@
 
 namespace
 {
-
     template <typename T>
     bool property_gui(GUIFunction<T> function, const LevelTextures& textures,
                       ActionManager& action_manager, const T& object, LevelObject& current,
                       typename T::PropertiesType& object_default, int current_floor,
                       EditMode edit_mode)
     {
-
         // Caching the object is a work-around due to an ImGui limitation that when the mouse is
         // held on a slider element, it will continuously trigger that input, returning true. This
         // means that when the object gets updated, it creates many events - even if nothing has
@@ -36,7 +34,6 @@ namespace
         //
         // So by caching the object the first time the slider is clicked, it means the correct
         // history can be stored, meaning undo/redo functionality actually works.
-
         static auto cached_object = current;
 
         // Was the last update one where the mouse was released - storing it in the
@@ -187,7 +184,6 @@ void LevelObject::render_2d(DrawingPad& drawing_pad, bool is_current_floor, bool
             colour.r = 1.0f;
         }
     }
-
     std::visit([&](auto&& object)
                { render_object_2d(object, drawing_pad, colour, selected_offset); }, object_type);
 }

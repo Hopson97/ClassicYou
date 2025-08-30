@@ -27,14 +27,12 @@ bool operator!=(const WallProps& lhs, const WallProps& rhs)
 
 template <>
 LevelObjectsMesh3D object_to_geometry(const WallObject& wall, int floor_number)
-
 {
     return generate_wall_mesh(wall, floor_number);
 }
 
 template <>
 std::string object_to_string(const WallObject& wall)
-
 {
     auto& params = wall.parameters;
     auto& props = wall.properties;
@@ -50,7 +48,6 @@ std::string object_to_string(const WallObject& wall)
 template <>
 void render_object_2d(const WallObject& wall, DrawingPad& drawing_pad, const glm::vec4& colour,
                       const glm::vec2& selected_offset)
-
 {
     drawing_pad.render_line(wall.parameters.line.start + selected_offset,
                             wall.parameters.line.end + selected_offset, colour, 2.0f);
@@ -127,12 +124,12 @@ bool object_deserialise(WallObject& wall, const nlohmann::json& json,
 
     auto jparams = json[0];
     auto jprops = json[1];
-    if (jparams.size() < 4)
+    if (jparams.size() != 4)
     {
         std::println("Invalid wall parameters, expected 4 values");
         return false;
     }
-    if (jprops.size() < 7)
+    if (jprops.size() != 7)
     {
         std::println("Invalid wall properties, expected 7 values");
         return false;

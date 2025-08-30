@@ -35,10 +35,12 @@ namespace
             move += right_vector(camera.transform.rotation);
         }
 
+        move *= 4.0f;
+
         // Speed up when left shift is held
         if (keyboard.is_key_down(sf::Keyboard::Key::LShift))
         {
-            move *= 20.0f;
+            move *= 4.0f;
         }
 
         return move;

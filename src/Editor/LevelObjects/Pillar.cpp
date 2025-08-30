@@ -7,7 +7,6 @@
 #include "../LevelFileIO.h"
 
 bool operator==(const PillarProps& lhs, const PillarProps& rhs)
-
 {
     return lhs.texture == rhs.texture && lhs.style == rhs.style && lhs.size == rhs.size &&
            lhs.base_height == rhs.base_height && lhs.height == rhs.height &&
@@ -21,14 +20,12 @@ bool operator!=(const PillarProps& lhs, const PillarProps& rhs)
 
 template <>
 LevelObjectsMesh3D object_to_geometry(const PillarObject& pillar, int floor_number)
-
 {
     return generate_pillar_mesh(pillar, floor_number);
 }
 
 template <>
 std::string object_to_string(const PillarObject& pillar)
-
 {
     auto& params = pillar.parameters;
     auto& props = pillar.properties;
@@ -44,7 +41,6 @@ std::string object_to_string(const PillarObject& pillar)
 template <>
 void render_object_2d(const PillarObject& pillar, DrawingPad& drawing_pad, const glm::vec4& colour,
                       const glm::vec2& selected_offset)
-
 {
     const auto& position = pillar.parameters.position;
     const auto& size = pillar.properties.size * TILE_SIZE;
@@ -56,7 +52,6 @@ void render_object_2d(const PillarObject& pillar, DrawingPad& drawing_pad, const
 
 template <>
 [[nodiscard]] bool object_try_select_2d(const PillarObject& pillar, glm::vec2 selection_tile)
-
 {
     const auto& params = pillar.parameters;
     const auto& props = pillar.properties;
@@ -119,12 +114,12 @@ bool object_deserialise(PillarObject& pillar_object, const nlohmann::json& json,
 
     auto jparams = json[0];
     auto jprops = json[1];
-    if (jparams.size() < 2)
+    if (jparams.size() != 2)
     {
         std::println("Invalid pillar parameters, expected 2 values");
         return false;
     }
-    if (jprops.size() < 6)
+    if (jprops.size() != 6)
     {
         std::println("Invalid pillar properties, expected 6 values");
         return false;
@@ -154,8 +149,6 @@ LevelObjectsMesh3D generate_pillar_mesh(const PillarObject& platform, int floor_
     auto size = props.size;
     auto ob = props.base_height * FLOOR_HEIGHT;
     auto h = ob + props.height * FLOOR_HEIGHT;
-
-    // auto h = std::min(ob + props.height * FLOOR_HEIGHT, FLOOR_HEIGHT);
 
     ob += floor_number * FLOOR_HEIGHT;
     h += floor_number * FLOOR_HEIGHT;
