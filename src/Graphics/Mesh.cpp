@@ -5,6 +5,7 @@
 #include <SFML/Graphics/Image.hpp>
 
 #include "../Editor/EditConstants.h"
+#include "../Editor/LevelObjects/LevelObjectTypes.h"
 
 namespace
 {
@@ -289,15 +290,36 @@ Mesh3D generate_grid_mesh(int width, int height)
     return mesh;
 }
 
-Mesh2D generate_line_mesh(glm::vec2 from, glm::vec2 to, const glm::vec4& colour)
+Mesh2D generate_line_mesh(glm::vec2 from, glm::vec2 to)
 {
     Mesh2D mesh;
 
-    mesh.vertices.push_back(Vertex2D{.position = from, .colour = colour});
-    mesh.vertices.push_back(Vertex2D{.position = to, .colour = colour});
+    mesh.vertices.push_back(Vertex2D{.position = from});
+    mesh.vertices.push_back(Vertex2D{.position = to});
 
     mesh.indices.push_back(static_cast<GLuint>(0));
     mesh.indices.push_back(static_cast<GLuint>(1));
+
+    return mesh;
+}
+
+Mesh2D generate_2d_quad_mesh(glm::vec2 position, glm::vec2 size, float texture, Direction direction)
+{
+    Mesh2D mesh;
+
+    auto& p = position;
+    auto& s = size;
+
+    // clang-format off
+    mesh.vertices = {
+        {.position = {p.x,       p.y        }, .texture_coord = {0.0f, 0.0f, texture}, .colour = {1, 1, 1, 0.9}},
+        {.position = {p.x,       p.y + s.y  }, .texture_coord = {0.0f, 1.0f, texture}, .colour = {1, 1, 1, 0.9}},
+        {.position = {p.x + s.x, p.y + s.y  }, .texture_coord = {1.0f, 1.0f, texture}, .colour = {1, 1, 1, 0.9}},
+        {.position = {p.x + s.x, p.y        }, .texture_coord = {1.0f, 0.0f, texture}, .colour = {1, 1, 1, 0.9}},
+    };
+    // clang-format on
+
+    mesh.indices = {0, 1, 2, 2, 3, 0};
 
     return mesh;
 }

@@ -2,6 +2,7 @@
 
 #include "../DrawingPad.h"
 #include "LevelObjectTypes.h"
+#include "LevelObjectBase.h"
 
 // =======================================
 //      Wall Object Types

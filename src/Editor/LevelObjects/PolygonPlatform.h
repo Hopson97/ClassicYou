@@ -2,6 +2,7 @@
 
 #include "../EditConstants.h"
 #include "LevelObjectTypes.h"
+#include "LevelObjectBase.h"
 
 // =======================================
 //      Platform Object Types
