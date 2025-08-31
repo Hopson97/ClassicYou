@@ -13,6 +13,7 @@
 
 class DrawingPad;
 class LevelFileIO;
+class LevelTextures;
 
 /**
  * @brief The editor representation of a level.
@@ -23,7 +24,7 @@ class LevelFileIO;
 class EditorLevel
 {
   public:
-    EditorLevel();
+    EditorLevel(const LevelTextures& drawing_pad_texture_map);
 
     LevelObject& add_object(const LevelObject& object, int floor_number);
     LevelObject& add_object(const LevelObject& object, Floor& floor);
@@ -109,4 +110,6 @@ class EditorLevel
     ObjectId current_id_ = 0;
 
     bool changes_made_since_last_save_ = false;
+
+    const LevelTextures* p_drawing_pad_texture_map_ = nullptr;
 };

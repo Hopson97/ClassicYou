@@ -5,8 +5,9 @@
 #include <print>
 #include <vector>
 
-#include "OpenGL/VertexArrayObject.h"
+#include "../Editor/LevelObjects/LevelObjectTypes.h"
 #include "OpenGL/GLUtils.h"
+#include "OpenGL/VertexArrayObject.h"
 
 /**
  * @brief A vertex structure for 3D meshes
@@ -43,14 +44,14 @@ struct Vertex3D
 struct Vertex2D
 {
     glm::vec2 position{0.0f};
-    glm::vec2 texture_coord{0.0f};
-    glm::vec4 colour{0.0f};
+    glm::vec3 texture_coord{0.0f};
+    glm::vec4 colour{1.0f};
 
     static void build_attribs(gl::VertexArrayObject& vao, gl::BufferObject& vbo)
     {
         vao.add_vertex_buffer(vbo, sizeof(Vertex2D))
             .add_attribute(2, GL_FLOAT, offsetof(Vertex2D, position))
-            .add_attribute(2, GL_FLOAT, offsetof(Vertex2D, texture_coord))
+            .add_attribute(3, GL_FLOAT, offsetof(Vertex2D, texture_coord))
             .add_attribute(4, GL_FLOAT, offsetof(Vertex2D, colour));
     }
 };
@@ -187,4 +188,6 @@ generate_cube_mesh_level(const glm::vec3& start, const glm::vec3& size, int text
 [[nodiscard]] Mesh3D generate_terrain_mesh(int size, int edgeVertices);
 [[nodiscard]] Mesh3D generate_grid_mesh(int width, int height);
 
-[[nodiscard]] Mesh2D generate_line_mesh(glm::vec2 from, glm::vec2 to, const glm::vec4& colour);
+[[nodiscard]] Mesh2D generate_line_mesh(glm::vec2 from, glm::vec2 to);
+[[nodiscard]] Mesh2D generate_2d_quad_mesh(glm::vec2 position, glm::vec2 size, float texture,
+                                           Direction direction);

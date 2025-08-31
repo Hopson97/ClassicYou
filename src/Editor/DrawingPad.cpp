@@ -97,12 +97,12 @@ bool DrawingPad::init()
     grid_mesh_.main_grid.buffer();
 
     // Create the mesh for displaying whatever node is being selected
-    selection_mesh_.vertices = {
-        {.position = {0.0f, 0.0f}, .texture_coord = {0.0f, 0.0f}, .colour = glm::vec4(1.0f)},
-        {.position = {0.0f, 8.0f}, .texture_coord = {0.0f, 1.0f}, .colour = glm::vec4(1.0f)},
-        {.position = {8.0f, 8.0f}, .texture_coord = {1.0f, 1.0f}, .colour = glm::vec4(1.0f)},
-        {.position = {8.0f, 0.0f}, .texture_coord = {1.0f, 0.0f}, .colour = glm::vec4(1.0f)},
-    };
+    //selection_mesh_.vertices = {
+    //    {.position = {0.0f, 0.0f}, .texture_coord = {0.0f, 0.0f}, .colour = glm::vec4(1.0f)},
+    //    {.position = {0.0f, 8.0f}, .texture_coord = {0.0f, 1.0f}, .colour = glm::vec4(1.0f)},
+    //    {.position = {8.0f, 8.0f}, .texture_coord = {1.0f, 1.0f}, .colour = glm::vec4(1.0f)},
+    //    {.position = {8.0f, 0.0f}, .texture_coord = {1.0f, 0.0f}, .colour = glm::vec4(1.0f)},
+    //};
 
     selection_mesh_.indices = {0, 1, 2, 2, 3, 0};
     selection_mesh_.buffer();

@@ -1,11 +1,11 @@
 #version 450 core
 
 layout(location = 0) in vec2 in_position;
-layout(location = 1) in vec2 in_texture_coord;
+layout(location = 1) in vec3 in_texture_coord;
 layout(location = 2) in vec4 in_colour;
 
 out VS_OUT {
-    vec2 texture_coord;
+    vec3 texture_coord;
     vec4 colour;
 } vs_out;
 

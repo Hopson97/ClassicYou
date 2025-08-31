@@ -11,7 +11,8 @@
 #include "EditorGUI.h"
 #include "LevelFileIO.h"
 
-EditorLevel::EditorLevel()
+EditorLevel::EditorLevel(const LevelTextures& drawing_pad_texture_map)
+    : p_drawing_pad_texture_map_(&drawing_pad_texture_map)
 {
     floors_manager_.ensure_floor_exists(0);
 }
@@ -44,7 +45,7 @@ LevelObject& EditorLevel::add_object(const LevelObject& object, Floor& floor)
     floor.meshes.push_back(std::move(level_mesh));
 
     // Add the 2D mesh
-    auto [mesh, primitive] = object.to_2d_geometry(floor.real_floor);
+    auto [mesh, primitive] = object.to_2d_geometry(floor.real_floor, *p_drawing_pad_texture_map_);
     Floor::LevelMesh level_mesh_2d = {
         .id = new_object.object_id, .mesh = std::move(mesh), .primitive = primitive};
     level_mesh_2d.mesh.update();
@@ -72,7 +73,8 @@ void EditorLevel::update_object(const LevelObject& object, int floor_number)
         {
             if (mesh.id == object.object_id)
             {
-                mesh.mesh = object.to_2d_geometry(floor.real_floor).first;
+                mesh.mesh =
+                    object.to_2d_geometry(floor.real_floor, *p_drawing_pad_texture_map_).first;
                 mesh.mesh.update();
                 break;
             }
@@ -186,6 +188,10 @@ void EditorLevel::render_2d(gl::Shader& scene_shader, const std::vector<ObjectId
     std::vector<Floor::LevelMesh<Mesh2D>*> p_below;
     std::vector<Floor::LevelMesh<Mesh2D>*> p_current;
 
+    std::vector<Floor::LevelMesh<Mesh2D>*> p_active_wall;
+    std::vector<Floor::LevelMesh<Mesh2D>*> p_below_wall;
+    std::vector<Floor::LevelMesh<Mesh2D>*> p_current_wall;
+
     for (auto& floor : floors_manager_.floors)
     {
         // Render floors only from the current floor and below
@@ -193,7 +199,8 @@ void EditorLevel::render_2d(gl::Shader& scene_shader, const std::vector<ObjectId
         {
             for (auto& object : floor.meshes_2d)
             {
-                p_below.push_back(&object);
+                object.primitive == gl::PrimitiveType::Lines ? p_below_wall.push_back(&object)
+                                                             : p_below.push_back(&object);
             }
         }
         else if (floor.real_floor == current_floor)
@@ -207,34 +214,49 @@ void EditorLevel::render_2d(gl::Shader& scene_shader, const std::vector<ObjectId
 
                 if (contains(active_objects, object.id))
                 {
-                    p_active.push_back(&object);
+                    object.primitive == gl::PrimitiveType::Lines ? p_active_wall.push_back(&object)
+                                                                 : p_active.push_back(&object);
                 }
                 else
                 {
-                    p_current.push_back(&object);
+                    object.primitive == gl::PrimitiveType::Lines ? p_current_wall.push_back(&object)
+                                                                 : p_current.push_back(&object);
                 }
             }
         }
     }
 
+    // Render the objects on the floor below
+    scene_shader.set_uniform("model_matrix", create_model_matrix({}));
+    glLineWidth(2);
+    scene_shader.set_uniform("is_selected", false);
+    scene_shader.set_uniform("on_floor_below", true);
+
+    scene_shader.set_uniform("use_texture", false);
+    render_group(p_below_wall);
+    scene_shader.set_uniform("use_texture", true);
+    render_group(p_below);
+
+    // Render objects on the current floor
+    scene_shader.set_uniform("on_floor_below", false);
+
+    scene_shader.set_uniform("use_texture", false);
+    render_group(p_current_wall);
+    scene_shader.set_uniform("use_texture", true);
+    render_group(p_current);
+
     // Render the selected objects
     glLineWidth(3);
-    scene_shader.set_uniform("below", false);
-    scene_shader.set_uniform("selected", true);
+    scene_shader.set_uniform("is_selected", true);
     scene_shader.set_uniform(
         "model_matrix",
         create_model_matrix({.position = {selected_offset.x, selected_offset.y, 0}}));
+
+    scene_shader.set_uniform("use_texture", false);
+    render_group(p_active_wall);
+
+    scene_shader.set_uniform("use_texture", true);
     render_group(p_active);
-
-    // Render objects on the current floor
-    glLineWidth(2);
-    scene_shader.set_uniform("model_matrix", create_model_matrix({}));
-    scene_shader.set_uniform("selected", false);
-    render_group(p_current);
-
-    // Render the objects on the floor below
-    scene_shader.set_uniform("below", true);
-    render_group(p_below);
 }
 
 void EditorLevel::render_to_picker(gl::Shader& picker_shader, int current_floor)

@@ -17,7 +17,7 @@ class LevelTextures
             return true;
         }
 
-        auto [loaded, id] = textures.add_texture_from_file(texture_file_path, 4, true, false);
+        auto [loaded, id] = textures.add_texture_from_file(texture_file_path, 4, false, false);
         if (loaded)
         {
             texture_map.emplace(name, id);

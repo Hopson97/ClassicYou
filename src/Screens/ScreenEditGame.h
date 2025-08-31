@@ -104,10 +104,12 @@ class ScreenEditGame final : public Screen
     EditorState editor_state_;
 
     /// Wrapper around the selectable texture list
-    LevelTextures level_textures_;
+    LevelTextures level_texture_map_;
+    LevelTextures drawing_pad_texture_map_;
 
-    /// 2D Texture array used for rendering the world geometry
-    gl::Texture2DArray texture_;
+    /// 2D Texture arrays to texture the world geometry/ drawing pad
+    gl::Texture2DArray world_textures_;
+    gl::Texture2DArray drawing_pad_textures_;
 
     EditorLevel level_;
     std::unique_ptr<ITool> tool_;

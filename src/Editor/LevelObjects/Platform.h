@@ -1,6 +1,7 @@
 #pragma once
 
 #include "LevelObjectTypes.h"
+#include "LevelObjectBase.h"
 
 // =======================================
 //      Platform Object Types

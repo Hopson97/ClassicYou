@@ -59,6 +59,7 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens)
           .right = sf::Keyboard::Key::Right,
           .back = sf::Keyboard::Key::Up,
       }
+    , level_(drawing_pad_texture_map_)
     , action_manager_(editor_state_, level_)
     , object_move_handler_(level_, action_manager_)
     , copy_paste_handler_(level_, action_manager_)
@@ -87,6 +88,7 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens, std::string level_name)
           .right = sf::Keyboard::Key::Right,
           .back = sf::Keyboard::Key::Up,
       }
+    , level_(drawing_pad_texture_map_)
     , action_manager_(editor_state_, level_)
     , object_move_handler_(level_, action_manager_)
     , copy_paste_handler_(level_, action_manager_)
@@ -104,19 +106,37 @@ bool ScreenEditGame::on_init()
     // -----------------------
     // ==== Load textures ====
     // -----------------------
-    texture_.create(16, 32, gl::TEXTURE_PARAMS_NEAREST);
+    world_textures_.create(16, TEXTURE_NAMES.size(), gl::TEXTURE_PARAMS_NEAREST);
     for (auto& texture : TEXTURE_NAMES)
     {
         std::string name = texture;
         name.erase(std::remove_if(name.begin(), name.end(), [](char c) { return c == ' '; }),
                    name.end());
 
-        if (!level_textures_.register_texture(texture, "assets/textures/World/" + name + ".png",
-                                              texture_))
+        if (!level_texture_map_.register_texture(texture, "assets/textures/World/" + name + ".png",
+                                                 world_textures_))
         {
             return false;
         }
     }
+
+    drawing_pad_textures_.create(16, 32, gl::TEXTURE_PARAMS_NEAREST);
+    if (!drawing_pad_texture_map_.register_texture(
+            "platform", "assets/textures/DrawingPad/Platform.png", drawing_pad_textures_))
+    {
+        return false;
+    }
+    if (!drawing_pad_texture_map_.register_texture("ramp", "assets/textures/DrawingPad/Ramp.png",
+                                                   drawing_pad_textures_))
+    {
+        return false;
+    }
+    if (!drawing_pad_texture_map_.register_texture("pillar", "assets/textures/DrawingPad/Pillar.png",
+                                                   drawing_pad_textures_))
+    {
+        return false;
+    }
+
 
     // ---------------------------
     // ==== Buffer thr meshes ====
@@ -421,18 +441,25 @@ void ScreenEditGame::on_render(bool show_debug)
     //=============================================
     if (editor_settings_.show_2d_view)
     {
+        gl::enable(gl::Capability::Blend);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
 
-        // For 2D rendering, depth testing is not required
+        gl::disable(gl::Capability::DepthTest);
         gl::disable(gl::Capability::CullFace);
-        gl::cull_face(gl::Face::Back);
+
+        // Render grid underneath
+        grid_2d_.render(camera_2d_);
+
 
         // Update the shaders
         drawing_pad_shader_.bind();
         drawing_pad_shader_.set_uniform("projection_matrix", camera_2d_.get_projection_matrix());
         drawing_pad_shader_.set_uniform("view_matrix", camera_2d_.get_view_matrix());
         drawing_pad_shader_.set_uniform("model_matrix", create_model_matrix({}));
-        drawing_pad_shader_.set_uniform("use_texture", false);
+
+        drawing_pad_textures_.bind(0);
+
 
         // Render the tool preview
         if (tool_->get_tool_type() == ToolType::UpdateWall || !ImGui::GetIO().WantCaptureMouse)
@@ -447,14 +474,12 @@ void ScreenEditGame::on_render(bool show_debug)
         level_.render_2d(drawing_pad_shader_, editor_state_.selection.objects,
                          editor_state_.current_floor, object_move_handler_.get_move_offset());
 
-        // ...and then the grid
-        grid_2d_.render(camera_2d_);
-
         // Finalise 2d rendering
         // drawing_pad_.display(camera_.transform);
 
         // When showing the 2D view, the 3D view is half width
         glViewport(window().getSize().x / 2, 0, window().getSize().x / 2, window().getSize().y);
+        gl::disable(gl::Capability::Blend);
     }
     else
     {
@@ -500,7 +525,7 @@ void ScreenEditGame::on_render(bool show_debug)
 
     // Draw the current tool preview
     world_geometry_shader_.bind();
-    texture_.bind(0);
+    world_textures_.bind(0);
     world_geometry_shader_.set_uniform("use_texture", true);
     world_geometry_shader_.set_uniform("model_matrix", create_model_matrix({}));
 
@@ -716,7 +741,7 @@ void ScreenEditGame::display_editor_gui()
         if (ImGui::Begin("Object Properties"))
         {
             auto object_updated = editor_state_.selection.p_active_object->property_gui(
-                editor_state_, level_textures_, action_manager_);
+                editor_state_, level_texture_map_, action_manager_);
 
             if (object_updated)
             {
