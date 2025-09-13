@@ -31,7 +31,7 @@ object_to_geometry_2d(const PillarObject& pillar, const LevelTextures& drawing_p
 {
     // TODO: Angled pillars
     auto& props = pillar.properties;
-    auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("pillar"));
+    auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Pillar"));
 
     return {generate_2d_quad_mesh(pillar.parameters.position - (props.size * TILE_SIZE_F / 2.0f),
                                   {props.size * TILE_SIZE_F, props.size * TILE_SIZE_F}, texture,
@@ -118,7 +118,7 @@ SerialiseResponse object_serialise(const PillarObject& pillar, LevelFileIO& leve
     json_props.insert(json_props.end(), {(int)props.style, props.size, props.base_height,
                                          props.height, (int)props.angled});
 
-    return {{json_params, json_props}, "pillar"};
+    return {{json_params, json_props}, "Pillar"};
 }
 
 bool object_deserialise(PillarObject& pillar_object, const nlohmann::json& json,

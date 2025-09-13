@@ -171,7 +171,8 @@ void EditorLevel::render(gl::Shader& scene_shader, const std::vector<ObjectId>& 
     scene_shader.set_uniform("selected", false);
 }
 
-void EditorLevel::render_2d(gl::Shader& scene_shader, const std::vector<ObjectId>& active_objects,
+void EditorLevel::render_2d(gl::Shader& scene_shader_2d,
+                            const std::vector<ObjectId>& active_objects,
                             int current_floor, const glm::vec2& selected_offset)
 {
     auto render_group = [&](const std::vector<Floor::LevelMesh<Mesh2D>*>& group)
@@ -228,37 +229,38 @@ void EditorLevel::render_2d(gl::Shader& scene_shader, const std::vector<ObjectId
     }
 
     // Render the objects on the floor below
-    scene_shader.set_uniform("model_matrix", create_model_matrix({}));
+    scene_shader_2d.set_uniform("use_texture_alpha_channel", true);
+    scene_shader_2d.set_uniform("model_matrix", create_model_matrix({}));
     glLineWidth(2);
-    scene_shader.set_uniform("is_selected", false);
-    scene_shader.set_uniform("on_floor_below", true);
+    scene_shader_2d.set_uniform("is_selected", false);
+    scene_shader_2d.set_uniform("on_floor_below", true);
 
-    scene_shader.set_uniform("use_texture", false);
+    scene_shader_2d.set_uniform("use_texture", false);
     render_group(p_below_wall);
-    scene_shader.set_uniform("use_texture", true);
+    scene_shader_2d.set_uniform("use_texture", true);
     render_group(p_below);
 
     // Render objects on the current floor
-    scene_shader.set_uniform("on_floor_below", false);
+    scene_shader_2d.set_uniform("on_floor_below", false);
 
-    scene_shader.set_uniform("use_texture", true);
+    scene_shader_2d.set_uniform("use_texture", true);
     render_group(p_current);
 
-    scene_shader.set_uniform("use_texture", false);
+    scene_shader_2d.set_uniform("use_texture", false);
     render_group(p_current_wall);
 
 
     // Render the selected objects
     glLineWidth(3);
-    scene_shader.set_uniform("is_selected", true);
-    scene_shader.set_uniform(
+    scene_shader_2d.set_uniform("is_selected", true);
+    scene_shader_2d.set_uniform(
         "model_matrix",
         create_model_matrix({.position = {selected_offset.x, selected_offset.y, 0}}));
 
-    scene_shader.set_uniform("use_texture", false);
+    scene_shader_2d.set_uniform("use_texture", false);
     render_group(p_active_wall);
 
-    scene_shader.set_uniform("use_texture", true);
+    scene_shader_2d.set_uniform("use_texture", true);
     render_group(p_active);
 }
 

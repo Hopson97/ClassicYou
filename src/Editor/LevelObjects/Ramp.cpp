@@ -33,7 +33,7 @@ std::pair<Mesh2D, gl::PrimitiveType>
 object_to_geometry_2d(const RampObject& ramp, const LevelTextures& drawing_pad_texture_map)
 {
     auto& props = ramp.properties;
-    auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("ramp"));
+    auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Ramp"));
 
     return {generate_2d_quad_mesh(ramp.parameters.position,
                                   {props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F}, texture,

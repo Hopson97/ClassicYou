@@ -25,6 +25,13 @@ namespace
         "Slate",      "Board",
     };
 
+    constexpr std::array TEXTURE_NAMES_2D = {
+        "SelectCircle",
+        "Platform",
+        "Ramp",
+        "Pillar",
+    };
+
     glm::ivec2 map_pixel_to_tile(glm::vec2 point, const Camera& camera)
     {
         auto scale = HALF_TILE_SIZE;
@@ -120,21 +127,15 @@ bool ScreenEditGame::on_init()
         }
     }
 
-    drawing_pad_textures_.create(16, 32, gl::TEXTURE_PARAMS_NEAREST);
-    if (!drawing_pad_texture_map_.register_texture(
-            "platform", "assets/textures/DrawingPad/Platform.png", drawing_pad_textures_))
+    drawing_pad_textures_.create(16, TEXTURE_NAMES_2D.size(), gl::TEXTURE_PARAMS_NEAREST);
+    for (auto& texture : TEXTURE_NAMES_2D)
     {
-        return false;
-    }
-    if (!drawing_pad_texture_map_.register_texture("ramp", "assets/textures/DrawingPad/Ramp.png",
-                                                   drawing_pad_textures_))
-    {
-        return false;
-    }
-    if (!drawing_pad_texture_map_.register_texture(
-            "pillar", "assets/textures/DrawingPad/Pillar.png", drawing_pad_textures_))
-    {
-        return false;
+        if (!drawing_pad_texture_map_.register_texture(
+                texture, "assets/textures/DrawingPad/" + std::string{texture} + ".png",
+                drawing_pad_textures_))
+        {
+            return false;
+        }
     }
 
     // ---------------------------
@@ -459,6 +460,10 @@ void ScreenEditGame::on_render(bool show_debug)
 
         drawing_pad_textures_.bind(0);
 
+        // Render level
+        level_.render_2d(drawing_pad_shader_, editor_state_.selection.objects,
+                         editor_state_.current_floor, object_move_handler_.get_move_offset());
+
         // Render the tool preview
         if (tool_->get_tool_type() == ToolType::UpdateWall || !ImGui::GetIO().WantCaptureMouse)
         {
@@ -467,13 +472,6 @@ void ScreenEditGame::on_render(bool show_debug)
                 tool_->render_preview_2d_v2(drawing_pad_shader_);
             }
         }
-
-        // Render level
-        level_.render_2d(drawing_pad_shader_, editor_state_.selection.objects,
-                         editor_state_.current_floor, object_move_handler_.get_move_offset());
-
-        // Finalise 2d rendering
-        // drawing_pad_.display(camera_.transform);
 
         // When showing the 2D view, the 3D view is half width
         glViewport(window().getSize().x / 2, 0, window().getSize().x / 2, window().getSize().y);
@@ -643,7 +641,8 @@ void ScreenEditGame::select_object(LevelObject* object)
         if (auto wall = std::get_if<WallObject>(&object->object_type))
         {
             auto floor = level_.get_object_floor(object->object_id);
-            tool_ = std::make_unique<UpdateWallTool>(*object, *wall, *floor);
+            tool_ =
+                std::make_unique<UpdateWallTool>(*object, *wall, *floor, drawing_pad_texture_map_);
         }
         else
         {
@@ -927,7 +926,8 @@ void ScreenEditGame::try_reset_update_wall_tool()
         if (auto wall = std::get_if<WallObject>(&object->object_type))
         {
             auto floor = level_.get_object_floor(object->object_id);
-            tool_ = std::make_unique<UpdateWallTool>(*object, *wall, *floor);
+            tool_ =
+                std::make_unique<UpdateWallTool>(*object, *wall, *floor, drawing_pad_texture_map_);
         }
     }
 }
