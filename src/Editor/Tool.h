@@ -134,6 +134,7 @@ class AreaSelectTool : public ITool
                   const LevelTextures& drawing_pad_texture_map) override;
     void render_preview() override;
     void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) override;
+    void render_preview_2d_v2(gl::Shader& scene_shader_2d) override;
 
     ToolType get_tool_type() const override;
 
@@ -141,7 +142,9 @@ class AreaSelectTool : public ITool
 
   private:
     void select(EditorState& state);
+    void update_previews();
 
+  private:
     bool active_dragging_ = false;
     bool render_preview_mesh_ = false;
 
@@ -150,6 +153,7 @@ class AreaSelectTool : public ITool
     // The line refers to the start corner and end corner
     Line selection_area_;
     LevelObjectsMesh3D selection_cube_;
+    Mesh2D selection_quad_;
     glm::ivec3 selection_cube_start_{0};
     glm::ivec3 selection_cube_size_{0};
 

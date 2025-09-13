@@ -191,3 +191,5 @@ generate_cube_mesh_level(const glm::vec3& start, const glm::vec3& size, int text
 [[nodiscard]] Mesh2D generate_line_mesh(glm::vec2 from, glm::vec2 to);
 [[nodiscard]] Mesh2D generate_2d_quad_mesh(glm::vec2 position, glm::vec2 size, float texture,
                                            Direction direction);
+
+[[nodiscard]] Mesh2D generate_2d_outline_quad_mesh(glm::vec2 position, glm::vec2 size);
