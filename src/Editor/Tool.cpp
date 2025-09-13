@@ -281,6 +281,7 @@ void UpdateWallTool::update_previews(const EditorState& state,
 // =======================================
 CreateObjectTool::CreateObjectTool(ObjectTypeName object_type)
     : object_type_(object_type)
+    , object_(-1)
 {
 }
 
@@ -293,116 +294,13 @@ void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& st
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
-            switch (object_type_)
-            {
-                case ObjectTypeName::Platform:
-                    actions.push_action(std::make_unique<AddObjectAction>(
-                        LevelObject{
-                            PlatformObject{
-                                .properties = state.platform_default,
-                                .parameters = {.position = node},
-                            },
-                        },
-                        state.current_floor));
-                    break;
-
-                case ObjectTypeName::PolygonPlatform:
-                    actions.push_action(std::make_unique<AddObjectAction>(
-                        LevelObject{
-                            PolygonPlatformObject{
-                                .properties = state.polygon_platform_default,
-                                .parameters = {.corner_top_left = node,
-                                               .corner_top_right =
-                                                   node + glm::vec2{10.0f, 0} * TILE_SIZE_F,
-                                               .corner_bottom_right =
-                                                   node + glm::vec2{10.0f, 10.0f} * TILE_SIZE_F,
-                                               .corner_bottom_left =
-                                                   node + glm::vec2{0, 10.0f} * TILE_SIZE_F
-
-                                },
-                            },
-                        },
-                        state.current_floor));
-                    break;
-
-                case ObjectTypeName::Pillar:
-                    actions.push_action(std::make_unique<AddObjectAction>(
-                        LevelObject{
-                            PillarObject{
-                                .properties = state.pillar_default,
-                                .parameters = {.position = node},
-                            },
-                        },
-                        state.current_floor));
-                    break;
-
-                case ObjectTypeName::Ramp:
-                    actions.push_action(std::make_unique<AddObjectAction>(
-                        LevelObject{
-                            RampObject{
-                                .properties = state.ramp_default,
-                                .parameters = {.position = node},
-                            },
-                        },
-                        state.current_floor));
-                    break;
-
-                default:
-                    std::println("Missing implementation for CreateObjectTool for {}",
-                                 magic_enum::enum_name(object_type_));
-                    break;
-            }
+            update_previews(state, drawing_pad_texture_map);
+            actions.push_action(std::make_unique<AddObjectAction>(object_, state.current_floor));
         }
     }
     else if (event.is<sf::Event::MouseMoved>())
     {
-        switch (object_type_)
-        {
-            case ObjectTypeName::Platform:
-                object_preview_ = generate_platform_mesh(
-                    {
-                        .properties = state.platform_default,
-                        .parameters = {.position = node},
-                    },
-                    state.current_floor);
-                break;
-
-            case ObjectTypeName::PolygonPlatform:
-                object_preview_ = generate_polygon_platform_mesh(
-                    {.properties = state.polygon_platform_default,
-                     .parameters = {.corner_top_left = node,
-                                    .corner_top_right = node + glm::vec2{10.0f, 0} * TILE_SIZE_F,
-                                    .corner_bottom_right =
-                                        node + glm::vec2{10.0f, 10.0f} * TILE_SIZE_F,
-                                    .corner_bottom_left =
-                                        node + glm::vec2{0, 10.0f} * TILE_SIZE_F}},
-                    state.current_floor);
-                break;
-
-            case ObjectTypeName::Pillar:
-                object_preview_ = generate_pillar_mesh(
-                    PillarObject{
-                        .properties = state.pillar_default,
-                        .parameters = {.position = node},
-                    },
-                    state.current_floor);
-                break;
-
-            case ObjectTypeName::Ramp:
-                object_preview_ = generate_ramp_mesh(
-                    RampObject{
-                        .properties = state.ramp_default,
-                        .parameters = {.position = node},
-                    },
-                    state.current_floor);
-                break;
-
-            default:
-                std::println("Missing implemention for CreateObjectTool mouse move for {}",
-                             magic_enum::enum_name(object_type_));
-                break;
-        }
-        object_preview_.update();
+        update_previews(state, drawing_pad_texture_map);
     }
 }
 
@@ -465,6 +363,68 @@ void CreateObjectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorSt
                          magic_enum::enum_name(object_type_));
             break;
     }
+}
+
+void CreateObjectTool::render_preview_2d_v2(gl::Shader& scene_shader_2d)
+{
+    if (object_preview_2d_.has_buffered())
+    {
+        scene_shader_2d.set_uniform("use_texture", true);
+        scene_shader_2d.set_uniform("is_selected", true);
+        scene_shader_2d.set_uniform("on_floor_below", false);
+        object_preview_2d_.bind().draw_elements();
+    }
+}
+
+void CreateObjectTool::update_previews(const EditorState& state,
+                                       const LevelTextures& drawing_pad_texture_map)
+{
+    switch (object_type_)
+    {
+        case ObjectTypeName::Platform:
+            object_.object_type = PlatformObject{
+                .properties = state.platform_default,
+                .parameters = {.position = tile_},
+
+            };
+            break;
+        case ObjectTypeName::PolygonPlatform:
+            object_.object_type = PolygonPlatformObject{
+                .parameters =
+                    {
+                        .corner_top_left = tile_,
+                        .corner_top_right = tile_ + glm::vec2{10.0f, 0} * TILE_SIZE_F,
+                        .corner_bottom_right = tile_ + glm::vec2{10.0f, 10.0f} * TILE_SIZE_F,
+                        .corner_bottom_left = tile_ + glm::vec2{0, 10.0f} * TILE_SIZE_F,
+                    },
+            };
+            break;
+
+        case ObjectTypeName::Pillar:
+            object_.object_type = PillarObject{
+                .properties = state.pillar_default,
+                .parameters = {.position = tile_},
+            };
+            break;
+
+        case ObjectTypeName::Ramp:
+            object_.object_type = RampObject{
+                .properties = state.ramp_default,
+                .parameters = {.position = tile_},
+            };
+            break;
+
+        default:
+            std::println("Missing implementation for CreateObjectTool for {}",
+                         magic_enum::enum_name(object_type_));
+            break;
+    }
+
+    object_preview_ = object_.to_geometry(state.current_floor);
+    object_preview_.update();
+
+    object_preview_2d_ = object_.to_2d_geometry(drawing_pad_texture_map).first;
+    object_preview_2d_.update();
 }
 
 ToolType CreateObjectTool::get_tool_type() const
