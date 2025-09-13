@@ -45,7 +45,7 @@ LevelObject& EditorLevel::add_object(const LevelObject& object, Floor& floor)
     floor.meshes.push_back(std::move(level_mesh));
 
     // Add the 2D mesh
-    auto [mesh, primitive] = object.to_2d_geometry(floor.real_floor, *p_drawing_pad_texture_map_);
+    auto [mesh, primitive] = object.to_2d_geometry(*p_drawing_pad_texture_map_);
     Floor::LevelMesh level_mesh_2d = {
         .id = new_object.object_id, .mesh = std::move(mesh), .primitive = primitive};
     level_mesh_2d.mesh.update();
@@ -73,8 +73,7 @@ void EditorLevel::update_object(const LevelObject& object, int floor_number)
         {
             if (mesh.id == object.object_id)
             {
-                mesh.mesh =
-                    object.to_2d_geometry(floor.real_floor, *p_drawing_pad_texture_map_).first;
+                mesh.mesh = object.to_2d_geometry(*p_drawing_pad_texture_map_).first;
                 mesh.mesh.update();
                 break;
             }
@@ -184,6 +183,8 @@ void EditorLevel::render_2d(gl::Shader& scene_shader, const std::vector<ObjectId
     };
 
     // Sort the objects into groups
+    // "current" refers to objects on the current floor
+    // "below" refers to objects on the floor below
     std::vector<Floor::LevelMesh<Mesh2D>*> p_active;
     std::vector<Floor::LevelMesh<Mesh2D>*> p_below;
     std::vector<Floor::LevelMesh<Mesh2D>*> p_current;
@@ -240,10 +241,12 @@ void EditorLevel::render_2d(gl::Shader& scene_shader, const std::vector<ObjectId
     // Render objects on the current floor
     scene_shader.set_uniform("on_floor_below", false);
 
-    scene_shader.set_uniform("use_texture", false);
-    render_group(p_current_wall);
     scene_shader.set_uniform("use_texture", true);
     render_group(p_current);
+
+    scene_shader.set_uniform("use_texture", false);
+    render_group(p_current_wall);
+
 
     // Render the selected objects
     glLineWidth(3);

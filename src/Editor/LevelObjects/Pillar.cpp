@@ -5,6 +5,7 @@
 #include "../DrawingPad.h"
 #include "../EditConstants.h"
 #include "../LevelFileIO.h"
+#include "../LevelTextures.h"
 
 bool operator==(const PillarProps& lhs, const PillarProps& rhs)
 {
@@ -22,6 +23,20 @@ template <>
 LevelObjectsMesh3D object_to_geometry(const PillarObject& pillar, int floor_number)
 {
     return generate_pillar_mesh(pillar, floor_number);
+}
+
+template <>
+std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d(const PillarObject& pillar, const LevelTextures& drawing_pad_texture_map)
+{
+    // TODO: Angled pillars
+    auto& props = pillar.properties;
+    auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("pillar"));
+
+    return {generate_2d_quad_mesh(pillar.parameters.position - (props.size * TILE_SIZE_F / 2.0f),
+                                  {props.size * TILE_SIZE_F, props.size * TILE_SIZE_F}, texture,
+                                  Direction::Forward),
+            gl::PrimitiveType::Triangles};
 }
 
 template <>

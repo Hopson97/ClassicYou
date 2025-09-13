@@ -5,6 +5,7 @@
 #include "../DrawingPad.h"
 #include "../EditConstants.h"
 #include "../LevelFileIO.h"
+#include "../LevelTextures.h"
 
 bool operator==(const PlatformProps& lhs, const PlatformProps& rhs)
 {
@@ -56,6 +57,20 @@ void render_object_2d(const PlatformObject& platform, DrawingPad& drawing_pad,
     {
         drawing_pad.render_diamond(position, {width, depth}, colour);
     }
+}
+
+template <>
+std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d(const PlatformObject& platform, const LevelTextures& drawing_pad_texture_map)
+{
+    // TODO: Diamond and tri plats
+    auto& props = platform.properties;
+    auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("platform"));
+
+    return {generate_2d_quad_mesh(platform.parameters.position,
+                                  {props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F}, texture,
+                                  Direction::Forward),
+            gl::PrimitiveType::Triangles};
 }
 
 template <>

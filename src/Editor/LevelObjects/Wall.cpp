@@ -32,6 +32,15 @@ LevelObjectsMesh3D object_to_geometry(const WallObject& wall, int floor_number)
 }
 
 template <>
+std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d(const WallObject& wall,
+                      [[maybe_unused]] const LevelTextures& drawing_pad_texture_map)
+{
+    return {generate_line_mesh(wall.parameters.line.start, wall.parameters.line.end),
+            gl::PrimitiveType::Lines};
+}
+
+template <>
 std::string object_to_string(const WallObject& wall)
 {
     auto& params = wall.parameters;

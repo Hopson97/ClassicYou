@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../EditConstants.h"
-#include "LevelObjectTypes.h"
 #include "LevelObjectBase.h"
+#include "LevelObjectTypes.h"
 
 // =======================================
 //      Platform Object Types
@@ -44,6 +44,11 @@ bool operator!=(const PolygonPlatformProps& lhs, const PolygonPlatformProps& rhs
 template <>
 [[nodiscard]] LevelObjectsMesh3D
 object_to_geometry<PolygonPlatformObject>(const PolygonPlatformObject& poly, int floor_number);
+
+template <>
+[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d<PolygonPlatformObject>(const PolygonPlatformObject& poly,
+                                             const LevelTextures& drawing_pad_texture_map);
 
 template <>
 [[nodiscard]] std::string

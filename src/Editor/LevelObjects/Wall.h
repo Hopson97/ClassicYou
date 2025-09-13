@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../DrawingPad.h"
-#include "LevelObjectTypes.h"
 #include "LevelObjectBase.h"
+#include "LevelObjectTypes.h"
 
 // =======================================
 //      Wall Object Types
@@ -50,6 +50,11 @@ bool operator!=(const WallProps& lhs, const WallProps& rhs);
 template <>
 [[nodiscard]] LevelObjectsMesh3D object_to_geometry<WallObject>(const WallObject& wall,
                                                                 int floor_number);
+
+template <>
+[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d<WallObject>(const WallObject& wall,
+                                  const LevelTextures& drawing_pad_texture_map);
 
 template <>
 [[nodiscard]] std::string object_to_string<WallObject>(const WallObject& wall);

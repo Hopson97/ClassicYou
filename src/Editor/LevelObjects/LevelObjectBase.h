@@ -2,13 +2,18 @@
 
 #include "../../Graphics/Mesh.h"
 
+class LevelTextures;
+
 /**
  * All Level objects must specialize these functions. These are called via std::visit in
  * LevelObject.cpp
  */
-
 template <typename T>
 [[nodiscard]] LevelObjectsMesh3D object_to_geometry(const T& object, int floor_number);
+
+template <typename T>
+[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d(const T& object, const LevelTextures& drawing_pad_texture_map);
 
 template <typename T>
 [[nodiscard]] std::string object_to_string(const T& object);

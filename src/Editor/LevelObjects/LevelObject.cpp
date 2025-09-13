@@ -163,54 +163,11 @@ LevelObjectsMesh3D LevelObject::to_geometry(int floor_number) const
 }
 
 std::pair<Mesh2D, gl::PrimitiveType>
-LevelObject::to_2d_geometry(int floor_number, const LevelTextures& drawing_pad_texture_map) const
+LevelObject::to_2d_geometry(const LevelTextures& drawing_pad_texture_map) const
 {
-    Mesh2D mesh_2d;
-
-    // As the majority of objects are rendered using textured quads of varying sizes, there is only
-    // need to write special cases for some objects
-    if (auto wall = std::get_if<WallObject>(&object_type))
-    {
-        return {generate_line_mesh(wall->parameters.line.start, wall->parameters.line.end),
-                gl::PrimitiveType::Lines};
-    }
-    else if (auto platform = std::get_if<PlatformObject>(&object_type))
-    {
-        // TODO: Diamond and tri plats
-        auto& props = platform->properties;
-        auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("platform"));
-
-        return {generate_2d_quad_mesh(platform->parameters.position,
-                                      {props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F},
-                                      texture, Direction::Forward),
-                gl::PrimitiveType::Triangles};
-    }
-    else if (auto poly = std::get_if<PolygonPlatformObject>(&object_type))
-    {
-    }
-    else if (auto pillar = std::get_if<PillarObject>(&object_type))
-    {
-        // TODO: Angled pillars
-        auto& props = pillar->properties;
-        auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("pillar"));
-
-        return {generate_2d_quad_mesh(pillar->parameters.position - (props.size * TILE_SIZE_F / 2.0f),
-                                      {props.size * TILE_SIZE_F, props.size * TILE_SIZE_F},
-                                      texture, Direction::Forward),
-                gl::PrimitiveType::Triangles};
-    }
-    else if (auto ramp = std::get_if<RampObject>(&object_type))
-    {
-        auto& props = ramp->properties;
-        auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("ramp"));
-
-        return {generate_2d_quad_mesh(ramp->parameters.position,
-                                      {props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F},
-                                      texture, props.direction),
-                gl::PrimitiveType::Triangles};
-    }
-
-    return {generate_line_mesh({0, 0}, {1, 1}), gl::PrimitiveType::Lines};
+    return std::visit([&](auto&& object)
+                      { return object_to_geometry_2d(object, drawing_pad_texture_map); },
+                      object_type);
 }
 
 std::string LevelObject::to_string() const
