@@ -21,6 +21,15 @@ LevelObjectsMesh3D object_to_geometry(const PolygonPlatformObject& poly, int flo
 }
 
 template <>
+std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d(const PolygonPlatformObject& poly,
+                      const LevelTextures& drawing_pad_texture_map)
+{
+    // TODO
+    return {generate_line_mesh({0, 0}, {1, 1}), gl::PrimitiveType::Lines};
+}
+
+template <>
 std::string object_to_string(const PolygonPlatformObject& poly)
 {
     auto& params = poly.parameters;

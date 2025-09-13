@@ -1,7 +1,7 @@
 #pragma once
 
-#include "LevelObjectTypes.h"
 #include "LevelObjectBase.h"
+#include "LevelObjectTypes.h"
 
 // =======================================
 //      Platform Object Types
@@ -56,6 +56,11 @@ template <>
 template <>
 void render_object_2d<PlatformObject>(const PlatformObject& platform, DrawingPad& drawing_pad,
                                       const glm::vec4& colour, const glm::vec2& selected_offset);
+
+template <>
+[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d<PlatformObject>(const PlatformObject& platform,
+                                      const LevelTextures& drawing_pad_texture_map);
 
 template <>
 [[nodiscard]] bool object_try_select_2d<PlatformObject>(const PlatformObject& platform,

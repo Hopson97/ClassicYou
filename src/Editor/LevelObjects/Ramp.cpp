@@ -6,6 +6,7 @@
 #include "../DrawingPad.h"
 #include "../EditConstants.h"
 #include "../LevelFileIO.h"
+#include "../LevelTextures.h"
 
 bool operator==(const RampProps& lhs, const RampProps& rhs)
 {
@@ -25,6 +26,19 @@ template <>
 LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
 {
     return generate_ramp_mesh(ramp, floor_number);
+}
+
+template <>
+std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d(const RampObject& ramp, const LevelTextures& drawing_pad_texture_map)
+{
+    auto& props = ramp.properties;
+    auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("ramp"));
+
+    return {generate_2d_quad_mesh(ramp.parameters.position,
+                                  {props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F}, texture,
+                                  props.direction),
+            gl::PrimitiveType::Triangles};
 }
 
 template <>

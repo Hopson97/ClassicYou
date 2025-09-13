@@ -131,12 +131,11 @@ bool ScreenEditGame::on_init()
     {
         return false;
     }
-    if (!drawing_pad_texture_map_.register_texture("pillar", "assets/textures/DrawingPad/Pillar.png",
-                                                   drawing_pad_textures_))
+    if (!drawing_pad_texture_map_.register_texture(
+            "pillar", "assets/textures/DrawingPad/Pillar.png", drawing_pad_textures_))
     {
         return false;
     }
-
 
     // ---------------------------
     // ==== Buffer thr meshes ====
@@ -451,7 +450,6 @@ void ScreenEditGame::on_render(bool show_debug)
         // Render grid underneath
         grid_2d_.render(camera_2d_);
 
-
         // Update the shaders
         drawing_pad_shader_.bind();
         drawing_pad_shader_.set_uniform("projection_matrix", camera_2d_.get_projection_matrix());
@@ -459,7 +457,6 @@ void ScreenEditGame::on_render(bool show_debug)
         drawing_pad_shader_.set_uniform("model_matrix", create_model_matrix({}));
 
         drawing_pad_textures_.bind(0);
-
 
         // Render the tool preview
         if (tool_->get_tool_type() == ToolType::UpdateWall || !ImGui::GetIO().WantCaptureMouse)
@@ -716,6 +713,16 @@ void ScreenEditGame::display_editor_gui()
         }
         ImGui::Text("Lowest: %d - Current: %d - Highest: %d", level_.get_min_floor(),
                     editor_state_.current_floor, level_.get_max_floor());
+
+        if (editor_settings_.show_2d_view)
+        {
+            ImGui::Separator();
+            auto scale = camera_2d_.get_orthographic_scale();
+            if (ImGui::SliderFloat("2D Camera Zoom", &scale, 0.5, 2.5))
+            {
+                camera_2d_.set_orthographic_scale(scale);
+            }
+        }
 
         ImGui::Separator();
         if (ImGui::Button("Center 2D View To 3D Camera"))

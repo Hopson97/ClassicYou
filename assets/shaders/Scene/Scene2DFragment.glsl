@@ -16,8 +16,6 @@ uniform bool on_floor_below;
 #define HIGHLIGHT_FACTOR 1.5
 #define OBSCURE_FACTOR 0.5
 
-
-
 void main() 
 {
     if (use_texture) 

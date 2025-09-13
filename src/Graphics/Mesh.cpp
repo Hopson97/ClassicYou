@@ -303,6 +303,37 @@ Mesh2D generate_line_mesh(glm::vec2 from, glm::vec2 to)
     return mesh;
 }
 
+namespace
+{
+    constexpr std::array QUAD_TEXTURE_COORDS_FORWARDS = {
+        glm::vec2{0.0f, 0.0f},
+        glm::vec2{0.0f, 1.0f},
+        glm::vec2{1.0f, 1.0f},
+        glm::vec2{1.0f, 0.0f},
+    };
+
+    constexpr std::array QUAD_TEXTURE_COORDS_LEFT = {
+        glm::vec2{1.0f, 0.0f},
+        glm::vec2{0.0f, 0.0f},
+        glm::vec2{0.0f, 1.0f},
+        glm::vec2{1.0f, 1.0f},
+    };
+
+    constexpr std::array QUAD_TEXTURE_COORDS_BACK = {
+        glm::vec2{1.0f, 1.0f},
+        glm::vec2{1.0f, 0.0f},
+        glm::vec2{0.0f, 0.0f},
+        glm::vec2{0.0f, 1.0f},
+    };
+
+    constexpr std::array QUAD_TEXTURE_COORDS_RIGHT = {
+        glm::vec2{0.0f, 1.0f},
+        glm::vec2{1.0f, 1.0f},
+        glm::vec2{1.0f, 0.0f},
+        glm::vec2{0.0f, 0.0f},
+    };
+} // namespace
+
 Mesh2D generate_2d_quad_mesh(glm::vec2 position, glm::vec2 size, float texture, Direction direction)
 {
     Mesh2D mesh;
@@ -310,12 +341,31 @@ Mesh2D generate_2d_quad_mesh(glm::vec2 position, glm::vec2 size, float texture, 
     auto& p = position;
     auto& s = size;
 
+    const auto& tex_coords = [&]()
+    {
+        switch (direction)
+        {
+            case Direction::Forward:
+                return QUAD_TEXTURE_COORDS_FORWARDS;
+
+            case Direction::Left:
+                return QUAD_TEXTURE_COORDS_LEFT;
+
+            case Direction::Back:
+                return QUAD_TEXTURE_COORDS_BACK;
+
+            case Direction::Right:
+                return QUAD_TEXTURE_COORDS_RIGHT;
+        }
+        return QUAD_TEXTURE_COORDS_FORWARDS;
+    }();
+
     // clang-format off
     mesh.vertices = {
-        {.position = {p.x,       p.y        }, .texture_coord = {0.0f, 0.0f, texture}, .colour = {1, 1, 1, 0.9}},
-        {.position = {p.x,       p.y + s.y  }, .texture_coord = {0.0f, 1.0f, texture}, .colour = {1, 1, 1, 0.9}},
-        {.position = {p.x + s.x, p.y + s.y  }, .texture_coord = {1.0f, 1.0f, texture}, .colour = {1, 1, 1, 0.9}},
-        {.position = {p.x + s.x, p.y        }, .texture_coord = {1.0f, 0.0f, texture}, .colour = {1, 1, 1, 0.9}},
+        {.position = {p.x,       p.y        }, .texture_coord = {tex_coords[0].x, tex_coords[0].y, texture}, .colour = {1, 1, 1, 0.9}},
+        {.position = {p.x,       p.y + s.y  }, .texture_coord = {tex_coords[1].x, tex_coords[1].y, texture}, .colour = {1, 1, 1, 0.9}},
+        {.position = {p.x + s.x, p.y + s.y  }, .texture_coord = {tex_coords[2].x, tex_coords[2].y, texture}, .colour = {1, 1, 1, 0.9}},
+        {.position = {p.x + s.x, p.y        }, .texture_coord = {tex_coords[3].x, tex_coords[3].y, texture}, .colour = {1, 1, 1, 0.9}},
     };
     // clang-format on
 

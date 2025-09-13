@@ -1,7 +1,7 @@
 #pragma once
 
-#include "LevelObjectTypes.h"
 #include "LevelObjectBase.h"
+#include "LevelObjectTypes.h"
 
 // =======================================
 //      Ramp Object Types
@@ -54,6 +54,11 @@ template <>
                                                                 int floor_number);
 
 template <>
+[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d<RampObject>(const RampObject& ramp,
+                                  const LevelTextures& drawing_pad_texture_map);
+
+template <>
 [[nodiscard]] std::string object_to_string<RampObject>(const RampObject& ramp);
 
 template <>
@@ -78,5 +83,4 @@ template <>
 [[nodiscard]] glm::vec2 object_get_position(const RampObject& ramp);
 
 template <>
-SerialiseResponse object_serialise<RampObject>(const RampObject& ramp,
-                                               LevelFileIO& level_file_io);
+SerialiseResponse object_serialise<RampObject>(const RampObject& ramp, LevelFileIO& level_file_io);

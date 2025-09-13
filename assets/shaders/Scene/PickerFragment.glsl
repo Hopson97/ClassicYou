@@ -7,6 +7,7 @@ layout(location = 0) out int out_colour;
 
 uniform int object_id;
 
-void main() {
+void main() 
+{
     out_colour = object_id;
 }

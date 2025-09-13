@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../DrawingPad.h"
-#include "LevelObjectTypes.h"
 #include "LevelObjectBase.h"
+#include "LevelObjectTypes.h"
 
 #include "../EditConstants.h"
 
@@ -51,6 +51,11 @@ template <>
                                                                   int floor_number);
 
 template <>
+[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d<PillarObject>(const PillarObject& pillar,
+                                    const LevelTextures& drawing_pad_texture_map);
+
+template <>
 [[nodiscard]] std::string object_to_string<PillarObject>(const PillarObject& pillar);
 
 template <>
@@ -76,4 +81,4 @@ template <>
 
 template <>
 SerialiseResponse object_serialise<PillarObject>(const PillarObject& pillar,
-                        LevelFileIO& level_file_io);
+                                                 LevelFileIO& level_file_io);
