@@ -110,12 +110,18 @@ class CreateObjectTool : public ITool
                   const LevelTextures& drawing_pad_texture_map) override;
     void render_preview() override;
     void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) override;
+    void render_preview_2d_v2(gl::Shader& scene_shader_2d) override;
 
     ToolType get_tool_type() const override;
 
   private:
+    void update_previews(const EditorState& state, const LevelTextures& drawing_pad_texture_map);
+
+  private:
     const ObjectTypeName object_type_;
+    LevelObject object_;
     LevelObjectsMesh3D object_preview_;
+    Mesh2D object_preview_2d_;
     glm::vec2 tile_{0.0f};
 };
 
