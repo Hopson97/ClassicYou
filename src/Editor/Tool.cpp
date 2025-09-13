@@ -6,6 +6,7 @@
 #include <magic_enum/magic_enum.hpp>
 
 #include "../Graphics/OpenGL/GLUtils.h"
+#include "../Graphics/OpenGL/Shader.h"
 #include "Actions.h"
 #include "DrawingPad.h"
 #include "EditConstants.h"
@@ -16,7 +17,7 @@
 //          CreateWallTool
 // =======================================
 void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
-                              ActionManager& actions)
+                              ActionManager& actions, const LevelTextures& drawing_pad_texture_map)
 {
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {
@@ -26,25 +27,13 @@ void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
             active_dragging_ = true;
             wall_line_.start = node;
             wall_line_.end = node;
-            wall_preview_ = generate_wall_mesh(
-                {
-                    .properties = state.wall_default,
-                    .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
-                },
-                state.current_floor);
-            wall_preview_.update();
+            update_previews(state, drawing_pad_texture_map);
         }
     }
     else if (event.is<sf::Event::MouseMoved>())
     {
         wall_line_.end = node;
-        wall_preview_ = generate_wall_mesh(
-            {
-                .properties = state.wall_default,
-                .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
-            },
-            state.current_floor);
-        wall_preview_.update();
+        update_previews(state, drawing_pad_texture_map);
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
@@ -76,6 +65,20 @@ void CreateWallTool::render_preview()
     }
 }
 
+void CreateWallTool::render_preview_2d_v2(gl::Shader& scene_shader_2d)
+{
+    glLineWidth(3);
+
+    scene_shader_2d.set_uniform("use_texture", false);
+    scene_shader_2d.set_uniform("is_selected", true);
+    scene_shader_2d.set_uniform("on_floor_below", false);
+
+    if (active_dragging_ && wall_preview_2d_.has_buffered())
+    {
+        wall_preview_2d_.bind().draw_elements(gl::PrimitiveType::Lines);
+    }
+}
+
 void CreateWallTool::render_preview_2d(DrawingPad& drawing_pad,
                                        [[maybe_unused]] const EditorState& state)
 {
@@ -92,6 +95,21 @@ ToolType CreateWallTool::get_tool_type() const
     return ToolType::CreateWall;
 }
 
+void CreateWallTool::update_previews(const EditorState& state,
+                                     const LevelTextures& drawing_pad_texture_map)
+{
+    WallObject wall{
+        .properties = state.wall_default,
+        .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
+    };
+
+    wall_preview_ = object_to_geometry(wall, state.current_floor);
+    wall_preview_.update();
+
+    wall_preview_2d_ = object_to_geometry_2d(wall, drawing_pad_texture_map).first;
+    wall_preview_2d_.update();
+}
+
 // =======================================
 //          UpdateWallTool
 // =======================================
@@ -103,7 +121,7 @@ UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall, int wall_fl
 }
 
 void UpdateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
-                              ActionManager& actions)
+                              ActionManager& actions, const LevelTextures& drawing_pad_texture_map)
 {
     // Walls should only be edited on the same floor
     if (state.current_floor != wall_floor_)
@@ -226,7 +244,8 @@ CreateObjectTool::CreateObjectTool(ObjectTypeName object_type)
 }
 
 void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
-                                ActionManager& actions)
+                                ActionManager& actions,
+                                const LevelTextures& drawing_pad_texture_map)
 {
     tile_ = node;
     if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
@@ -421,7 +440,7 @@ AreaSelectTool::AreaSelectTool(EditorLevel& level)
 }
 
 void AreaSelectTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
-                              ActionManager& actions)
+                              ActionManager& actions, const LevelTextures& drawing_pad_texture_map)
 {
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {

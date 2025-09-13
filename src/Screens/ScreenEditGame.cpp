@@ -385,7 +385,8 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
     if (!object_move_handler_.is_moving_objects() && !move_finished)
     {
-        tool_->on_event(event, editor_state_.node_hovered, editor_state_, action_manager_);
+        tool_->on_event(event, editor_state_.node_hovered, editor_state_, action_manager_,
+                        drawing_pad_texture_map_);
     }
 
     if (move_finished)
@@ -463,7 +464,7 @@ void ScreenEditGame::on_render(bool show_debug)
         {
             if (!object_move_handler_.is_moving_objects())
             {
-                // tool_->render_preview_2d(drawing_pad_, editor_state_);
+                tool_->render_preview_2d_v2(drawing_pad_shader_);
             }
         }
 
