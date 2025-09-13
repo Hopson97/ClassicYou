@@ -453,9 +453,9 @@ void AreaSelectTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
             min_floor_ = state.current_floor;
 
             active_dragging_ = true;
-            render_preview_mesh_ = true;
             selection_area_.start = node;
             selection_area_.end = node;
+            update_previews();
         }
     }
     else if (event.is<sf::Event::MouseMoved>())
@@ -463,6 +463,7 @@ void AreaSelectTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
         if (active_dragging_)
         {
             selection_area_.end = node;
+            update_previews();
         }
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
@@ -470,7 +471,6 @@ void AreaSelectTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
             active_dragging_ = false;
-            render_preview_mesh_ = false;
             auto start = glm::ivec2{selection_area_.start};
             auto end = glm::ivec2{selection_area_.end};
 
@@ -496,11 +496,82 @@ void AreaSelectTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
 
 void AreaSelectTool::render_preview()
 {
+    if (selection_quad_.has_buffered() && render_preview_mesh_)
+    {
+        gl::enable(gl::Capability::Blend);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+        selection_cube_.bind().draw_elements();
+
+        gl::disable(gl::Capability::Blend);
+    }
+}
+
+void AreaSelectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorState& state)
+{
+    if (active_dragging_)
+    {
+        drawing_pad.render_quad(selection_area_.start, selection_area_.end - selection_area_.start,
+                                Colour::RED);
+    }
+}
+
+void AreaSelectTool::render_preview_2d_v2(gl::Shader& scene_shader_2d)
+{
+    if (active_dragging_ && selection_quad_.has_buffered() && render_preview_mesh_)
+    {
+        scene_shader_2d.set_uniform("use_texture", false);
+        scene_shader_2d.set_uniform("is_selected", true);
+        scene_shader_2d.set_uniform("on_floor_below", false);
+        selection_quad_.bind().draw_elements(gl::PrimitiveType::Lines);
+    }
+}
+
+ToolType AreaSelectTool::get_tool_type() const
+{
+    return ToolType::AreaSelectTool;
+}
+
+void AreaSelectTool::show_gui(EditorState& state)
+{
+    if (state.selection.objects.size() > 0)
+    {
+        if (ImGui::Begin("Selection Options"))
+        {
+            ImGui::Text("Selected %d objects.", (int)state.selection.objects.size());
+
+            bool update = false;
+            update |= ImGui::SliderInt("Max floors selection", &max_floor_, start_floor_,
+                                       p_level_->get_max_floor());
+            update |= ImGui::SliderInt("Minimum floors selection", &min_floor_,
+                                       p_level_->get_min_floor(), start_floor_);
+
+            if (update)
+            {
+                select(state);
+            }
+        }
+        ImGui::End();
+    }
+}
+
+void AreaSelectTool::select(EditorState& state)
+{
+    state.selection.clear_selection();
+    for (int floor = min_floor_; floor <= max_floor_; floor++)
+    {
+        p_level_->select_within(selection_area_.to_bounds(), state.selection, floor);
+    }
+    update_previews();
+}
+
+void AreaSelectTool::update_previews()
+{
     auto start = glm::ivec2{selection_area_.start};
     auto end = glm::ivec2{selection_area_.end};
     if (glm::length2(glm::vec2{end - start}) < HALF_TILE_SIZE_F * HALF_TILE_SIZE_F)
     {
+        render_preview_mesh_ = false;
         return;
     }
 
@@ -525,65 +596,15 @@ void AreaSelectTool::render_preview()
         selection_cube_start_ = cube_start;
         selection_cube_size_ = size;
 
-        // 16 is the id for a "blank" feature
+        // 16 is the id for a "blank" texture
         selection_cube_ = generate_cube_mesh_level(selection_cube_start_, selection_cube_size_, 16,
                                                    {255, 255, 255, 150});
 
         selection_cube_.update();
     }
 
-    gl::enable(gl::Capability::Blend);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    selection_cube_.bind().draw_elements();
-
-    gl::disable(gl::Capability::Blend);
-}
-
-void AreaSelectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorState& state)
-{
-    if (active_dragging_)
-    {
-        drawing_pad.render_quad(selection_area_.start, selection_area_.end - selection_area_.start,
-                                Colour::RED);
-    }
-}
-
-ToolType AreaSelectTool::get_tool_type() const
-{
-    return ToolType::AreaSelectTool;
-}
-
-void AreaSelectTool::show_gui(EditorState& state)
-{
-
-    if (state.selection.objects.size() > 0)
-    {
-
-        if (ImGui::Begin("Selection Options"))
-        {
-            ImGui::Text("Selected %ull objects.", state.selection.objects.size());
-
-            bool update = false;
-            update |= ImGui::SliderInt("Max floors selection", &max_floor_, start_floor_,
-                                       p_level_->get_max_floor());
-            update |= ImGui::SliderInt("Minimum floors selection", &min_floor_,
-                                       p_level_->get_min_floor(), start_floor_);
-
-            if (update)
-            {
-                select(state);
-            }
-        }
-        ImGui::End();
-    }
-}
-
-void AreaSelectTool::select(EditorState& state)
-{
-    state.selection.clear_selection();
-    for (int floor = min_floor_; floor <= max_floor_; floor++)
-    {
-        p_level_->select_within(selection_area_.to_bounds(), state.selection, floor);
-    }
+    selection_quad_ = generate_2d_outline_quad_mesh(selection_area_.start,
+                                                   selection_area_.end - selection_area_.start);
+    selection_quad_.update();
+    render_preview_mesh_ = true;
 }

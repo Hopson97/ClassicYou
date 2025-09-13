@@ -15,6 +15,44 @@ namespace
     constexpr glm::vec3 RIGHT = {1.0f, 0.0f, 0.0f};
     constexpr glm::vec3 FORWARD = {0.0f, 0.0f, 1.0f};
     constexpr glm::vec3 BACKWARD = {0.0f, 0.0f, -1.0f};
+
+    constexpr std::array QUAD_TEXTURE_COORDS_FORWARDS = {
+        glm::vec2{0.0f, 0.0f},
+        glm::vec2{0.0f, 1.0f},
+        glm::vec2{1.0f, 1.0f},
+        glm::vec2{1.0f, 0.0f},
+    };
+
+    constexpr std::array QUAD_TEXTURE_COORDS_LEFT = {
+        glm::vec2{1.0f, 0.0f},
+        glm::vec2{0.0f, 0.0f},
+        glm::vec2{0.0f, 1.0f},
+        glm::vec2{1.0f, 1.0f},
+    };
+
+    constexpr std::array QUAD_TEXTURE_COORDS_BACK = {
+        glm::vec2{1.0f, 1.0f},
+        glm::vec2{1.0f, 0.0f},
+        glm::vec2{0.0f, 0.0f},
+        glm::vec2{0.0f, 1.0f},
+    };
+
+    constexpr std::array QUAD_TEXTURE_COORDS_RIGHT = {
+        glm::vec2{0.0f, 1.0f},
+        glm::vec2{1.0f, 1.0f},
+        glm::vec2{1.0f, 0.0f},
+        glm::vec2{0.0f, 0.0f},
+    };
+
+    void add_line_to_mesh(Mesh2D& mesh, glm::vec2 from, glm::vec2 to, const glm::vec4& colour)
+    {
+        mesh.vertices.push_back(Vertex2D{.position = from, .colour = colour});
+        mesh.vertices.push_back(Vertex2D{.position = to, .colour = colour});
+
+        mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
+        mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
+    }
+
 } // namespace
 
 // -----------------------------------
@@ -293,46 +331,9 @@ Mesh3D generate_grid_mesh(int width, int height)
 Mesh2D generate_line_mesh(glm::vec2 from, glm::vec2 to)
 {
     Mesh2D mesh;
-
-    mesh.vertices.push_back(Vertex2D{.position = from});
-    mesh.vertices.push_back(Vertex2D{.position = to});
-
-    mesh.indices.push_back(static_cast<GLuint>(0));
-    mesh.indices.push_back(static_cast<GLuint>(1));
-
+    add_line_to_mesh(mesh, from, to, Colour::WHITE);
     return mesh;
 }
-
-namespace
-{
-    constexpr std::array QUAD_TEXTURE_COORDS_FORWARDS = {
-        glm::vec2{0.0f, 0.0f},
-        glm::vec2{0.0f, 1.0f},
-        glm::vec2{1.0f, 1.0f},
-        glm::vec2{1.0f, 0.0f},
-    };
-
-    constexpr std::array QUAD_TEXTURE_COORDS_LEFT = {
-        glm::vec2{1.0f, 0.0f},
-        glm::vec2{0.0f, 0.0f},
-        glm::vec2{0.0f, 1.0f},
-        glm::vec2{1.0f, 1.0f},
-    };
-
-    constexpr std::array QUAD_TEXTURE_COORDS_BACK = {
-        glm::vec2{1.0f, 1.0f},
-        glm::vec2{1.0f, 0.0f},
-        glm::vec2{0.0f, 0.0f},
-        glm::vec2{0.0f, 1.0f},
-    };
-
-    constexpr std::array QUAD_TEXTURE_COORDS_RIGHT = {
-        glm::vec2{0.0f, 1.0f},
-        glm::vec2{1.0f, 1.0f},
-        glm::vec2{1.0f, 0.0f},
-        glm::vec2{0.0f, 0.0f},
-    };
-} // namespace
 
 Mesh2D generate_2d_quad_mesh(glm::vec2 position, glm::vec2 size, float texture, Direction direction)
 {
@@ -371,5 +372,19 @@ Mesh2D generate_2d_quad_mesh(glm::vec2 position, glm::vec2 size, float texture, 
 
     mesh.indices = {0, 1, 2, 2, 3, 0};
 
+    return mesh;
+}
+
+Mesh2D generate_2d_outline_quad_mesh(glm::vec2 position, glm::vec2 size)
+{
+    Mesh2D mesh;
+    add_line_to_mesh(mesh, {position.x, position.y}, {position.x + size.x, position.y},
+                     Colour::WHITE);
+    add_line_to_mesh(mesh, {position.x + size.x, position.y},
+                     {position.x + size.x, position.y + size.y}, Colour::WHITE);
+    add_line_to_mesh(mesh, {position.x + size.x, position.y + size.y},
+                     {position.x, position.y + size.y}, Colour::WHITE);
+    add_line_to_mesh(mesh, {position.x, position.y + size.y}, {position.x, position.y},
+                     Colour::WHITE);
     return mesh;
 }
