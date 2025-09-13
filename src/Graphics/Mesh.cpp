@@ -43,17 +43,17 @@ namespace
         glm::vec2{1.0f, 0.0f},
         glm::vec2{0.0f, 0.0f},
     };
+} // namespace
+
 
     void add_line_to_mesh(Mesh2D& mesh, glm::vec2 from, glm::vec2 to, const glm::vec4& colour)
-    {
-        mesh.vertices.push_back(Vertex2D{.position = from, .colour = colour});
-        mesh.vertices.push_back(Vertex2D{.position = to, .colour = colour});
+{
+    mesh.vertices.push_back(Vertex2D{.position = from, .colour = colour});
+    mesh.vertices.push_back(Vertex2D{.position = to, .colour = colour});
 
-        mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
-        mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
-    }
-
-} // namespace
+    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
+    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
+}
 
 // -----------------------------------
 // ==== MESH GENERATION FUNCTIONS ====

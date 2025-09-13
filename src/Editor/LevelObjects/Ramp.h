@@ -39,10 +39,6 @@ using RampObject = ObjectType<RampProps, RampParameters>;
 bool operator==(const RampProps& lhs, const RampProps& rhs);
 bool operator!=(const RampProps& lhs, const RampProps& rhs);
 
-// =======================================
-//     Free functions
-// =======================================
-[[nodiscard]] LevelObjectsMesh3D generate_ramp_mesh(const RampObject& ramp, int floor_number);
 [[nodiscard]] bool object_deserialise(RampObject& pillar, const nlohmann::json& json,
                                       const LevelFileIO& level_file_io);
 
@@ -50,20 +46,7 @@ bool operator!=(const RampProps& lhs, const RampProps& rhs);
 //      Specialised Functions
 // =======================================
 template <>
-[[nodiscard]] LevelObjectsMesh3D object_to_geometry<RampObject>(const RampObject& ramp,
-                                                                int floor_number);
-
-template <>
-[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
-object_to_geometry_2d<RampObject>(const RampObject& ramp,
-                                  const LevelTextures& drawing_pad_texture_map);
-
-template <>
 [[nodiscard]] std::string object_to_string<RampObject>(const RampObject& ramp);
-
-template <>
-void render_object_2d<RampObject>(const RampObject& ramp, DrawingPad& drawing_pad,
-                                  const glm::vec4& colour, const glm::vec2& selected_offset);
 
 template <>
 [[nodiscard]] bool object_try_select_2d<RampObject>(const RampObject& ramp,
@@ -83,4 +66,14 @@ template <>
 [[nodiscard]] glm::vec2 object_get_position(const RampObject& ramp);
 
 template <>
-SerialiseResponse object_serialise<RampObject>(const RampObject& ramp, LevelFileIO& level_file_io);
+[[nodiscard]] SerialiseResponse object_serialise<RampObject>(const RampObject& ramp,
+                                                             LevelFileIO& level_file_io);
+
+template <>
+[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d<RampObject>(const RampObject& ramp,
+                                  const LevelTextures& drawing_pad_texture_map);
+
+template <>
+[[nodiscard]] LevelObjectsMesh3D object_to_geometry<RampObject>(const RampObject& ramp,
+                                                                int floor_number);

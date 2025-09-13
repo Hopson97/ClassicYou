@@ -35,11 +35,6 @@ using PlatformObject = ObjectType<PlatformProps, PlatformParameters>;
 bool operator==(const PlatformProps& lhs, const PlatformProps& rhs);
 bool operator!=(const PlatformProps& lhs, const PlatformProps& rhs);
 
-// =======================================
-//     Free functions
-// =======================================
-[[nodiscard]] LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform,
-                                                        int floor_number);
 [[nodiscard]] bool object_deserialise(PlatformObject& pillar, const nlohmann::json& json,
                                       const LevelFileIO& level_file_io);
 
@@ -47,20 +42,7 @@ bool operator!=(const PlatformProps& lhs, const PlatformProps& rhs);
 //      Specialised Functions
 // =======================================
 template <>
-[[nodiscard]] LevelObjectsMesh3D object_to_geometry<PlatformObject>(const PlatformObject& platform,
-                                                                    int floor_number);
-
-template <>
 [[nodiscard]] std::string object_to_string<PlatformObject>(const PlatformObject& platform);
-
-template <>
-void render_object_2d<PlatformObject>(const PlatformObject& platform, DrawingPad& drawing_pad,
-                                      const glm::vec4& colour, const glm::vec2& selected_offset);
-
-template <>
-[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
-object_to_geometry_2d<PlatformObject>(const PlatformObject& platform,
-                                      const LevelTextures& drawing_pad_texture_map);
 
 template <>
 [[nodiscard]] bool object_try_select_2d<PlatformObject>(const PlatformObject& platform,
@@ -80,5 +62,12 @@ template <>
 [[nodiscard]] glm::vec2 object_get_position(const PlatformObject& platform);
 
 template <>
-SerialiseResponse object_serialise<PlatformObject>(const PlatformObject& platform,
-                                                   LevelFileIO& level_file_io);
+[[nodiscard]] SerialiseResponse object_serialise<PlatformObject>(const PlatformObject& platform,
+                                                                 LevelFileIO& level_file_io);
+template <>
+[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d<PlatformObject>(const PlatformObject& platform,
+                                      const LevelTextures& drawing_pad_texture_map);
+template <>
+[[nodiscard]] LevelObjectsMesh3D object_to_geometry<PlatformObject>(const PlatformObject& platform,
+                                                                    int floor_number);

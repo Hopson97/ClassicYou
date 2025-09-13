@@ -2,7 +2,7 @@
 
 #include <magic_enum/magic_enum.hpp>
 
-#include "../DrawingPad.h"
+#include "../../Util/Maths.h"
 #include "../EditConstants.h"
 #include "../LevelFileIO.h"
 #include "../LevelTextures.h"
@@ -20,26 +20,6 @@ bool operator!=(const PillarProps& lhs, const PillarProps& rhs)
 }
 
 template <>
-LevelObjectsMesh3D object_to_geometry(const PillarObject& pillar, int floor_number)
-{
-    return generate_pillar_mesh(pillar, floor_number);
-}
-
-template <>
-std::pair<Mesh2D, gl::PrimitiveType>
-object_to_geometry_2d(const PillarObject& pillar, const LevelTextures& drawing_pad_texture_map)
-{
-    // TODO: Angled pillars
-    auto& props = pillar.properties;
-    auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Pillar"));
-
-    return {generate_2d_quad_mesh(pillar.parameters.position - (props.size * TILE_SIZE_F / 2.0f),
-                                  {props.size * TILE_SIZE_F, props.size * TILE_SIZE_F}, texture,
-                                  Direction::Forward),
-            gl::PrimitiveType::Triangles};
-}
-
-template <>
 std::string object_to_string(const PillarObject& pillar)
 {
     auto& params = pillar.parameters;
@@ -51,18 +31,6 @@ std::string object_to_string(const PillarObject& pillar)
                        props.texture.id, magic_enum::enum_name(props.style), props.size,
                        props.base_height, props.height, props.angled ? "true" : "false",
                        params.position.x, params.position.y);
-}
-
-template <>
-void render_object_2d(const PillarObject& pillar, DrawingPad& drawing_pad, const glm::vec4& colour,
-                      const glm::vec2& selected_offset)
-{
-    const auto& position = pillar.parameters.position;
-    const auto& size = pillar.properties.size * TILE_SIZE;
-
-    auto offset = size / 2.0f;
-
-    drawing_pad.render_quad(position - offset + selected_offset, {size, size}, colour);
 }
 
 template <>
@@ -153,10 +121,25 @@ bool object_deserialise(PillarObject& pillar_object, const nlohmann::json& json,
     return true;
 }
 
-LevelObjectsMesh3D generate_pillar_mesh(const PillarObject& platform, int floor_number)
+template <>
+std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d(const PillarObject& pillar, const LevelTextures& drawing_pad_texture_map)
 {
-    const auto& params = platform.parameters;
-    const auto& props = platform.properties;
+    // TODO: Angled pillars
+    auto& props = pillar.properties;
+    auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Pillar"));
+
+    return {generate_2d_quad_mesh(pillar.parameters.position - (props.size * TILE_SIZE_F / 2.0f),
+                                  {props.size * TILE_SIZE_F, props.size * TILE_SIZE_F}, texture,
+                                  Direction::Forward),
+            gl::PrimitiveType::Triangles};
+}
+
+template <>
+LevelObjectsMesh3D object_to_geometry(const PillarObject& pillar, int floor_number)
+{
+    const auto& params = pillar.parameters;
+    const auto& props = pillar.properties;
 
     auto texture = static_cast<float>(props.texture.id);
     auto colour = props.texture.colour;
@@ -181,7 +164,7 @@ LevelObjectsMesh3D generate_pillar_mesh(const PillarObject& platform, int floor_
 
     if (props.angled)
     {
-        // ???
+        // TODO
     }
 
     mesh.vertices = {

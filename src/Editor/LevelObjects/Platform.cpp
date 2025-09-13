@@ -2,7 +2,7 @@
 
 #include <magic_enum/magic_enum.hpp>
 
-#include "../DrawingPad.h"
+#include "../../Util/Maths.h"
 #include "../EditConstants.h"
 #include "../LevelFileIO.h"
 #include "../LevelTextures.h"
@@ -20,12 +20,6 @@ bool operator!=(const PlatformProps& lhs, const PlatformProps& rhs)
 }
 
 template <>
-LevelObjectsMesh3D object_to_geometry(const PlatformObject& platform, int floor_number)
-{
-    return generate_platform_mesh(platform, floor_number);
-}
-
-template <>
 std::string object_to_string(const PlatformObject& platform)
 {
     auto& params = platform.parameters;
@@ -37,40 +31,6 @@ std::string object_to_string(const PlatformObject& platform)
                        props.texture_top.id, props.texture_bottom.id, props.width, props.depth,
                        props.base, magic_enum::enum_name(props.style), params.position.x,
                        params.position.y);
-}
-
-template <>
-void render_object_2d(const PlatformObject& platform, DrawingPad& drawing_pad,
-                      const glm::vec4& colour, const glm::vec2& selected_offset)
-{
-    const auto& position = platform.parameters.position + selected_offset;
-    const auto& width = platform.properties.width * TILE_SIZE;
-    const auto& depth = platform.properties.depth * TILE_SIZE;
-
-    // TODO: 2D drawing for triangles
-    if (platform.properties.style == PlatformStyle::Quad ||
-        platform.properties.style == PlatformStyle::Triangle)
-    {
-        drawing_pad.render_quad(position, {width, depth}, colour);
-    }
-    else if (platform.properties.style == PlatformStyle::Diamond)
-    {
-        drawing_pad.render_diamond(position, {width, depth}, colour);
-    }
-}
-
-template <>
-std::pair<Mesh2D, gl::PrimitiveType>
-object_to_geometry_2d(const PlatformObject& platform, const LevelTextures& drawing_pad_texture_map)
-{
-    // TODO: Diamond and tri plats
-    auto& props = platform.properties;
-    auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Platform"));
-
-    return {generate_2d_quad_mesh(platform.parameters.position,
-                                  {props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F}, texture,
-                                  Direction::Forward),
-            gl::PrimitiveType::Triangles};
 }
 
 template <>
@@ -170,6 +130,20 @@ bool object_deserialise(PlatformObject& platform, const nlohmann::json& json,
     return true;
 }
 
+template <>
+std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d(const PlatformObject& platform, const LevelTextures& drawing_pad_texture_map)
+{
+    // TODO: Diamond and tri plats
+    auto& props = platform.properties;
+    auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Platform"));
+
+    return {generate_2d_quad_mesh(platform.parameters.position,
+                                  {props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F}, texture,
+                                  Direction::Forward),
+            gl::PrimitiveType::Triangles};
+}
+
 namespace
 {
     std::vector<VertexLevelObjects> create_quad_platform_vertices(const PlatformObject& platform,
@@ -239,7 +213,8 @@ namespace
     }
 } // namespace
 
-LevelObjectsMesh3D generate_platform_mesh(const PlatformObject& platform, int floor_number)
+template <>
+LevelObjectsMesh3D object_to_geometry(const PlatformObject& platform, int floor_number)
 {
     const auto& props = platform.properties;
 

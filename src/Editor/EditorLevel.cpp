@@ -6,7 +6,6 @@
 
 #include "../Util/Maths.h"
 #include "../Util/Util.h"
-#include "DrawingPad.h"
 #include "EditConstants.h"
 #include "EditorGUI.h"
 #include "LevelFileIO.h"

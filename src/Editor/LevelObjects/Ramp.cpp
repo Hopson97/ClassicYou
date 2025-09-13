@@ -3,7 +3,7 @@
 #include <glm/gtx/rotate_vector.hpp>
 #include <magic_enum/magic_enum.hpp>
 
-#include "../DrawingPad.h"
+#include "../../Util/Maths.h"
 #include "../EditConstants.h"
 #include "../LevelFileIO.h"
 #include "../LevelTextures.h"
@@ -23,25 +23,6 @@ bool operator!=(const RampProps& lhs, const RampProps& rhs)
 }
 
 template <>
-LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
-{
-    return generate_ramp_mesh(ramp, floor_number);
-}
-
-template <>
-std::pair<Mesh2D, gl::PrimitiveType>
-object_to_geometry_2d(const RampObject& ramp, const LevelTextures& drawing_pad_texture_map)
-{
-    auto& props = ramp.properties;
-    auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Ramp"));
-
-    return {generate_2d_quad_mesh(ramp.parameters.position,
-                                  {props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F}, texture,
-                                  props.direction),
-            gl::PrimitiveType::Triangles};
-}
-
-template <>
 std::string object_to_string(const RampObject& ramp)
 {
     auto& params = ramp.parameters;
@@ -54,24 +35,6 @@ std::string object_to_string(const RampObject& ramp)
         props.texture_top.id, props.texture_bottom.id, props.width, props.depth, props.start_height,
         props.end_height, magic_enum::enum_name(props.direction),
         magic_enum::enum_name(props.style), params.position.x, params.position.y);
-}
-
-template <>
-void render_object_2d(const RampObject& ramp, DrawingPad& drawing_pad, const glm::vec4& colour,
-                      const glm::vec2& selected_offset)
-{
-    const auto& position = ramp.parameters.position + selected_offset;
-    const auto& width = ramp.properties.width * TILE_SIZE;
-    const auto& depth = ramp.properties.depth * TILE_SIZE;
-
-    // if (ramp.properties.style == RampStyle::Full)
-    {
-        drawing_pad.render_quad(position, {width, depth}, colour);
-    }
-    // else if (ramp.properties.style == RampStyle::Diamond)
-    //{
-    //     drawing_pad.render_diamond(position, {width, depth}, colour);
-    // }
 }
 
 template <>
@@ -191,7 +154,21 @@ bool object_deserialise(RampObject& ramp, const nlohmann::json& json,
     return true;
 }
 
-LevelObjectsMesh3D generate_ramp_mesh(const RampObject& ramp, int floor_number)
+template <>
+std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d(const RampObject& ramp, const LevelTextures& drawing_pad_texture_map)
+{
+    auto& props = ramp.properties;
+    auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Ramp"));
+
+    return {generate_2d_quad_mesh(ramp.parameters.position,
+                                  {props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F}, texture,
+                                  props.direction),
+            gl::PrimitiveType::Triangles};
+}
+
+template <>
+LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
 {
     LevelObjectsMesh3D mesh;
 
@@ -228,7 +205,7 @@ LevelObjectsMesh3D generate_ramp_mesh(const RampObject& ramp, int floor_number)
 
     if (corner_style)
     {
-        // For corners, one point is higher than the rest (vice vera for inverted ramp
+        // For corners, one point is higher than the rest (vice vera for inverted ramp)
         ha = props.style == RampStyle::Corner ? hs : he;
         hb = props.style == RampStyle::Corner ? hs : he;
         hc = props.style == RampStyle::Corner ? hs : he;

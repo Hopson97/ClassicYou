@@ -11,7 +11,6 @@
 #include "FloorManager.h"
 #include "LevelObjects/LevelObject.h"
 
-class DrawingPad;
 class LevelFileIO;
 class LevelTextures;
 

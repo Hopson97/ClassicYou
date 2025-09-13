@@ -13,7 +13,6 @@ add_executable(${PROJECT_NAME}
     src/main.cpp
 
     src/Editor/Actions.cpp
-    src/Editor/DrawingPad.cpp
     src/Editor/EditorGUI.cpp
     src/Editor/EditorLevel.cpp
     src/Editor/FloorManager.cpp

@@ -113,7 +113,8 @@ bool ScreenEditGame::on_init()
     // -----------------------
     // ==== Load textures ====
     // -----------------------
-    world_textures_.create(16, TEXTURE_NAMES.size(), gl::TEXTURE_PARAMS_NEAREST);
+    world_textures_.create(16, static_cast<GLint>(TEXTURE_NAMES.size()),
+                           gl::TEXTURE_PARAMS_NEAREST);
     for (auto& texture : TEXTURE_NAMES)
     {
         std::string name = texture;
@@ -127,7 +128,8 @@ bool ScreenEditGame::on_init()
         }
     }
 
-    drawing_pad_textures_.create(16, TEXTURE_NAMES_2D.size(), gl::TEXTURE_PARAMS_NEAREST);
+    drawing_pad_textures_.create(16, static_cast<GLint>(TEXTURE_NAMES_2D.size()),
+                                 gl::TEXTURE_PARAMS_NEAREST);
     for (auto& texture : TEXTURE_NAMES_2D)
     {
         if (!drawing_pad_texture_map_.register_texture(
@@ -469,7 +471,7 @@ void ScreenEditGame::on_render(bool show_debug)
         {
             if (!object_move_handler_.is_moving_objects())
             {
-                tool_->render_preview_2d_v2(drawing_pad_shader_);
+                tool_->render_preview_2d(drawing_pad_shader_);
             }
         }
 

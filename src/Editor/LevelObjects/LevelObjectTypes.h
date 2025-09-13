@@ -5,7 +5,6 @@
 #include <glm/glm.hpp>
 #include <nlohmann/json.hpp>
 
-class DrawingPad;
 struct LevelObject;
 struct Rectangle;
 class LevelFileIO;
@@ -62,4 +61,3 @@ inline bool operator==(const TextureProp& lhs, const TextureProp& rhs)
 }
 
 using SerialiseResponse = std::pair<nlohmann::json, std::string>;
-

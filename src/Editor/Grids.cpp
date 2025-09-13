@@ -4,18 +4,6 @@
 #include "../Graphics/OpenGL/GLUtils.h"
 #include "EditConstants.h"
 
-namespace
-{
-    void add_line_to_mesh(Mesh2D& mesh, glm::vec2 from, glm::vec2 to, const glm::vec4& colour)
-    {
-        mesh.vertices.push_back(Vertex2D{.position = from, .colour = colour});
-        mesh.vertices.push_back(Vertex2D{.position = to, .colour = colour});
-
-        mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
-        mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
-    }
-} // namespace
-
 bool InfiniteGrid::init()
 {
     grid_mesh_.buffer();
