@@ -175,6 +175,8 @@ using LevelObjectsMesh3D = Mesh<VertexLevelObjects>;
 /// @brief
 using Mesh2D = Mesh<Vertex2D>;
 
+void add_line_to_mesh(Mesh2D& mesh, glm::vec2 from, glm::vec2 to, const glm::vec4& colour);
+
 [[nodiscard]] Mesh3D generate_quad_mesh(float w, float h);
 
 [[nodiscard]] LevelObjectsMesh3D

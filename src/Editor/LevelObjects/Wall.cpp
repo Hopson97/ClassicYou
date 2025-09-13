@@ -2,7 +2,6 @@
 
 #include <magic_enum/magic_enum.hpp>
 
-#include "../DrawingPad.h"
 #include "../EditConstants.h"
 #include "../LevelFileIO.h"
 
@@ -26,21 +25,6 @@ bool operator!=(const WallProps& lhs, const WallProps& rhs)
 }
 
 template <>
-LevelObjectsMesh3D object_to_geometry(const WallObject& wall, int floor_number)
-{
-    return generate_wall_mesh(wall, floor_number);
-}
-
-template <>
-std::pair<Mesh2D, gl::PrimitiveType>
-object_to_geometry_2d(const WallObject& wall,
-                      [[maybe_unused]] const LevelTextures& drawing_pad_texture_map)
-{
-    return {generate_line_mesh(wall.parameters.line.start, wall.parameters.line.end),
-            gl::PrimitiveType::Lines};
-}
-
-template <>
 std::string object_to_string(const WallObject& wall)
 {
     auto& params = wall.parameters;
@@ -52,14 +36,6 @@ std::string object_to_string(const WallObject& wall)
         props.texture_front.id, props.texture_back.id, props.start_base_height, props.start_height,
         props.end_base_height, props.end_height, magic_enum::enum_name(props.style),
         params.line.start.x, params.line.start.y, params.line.end.x, params.line.end.y);
-}
-
-template <>
-void render_object_2d(const WallObject& wall, DrawingPad& drawing_pad, const glm::vec4& colour,
-                      const glm::vec2& selected_offset)
-{
-    drawing_pad.render_line(wall.parameters.line.start + selected_offset,
-                            wall.parameters.line.end + selected_offset, colour, 2.0f);
 }
 
 template <>
@@ -160,7 +136,17 @@ bool object_deserialise(WallObject& wall, const nlohmann::json& json,
     return true;
 }
 
-LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number)
+template <>
+std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d(const WallObject& wall,
+                      [[maybe_unused]] const LevelTextures& drawing_pad_texture_map)
+{
+    return {generate_line_mesh(wall.parameters.line.start, wall.parameters.line.end),
+            gl::PrimitiveType::Lines};
+}
+
+template <>
+LevelObjectsMesh3D object_to_geometry(const WallObject& wall, int floor_number)
 {
     const auto& params = wall.parameters;
     const auto& props = wall.properties;

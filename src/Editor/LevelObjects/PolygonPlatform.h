@@ -30,11 +30,6 @@ using PolygonPlatformObject = ObjectType<PolygonPlatformProps, PolygonPlatformPa
 bool operator==(const PolygonPlatformProps& lhs, const PolygonPlatformProps& rhs);
 bool operator!=(const PolygonPlatformProps& lhs, const PolygonPlatformProps& rhs);
 
-// =======================================
-//     Free functions
-// =======================================
-[[nodiscard]] LevelObjectsMesh3D generate_polygon_platform_mesh(const PolygonPlatformObject& poly,
-                                                                int floor_number);
 [[nodiscard]] bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json,
                                       const LevelFileIO& level_file_io);
 
@@ -42,22 +37,8 @@ bool operator!=(const PolygonPlatformProps& lhs, const PolygonPlatformProps& rhs
 //      Specialised Functions
 // =======================================
 template <>
-[[nodiscard]] LevelObjectsMesh3D
-object_to_geometry<PolygonPlatformObject>(const PolygonPlatformObject& poly, int floor_number);
-
-template <>
-[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
-object_to_geometry_2d<PolygonPlatformObject>(const PolygonPlatformObject& poly,
-                                             const LevelTextures& drawing_pad_texture_map);
-
-template <>
 [[nodiscard]] std::string
 object_to_string<PolygonPlatformObject>(const PolygonPlatformObject& poly);
-
-template <>
-void render_object_2d<PolygonPlatformObject>(const PolygonPlatformObject& poly,
-                                             DrawingPad& drawing_pad, const glm::vec4& colour,
-                                             const glm::vec2& selected_offset);
 
 template <>
 [[nodiscard]] bool object_try_select_2d<PolygonPlatformObject>(const PolygonPlatformObject& poly,
@@ -77,5 +58,15 @@ template <>
 [[nodiscard]] glm::vec2 object_get_position(const PolygonPlatformObject& poly);
 
 template <>
-SerialiseResponse object_serialise<PolygonPlatformObject>(const PolygonPlatformObject& poly,
-                                                          LevelFileIO& level_file_io);
+[[nodiscard]] SerialiseResponse
+object_serialise<PolygonPlatformObject>(const PolygonPlatformObject& poly,
+                                        LevelFileIO& level_file_io);
+
+template <>
+[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d<PolygonPlatformObject>(const PolygonPlatformObject& poly,
+                                             const LevelTextures& drawing_pad_texture_map);
+
+template <>
+[[nodiscard]] LevelObjectsMesh3D
+object_to_geometry<PolygonPlatformObject>(const PolygonPlatformObject& poly, int floor_number);

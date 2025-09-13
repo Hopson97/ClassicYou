@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../DrawingPad.h"
+#include "../../Util/Maths.h"
 #include "LevelObjectBase.h"
 #include "LevelObjectTypes.h"
 
@@ -32,15 +32,12 @@ struct WallParameters
 {
     Line line;
 };
+
 using WallObject = ObjectType<WallProps, WallParameters>;
 
 bool operator==(const WallProps& lhs, const WallProps& rhs);
 bool operator!=(const WallProps& lhs, const WallProps& rhs);
 
-// =======================================
-//     Free functions
-// =======================================
-[[nodiscard]] LevelObjectsMesh3D generate_wall_mesh(const WallObject& wall, int floor_number);
 [[nodiscard]] bool object_deserialise(WallObject& wall, const nlohmann::json& json,
                                       const LevelFileIO& level_file_io);
 
@@ -48,20 +45,7 @@ bool operator!=(const WallProps& lhs, const WallProps& rhs);
 //      Specialised Functions
 // =======================================
 template <>
-[[nodiscard]] LevelObjectsMesh3D object_to_geometry<WallObject>(const WallObject& wall,
-                                                                int floor_number);
-
-template <>
-[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
-object_to_geometry_2d<WallObject>(const WallObject& wall,
-                                  const LevelTextures& drawing_pad_texture_map);
-
-template <>
 [[nodiscard]] std::string object_to_string<WallObject>(const WallObject& wall);
-
-template <>
-void render_object_2d<WallObject>(const WallObject& wall, DrawingPad& drawing_pad,
-                                  const glm::vec4& colour, const glm::vec2& selected_offset);
 
 template <>
 [[nodiscard]] bool object_try_select_2d<WallObject>(const WallObject& wall,
@@ -81,4 +65,13 @@ template <>
 [[nodiscard]] glm::vec2 object_get_position(const WallObject& wall);
 
 template <>
-SerialiseResponse object_serialise<WallObject>(const WallObject& wall, LevelFileIO& level_file_io);
+[[nodiscard]] SerialiseResponse object_serialise<WallObject>(const WallObject& wall,
+                                                             LevelFileIO& level_file_io);
+
+template <>
+[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d<WallObject>(const WallObject& wall,
+                                  const LevelTextures& drawing_pad_texture_map);
+template <>
+[[nodiscard]] LevelObjectsMesh3D object_to_geometry<WallObject>(const WallObject& wall,
+                                                                int floor_number);

@@ -8,7 +8,6 @@
 #include "../Graphics/OpenGL/GLUtils.h"
 #include "../Graphics/OpenGL/Shader.h"
 #include "Actions.h"
-#include "DrawingPad.h"
 #include "EditConstants.h"
 #include "EditorLevel.h"
 #include "EditorState.h"
@@ -83,20 +82,9 @@ void CreateWallTool::render_preview()
     }
 }
 
-void CreateWallTool::render_preview_2d_v2(gl::Shader& scene_shader_2d)
+void CreateWallTool::render_preview_2d(gl::Shader& scene_shader_2d)
 {
     render_wall(active_dragging_, wall_preview_2d_, scene_shader_2d);
-}
-
-void CreateWallTool::render_preview_2d(DrawingPad& drawing_pad,
-                                       [[maybe_unused]] const EditorState& state)
-{
-    if (active_dragging_)
-    {
-        render_object_2d(
-            WallObject{.properties = state.wall_default, .parameters = {.line = wall_line_}},
-            drawing_pad, Colour::RED);
-    }
 }
 
 ToolType CreateWallTool::get_tool_type() const
@@ -129,7 +117,7 @@ UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall, int wall_fl
     , wall_floor_(wall_floor)
 {
     edge_mesh_ = generate_2d_quad_mesh({0, 0}, {32, 32},
-                                       (float)*drawing_pad_texture_map.get_texture("SelectCircle"),
+                                       *drawing_pad_texture_map.get_texture("SelectCircle"),
                                        Direction::Forward);
     edge_mesh_.buffer();
 
@@ -218,27 +206,8 @@ void UpdateWallTool::render_preview()
     }
 }
 
-void UpdateWallTool::render_preview_2d(DrawingPad& drawing_pad, const EditorState& state)
-{
-    if (state.current_floor == wall_floor_)
-    {
-        constexpr static glm::vec2 OFFSET{16, 16};
-        drawing_pad.render_quad(wall_.parameters.line.start - OFFSET, glm::vec2{32.0f},
-                                Colour::RED);
-        drawing_pad.render_quad(wall_.parameters.line.end - OFFSET, glm::vec2{32.0f}, Colour::RED);
-
-        if (active_dragging_)
-        {
-            drawing_pad.render_line(wall_line_.start, wall_line_.end, {1, 0.5, 0.5, 0.75}, 4);
-
-            drawing_pad.render_quad(wall_line_.start - OFFSET, glm::vec2{32.0f}, Colour::RED);
-            drawing_pad.render_quad(wall_line_.end - OFFSET, glm::vec2{32.0f}, Colour::RED);
-        }
-    }
-}
-
 constexpr glm::vec2 OFFSET{16, 16};
-void UpdateWallTool::render_preview_2d_v2(gl::Shader& scene_shader_2d)
+void UpdateWallTool::render_preview_2d(gl::Shader& scene_shader_2d)
 {
     render_wall(active_dragging_, wall_preview_2d_, scene_shader_2d);
 
@@ -312,67 +281,15 @@ void CreateObjectTool::render_preview()
     }
 }
 
-void CreateObjectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorState& state)
-{
-    switch (object_type_)
-    {
-        case ObjectTypeName::Platform:
-            render_object_2d(
-                PlatformObject{
-                    .properties = state.platform_default,
-                    .parameters = {.position = tile_},
-
-                },
-                drawing_pad, Colour::RED);
-            break;
-        case ObjectTypeName::PolygonPlatform:
-            render_object_2d(
-                PolygonPlatformObject{
-                    .parameters =
-                        {
-                            .corner_top_left = tile_,
-                            .corner_top_right = tile_ + glm::vec2{10.0f, 0} * TILE_SIZE_F,
-                            .corner_bottom_right = tile_ + glm::vec2{10.0f, 10.0f} * TILE_SIZE_F,
-                            .corner_bottom_left = tile_ + glm::vec2{0, 10.0f} * TILE_SIZE_F,
-                        },
-                },
-                drawing_pad, Colour::RED);
-
-            break;
-
-        case ObjectTypeName::Pillar:
-            render_object_2d(
-                PillarObject{
-                    .properties = state.pillar_default,
-                    .parameters = {.position = tile_},
-                },
-                drawing_pad, Colour::RED);
-            break;
-
-        case ObjectTypeName::Ramp:
-            render_object_2d(
-                RampObject{
-                    .properties = state.ramp_default,
-                    .parameters = {.position = tile_},
-                },
-                drawing_pad, Colour::RED);
-            break;
-
-        default:
-            std::println("Missing implementation for CreateObjectTool for {}",
-                         magic_enum::enum_name(object_type_));
-            break;
-    }
-}
-
-void CreateObjectTool::render_preview_2d_v2(gl::Shader& scene_shader_2d)
+void CreateObjectTool::render_preview_2d(gl::Shader& scene_shader_2d)
 {
     if (object_preview_2d_.has_buffered())
     {
-        scene_shader_2d.set_uniform("use_texture", true);
+        scene_shader_2d.set_uniform("use_texture",
+                                    preview_2d_primitive_ != gl::PrimitiveType::Lines);
         scene_shader_2d.set_uniform("is_selected", true);
         scene_shader_2d.set_uniform("on_floor_below", false);
-        object_preview_2d_.bind().draw_elements();
+        object_preview_2d_.bind().draw_elements(preview_2d_primitive_);
     }
 }
 
@@ -423,7 +340,9 @@ void CreateObjectTool::update_previews(const EditorState& state,
     object_preview_ = object_.to_geometry(state.current_floor);
     object_preview_.update();
 
-    object_preview_2d_ = object_.to_2d_geometry(drawing_pad_texture_map).first;
+    auto [preview, primitive] = object_.to_2d_geometry(drawing_pad_texture_map);
+    object_preview_2d_ = std::move(preview);
+    preview_2d_primitive_ = primitive;
     object_preview_2d_.update();
 }
 
@@ -507,16 +426,7 @@ void AreaSelectTool::render_preview()
     }
 }
 
-void AreaSelectTool::render_preview_2d(DrawingPad& drawing_pad, const EditorState& state)
-{
-    if (active_dragging_)
-    {
-        drawing_pad.render_quad(selection_area_.start, selection_area_.end - selection_area_.start,
-                                Colour::RED);
-    }
-}
-
-void AreaSelectTool::render_preview_2d_v2(gl::Shader& scene_shader_2d)
+void AreaSelectTool::render_preview_2d(gl::Shader& scene_shader_2d)
 {
     if (active_dragging_ && selection_quad_.has_buffered() && render_preview_mesh_)
     {
@@ -604,7 +514,7 @@ void AreaSelectTool::update_previews()
     }
 
     selection_quad_ = generate_2d_outline_quad_mesh(selection_area_.start,
-                                                   selection_area_.end - selection_area_.start);
+                                                    selection_area_.end - selection_area_.start);
     selection_quad_.update();
     render_preview_mesh_ = true;
 }

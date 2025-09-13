@@ -6,19 +6,6 @@
 #include "../Graphics/OpenGL/GLUtils.h"
 #include "EditConstants.h"
 
-namespace
-{
-    void add_line_to_mesh(Mesh2D& mesh, glm::vec2 from, glm::vec2 to, const glm::vec4& colour)
-    {
-        mesh.vertices.push_back(Vertex2D{.position = from, .colour = colour});
-        mesh.vertices.push_back(Vertex2D{.position = to, .colour = colour});
-
-        mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
-        mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
-    }
-
-} // namespace
-
 DrawingPad::DrawingPad(glm::vec2 size, const glm::ivec2& selected_node)
     : camera_(CameraConfig{
           .type = CameraType::OrthographicScreen,
@@ -97,7 +84,7 @@ bool DrawingPad::init()
     grid_mesh_.main_grid.buffer();
 
     // Create the mesh for displaying whatever node is being selected
-    //selection_mesh_.vertices = {
+    // selection_mesh_.vertices = {
     //    {.position = {0.0f, 0.0f}, .texture_coord = {0.0f, 0.0f}, .colour = glm::vec4(1.0f)},
     //    {.position = {0.0f, 8.0f}, .texture_coord = {0.0f, 1.0f}, .colour = glm::vec4(1.0f)},
     //    {.position = {8.0f, 8.0f}, .texture_coord = {1.0f, 1.0f}, .colour = glm::vec4(1.0f)},
@@ -182,11 +169,11 @@ void DrawingPad::set_camera_position(glm::vec2 position)
 
 void DrawingPad::camera_gui()
 {
-    //auto scale = camera_.get_orthographic_scale();
-    //if (ImGui::SliderFloat("Zoom", &scale, 0.5, 2.5))
+    // auto scale = camera_.get_orthographic_scale();
+    // if (ImGui::SliderFloat("Zoom", &scale, 0.5, 2.5))
     //{
-    //    camera_.set_orthographic_scale(scale);
-    //}
+    //     camera_.set_orthographic_scale(scale);
+    // }
 }
 
 void DrawingPad::display(const Transform& camera_transform)

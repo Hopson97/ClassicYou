@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../DrawingPad.h"
 #include "LevelObjectBase.h"
 #include "LevelObjectTypes.h"
 
@@ -36,10 +35,6 @@ using PillarObject = ObjectType<PillarProps, PillarParameters>;
 bool operator==(const PillarProps& lhs, const PillarProps& rhs);
 bool operator!=(const PillarProps& lhs, const PillarProps& rhs);
 
-// =======================================
-//     Free functions
-// =======================================
-[[nodiscard]] LevelObjectsMesh3D generate_pillar_mesh(const PillarObject& pillar, int floor_number);
 [[nodiscard]] bool object_deserialise(PillarObject& pillar, const nlohmann::json& json,
                                       const LevelFileIO& level_file_io);
 
@@ -47,20 +42,7 @@ bool operator!=(const PillarProps& lhs, const PillarProps& rhs);
 //      Specialised Functions
 // =======================================
 template <>
-[[nodiscard]] LevelObjectsMesh3D object_to_geometry<PillarObject>(const PillarObject& pillar,
-                                                                  int floor_number);
-
-template <>
-[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
-object_to_geometry_2d<PillarObject>(const PillarObject& pillar,
-                                    const LevelTextures& drawing_pad_texture_map);
-
-template <>
 [[nodiscard]] std::string object_to_string<PillarObject>(const PillarObject& pillar);
-
-template <>
-void render_object_2d<PillarObject>(const PillarObject& pillar, DrawingPad& drawing_pad,
-                                    const glm::vec4& colour, const glm::vec2& selected_offset);
 
 template <>
 [[nodiscard]] bool object_try_select_2d<PillarObject>(const PillarObject& pillar,
@@ -80,5 +62,14 @@ template <>
 [[nodiscard]] glm::vec2 object_get_position(const PillarObject& pillar);
 
 template <>
-SerialiseResponse object_serialise<PillarObject>(const PillarObject& pillar,
-                                                 LevelFileIO& level_file_io);
+[[nodiscard]] SerialiseResponse object_serialise<PillarObject>(const PillarObject& pillar,
+                                                               LevelFileIO& level_file_io);
+
+template <>
+[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
+object_to_geometry_2d<PillarObject>(const PillarObject& pillar,
+                                    const LevelTextures& drawing_pad_texture_map);
+
+template <>
+[[nodiscard]] LevelObjectsMesh3D object_to_geometry<PillarObject>(const PillarObject& pillar,
+                                                                  int floor_number);
