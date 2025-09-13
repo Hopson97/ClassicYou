@@ -12,6 +12,24 @@
 #include "EditConstants.h"
 #include "EditorLevel.h"
 #include "EditorState.h"
+#include "LevelTextures.h"
+
+namespace
+{
+    void render_wall(bool should_draw, const Mesh2D& wall_mesh, gl::Shader& scene_shader_2d)
+    {
+        if (should_draw && wall_mesh.has_buffered())
+        {
+            glLineWidth(3);
+
+            scene_shader_2d.set_uniform("use_texture", false);
+            scene_shader_2d.set_uniform("is_selected", true);
+            scene_shader_2d.set_uniform("on_floor_below", false);
+
+            wall_mesh.bind().draw_elements(gl::PrimitiveType::Lines);
+        }
+    }
+} // namespace
 
 // =======================================
 //          CreateWallTool
@@ -67,16 +85,7 @@ void CreateWallTool::render_preview()
 
 void CreateWallTool::render_preview_2d_v2(gl::Shader& scene_shader_2d)
 {
-    glLineWidth(3);
-
-    scene_shader_2d.set_uniform("use_texture", false);
-    scene_shader_2d.set_uniform("is_selected", true);
-    scene_shader_2d.set_uniform("on_floor_below", false);
-
-    if (active_dragging_ && wall_preview_2d_.has_buffered())
-    {
-        wall_preview_2d_.bind().draw_elements(gl::PrimitiveType::Lines);
-    }
+    render_wall(active_dragging_, wall_preview_2d_, scene_shader_2d);
 }
 
 void CreateWallTool::render_preview_2d(DrawingPad& drawing_pad,
@@ -113,11 +122,18 @@ void CreateWallTool::update_previews(const EditorState& state,
 // =======================================
 //          UpdateWallTool
 // =======================================
-UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall, int wall_floor)
+UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall, int wall_floor,
+                               const LevelTextures& drawing_pad_texture_map)
     : object_(object)
     , wall_{wall}
     , wall_floor_(wall_floor)
 {
+    edge_mesh_ = generate_2d_quad_mesh({0, 0}, {32, 32},
+                                       (float)*drawing_pad_texture_map.get_texture("SelectCircle"),
+                                       Direction::Forward);
+    edge_mesh_.buffer();
+
+    wall_line_ = wall.parameters.line;
 }
 
 void UpdateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
@@ -151,8 +167,7 @@ void UpdateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
                 wall_line_.start = wall_.parameters.line.start;
                 wall_line_.end = wall_.parameters.line.end;
 
-                wall_preview_ = generate_wall_mesh(wall_, state.current_floor);
-                wall_preview_.update();
+                update_previews(state, drawing_pad_texture_map);
             }
         }
     }
@@ -160,7 +175,6 @@ void UpdateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
     {
         if (active_dragging_)
         {
-
             switch (target_)
             {
                 case UpdateWallTool::DragTarget::Start:
@@ -173,14 +187,7 @@ void UpdateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
                 default:
                     break;
             }
-
-            wall_preview_ = generate_wall_mesh(
-                {
-                    .properties = wall_.properties,
-                    .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
-                },
-                state.current_floor);
-            wall_preview_.update();
+            update_previews(state, drawing_pad_texture_map);
         }
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
@@ -230,9 +237,43 @@ void UpdateWallTool::render_preview_2d(DrawingPad& drawing_pad, const EditorStat
     }
 }
 
+constexpr glm::vec2 OFFSET{16, 16};
+void UpdateWallTool::render_preview_2d_v2(gl::Shader& scene_shader_2d)
+{
+    render_wall(active_dragging_, wall_preview_2d_, scene_shader_2d);
+
+    scene_shader_2d.set_uniform("use_texture", true);
+    scene_shader_2d.set_uniform("use_texture_alpha_channel", true);
+    scene_shader_2d.set_uniform("is_selected", false);
+
+    glm::vec3 start{wall_line_.start - OFFSET, 0};
+    glm::vec3 end{wall_line_.end - OFFSET, 0};
+
+    scene_shader_2d.set_uniform("model_matrix", create_model_matrix({.position = start}));
+    edge_mesh_.bind().draw_elements();
+
+    scene_shader_2d.set_uniform("model_matrix", create_model_matrix({.position = end}));
+    edge_mesh_.bind().draw_elements();
+}
+
 ToolType UpdateWallTool::get_tool_type() const
 {
     return ToolType::UpdateWall;
+}
+
+void UpdateWallTool::update_previews(const EditorState& state,
+                                     const LevelTextures& drawing_pad_texture_map)
+{
+    WallObject wall{
+        .properties = state.wall_default,
+        .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
+    };
+
+    wall_preview_ = object_to_geometry(wall, state.current_floor);
+    wall_preview_.update();
+
+    wall_preview_2d_ = object_to_geometry_2d(wall, drawing_pad_texture_map).first;
+    wall_preview_2d_.update();
 }
 
 // =======================================
@@ -561,7 +602,7 @@ void AreaSelectTool::show_gui(EditorState& state)
 
         if (ImGui::Begin("Selection Options"))
         {
-            ImGui::Text("Selected %u objects.", state.selection.objects.size());
+            ImGui::Text("Selected %ull objects.", state.selection.objects.size());
 
             bool update = false;
             update |= ImGui::SliderInt("Max floors selection", &max_floor_, start_floor_,

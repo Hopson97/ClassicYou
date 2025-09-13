@@ -12,6 +12,7 @@ uniform sampler2DArray diffuse;
 uniform bool use_texture;
 uniform bool is_selected;
 uniform bool on_floor_below;
+uniform bool use_texture_alpha_channel;
 
 #define HIGHLIGHT_FACTOR 1.5
 #define OBSCURE_FACTOR 0.5
@@ -21,7 +22,10 @@ void main()
     if (use_texture) 
     {
         out_colour = texture(diffuse, fs_in.texture_coord);
-        out_colour.a = fs_in.colour.a;
+        if (!use_texture_alpha_channel) 
+        {
+            out_colour.a = fs_in.colour.a;
+        }
     }
     else 
     {
