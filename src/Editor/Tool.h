@@ -14,6 +14,11 @@ struct EditorState;
 class ActionManager;
 class EditorLevel;
 
+namespace gl
+{
+    class Shader;
+}
+
 enum class ToolType
 {
     CreateWall,
@@ -28,9 +33,10 @@ class ITool
     virtual ~ITool() = default;
 
     virtual void on_event(sf::Event event, glm::vec2 node, EditorState& state,
-                          ActionManager& actions) = 0;
+                          ActionManager& actions, const LevelTextures& drawing_pad_texture_map) = 0;
     virtual void render_preview() = 0;
     virtual void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) = 0;
+    virtual void render_preview_2d_v2(gl::Shader& scene_shader_2d) {};
 
     virtual ToolType get_tool_type() const = 0;
 
@@ -40,15 +46,20 @@ class ITool
 class CreateWallTool : public ITool
 {
   public:
-    void on_event(sf::Event event, glm::vec2 node, EditorState& state,
-                  ActionManager& actions) override;
+    void on_event(sf::Event event, glm::vec2 node, EditorState& state, ActionManager& actions,
+                  const LevelTextures& drawing_pad_texture_map) override;
     void render_preview() override;
     void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) override;
+    void render_preview_2d_v2(gl::Shader& scene_shader_2d) override;
 
     ToolType get_tool_type() const override;
 
   private:
+    void update_previews(const EditorState& state, const LevelTextures& drawing_pad_texture_map);
+
+  private:
     LevelObjectsMesh3D wall_preview_;
+    Mesh2D wall_preview_2d_;
     Line wall_line_;
     bool active_dragging_ = false;
 };
@@ -57,8 +68,8 @@ class UpdateWallTool : public ITool
 {
   public:
     UpdateWallTool(LevelObject object, WallObject& wall, int wall_floor);
-    void on_event(sf::Event event, glm::vec2 node, EditorState& state,
-                  ActionManager& actions) override;
+    void on_event(sf::Event event, glm::vec2 node, EditorState& state, ActionManager& actions,
+                  const LevelTextures& drawing_pad_texture_map) override;
     void render_preview() override;
     void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) override;
 
@@ -88,8 +99,8 @@ class CreateObjectTool : public ITool
   public:
     CreateObjectTool(ObjectTypeName object_type);
 
-    void on_event(sf::Event event, glm::vec2 node, EditorState& state,
-                  ActionManager& actions) override;
+    void on_event(sf::Event event, glm::vec2 node, EditorState& state, ActionManager& actions,
+                  const LevelTextures& drawing_pad_texture_map) override;
     void render_preview() override;
     void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) override;
 
@@ -106,8 +117,8 @@ class AreaSelectTool : public ITool
   public:
     AreaSelectTool(EditorLevel& level);
 
-    void on_event(sf::Event event, glm::vec2 node, EditorState& state,
-                  ActionManager& actions) override;
+    void on_event(sf::Event event, glm::vec2 node, EditorState& state, ActionManager& actions,
+                  const LevelTextures& drawing_pad_texture_map) override;
     void render_preview() override;
     void render_preview_2d(DrawingPad& drawing_pad, const EditorState& state) override;
 
