@@ -115,8 +115,8 @@ bool ScreenEditGame::on_init()
     // ---------------------------
     // ==== Buffer the meshes ====
     // ---------------------------
-    arrow_mesh_ = generate_2d_quad_mesh(
-        {0, 0}, {16, 16}, *drawing_pad_texture_map_.get_texture("Arrow"), Direction::Forward);
+    arrow_mesh_ =
+        generate_2d_quad_mesh({0, 0}, {16, 16}, *drawing_pad_texture_map_.get_texture("Arrow"));
     arrow_mesh_.buffer();
 
     selection_mesh_.buffer();
@@ -159,6 +159,8 @@ bool ScreenEditGame::on_init()
     {
         return false;
     }
+    drawing_pad_shader_.set_uniform("base_texture", 0);
+    drawing_pad_shader_.set_uniform("world_texture", 1);
 
     // ----------------------------------------------------------------
     // ==== Set up the picker FBO and shader for 3D mouse picking  ====
@@ -245,12 +247,13 @@ void ScreenEditGame::on_event(const sf::Event& event)
             case sf::Keyboard::Key::T:
                 camera_controller_options_.lock_rotation =
                     !camera_controller_options_.lock_rotation;
+                window().setMouseCursorVisible(camera_controller_options_.lock_rotation);
                 break;
 
             case sf::Keyboard::Key::L:
                 camera_controller_options_.free_movement =
                     !camera_controller_options_.free_movement;
-                window().setMouseCursorVisible(camera_controller_options_.lock_rotation);
+
                 break;
 
             case sf::Keyboard::Key::Delete:
@@ -444,8 +447,12 @@ void ScreenEditGame::on_render(bool show_debug)
         drawing_pad_shader_.set_uniform("projection_matrix", camera_2d_.get_projection_matrix());
         drawing_pad_shader_.set_uniform("view_matrix", camera_2d_.get_view_matrix());
         drawing_pad_shader_.set_uniform("model_matrix", create_model_matrix({}));
+        drawing_pad_shader_.set_uniform("use_world_texture",
+                                        editor_settings_.show_textures_in_2d_view);
+        drawing_pad_shader_.set_uniform("texture_mix", editor_settings_.texture_mix);
 
         drawing_pad_textures_.bind(0);
+        world_textures_.bind(1);
 
         // Render level
         level_.render_2d(drawing_pad_shader_, editor_state_.selection.objects,
@@ -460,11 +467,12 @@ void ScreenEditGame::on_render(bool show_debug)
             }
         }
 
-        // Render the arrow shwoing where the 3D camera is in the 2D view
+        // Render the arrow showing where the 3D camera is in the 2D view
         drawing_pad_shader_.set_uniform("use_texture", true);
         drawing_pad_shader_.set_uniform("is_selected", false);
         drawing_pad_shader_.set_uniform("on_floor_below", false);
         drawing_pad_shader_.set_uniform("use_texture_alpha_channel", true);
+        drawing_pad_shader_.set_uniform("use_world_texture", false);
 
         drawing_pad_shader_.set_uniform(
             "model_matrix",
@@ -924,8 +932,15 @@ void ScreenEditGame::display_menu_bar_gui()
 
         if (ImGui::BeginMenu("View"))
         {
-            ImGui::Checkbox("Lock 2D To 3D View?", &editor_settings_.always_center_2d_to_3d_view);
             ImGui::Checkbox("Show History?", &editor_settings_.show_history);
+            ImGui::Checkbox("Lock 2D To 3D View?", &editor_settings_.always_center_2d_to_3d_view);
+
+            ImGui::Checkbox("Show Textues in 2D View?", &editor_settings_.show_textures_in_2d_view);
+            if (!editor_settings_.show_textures_in_2d_view) ImGui::BeginDisabled();
+            ImGui::SliderFloat("Base/World Texture Mix (2D)", &editor_settings_.texture_mix, 0.0f, 1.0f);
+            if (!editor_settings_.show_textures_in_2d_view) ImGui::EndDisabled();
+
+
             ImGui::Checkbox("Show Grid?", &editor_settings_.show_grid);
             if (ImGui::Checkbox("Show 2D View? (Full Screen 3D)", &editor_settings_.show_2d_view))
             {

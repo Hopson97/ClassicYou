@@ -38,6 +38,9 @@ class ScreenEditGame final : public Screen
 
         bool show_history = false;
 
+        bool show_textures_in_2d_view = true;
+        float texture_mix = 0.75;
+
         bool jump_to_selection_floor = true;
     } editor_settings_;
 

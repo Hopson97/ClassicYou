@@ -33,10 +33,6 @@ void main()
         }
         out_colour.rgb *= diffuse_light;
     }
-    else 
-    {
-        out_colour = fs_in.colour;
-    }
 
     if (out_colour.a < 0.1) 
     {

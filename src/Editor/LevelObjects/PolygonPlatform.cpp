@@ -153,14 +153,14 @@ object_to_geometry_2d(const PolygonPlatformObject& poly,
 
     Mesh2D mesh;
 
-    add_line_to_mesh(mesh, tl, tl + glm::vec2(TILE_SIZE, 0), Colour::WHITE);
-    add_line_to_mesh(mesh, tl, tl + glm::vec2(0, TILE_SIZE), Colour::WHITE);
-    add_line_to_mesh(mesh, tr, tr - glm::vec2(TILE_SIZE, 0), Colour::WHITE);
-    add_line_to_mesh(mesh, tr, tr + glm::vec2(0, TILE_SIZE), Colour::WHITE);
-    add_line_to_mesh(mesh, br, br - glm::vec2(TILE_SIZE, 0), Colour::WHITE);
-    add_line_to_mesh(mesh, br, br - glm::vec2(0, TILE_SIZE), Colour::WHITE);
-    add_line_to_mesh(mesh, bl, bl + glm::vec2(TILE_SIZE, 0), Colour::WHITE);
-    add_line_to_mesh(mesh, bl, bl - glm::vec2(0, TILE_SIZE), Colour::WHITE);
+    add_line_to_mesh(mesh, tl, tl + glm::vec2(TILE_SIZE, 0), poly.properties.texture_top.colour);
+    add_line_to_mesh(mesh, tl, tl + glm::vec2(0, TILE_SIZE), poly.properties.texture_top.colour);
+    add_line_to_mesh(mesh, tr, tr - glm::vec2(TILE_SIZE, 0), poly.properties.texture_top.colour);
+    add_line_to_mesh(mesh, tr, tr + glm::vec2(0, TILE_SIZE), poly.properties.texture_top.colour);
+    add_line_to_mesh(mesh, br, br - glm::vec2(TILE_SIZE, 0), poly.properties.texture_top.colour);
+    add_line_to_mesh(mesh, br, br - glm::vec2(0, TILE_SIZE), poly.properties.texture_top.colour);
+    add_line_to_mesh(mesh, bl, bl + glm::vec2(TILE_SIZE, 0), poly.properties.texture_top.colour);
+    add_line_to_mesh(mesh, bl, bl - glm::vec2(0, TILE_SIZE), poly.properties.texture_top.colour);
 
     return std::make_pair(std::move(mesh), gl::PrimitiveType::Lines);
 }

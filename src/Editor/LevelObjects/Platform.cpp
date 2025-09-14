@@ -140,6 +140,7 @@ object_to_geometry_2d(const PlatformObject& platform, const LevelTextures& drawi
 
     return {generate_2d_quad_mesh(platform.parameters.position,
                                   {props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F}, texture,
+                                  props.texture_top.id, props.texture_top.colour,
                                   Direction::Forward),
             gl::PrimitiveType::Triangles};
 }

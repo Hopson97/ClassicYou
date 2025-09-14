@@ -163,7 +163,7 @@ object_to_geometry_2d(const RampObject& ramp, const LevelTextures& drawing_pad_t
 
     return {generate_2d_quad_mesh(ramp.parameters.position,
                                   {props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F}, texture,
-                                  props.direction),
+                                  props.texture_top.id, props.texture_top.colour, props.direction),
             gl::PrimitiveType::Triangles};
 }
 

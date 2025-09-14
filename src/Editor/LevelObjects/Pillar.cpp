@@ -130,8 +130,8 @@ object_to_geometry_2d(const PillarObject& pillar, const LevelTextures& drawing_p
     auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Pillar"));
 
     return {generate_2d_quad_mesh(pillar.parameters.position - (props.size * TILE_SIZE_F / 2.0f),
-                                  {props.size * TILE_SIZE_F, props.size * TILE_SIZE_F}, texture,
-                                  Direction::Forward),
+                                  {props.size * TILE_SIZE_F, props.size * TILE_SIZE_F}, texture, 
+                                  props.texture.id, props.texture.colour),
             gl::PrimitiveType::Triangles};
 }
 
