@@ -14,9 +14,15 @@ struct CameraKeybinds
     sf::Keyboard::Key back = sf::Keyboard::Key::S;
 };
 
+struct CameraControllerOptions
+{
+    bool lock_rotation = true;
+    bool free_movement = false;
+};
+
 void free_camera_controller(const Keyboard& keyboard, Camera& camera, sf::Time dt,
                             const CameraKeybinds& keybinds, const sf::Window& window,
-                            bool is_rotation_locked);
+                            CameraControllerOptions options);
 
 void free_camera_controller_2d(const Keyboard& keyboard, Camera& camera, sf::Time dt,
                                const CameraKeybinds& keybinds);

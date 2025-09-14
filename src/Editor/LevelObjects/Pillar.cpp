@@ -86,7 +86,7 @@ SerialiseResponse object_serialise(const PillarObject& pillar, LevelFileIO& leve
     json_props.insert(json_props.end(), {(int)props.style, props.size, props.base_height,
                                          props.height, (int)props.angled});
 
-    return {{json_params, json_props}, "Pillar"};
+    return {{json_params, json_props}, "pillar"};
 }
 
 bool object_deserialise(PillarObject& pillar_object, const nlohmann::json& json,

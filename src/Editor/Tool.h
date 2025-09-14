@@ -44,6 +44,8 @@ class ITool
 class CreateWallTool : public ITool
 {
   public:
+    CreateWallTool(const LevelTextures& drawing_pad_texture_map);
+
     void on_event(sf::Event event, glm::vec2 node, EditorState& state, ActionManager& actions,
                   const LevelTextures& drawing_pad_texture_map) override;
     void render_preview() override;
@@ -57,7 +59,9 @@ class CreateWallTool : public ITool
   private:
     LevelObjectsMesh3D wall_preview_;
     Mesh2D wall_preview_2d_;
+    Mesh2D selection_node_;
     Line wall_line_;
+    glm::vec2 selected_node_{0};
     bool active_dragging_ = false;
 };
 

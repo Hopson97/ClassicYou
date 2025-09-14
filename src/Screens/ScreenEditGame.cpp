@@ -26,10 +26,7 @@ namespace
     };
 
     constexpr std::array TEXTURE_NAMES_2D = {
-        "SelectCircle",
-        "Platform",
-        "Ramp",
-        "Pillar",
+        "Arrow", "Selection", "SelectCircle", "Platform", "Ramp", "Pillar",
     };
 
     glm::ivec2 map_pixel_to_tile(glm::vec2 point, const Camera& camera)
@@ -75,41 +72,14 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens)
 }
 
 ScreenEditGame::ScreenEditGame(ScreenManager& screens, std::string level_name)
-    : Screen(screens)
-    , camera_(CameraConfig{
-          .type = CameraType::Perspective,
-          .viewport_size = {window().getSize().x / 2, window().getSize().y},
-          .near = 0.1f,
-          .far = 1000.0f,
-          .fov = 90.0f,
-      })
-    , camera_2d_(CameraConfig{
-          .type = CameraType::OrthographicScreen,
-          .viewport_size = {window().getSize().x / 2, window().getSize().y},
-          .near = 0.5f,
-          .far = 1000.0f,
-      })
-      , keybinds_2d_{
-          .forward = sf::Keyboard::Key::Down,
-          .left = sf::Keyboard::Key::Left,
-          .right = sf::Keyboard::Key::Right,
-          .back = sf::Keyboard::Key::Up,
-      }
-    , level_(drawing_pad_texture_map_)
-    , action_manager_(editor_state_, level_)
-    , object_move_handler_(level_, action_manager_)
-    , copy_paste_handler_(level_, action_manager_)
-    , level_name_(level_name)
-    , level_name_actual_(level_name)
-    , picker_fbo_(window().getSize().x, window().getSize().y)
+    : ScreenEditGame(screens)
 {
+    level_name_ = level_name;
+    level_name_actual_ = level_name;
 }
 
 bool ScreenEditGame::on_init()
 {
-
-    tool_ = std::make_unique<CreateWallTool>();
-
     // -----------------------
     // ==== Load textures ====
     // -----------------------
@@ -141,8 +111,12 @@ bool ScreenEditGame::on_init()
     }
 
     // ---------------------------
-    // ==== Buffer thr meshes ====
+    // ==== Buffer the meshes ====
     // ---------------------------
+    arrow_mesh_ = generate_2d_quad_mesh(
+        {0, 0}, {16, 16}, *drawing_pad_texture_map_.get_texture("Arrow"), Direction::Forward);
+    arrow_mesh_.buffer();
+
     selection_mesh_.buffer();
 
     // ----------------------------
@@ -184,9 +158,9 @@ bool ScreenEditGame::on_init()
         return false;
     }
 
-    // -------------------------------------------
-    // ==== Set up the picker FBO and shader  ====
-    // -------------------------------------------
+    // ----------------------------------------------------------------
+    // ==== Set up the picker FBO and shader for 3D mouse picking  ====
+    // ----------------------------------------------------------------
     picker_fbo_.attach_colour(gl::TextureFormat::R32I).attach_renderbuffer();
     if (!picker_fbo_.is_complete())
     {
@@ -211,7 +185,7 @@ bool ScreenEditGame::on_init()
     // -----------------------------------
     // ==== Entity Transform Creation ====
     // -----------------------------------
-    camera_.transform = {.position = {WORLD_SIZE / 2, 12, WORLD_SIZE + 3},
+    camera_.transform = {.position = {WORLD_SIZE / 2, 8, WORLD_SIZE + 3},
                          .rotation = {-40, 270.0f, 0.0f}};
 
     // -----------------------------
@@ -237,6 +211,9 @@ bool ScreenEditGame::on_init()
     {
         return false;
     }
+
+    // Set up the default tool
+    tool_ = std::make_unique<CreateWallTool>(drawing_pad_texture_map_);
 
     return true;
 }
@@ -264,8 +241,9 @@ void ScreenEditGame::on_event(const sf::Event& event)
         switch (key->code)
         {
             case sf::Keyboard::Key::L:
-                rotation_locked_ = !rotation_locked_;
-                window().setMouseCursorVisible(rotation_locked_);
+                camera_controller_options_.lock_rotation =
+                    !camera_controller_options_.lock_rotation;
+                window().setMouseCursorVisible(camera_controller_options_.lock_rotation);
                 break;
 
             case sf::Keyboard::Key::Delete:
@@ -404,7 +382,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
         {
             // After the selection has been moved, the old selection area is invalidated
             // TODO: Find a way to move the selection rather than just set to wall
-            tool_ = std::make_unique<CreateWallTool>();
+            tool_ = std::make_unique<CreateWallTool>(drawing_pad_texture_map_);
         }
     }
 
@@ -420,7 +398,7 @@ void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
     {
         return;
     }
-    free_camera_controller(keyboard, camera_, dt, camera_keybinds_, window(), rotation_locked_);
+    free_camera_controller(keyboard, camera_, dt, camera_keybinds_, window(), camera_controller_options_);
     free_camera_controller_2d(keyboard, camera_2d_, dt, keybinds_2d_);
 
     if (editor_settings_.always_center_2d_to_3d_view)
@@ -438,7 +416,6 @@ void ScreenEditGame::on_fixed_update([[maybe_unused]] sf::Time dt)
 
 void ScreenEditGame::on_render(bool show_debug)
 {
-
     //=============================================
     //          Render the 2D View
     //=============================================
@@ -474,6 +451,27 @@ void ScreenEditGame::on_render(bool show_debug)
                 tool_->render_preview_2d(drawing_pad_shader_);
             }
         }
+
+        // Render the arrow shwoing where the 3D camera is in the 2D view
+        drawing_pad_shader_.set_uniform("use_texture", true);
+        drawing_pad_shader_.set_uniform("is_selected", false);
+        drawing_pad_shader_.set_uniform("on_floor_below", false);
+        drawing_pad_shader_.set_uniform("use_texture_alpha_channel", true);
+
+        drawing_pad_shader_.set_uniform(
+            "model_matrix",
+            create_model_matrix(
+                {.position = glm::vec3{editor_state_.node_hovered, 0} - glm::vec3(8, 8, 0)}));
+
+        drawing_pad_shader_.set_uniform(
+            "model_matrix",
+            create_model_matrix_orbit(
+                {.position = {camera_.transform.position.x * TILE_SIZE - TILE_SIZE / 4,
+                              camera_.transform.position.z * TILE_SIZE, 0},
+                 .rotation = {0, 0, camera_.transform.rotation.y + 90.0f}},
+                {8, 8, 0}));
+
+        arrow_mesh_.bind().draw_elements();
 
         // When showing the 2D view, the 3D view is half width
         glViewport(window().getSize().x / 2, 0, window().getSize().x / 2, window().getSize().y);
@@ -514,9 +512,9 @@ void ScreenEditGame::on_render(bool show_debug)
     {
         scene_shader_.set_uniform(
             "model_matrix",
-            create_model_matrix({.position = {editor_state_.node_hovered.x / TILE_SIZE,
+            create_model_matrix({.position = {editor_state_.node_hovered.x / HALF_TILE_SIZE_F,
                                               editor_state_.current_floor * FLOOR_HEIGHT,
-                                              editor_state_.node_hovered.y / TILE_SIZE}}));
+                                              editor_state_.node_hovered.y / HALF_TILE_SIZE_F}}));
         scene_shader_.set_uniform("use_texture", false);
         selection_mesh_.bind().draw_elements();
     }
@@ -648,7 +646,7 @@ void ScreenEditGame::select_object(LevelObject* object)
         }
         else
         {
-            tool_ = std::make_unique<CreateWallTool>();
+            tool_ = std::make_unique<CreateWallTool>(drawing_pad_texture_map_);
         }
     }
 }
@@ -663,7 +661,7 @@ void ScreenEditGame::display_editor_gui()
         ImGui::Separator();
         if (ImGui::Button("Wall"))
         {
-            tool_ = std::make_unique<CreateWallTool>();
+            tool_ = std::make_unique<CreateWallTool>(drawing_pad_texture_map_);
             editor_state_.selection.clear_selection();
         }
         ImGui::SameLine();
@@ -779,21 +777,6 @@ void ScreenEditGame::exit_editor()
     window().setMouseCursorVisible(true);
 }
 
-void ScreenEditGame::save_level()
-{
-    // Ensure a level name is actually set before saving
-    if (level_name_.empty())
-    {
-        show_save_dialog_ = true;
-    }
-    else
-    {
-        save_level(level_name_);
-        level_name_actual_ = level_name_;
-
-        show_save_dialog_ = false;
-    }
-}
 
 void ScreenEditGame::display_save_as_gui()
 {
@@ -913,7 +896,7 @@ void ScreenEditGame::try_set_tool_to_create_wall()
     // So this explicitly prevents that from happening
     if (tool_ && tool_->get_tool_type() == ToolType::UpdateWall)
     {
-        tool_ = std::make_unique<CreateWallTool>();
+        tool_ = std::make_unique<CreateWallTool>(drawing_pad_texture_map_);
     }
 }
 
@@ -949,12 +932,29 @@ bool ScreenEditGame::load_level(const std::string& name)
     return true;
 }
 
+
+void ScreenEditGame::save_level()
+{
+    // Ensure a level name is actually set before saving
+    if (level_name_.empty())
+    {
+        show_save_dialog_ = true;
+    }
+    else
+    {
+        save_level(level_name_);
+        level_name_actual_ = level_name_;
+
+        show_save_dialog_ = false;
+    }
+}
+
 void ScreenEditGame::save_level(const std::string& name)
 {
     LevelFileIO level_file_io;
 
     if (level_.serialise(level_file_io))
     {
-        level_file_io.save(name, false);
+        level_file_io.save(name, true);
     }
 }
