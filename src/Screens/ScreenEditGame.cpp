@@ -40,6 +40,8 @@ namespace
         };
     }
 
+    constexpr float CAMERA_BASE_Y = 10.0f;
+
 } // namespace
 
 ScreenEditGame::ScreenEditGame(ScreenManager& screens)
@@ -185,7 +187,7 @@ bool ScreenEditGame::on_init()
     // -----------------------------------
     // ==== Entity Transform Creation ====
     // -----------------------------------
-    camera_.transform = {.position = {WORLD_SIZE / 2, 8, WORLD_SIZE + 3},
+    camera_.transform = {.position = {WORLD_SIZE / 2, CAMERA_BASE_Y, WORLD_SIZE + 3},
                          .rotation = {-40, 270.0f, 0.0f}};
 
     // -----------------------------
@@ -243,6 +245,9 @@ void ScreenEditGame::on_event(const sf::Event& event)
             case sf::Keyboard::Key::L:
                 camera_controller_options_.lock_rotation =
                     !camera_controller_options_.lock_rotation;
+
+                camera_controller_options_.free_movement =
+                    !camera_controller_options_.free_movement;
                 window().setMouseCursorVisible(camera_controller_options_.lock_rotation);
                 break;
 
@@ -398,7 +403,8 @@ void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
     {
         return;
     }
-    free_camera_controller(keyboard, camera_, dt, camera_keybinds_, window(), camera_controller_options_);
+    free_camera_controller(keyboard, camera_, dt, camera_keybinds_, window(),
+                           camera_controller_options_);
     free_camera_controller_2d(keyboard, camera_2d_, dt, keybinds_2d_);
 
     if (editor_settings_.always_center_2d_to_3d_view)
@@ -634,6 +640,7 @@ void ScreenEditGame::select_object(LevelObject* object)
             {
                 editor_state_.current_floor = *floor;
             }
+            set_camera_to_current_floor();
         }
 
         // Editing a wall requires a special tool to enable resizing, so after a object
@@ -703,13 +710,13 @@ void ScreenEditGame::display_editor_gui()
         if (ImGui::Button("Floor Down"))
         {
             level_.ensure_floor_exists(--editor_state_.current_floor);
-            camera_.transform.position.y -= FLOOR_HEIGHT;
+            set_camera_to_current_floor();
         }
         ImGui::SameLine();
         if (ImGui::Button("Floor Up"))
         {
             level_.ensure_floor_exists(++editor_state_.current_floor);
-            camera_.transform.position.y += FLOOR_HEIGHT;
+            set_camera_to_current_floor();
         }
         ImGui::Text("Lowest: %d - Current: %d - Highest: %d", level_.get_min_floor(),
                     editor_state_.current_floor, level_.get_max_floor());
@@ -776,7 +783,6 @@ void ScreenEditGame::exit_editor()
     p_screen_manager_->pop_screen();
     window().setMouseCursorVisible(true);
 }
-
 
 void ScreenEditGame::display_save_as_gui()
 {
@@ -932,7 +938,6 @@ bool ScreenEditGame::load_level(const std::string& name)
     return true;
 }
 
-
 void ScreenEditGame::save_level()
 {
     // Ensure a level name is actually set before saving
@@ -957,4 +962,9 @@ void ScreenEditGame::save_level(const std::string& name)
     {
         level_file_io.save(name, true);
     }
+}
+
+void ScreenEditGame::set_camera_to_current_floor()
+{
+    camera_.transform.position.y = CAMERA_BASE_Y + FLOOR_HEIGHT * editor_state_.current_floor;
 }

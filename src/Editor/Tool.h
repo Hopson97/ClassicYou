@@ -89,6 +89,7 @@ class UpdateWallTool : public ITool
 
     /// Used to ensure walls can only be resized on the current floor as the editor
     const int wall_floor_;
+    int state_floor_;
 
     Line wall_line_;
 

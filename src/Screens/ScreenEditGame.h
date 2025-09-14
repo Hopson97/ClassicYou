@@ -38,7 +38,7 @@ class ScreenEditGame final : public Screen
 
         bool show_history = false;
 
-        bool jump_to_selection_floor = false;
+        bool jump_to_selection_floor = true;
     } editor_settings_;
 
   private:
@@ -77,6 +77,8 @@ class ScreenEditGame final : public Screen
 
     /// Saves the current level to disk
     void save_level(const std::string& name);
+
+    void set_camera_to_current_floor();
 
   private:
     Camera camera_;
