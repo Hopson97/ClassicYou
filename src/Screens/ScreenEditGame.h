@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../Editor/Actions.h"
-#include "../Editor/DrawingPad.h"
 #include "../Editor/EditConstants.h"
 #include "../Editor/EditorEventHandlers.h"
 #include "../Editor/EditorLevel.h"
@@ -87,13 +86,15 @@ class ScreenEditGame final : public Screen
     gl::Shader scene_shader_;
     gl::Shader drawing_pad_shader_;
     gl::Shader world_geometry_shader_;
-    CameraKeybinds camera_keybinds_;
 
+    CameraKeybinds camera_keybinds_;
     CameraKeybinds keybinds_2d_;
+    CameraControllerOptions camera_controller_options_;
 
     Mesh3D selection_mesh_ = generate_cube_mesh({0.1, 1.0f, 0.1});
+    Mesh2D arrow_mesh_;
 
-    bool rotation_locked_ = true;
+    
     Settings settings_;
 
     /// Grid Mesh

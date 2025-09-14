@@ -15,6 +15,8 @@
 
 namespace
 {
+    constexpr glm::vec2 WALL_NODE_ICON_SIZE{8, 8};
+
     void render_wall(bool should_draw, const Mesh2D& wall_mesh, gl::Shader& scene_shader_2d)
     {
         if (should_draw && wall_mesh.has_buffered())
@@ -30,12 +32,20 @@ namespace
     }
 } // namespace
 
+CreateWallTool::CreateWallTool(const LevelTextures& drawing_pad_texture_map)
+{
+    selection_node_ = generate_2d_quad_mesh(
+        {0, 0}, WALL_NODE_ICON_SIZE, *drawing_pad_texture_map.get_texture("Selection"), Direction::Forward);
+    selection_node_.buffer();
+}
+
 // =======================================
 //          CreateWallTool
 // =======================================
 void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
                               ActionManager& actions, const LevelTextures& drawing_pad_texture_map)
 {
+    selected_node_ = node;
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
@@ -85,6 +95,18 @@ void CreateWallTool::render_preview()
 void CreateWallTool::render_preview_2d(gl::Shader& scene_shader_2d)
 {
     render_wall(active_dragging_, wall_preview_2d_, scene_shader_2d);
+
+    scene_shader_2d.set_uniform("use_texture", true);
+    scene_shader_2d.set_uniform("is_selected", false);
+    scene_shader_2d.set_uniform("on_floor_below", false);
+    scene_shader_2d.set_uniform("use_texture_alpha_channel", true);
+
+    scene_shader_2d.set_uniform(
+        "model_matrix",
+        create_model_matrix(
+            {.position = glm::vec3{selected_node_, 0} - glm::vec3(WALL_NODE_ICON_SIZE / 2.0f, 0)}));
+
+    selection_node_.bind().draw_elements();
 }
 
 ToolType CreateWallTool::get_tool_type() const
@@ -116,9 +138,8 @@ UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall, int wall_fl
     , wall_{wall}
     , wall_floor_(wall_floor)
 {
-    edge_mesh_ = generate_2d_quad_mesh({0, 0}, {32, 32},
-                                       *drawing_pad_texture_map.get_texture("SelectCircle"),
-                                       Direction::Forward);
+    edge_mesh_ = generate_2d_quad_mesh(
+        {0, 0}, {32, 32}, *drawing_pad_texture_map.get_texture("SelectCircle"), Direction::Forward);
     edge_mesh_.buffer();
 
     wall_line_ = wall.parameters.line;

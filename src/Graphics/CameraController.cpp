@@ -11,19 +11,19 @@
 namespace
 {
     glm::vec3 keyboard_input(const Keyboard& keyboard, const Camera& camera,
-                             const CameraKeybinds& keybinds)
+                             const CameraKeybinds& keybinds, CameraControllerOptions options)
     {
         glm::vec3 move{0.0f};
-        auto orthographic = camera.get_type() != CameraType::Perspective;
+        auto flat = !options.free_movement || camera.get_type() != CameraType::Perspective;
         if (keyboard.is_key_down(keybinds.forward))
         {
-            move += orthographic ? forward_vector_flat(camera.transform.rotation)
-                                 : forward_vector(camera.transform.rotation);
+            move += flat ? forward_vector_flat(camera.transform.rotation)
+                         : forward_vector(camera.transform.rotation);
         }
         else if (keyboard.is_key_down(keybinds.back))
         {
-            move += orthographic ? backward_vector_flat(camera.transform.rotation)
-                                 : backward_vector(camera.transform.rotation);
+            move += flat ? backward_vector_flat(camera.transform.rotation)
+                         : backward_vector(camera.transform.rotation);
         }
 
         if (keyboard.is_key_down(keybinds.left))
@@ -72,19 +72,19 @@ namespace
 
 void free_camera_controller(const Keyboard& keyboard, Camera& camera, sf::Time dt,
                             const CameraKeybinds& keybinds, const sf::Window& window,
-                            bool is_rotation_locked)
+                            CameraControllerOptions options)
 {
     if (!window.hasFocus())
     {
         return;
     }
 
-    auto move = keyboard_input(keyboard, camera, keybinds);
+    auto move = keyboard_input(keyboard, camera, keybinds, options);
     move.y = camera.get_type() == CameraType::Perspective ? move.y : 0;
     camera.transform.position += move * dt.asSeconds();
     camera.update();
 
-    if (!is_rotation_locked)
+    if (!options.lock_rotation)
     {
         mouse_input(window, camera);
     }
