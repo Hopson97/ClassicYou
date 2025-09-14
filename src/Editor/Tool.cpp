@@ -35,8 +35,7 @@ namespace
 CreateWallTool::CreateWallTool(const LevelTextures& drawing_pad_texture_map)
 {
     selection_node_ = generate_2d_quad_mesh({0, 0}, WALL_NODE_ICON_SIZE,
-                                            *drawing_pad_texture_map.get_texture("Selection"),
-                                            Direction::Forward);
+                                            *drawing_pad_texture_map.get_texture("Selection"));
     selection_node_.buffer();
 }
 
@@ -101,6 +100,7 @@ void CreateWallTool::render_preview_2d(gl::Shader& scene_shader_2d)
     scene_shader_2d.set_uniform("is_selected", false);
     scene_shader_2d.set_uniform("on_floor_below", false);
     scene_shader_2d.set_uniform("use_texture_alpha_channel", true);
+    scene_shader_2d.set_uniform("use_world_texture", false);
 
     scene_shader_2d.set_uniform(
         "model_matrix",
@@ -140,7 +140,7 @@ UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall, int wall_fl
     , wall_floor_(wall_floor)
 {
     edge_mesh_ = generate_2d_quad_mesh(
-        {0, 0}, {32, 32}, *drawing_pad_texture_map.get_texture("SelectCircle"), Direction::Forward);
+        {0, 0}, {32, 32}, *drawing_pad_texture_map.get_texture("SelectCircle"));
     edge_mesh_.buffer();
 
     wall_line_ = wall.parameters.line;

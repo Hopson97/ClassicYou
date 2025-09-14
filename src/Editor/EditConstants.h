@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 
 #include "../Util/Util.h"
-
+#include <glm/glm.hpp>
 
 enum class EditMode
 {
@@ -22,8 +22,9 @@ static constexpr auto TILE_SIZE = 32;
 static constexpr auto HALF_TILE_SIZE = TILE_SIZE / 2;
 static constexpr auto TILE_SIZE_F = static_cast<float>(TILE_SIZE);
 static constexpr auto HALF_TILE_SIZE_F = static_cast<float>(TILE_SIZE_F);
-static constexpr auto MAIN_GRID_COLOUR = rgb_to_normalised({69, 103, 137});
-static constexpr auto SUB_GRID_COLOUR = rgb_to_normalised({18, 52, 86});
+
+static constexpr glm::uvec4 MAIN_GRID_COLOUR{69, 103, 137, 255};
+static constexpr glm::uvec4 SUB_GRID_COLOUR{18, 52, 86, 255};
 
 namespace Colour
 {
