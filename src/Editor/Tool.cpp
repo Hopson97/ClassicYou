@@ -34,8 +34,9 @@ namespace
 
 CreateWallTool::CreateWallTool(const LevelTextures& drawing_pad_texture_map)
 {
-    selection_node_ = generate_2d_quad_mesh(
-        {0, 0}, WALL_NODE_ICON_SIZE, *drawing_pad_texture_map.get_texture("Selection"), Direction::Forward);
+    selection_node_ = generate_2d_quad_mesh({0, 0}, WALL_NODE_ICON_SIZE,
+                                            *drawing_pad_texture_map.get_texture("Selection"),
+                                            Direction::Forward);
     selection_node_.buffer();
 }
 
@@ -148,6 +149,7 @@ UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall, int wall_fl
 void UpdateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
                               ActionManager& actions, const LevelTextures& drawing_pad_texture_map)
 {
+    state_floor_ = state.current_floor;
     // Walls should only be edited on the same floor
     if (state.current_floor != wall_floor_)
     {
@@ -230,20 +232,23 @@ void UpdateWallTool::render_preview()
 constexpr glm::vec2 OFFSET{16, 16};
 void UpdateWallTool::render_preview_2d(gl::Shader& scene_shader_2d)
 {
-    render_wall(active_dragging_, wall_preview_2d_, scene_shader_2d);
+    if (state_floor_ == wall_floor_)
+    {
+        render_wall(active_dragging_, wall_preview_2d_, scene_shader_2d);
 
-    scene_shader_2d.set_uniform("use_texture", true);
-    scene_shader_2d.set_uniform("use_texture_alpha_channel", true);
-    scene_shader_2d.set_uniform("is_selected", false);
+        scene_shader_2d.set_uniform("use_texture", true);
+        scene_shader_2d.set_uniform("use_texture_alpha_channel", true);
+        scene_shader_2d.set_uniform("is_selected", false);
 
-    glm::vec3 start{wall_line_.start - OFFSET, 0};
-    glm::vec3 end{wall_line_.end - OFFSET, 0};
+        glm::vec3 start{wall_line_.start - OFFSET, 0};
+        glm::vec3 end{wall_line_.end - OFFSET, 0};
 
-    scene_shader_2d.set_uniform("model_matrix", create_model_matrix({.position = start}));
-    edge_mesh_.bind().draw_elements();
+        scene_shader_2d.set_uniform("model_matrix", create_model_matrix({.position = start}));
+        edge_mesh_.bind().draw_elements();
 
-    scene_shader_2d.set_uniform("model_matrix", create_model_matrix({.position = end}));
-    edge_mesh_.bind().draw_elements();
+        scene_shader_2d.set_uniform("model_matrix", create_model_matrix({.position = end}));
+        edge_mesh_.bind().draw_elements();
+    }
 }
 
 ToolType UpdateWallTool::get_tool_type() const
