@@ -12,6 +12,9 @@ struct CameraKeybinds
     sf::Keyboard::Key left = sf::Keyboard::Key::A;
     sf::Keyboard::Key right = sf::Keyboard::Key::D;
     sf::Keyboard::Key back = sf::Keyboard::Key::S;
+
+    sf::Keyboard::Key up = sf::Keyboard::Key::Space;
+    sf::Keyboard::Key down = sf::Keyboard::Key::LControl;
 };
 
 struct CameraControllerOptions

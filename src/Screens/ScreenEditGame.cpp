@@ -188,7 +188,7 @@ bool ScreenEditGame::on_init()
     // ==== Entity Transform Creation ====
     // -----------------------------------
     camera_.transform = {.position = {WORLD_SIZE / 2, CAMERA_BASE_Y, WORLD_SIZE + 3},
-                         .rotation = {-40, 270.0f, 0.0f}};
+                         .rotation = {-40, 270.0f, 0.0f}}; // Slightly pointing down
 
     // -----------------------------
     // ==== Optional load level ====
@@ -242,10 +242,12 @@ void ScreenEditGame::on_event(const sf::Event& event)
     {
         switch (key->code)
         {
-            case sf::Keyboard::Key::L:
+            case sf::Keyboard::Key::T:
                 camera_controller_options_.lock_rotation =
                     !camera_controller_options_.lock_rotation;
+                break;
 
+            case sf::Keyboard::Key::L:
                 camera_controller_options_.free_movement =
                     !camera_controller_options_.free_movement;
                 window().setMouseCursorVisible(camera_controller_options_.lock_rotation);
@@ -636,11 +638,12 @@ void ScreenEditGame::select_object(LevelObject* object)
 
         if (editor_settings_.jump_to_selection_floor)
         {
+            int old_floor = editor_state_.current_floor;
             if (auto floor = level_.get_object_floor(object->object_id))
             {
                 editor_state_.current_floor = *floor;
             }
-            set_camera_to_current_floor();
+            offset_camera_to_floor(old_floor);
         }
 
         // Editing a wall requires a special tool to enable resizing, so after a object
@@ -658,118 +661,6 @@ void ScreenEditGame::select_object(LevelObject* object)
     }
 }
 
-void ScreenEditGame::display_editor_gui()
-{
-    // Draw the editor gui itself, such as property editors, changing floors, etc
-    if (ImGui::Begin("Editor"))
-    {
-        // Display the list of objects that can be placed
-        ImGui::Text("Tools");
-        ImGui::Separator();
-        if (ImGui::Button("Wall"))
-        {
-            tool_ = std::make_unique<CreateWallTool>(drawing_pad_texture_map_);
-            editor_state_.selection.clear_selection();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Platform"))
-        {
-            tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::Platform);
-            editor_state_.selection.clear_selection();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Polygon"))
-        {
-            tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::PolygonPlatform);
-            editor_state_.selection.clear_selection();
-        }
-
-        if (ImGui::Button("Pillar"))
-        {
-            tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::Pillar);
-            editor_state_.selection.clear_selection();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Ramp"))
-        {
-            tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::Ramp);
-            editor_state_.selection.clear_selection();
-        }
-
-        ImGui::Separator();
-        if (ImGui::Button("Area Selection"))
-        {
-            tool_ = std::make_unique<AreaSelectTool>(level_);
-            editor_state_.selection.clear_selection();
-        }
-
-        ImGui::Separator();
-
-        // Display the floor options, so going up or down a floor
-        ImGui::Text("Floors");
-        if (ImGui::Button("Floor Down"))
-        {
-            level_.ensure_floor_exists(--editor_state_.current_floor);
-            set_camera_to_current_floor();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Floor Up"))
-        {
-            level_.ensure_floor_exists(++editor_state_.current_floor);
-            set_camera_to_current_floor();
-        }
-        ImGui::Text("Lowest: %d - Current: %d - Highest: %d", level_.get_min_floor(),
-                    editor_state_.current_floor, level_.get_max_floor());
-
-        if (editor_settings_.show_2d_view)
-        {
-            ImGui::Separator();
-            auto scale = camera_2d_.get_orthographic_scale();
-            if (ImGui::SliderFloat("2D Camera Zoom", &scale, 0.5, 2.5))
-            {
-                camera_2d_.set_orthographic_scale(scale);
-            }
-        }
-
-        ImGui::Separator();
-        if (ImGui::Button("Center 2D View To 3D Camera"))
-        {
-            set_2d_to_3d_view();
-        }
-        ImGui::Separator();
-        // drawing_pad_.camera_gui();
-        ImGui::Separator();
-
-        ImGuiExtras::EnumSelect(
-            "Editor Mode", editor_state_.edit_mode,
-            "-Legacy: Options based on the original ChallengeYou editor.\n-Extended: "
-            "Adds  options such as custom wall start/end heights, and texturing both "
-            "sides of  a platform differently.\n-Advanced: Adds advanced options "
-            "such as extending heights of walls and pillars beyond a single floor.");
-    }
-    ImGui::End();
-
-    // When an object is selected, its properties is rendered
-    if (editor_state_.selection.single_object_is_selected())
-    {
-        if (ImGui::Begin("Object Properties"))
-        {
-            auto object_updated = editor_state_.selection.p_active_object->property_gui(
-                editor_state_, level_texture_map_, action_manager_);
-
-            if (object_updated)
-            {
-                // The UpdateWallTool caches the wall when it is right-clicked. This means that
-                // updating a wall and then moving its start/end resets the walls props to how it
-                // was before.
-                // This ensures that the wall props stay correct
-                try_reset_update_wall_tool();
-            }
-        }
-        ImGui::End();
-    }
-}
-
 void ScreenEditGame::exit_editor()
 {
     LevelFileIO level_file_io;
@@ -784,98 +675,9 @@ void ScreenEditGame::exit_editor()
     window().setMouseCursorVisible(true);
 }
 
-void ScreenEditGame::display_save_as_gui()
+void ScreenEditGame::offset_camera_to_floor(int old_floor)
 {
-    // clang-format off
-    if (ImGuiExtras::BeginCentredWindow("Save As...", {300, 200}))
-    {
-        bool bad_file_name = level_name_.starts_with(INTERNAL_FILE_ID);
-        bool can_save = !level_name_.empty() && !bad_file_name;
-
-        if (bad_file_name)
-        {
-            ImGui::Text("Level names cannot start with '%s'", INTERNAL_FILE_ID.c_str());
-        }
-        ImGui::InputText("Level Name", &level_name_);
-        // Only enable the save button if a name is actually set
-        if (!can_save)                  { ImGui::BeginDisabled();    } 
-        if (ImGui::Button("Save Game")) { save_level();              }
-        if (!can_save)                  { ImGui::EndDisabled();      }
-        if (ImGui::Button("Cancel"))    { show_save_dialog_ = false; }
-    }
-    ImGui::End();
-    // clang-format on
-}
-
-void ScreenEditGame::display_menu_bar_gui()
-{
-    // clang-format off
-    if (ImGui::BeginMainMenuBar())
-    {
-        if (ImGui::BeginMenu("File"))
-        {
-            // if (ImGui::MenuItem("New")) {  }
-            if (ImGui::MenuItem("Open...")) 
-            { 
-                if (level_.changes_made_since_last_save())
-                {
-                    std::println("TODO: Implement saving before loading menu");
-                }
-                level_file_selector_.show();
-            }
-            if (ImGui::MenuItem("Save"))        { save_level();             }
-            if (ImGui::MenuItem("Save As..."))  { show_save_dialog_ = true; }
-            if (ImGui::MenuItem("Exit"))        { exit_editor();            }
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("Edit"))
-        {
-            if (ImGui::MenuItem("Undo (CTRL + Z)")) { action_manager_.undo_action(); }
-            if (ImGui::MenuItem("Redo (CTRL + Y)")) { action_manager_.redo_action(); }
-
-            if (ImGui::MenuItem("Copy (CTRL + C)")) 
-            { 
-                copy_paste_handler_.copy_selection(editor_state_.selection, editor_state_.current_floor); 
-            }
-            if (ImGui::MenuItem("Paste (CTRL + V)")) 
-            { 
-                copy_paste_handler_.paste_selection(editor_state_.current_floor); 
-            }
-
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("View"))
-        {
-            ImGui::Checkbox("Lock 2D To 3D View?", &editor_settings_.always_center_2d_to_3d_view);
-            ImGui::Checkbox("Show History?", &editor_settings_.show_history);
-            ImGui::Checkbox("Show Grid?", &editor_settings_.show_grid);
-            if (ImGui::Checkbox("Show 2D View? (Full Screen 3D)", &editor_settings_.show_2d_view))
-            {
-                auto factor = editor_settings_.show_2d_view ? 2 : 1;
-                camera_.set_viewport_size({window().getSize().x / factor, window().getSize().y});
-            }
-            ImGui::Checkbox("Auto-Jump to selection floor?", &editor_settings_.jump_to_selection_floor);
-
-            ImGui::EndMenu();
-        }
-        ImGui::EndMainMenuBar();
-    }
-    // clang-format on
-}
-
-void ScreenEditGame::display_debug_gui()
-{
-    // clang-format off
-    camera_.gui("Camera");
-    if (ImGui::Begin("Camera Kind"))
-    {
-        if (ImGui::Button("Perspective"))   { camera_.set_type(CameraType::Perspective);        }
-        if (ImGui::Button("Orthographic"))  { camera_.set_type(CameraType::OrthographicWorld);  }
-    }
-    ImGui::End();
-    // clang-format on
+    camera_.transform.position.y += FLOOR_HEIGHT * (editor_state_.current_floor - old_floor);
 }
 
 bool ScreenEditGame::showing_dialog() const
@@ -964,7 +766,220 @@ void ScreenEditGame::save_level(const std::string& name)
     }
 }
 
-void ScreenEditGame::set_camera_to_current_floor()
+// ---------------------------
+// ==== GUI Functions ====
+// ---------------------------
+
+void ScreenEditGame::display_editor_gui()
 {
-    camera_.transform.position.y = CAMERA_BASE_Y + FLOOR_HEIGHT * editor_state_.current_floor;
+    // Draw the editor gui itself, such as property editors, changing floors, etc
+    if (ImGui::Begin("Editor"))
+    {
+        // Display the list of objects that can be placed
+        ImGui::Text("Tools");
+        ImGui::Separator();
+        if (ImGui::Button("Wall"))
+        {
+            tool_ = std::make_unique<CreateWallTool>(drawing_pad_texture_map_);
+            editor_state_.selection.clear_selection();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Platform"))
+        {
+            tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::Platform);
+            editor_state_.selection.clear_selection();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Polygon"))
+        {
+            tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::PolygonPlatform);
+            editor_state_.selection.clear_selection();
+        }
+
+        if (ImGui::Button("Pillar"))
+        {
+            tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::Pillar);
+            editor_state_.selection.clear_selection();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Ramp"))
+        {
+            tool_ = std::make_unique<CreateObjectTool>(ObjectTypeName::Ramp);
+            editor_state_.selection.clear_selection();
+        }
+
+        ImGui::Separator();
+        if (ImGui::Button("Area Selection"))
+        {
+            tool_ = std::make_unique<AreaSelectTool>(level_);
+            editor_state_.selection.clear_selection();
+        }
+
+        ImGui::Separator();
+
+        // Display the floor options, so going up or down a floor
+        ImGui::Text("Floors");
+        if (ImGui::Button("Floor Down"))
+        {
+            int old_floor = editor_state_.current_floor;
+            level_.ensure_floor_exists(--editor_state_.current_floor);
+            offset_camera_to_floor(old_floor);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Floor Up"))
+        {
+            int old_floor = editor_state_.current_floor;
+            level_.ensure_floor_exists(++editor_state_.current_floor);
+            offset_camera_to_floor(old_floor);
+        }
+        ImGui::Text("Lowest: %d - Current: %d - Highest: %d", level_.get_min_floor(),
+                    editor_state_.current_floor, level_.get_max_floor());
+
+        if (editor_settings_.show_2d_view)
+        {
+            ImGui::Separator();
+            auto scale = camera_2d_.get_orthographic_scale();
+            if (ImGui::SliderFloat("2D Camera Zoom", &scale, 0.5, 2.5))
+            {
+                camera_2d_.set_orthographic_scale(scale);
+            }
+        }
+
+        ImGui::Separator();
+        if (ImGui::Button("Center 2D View To 3D Camera"))
+        {
+            set_2d_to_3d_view();
+        }
+        ImGui::Separator();
+        // drawing_pad_.camera_gui();
+        ImGui::Separator();
+
+        ImGuiExtras::EnumSelect(
+            "Editor Mode", editor_state_.edit_mode,
+            "-Legacy: Options based on the original ChallengeYou editor.\n-Extended: "
+            "Adds  options such as custom wall start/end heights, and texturing both "
+            "sides of  a platform differently.\n-Advanced: Adds advanced options "
+            "such as extending heights of walls and pillars beyond a single floor.");
+    }
+    ImGui::End();
+
+    // When an object is selected, its properties is rendered
+    if (editor_state_.selection.single_object_is_selected())
+    {
+        if (ImGui::Begin("Object Properties"))
+        {
+            auto object_updated = editor_state_.selection.p_active_object->property_gui(
+                editor_state_, level_texture_map_, action_manager_);
+
+            if (object_updated)
+            {
+                // The UpdateWallTool caches the wall when it is right-clicked. This means that
+                // updating a wall and then moving its start/end resets the walls props to how it
+                // was before.
+                // This ensures that the wall props stay correct
+                try_reset_update_wall_tool();
+            }
+        }
+        ImGui::End();
+    }
+}
+
+void ScreenEditGame::display_menu_bar_gui()
+{
+    // clang-format off
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            // if (ImGui::MenuItem("New")) {  }
+            if (ImGui::MenuItem("Open...")) 
+            { 
+                if (level_.changes_made_since_last_save())
+                {
+                    std::println("TODO: Implement saving before loading menu");
+                }
+                level_file_selector_.show();
+            }
+            if (ImGui::MenuItem("Save"))        { save_level();             }
+            if (ImGui::MenuItem("Save As..."))  { show_save_dialog_ = true; }
+            if (ImGui::MenuItem("Exit"))        { exit_editor();            }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Edit"))
+        {
+            if (ImGui::MenuItem("Undo (CTRL + Z)")) { action_manager_.undo_action(); }
+            if (ImGui::MenuItem("Redo (CTRL + Y)")) { action_manager_.redo_action(); }
+
+            if (ImGui::MenuItem("Copy (CTRL + C)")) 
+            { 
+                copy_paste_handler_.copy_selection(editor_state_.selection, editor_state_.current_floor); 
+            }
+            if (ImGui::MenuItem("Paste (CTRL + V)")) 
+            { 
+                copy_paste_handler_.paste_selection(editor_state_.current_floor); 
+            }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("View"))
+        {
+            ImGui::Checkbox("Lock 2D To 3D View?", &editor_settings_.always_center_2d_to_3d_view);
+            ImGui::Checkbox("Show History?", &editor_settings_.show_history);
+            ImGui::Checkbox("Show Grid?", &editor_settings_.show_grid);
+            if (ImGui::Checkbox("Show 2D View? (Full Screen 3D)", &editor_settings_.show_2d_view))
+            {
+                auto factor = editor_settings_.show_2d_view ? 2 : 1;
+                camera_.set_viewport_size({window().getSize().x / factor, window().getSize().y});
+            }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Settings"))
+        {
+            ImGui::Checkbox("Auto-Jump to selection floor?", &editor_settings_.jump_to_selection_floor);
+            ImGui::Checkbox("Lock Mouse?", &camera_controller_options_.lock_rotation);
+            ImGui::Checkbox("Free camera movement?", &camera_controller_options_.free_movement);
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMainMenuBar();
+    }
+    // clang-format on
+}
+
+void ScreenEditGame::display_save_as_gui()
+{
+    // clang-format off
+    if (ImGuiExtras::BeginCentredWindow("Save As...", {300, 200}))
+    {
+        bool bad_file_name = level_name_.starts_with(INTERNAL_FILE_ID);
+        bool can_save = !level_name_.empty() && !bad_file_name;
+
+        if (bad_file_name)
+        {
+            ImGui::Text("Level names cannot start with '%s'", INTERNAL_FILE_ID.c_str());
+        }
+        ImGui::InputText("Level Name", &level_name_);
+        // Only enable the save button if a name is actually set
+        if (!can_save)                  { ImGui::BeginDisabled();    } 
+        if (ImGui::Button("Save Game")) { save_level();              }
+        if (!can_save)                  { ImGui::EndDisabled();      }
+        if (ImGui::Button("Cancel"))    { show_save_dialog_ = false; }
+    }
+    ImGui::End();
+    // clang-format on
+}
+
+void ScreenEditGame::display_debug_gui()
+{
+    // clang-format off
+    camera_.gui("Camera");
+    if (ImGui::Begin("Camera Kind"))
+    {
+        if (ImGui::Button("Perspective"))   { camera_.set_type(CameraType::Perspective);        }
+        if (ImGui::Button("Orthographic"))  { camera_.set_type(CameraType::OrthographicWorld);  }
+    }
+    ImGui::End();
+    // clang-format on
 }

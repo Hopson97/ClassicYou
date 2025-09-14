@@ -35,6 +35,15 @@ namespace
             move += right_vector(camera.transform.rotation);
         }
 
+        if (keyboard.is_key_down(keybinds.up))
+        {
+            move.y += 1.5f;
+        }
+        else if (keyboard.is_key_down(keybinds.down))
+        {
+            move.y -= 1.5f;
+        }
+
         move *= 4.0f;
 
         // Speed up when left shift is held
@@ -84,7 +93,7 @@ void free_camera_controller(const Keyboard& keyboard, Camera& camera, sf::Time d
     camera.transform.position += move * dt.asSeconds();
     camera.update();
 
-    if (!options.lock_rotation)
+    if (!options.lock_rotation || sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
     {
         mouse_input(window, camera);
     }
