@@ -23,14 +23,12 @@ static constexpr auto HALF_TILE_SIZE = TILE_SIZE / 2;
 static constexpr auto TILE_SIZE_F = static_cast<float>(TILE_SIZE);
 static constexpr auto HALF_TILE_SIZE_F = static_cast<float>(TILE_SIZE_F);
 
-static constexpr glm::uvec4 MAIN_GRID_COLOUR{69, 103, 137, 255};
-static constexpr glm::uvec4 SUB_GRID_COLOUR{18, 52, 86, 255};
+static constexpr glm::u8vec4 MAIN_GRID_COLOUR{69, 103, 137, 255};
+static constexpr glm::u8vec4 SUB_GRID_COLOUR{18, 52, 86, 255};
 
 namespace Colour
 {
-    static constexpr auto RED = glm::vec4{1.0f, 0.0f, 0.0f, 1.0f};
-    static constexpr auto WHITE = glm::vec4{1.0f};
-    static constexpr auto GREY = glm::vec4{0.5, 0.5, 0.5, 1.0f};
+    static constexpr auto WHITE = glm::u8vec4{255};
 } // namespace Colour
 
 static constexpr float FLOOR_HEIGHT = 2.0f;
