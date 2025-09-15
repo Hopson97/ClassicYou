@@ -5,6 +5,7 @@
 #include <print>
 #include <vector>
 
+#include "../Editor/EditConstants.h"
 #include "../Editor/LevelObjects/LevelObjectTypes.h"
 #include "OpenGL/GLUtils.h"
 #include "OpenGL/VertexArrayObject.h"
@@ -200,19 +201,19 @@ using Mesh2D = Mesh<Vertex2D>;
 
 [[nodiscard]] Mesh3D generate_quad_mesh(float w, float h);
 
-[[nodiscard]] LevelObjectsMesh3D
-generate_cube_mesh_level(const glm::vec3& start, const glm::vec3& size, int texture,
-                         glm::u8vec4 colour = {255, 255, 255, 255});
+[[nodiscard]] LevelObjectsMesh3D generate_cube_mesh_level(const glm::vec3& start,
+                                                          const glm::vec3& size, int texture,
+                                                          glm::u8vec4 colour = Colour::WHITE);
 
 [[nodiscard]] Mesh3D generate_cube_mesh(const glm::vec3& size, bool repeat_texture = false,
-                                        glm::u8vec4 colour = {255, 255, 255, 255});
+                                        glm::u8vec4 colour = Colour::WHITE);
 
 [[nodiscard]] Mesh3D generate_centered_cube_mesh(const glm::vec3& size);
 [[nodiscard]] Mesh3D generate_terrain_mesh(int size, int edgeVertices);
 [[nodiscard]] Mesh3D generate_grid_mesh(int width, int height);
 
 template <typename MeshType>
-void add_line_to_mesh(MeshType& mesh, glm::vec2 from, glm::vec2 to, const glm::uvec4& colour)
+void add_line_to_mesh(MeshType& mesh, glm::vec2 from, glm::vec2 to, glm::u8vec4 colour)
 {
     mesh.vertices.push_back({.position = from, .colour = colour});
     mesh.vertices.push_back({.position = to, .colour = colour});
@@ -221,11 +222,10 @@ void add_line_to_mesh(MeshType& mesh, glm::vec2 from, glm::vec2 to, const glm::u
     mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
 }
 
-[[nodiscard]] Mesh2DWorld generate_line_mesh(glm::vec2 from, glm::vec2 to,
-                                             const glm::uvec4& colour);
+[[nodiscard]] Mesh2DWorld generate_line_mesh(glm::vec2 from, glm::vec2 to, glm::u8vec4 colour);
 [[nodiscard]] Mesh2DWorld generate_2d_quad_mesh(glm::vec2 position, glm::vec2 size,
                                                 float base_texture, float world_texture = 0,
-                                                const glm::uvec4& = {255, 255, 255, 255},
+                                                glm::u8vec4 = Colour::WHITE,
                                                 Direction direction = Direction::Forward);
 
 [[nodiscard]] Mesh2DWorld generate_2d_outline_quad_mesh(glm::vec2 position, glm::vec2 size);
