@@ -65,7 +65,7 @@ template <>
 [[nodiscard]] SerialiseResponse object_serialise<PlatformObject>(const PlatformObject& platform,
                                                                  LevelFileIO& level_file_io);
 template <>
-[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
+[[nodiscard]] std::pair<Mesh2DWorld, gl::PrimitiveType>
 object_to_geometry_2d<PlatformObject>(const PlatformObject& platform,
                                       const LevelTextures& drawing_pad_texture_map);
 template <>

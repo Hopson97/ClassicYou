@@ -99,7 +99,7 @@ class ScreenEditGame final : public Screen
     CameraControllerOptions camera_controller_options_;
 
     Mesh3D selection_mesh_ = generate_cube_mesh({0.1, 1.0f, 0.1});
-    Mesh2D arrow_mesh_;
+    Mesh2DWorld arrow_mesh_;
 
     Settings settings_;
 

@@ -58,8 +58,8 @@ class CreateWallTool : public ITool
 
   private:
     LevelObjectsMesh3D wall_preview_;
-    Mesh2D wall_preview_2d_;
-    Mesh2D selection_node_;
+    Mesh2DWorld wall_preview_2d_;
+    Mesh2DWorld selection_node_;
     Line wall_line_;
     glm::vec2 selected_node_{0};
     bool active_dragging_ = false;
@@ -82,8 +82,8 @@ class UpdateWallTool : public ITool
 
   private:
     LevelObjectsMesh3D wall_preview_;
-    Mesh2D edge_mesh_;
-    Mesh2D wall_preview_2d_;
+    Mesh2DWorld edge_mesh_;
+    Mesh2DWorld wall_preview_2d_;
     LevelObject object_;
     WallObject wall_;
 
@@ -121,7 +121,7 @@ class CreateObjectTool : public ITool
     const ObjectTypeName object_type_;
     LevelObject object_;
     LevelObjectsMesh3D object_preview_;
-    Mesh2D object_preview_2d_;
+    Mesh2DWorld object_preview_2d_;
     gl::PrimitiveType preview_2d_primitive_ = gl::PrimitiveType::Triangles;
     glm::vec2 tile_{0.0f};
 };
@@ -153,7 +153,7 @@ class AreaSelectTool : public ITool
     // The line refers to the start corner and end corner
     Line selection_area_;
     LevelObjectsMesh3D selection_cube_;
-    Mesh2D selection_quad_;
+    Mesh2DWorld selection_quad_;
     glm::ivec3 selection_cube_start_{0};
     glm::ivec3 selection_cube_size_{0};
 

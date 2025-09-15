@@ -174,7 +174,7 @@ void EditorLevel::render_2d(gl::Shader& scene_shader_2d,
                             const std::vector<ObjectId>& active_objects,
                             int current_floor, const glm::vec2& selected_offset)
 {
-    auto render_group = [&](const std::vector<Floor::LevelMesh<Mesh2D>*>& group)
+    auto render_group = [&](const std::vector<Floor::LevelMesh<Mesh2DWorld>*>& group)
     {
         for (auto object : group)
         {
@@ -185,13 +185,13 @@ void EditorLevel::render_2d(gl::Shader& scene_shader_2d,
     // Sort the objects into groups
     // "current" refers to objects on the current floor
     // "below" refers to objects on the floor below
-    std::vector<Floor::LevelMesh<Mesh2D>*> p_active;
-    std::vector<Floor::LevelMesh<Mesh2D>*> p_below;
-    std::vector<Floor::LevelMesh<Mesh2D>*> p_current;
+    std::vector<Floor::LevelMesh<Mesh2DWorld>*> p_active;
+    std::vector<Floor::LevelMesh<Mesh2DWorld>*> p_below;
+    std::vector<Floor::LevelMesh<Mesh2DWorld>*> p_current;
 
-    std::vector<Floor::LevelMesh<Mesh2D>*> p_active_wall;
-    std::vector<Floor::LevelMesh<Mesh2D>*> p_below_wall;
-    std::vector<Floor::LevelMesh<Mesh2D>*> p_current_wall;
+    std::vector<Floor::LevelMesh<Mesh2DWorld>*> p_active_wall;
+    std::vector<Floor::LevelMesh<Mesh2DWorld>*> p_below_wall;
+    std::vector<Floor::LevelMesh<Mesh2DWorld>*> p_current_wall;
 
     for (auto& floor : floors_manager_.floors)
     {

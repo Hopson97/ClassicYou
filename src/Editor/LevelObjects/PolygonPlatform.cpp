@@ -141,7 +141,7 @@ bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json,
 }
 
 template <>
-std::pair<Mesh2D, gl::PrimitiveType>
+std::pair<Mesh2DWorld, gl::PrimitiveType>
 object_to_geometry_2d(const PolygonPlatformObject& poly,
                       const LevelTextures& drawing_pad_texture_map)
 {
@@ -151,7 +151,7 @@ object_to_geometry_2d(const PolygonPlatformObject& poly,
     auto br = params.corner_bottom_right;
     auto bl = params.corner_bottom_left;
 
-    Mesh2D mesh;
+    Mesh2DWorld mesh;
 
     add_line_to_mesh(mesh, tl, tl + glm::vec2(TILE_SIZE, 0), poly.properties.texture_top.colour);
     add_line_to_mesh(mesh, tl, tl + glm::vec2(0, TILE_SIZE), poly.properties.texture_top.colour);

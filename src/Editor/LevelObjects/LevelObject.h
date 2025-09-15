@@ -55,7 +55,7 @@ struct LevelObject
     [[nodiscard]] LevelObjectsMesh3D to_geometry(int floor_number) const;
 
     /// Converts the object to a 2D mesh for rendering.
-    [[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
+    [[nodiscard]] std::pair<Mesh2DWorld, gl::PrimitiveType>
     to_2d_geometry(const LevelTextures& drawing_pad_texture_map) const;
 
     /// Converts the object to a string representation.

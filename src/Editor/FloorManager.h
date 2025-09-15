@@ -31,7 +31,7 @@ struct Floor
 
     std::vector<LevelObject> objects;
     std::vector<LevelMesh<LevelObjectsMesh3D>> meshes;
-    std::vector<LevelMesh<Mesh2D>> meshes_2d;
+    std::vector<LevelMesh<Mesh2DWorld>> meshes_2d;
     int real_floor = 0;
 };
 

@@ -161,7 +161,7 @@ LevelObjectsMesh3D LevelObject::to_geometry(int floor_number) const
                       { return object_to_geometry(object, floor_number); }, object_type);
 }
 
-std::pair<Mesh2D, gl::PrimitiveType>
+std::pair<Mesh2DWorld, gl::PrimitiveType>
 LevelObject::to_2d_geometry(const LevelTextures& drawing_pad_texture_map) const
 {
     return std::visit([&](auto&& object)

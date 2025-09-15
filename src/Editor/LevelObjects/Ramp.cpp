@@ -155,7 +155,7 @@ bool object_deserialise(RampObject& ramp, const nlohmann::json& json,
 }
 
 template <>
-std::pair<Mesh2D, gl::PrimitiveType>
+std::pair<Mesh2DWorld, gl::PrimitiveType>
 object_to_geometry_2d(const RampObject& ramp, const LevelTextures& drawing_pad_texture_map)
 {
     auto& props = ramp.properties;

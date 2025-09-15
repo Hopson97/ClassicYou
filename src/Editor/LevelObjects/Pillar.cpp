@@ -122,7 +122,7 @@ bool object_deserialise(PillarObject& pillar_object, const nlohmann::json& json,
 }
 
 template <>
-std::pair<Mesh2D, gl::PrimitiveType>
+std::pair<Mesh2DWorld, gl::PrimitiveType>
 object_to_geometry_2d(const PillarObject& pillar, const LevelTextures& drawing_pad_texture_map)
 {
     // TODO: Angled pillars

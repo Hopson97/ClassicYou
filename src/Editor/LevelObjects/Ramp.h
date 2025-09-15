@@ -70,7 +70,7 @@ template <>
                                                              LevelFileIO& level_file_io);
 
 template <>
-[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
+[[nodiscard]] std::pair<Mesh2DWorld, gl::PrimitiveType>
 object_to_geometry_2d<RampObject>(const RampObject& ramp,
                                   const LevelTextures& drawing_pad_texture_map);
 
