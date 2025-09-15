@@ -131,7 +131,7 @@ bool object_deserialise(PlatformObject& platform, const nlohmann::json& json,
 }
 
 template <>
-std::pair<Mesh2D, gl::PrimitiveType>
+std::pair<Mesh2DWorld, gl::PrimitiveType>
 object_to_geometry_2d(const PlatformObject& platform, const LevelTextures& drawing_pad_texture_map)
 {
     // TODO: Diamond and tri plats

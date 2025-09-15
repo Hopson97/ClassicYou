@@ -30,7 +30,7 @@ template <typename T>
 [[nodiscard]] SerialiseResponse object_serialise(const T& object, LevelFileIO& level_file_io);
 
 template <typename T>
-[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
+[[nodiscard]] std::pair<Mesh2DWorld, gl::PrimitiveType>
 object_to_geometry_2d(const T& object, const LevelTextures& drawing_pad_texture_map);
 
 template <typename T>

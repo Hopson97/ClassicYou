@@ -45,15 +45,6 @@ namespace
     };
 } // namespace
 
-void add_line_to_mesh(Mesh2D& mesh, glm::vec2 from, glm::vec2 to, const glm::uvec4& colour)
-{
-    mesh.vertices.push_back(Vertex2D{.position = from, .colour = colour});
-    mesh.vertices.push_back(Vertex2D{.position = to, .colour = colour});
-
-    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
-    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
-}
-
 // -----------------------------------
 // ==== MESH GENERATION FUNCTIONS ====
 // -----------------------------------
@@ -327,17 +318,18 @@ Mesh3D generate_grid_mesh(int width, int height)
     return mesh;
 }
 
-Mesh2D generate_line_mesh(glm::vec2 from, glm::vec2 to, const glm::uvec4& colour)
+Mesh2DWorld generate_line_mesh(glm::vec2 from, glm::vec2 to, const glm::uvec4& colour)
 {
-    Mesh2D mesh;
+    Mesh2DWorld mesh;
     add_line_to_mesh(mesh, from, to, colour);
     return mesh;
 }
 
-Mesh2D generate_2d_quad_mesh(glm::vec2 position, glm::vec2 size, float base_texture,
-                             float world_texture, const glm::uvec4& colour, Direction direction)
+Mesh2DWorld generate_2d_quad_mesh(glm::vec2 position, glm::vec2 size, float base_texture,
+                                  float world_texture, const glm::uvec4& colour,
+                                  Direction direction)
 {
-    Mesh2D mesh;
+    Mesh2DWorld mesh;
 
     auto& p = position;
     auto& s = size;
@@ -366,10 +358,22 @@ Mesh2D generate_2d_quad_mesh(glm::vec2 position, glm::vec2 size, float base_text
 
     // clang-format on
     mesh.vertices = {
-        {.position = {p.x,       p.y        }, .texture_coord = {tex_coords[0].x, tex_coords[0].y, base_texture}, .world_texture_coord = {0,     0,    world_texture},   .colour = colour},
-        {.position = {p.x,       p.y + s.y  }, .texture_coord = {tex_coords[1].x, tex_coords[1].y, base_texture}, .world_texture_coord = {0,     depth, world_texture},  .colour = colour},
-        {.position = {p.x + s.x, p.y + s.y  }, .texture_coord = {tex_coords[2].x, tex_coords[2].y, base_texture}, .world_texture_coord = {width, depth, world_texture},  .colour = colour},
-        {.position = {p.x + s.x, p.y        }, .texture_coord = {tex_coords[3].x, tex_coords[3].y, base_texture}, .world_texture_coord = {width, 0,    world_texture},   .colour = colour},
+        {.position = {p.x, p.y},
+         .texture_coord = {tex_coords[0].x, tex_coords[0].y, base_texture},
+         .world_texture_coord = {0, 0, world_texture},
+         .colour = colour},
+        {.position = {p.x, p.y + s.y},
+         .texture_coord = {tex_coords[1].x, tex_coords[1].y, base_texture},
+         .world_texture_coord = {0, depth, world_texture},
+         .colour = colour},
+        {.position = {p.x + s.x, p.y + s.y},
+         .texture_coord = {tex_coords[2].x, tex_coords[2].y, base_texture},
+         .world_texture_coord = {width, depth, world_texture},
+         .colour = colour},
+        {.position = {p.x + s.x, p.y},
+         .texture_coord = {tex_coords[3].x, tex_coords[3].y, base_texture},
+         .world_texture_coord = {width, 0, world_texture},
+         .colour = colour},
     };
     // clang-format on
 
@@ -378,10 +382,10 @@ Mesh2D generate_2d_quad_mesh(glm::vec2 position, glm::vec2 size, float base_text
     return mesh;
 }
 
-Mesh2D generate_2d_outline_quad_mesh(glm::vec2 position, glm::vec2 size)
+Mesh2DWorld generate_2d_outline_quad_mesh(glm::vec2 position, glm::vec2 size)
 {
     glm::uvec4 colour = {255, 255, 255, 255};
-    Mesh2D mesh;
+    Mesh2DWorld mesh;
     add_line_to_mesh(mesh, {position.x, position.y}, {position.x + size.x, position.y}, colour);
     add_line_to_mesh(mesh, {position.x + size.x, position.y},
                      {position.x + size.x, position.y + size.y}, colour);

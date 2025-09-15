@@ -137,7 +137,7 @@ bool object_deserialise(WallObject& wall, const nlohmann::json& json,
 }
 
 template <>
-std::pair<Mesh2D, gl::PrimitiveType>
+std::pair<Mesh2DWorld, gl::PrimitiveType>
 object_to_geometry_2d(const WallObject& wall,
                       [[maybe_unused]] const LevelTextures& drawing_pad_texture_map)
 {

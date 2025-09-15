@@ -17,7 +17,7 @@ namespace
 {
     constexpr glm::vec2 WALL_NODE_ICON_SIZE{8, 8};
 
-    void render_wall(bool should_draw, const Mesh2D& wall_mesh, gl::Shader& scene_shader_2d)
+    void render_wall(bool should_draw, const Mesh2DWorld& wall_mesh, gl::Shader& scene_shader_2d)
     {
         if (should_draw && wall_mesh.has_buffered())
         {

@@ -63,7 +63,7 @@ object_serialise<PolygonPlatformObject>(const PolygonPlatformObject& poly,
                                         LevelFileIO& level_file_io);
 
 template <>
-[[nodiscard]] std::pair<Mesh2D, gl::PrimitiveType>
+[[nodiscard]] std::pair<Mesh2DWorld, gl::PrimitiveType>
 object_to_geometry_2d<PolygonPlatformObject>(const PolygonPlatformObject& poly,
                                              const LevelTextures& drawing_pad_texture_map);
 

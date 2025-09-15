@@ -30,7 +30,7 @@ class Grid2D
 
   private:
     gl::Shader grid_shader_;
-    std::unordered_map<GLfloat, Mesh2D> line_meshes_;
+    std::unordered_map<GLfloat, Mesh2DWorld> line_meshes_;
 
     struct GridMesh
     {
