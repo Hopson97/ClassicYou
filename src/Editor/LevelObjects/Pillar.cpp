@@ -164,7 +164,7 @@ LevelObjectsMesh3D object_to_geometry(const PillarObject& pillar, int floor_numb
 
     if (props.angled)
     {
-        // TODO
+        // TODO, work out the mesh layout for angled pillars
     }
 
     mesh.vertices = {

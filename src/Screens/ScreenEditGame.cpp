@@ -116,7 +116,7 @@ bool ScreenEditGame::on_init()
     // ==== Buffer the meshes ====
     // ---------------------------
     arrow_mesh_ =
-        generate_2d_quad_mesh({0, 0}, {16, 16}, *drawing_pad_texture_map_.get_texture("Arrow"));
+        generate_2d_quad_mesh({0, 0}, {16, 16}, (float)*drawing_pad_texture_map_.get_texture("Arrow"));
     arrow_mesh_.buffer();
 
     selection_mesh_.buffer();
@@ -296,7 +296,6 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
             // Rotate
             case sf::Keyboard::Key::R:
-
                 if (editor_state_.selection.has_selection())
                 {
                     auto [objects, _] =
@@ -309,7 +308,15 @@ void ScreenEditGame::on_event(const sf::Event& event)
                     action_manager_.push_action(
                         std::make_unique<BulkUpdateObjectAction>(cached, objects));
                 }
+                break;
 
+            // Up/Down floor
+            case sf::Keyboard::Key::PageUp:
+                increase_floor();
+                break;
+
+            case sf::Keyboard::Key::PageDown:
+                decrease_floor();
                 break;
 
             default:
@@ -688,6 +695,20 @@ void ScreenEditGame::offset_camera_to_floor(int old_floor)
     camera_.transform.position.y += FLOOR_HEIGHT * (editor_state_.current_floor - old_floor);
 }
 
+void ScreenEditGame::increase_floor()
+{
+    int old_floor = editor_state_.current_floor;
+    level_.ensure_floor_exists(++editor_state_.current_floor);
+    offset_camera_to_floor(old_floor);
+}
+
+void ScreenEditGame::decrease_floor()
+{
+    int old_floor = editor_state_.current_floor;
+    level_.ensure_floor_exists(--editor_state_.current_floor);
+    offset_camera_to_floor(old_floor);
+}
+
 bool ScreenEditGame::showing_dialog() const
 {
     return show_save_dialog_ || level_file_selector_.is_showing();
@@ -786,6 +807,7 @@ void ScreenEditGame::display_editor_gui()
         // Display the list of objects that can be placed
         ImGui::Text("Tools");
         ImGui::Separator();
+
         if (ImGui::Button("Wall"))
         {
             tool_ = std::make_unique<CreateWallTool>(drawing_pad_texture_map_);
@@ -827,18 +849,14 @@ void ScreenEditGame::display_editor_gui()
 
         // Display the floor options, so going up or down a floor
         ImGui::Text("Floors");
-        if (ImGui::Button("Floor Down"))
+        if (ImGui::Button("Floor Down (PgDown)"))
         {
-            int old_floor = editor_state_.current_floor;
-            level_.ensure_floor_exists(--editor_state_.current_floor);
-            offset_camera_to_floor(old_floor);
+            decrease_floor();
         }
         ImGui::SameLine();
-        if (ImGui::Button("Floor Up"))
+        if (ImGui::Button("Floor Up (PgUp)"))
         {
-            int old_floor = editor_state_.current_floor;
-            level_.ensure_floor_exists(++editor_state_.current_floor);
-            offset_camera_to_floor(old_floor);
+            increase_floor();
         }
         ImGui::Text("Lowest: %d - Current: %d - Highest: %d", level_.get_min_floor(),
                     editor_state_.current_floor, level_.get_max_floor());

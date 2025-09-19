@@ -24,7 +24,7 @@ struct CameraControllerOptions
 };
 
 void free_camera_controller(const Keyboard& keyboard, Camera& camera, sf::Time dt,
-                            const CameraKeybinds& keybinds, const sf::Window& window,
+                            const CameraKeybinds& keybinds, sf::Window& window,
                             CameraControllerOptions options);
 
 void free_camera_controller_2d(const Keyboard& keyboard, Camera& camera, sf::Time dt,

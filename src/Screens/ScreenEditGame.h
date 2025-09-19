@@ -49,7 +49,7 @@ class ScreenEditGame final : public Screen
     /// Selecting walls sets the tool type to be "UpdateWallTool" such that it can be resized
     void select_object(LevelObject* object);
 
-    /// Exit to ehe main menu, saving the current level to "backup.cly"
+    /// Exit to the main menu, saving the current level to "backup/backup.cly"
     void exit_editor();
 
     // Returns true if ANY dialog is showing (saving, loading)
@@ -69,6 +69,9 @@ class ScreenEditGame final : public Screen
 
     // When the floor is increased/decreased, this can be used to jump the camera to the new floor
     void offset_camera_to_floor(int old_floor);
+
+    void increase_floor();
+    void decrease_floor();
 
     /// Loads a level from disk
     bool load_level(const std::string& name);
