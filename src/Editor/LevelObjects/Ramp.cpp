@@ -205,7 +205,7 @@ LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
 
     if (corner_style)
     {
-        // For corners, one point is higher than the rest (vice vera for inverted ramp)
+        // For corners, one point is higher than the rest (vice versa for inverted ramp)
         ha = props.style == RampStyle::Corner ? hs : he;
         hb = props.style == RampStyle::Corner ? hs : he;
         hc = props.style == RampStyle::Corner ? hs : he;

@@ -474,7 +474,7 @@ void AreaSelectTool::show_gui(EditorState& state)
     {
         if (ImGui::Begin("Selection Options"))
         {
-            ImGui::Text("Selected %d objects.", (int)state.selection.objects.size());
+            ImGui::Text("Selected %zu objects.", state.selection.objects.size());
 
             bool update = false;
             update |= ImGui::SliderInt("Max floors selection", &max_floor_, start_floor_,

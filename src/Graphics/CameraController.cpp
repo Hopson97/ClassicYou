@@ -80,7 +80,7 @@ namespace
 } // namespace
 
 void free_camera_controller(const Keyboard& keyboard, Camera& camera, sf::Time dt,
-                            const CameraKeybinds& keybinds, const sf::Window& window,
+                            const CameraKeybinds& keybinds, sf::Window& window,
                             CameraControllerOptions options)
 {
     if (!window.hasFocus())
@@ -96,6 +96,11 @@ void free_camera_controller(const Keyboard& keyboard, Camera& camera, sf::Time d
     if (!options.lock_rotation || sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
     {
         mouse_input(window, camera);
+    }
+
+    if (options.lock_rotation)
+    {
+        window.setMouseCursorVisible(!sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle));
     }
 }
 

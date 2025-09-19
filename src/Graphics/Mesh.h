@@ -48,7 +48,7 @@ struct Vertex2DWorld
     glm::vec3 texture_coord{0.0f};
 
     // When displaying world textures in the 2D view, this enables the textures to repeat rather
-    // than stretch
+    // than being stretched
     glm::vec3 world_texture_coord{0.0f};
     glm::u8vec4 colour{255};
 
@@ -175,11 +175,6 @@ void Mesh<Vertex>::draw_elements(gl::PrimitiveType primitive) const
 
     glDrawElements(static_cast<GLenum>(primitive), indices_, GL_UNSIGNED_INT, nullptr);
 }
-
-/**
- * @brief Type aliases for commonly used vertex types and meshes.
- *
- */
 
 /// 3D vertex with 2D texture coordinates.
 using Vertex = Vertex3D<glm::vec2>;
