@@ -798,7 +798,6 @@ void ScreenEditGame::save_level(const std::string& name)
 // ---------------------------
 // ==== GUI Functions ====
 // ---------------------------
-
 void ScreenEditGame::display_editor_gui()
 {
     // Draw the editor gui itself, such as property editors, changing floors, etc

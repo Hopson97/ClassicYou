@@ -175,6 +175,7 @@
     <ClCompile Include="src\Editor\LevelObjects\PolygonPlatform.cpp" />
     <ClCompile Include="src\Editor\LevelObjects\Ramp.cpp" />
     <ClCompile Include="src\Editor\LevelObjects\Wall.cpp" />
+    <ClCompile Include="src\Editor\LevelTextures.cpp" />
     <ClCompile Include="src\Editor\Tool.cpp" />
     <ClCompile Include="src\Graphics\CameraController.cpp" />
     <ClCompile Include="src\Graphics\Camera.cpp" />

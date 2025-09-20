@@ -1,11 +1,8 @@
 #include "Util.h"
 
 #include <algorithm>
-#include <array>
-#include <cctype>
 #include <fstream>
 #include <iostream>
-#include <ranges>
 #include <string>
 
 std::string read_file_to_string(const std::filesystem::path& file_path)
@@ -14,7 +11,7 @@ std::string read_file_to_string(const std::filesystem::path& file_path)
 
     if (!in_file)
     {
-        std::cerr << "Failed to open file " << file_path << std::endl;
+        std::println(std::cerr, "Failed to open file '{}'.", file_path.string());
         return "";
     }
 
