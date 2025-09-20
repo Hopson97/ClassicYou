@@ -5,8 +5,7 @@
 #include <string_view>
 #include <vector>
 
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
+#include <glm/glm.hpp>
 
 using epoch_t = long long;
 
