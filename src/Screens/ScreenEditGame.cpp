@@ -115,8 +115,8 @@ bool ScreenEditGame::on_init()
     // ---------------------------
     // ==== Buffer the meshes ====
     // ---------------------------
-    arrow_mesh_ =
-        generate_2d_quad_mesh({0, 0}, {16, 16}, (float)*drawing_pad_texture_map_.get_texture("Arrow"));
+    arrow_mesh_ = generate_2d_quad_mesh({0, 0}, {16, 16},
+                                        (float)*drawing_pad_texture_map_.get_texture("Arrow"));
     arrow_mesh_.buffer();
 
     selection_mesh_.buffer();
@@ -483,11 +483,6 @@ void ScreenEditGame::on_render(bool show_debug)
 
         drawing_pad_shader_.set_uniform(
             "model_matrix",
-            create_model_matrix(
-                {.position = glm::vec3{editor_state_.node_hovered, 0} - glm::vec3(8, 8, 0)}));
-
-        drawing_pad_shader_.set_uniform(
-            "model_matrix",
             create_model_matrix_orbit(
                 {.position = {camera_.transform.position.x * TILE_SIZE - TILE_SIZE / 4,
                               camera_.transform.position.z * TILE_SIZE, 0},
@@ -717,11 +712,8 @@ bool ScreenEditGame::showing_dialog() const
 void ScreenEditGame::set_2d_to_3d_view()
 {
     const auto& viewport = camera_2d_.get_config().viewport_size;
-    camera_2d_.transform.position = {
-        camera_.transform.position.x * TILE_SIZE - viewport.x / 2,
-        camera_.transform.position.z * TILE_SIZE - viewport.y / 2,
-        camera_.transform.position.z,
-    };
+    camera_2d_.transform.position = {camera_.transform.position.x * TILE_SIZE - viewport.x / 2,
+                                     camera_.transform.position.z * TILE_SIZE - viewport.y / 2, 1};
 }
 
 void ScreenEditGame::try_set_tool_to_create_wall()
@@ -952,11 +944,10 @@ void ScreenEditGame::display_menu_bar_gui()
             ImGui::Checkbox("Show History?", &editor_settings_.show_history);
             ImGui::Checkbox("Lock 2D To 3D View?", &editor_settings_.always_center_2d_to_3d_view);
 
-            ImGui::Checkbox("Show Textues in 2D View?", &editor_settings_.show_textures_in_2d_view);
+            ImGui::Checkbox("Show Textures in 2D View?", &editor_settings_.show_textures_in_2d_view);
             if (!editor_settings_.show_textures_in_2d_view) ImGui::BeginDisabled();
             ImGui::SliderFloat("Base/World Texture Mix (2D)", &editor_settings_.texture_mix, 0.0f, 1.0f);
             if (!editor_settings_.show_textures_in_2d_view) ImGui::EndDisabled();
-
 
             ImGui::Checkbox("Show Grid?", &editor_settings_.show_grid);
             if (ImGui::Checkbox("Show 2D View? (Full Screen 3D)", &editor_settings_.show_2d_view))
@@ -1013,5 +1004,8 @@ void ScreenEditGame::display_debug_gui()
         if (ImGui::Button("Orthographic"))  { camera_.set_type(CameraType::OrthographicWorld);  }
     }
     ImGui::End();
+        
+    camera_2d_.gui("Camera2D");
+
     // clang-format on
 }

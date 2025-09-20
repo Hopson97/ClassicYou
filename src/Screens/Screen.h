@@ -53,6 +53,7 @@ class Screen
 {
   public:
     Screen(ScreenManager& screen_manager);
+    virtual ~Screen() = default;
 
     virtual bool on_init() = 0;
     virtual void on_event([[maybe_unused]] const sf::Event& event) {};
