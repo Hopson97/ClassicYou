@@ -3,9 +3,27 @@
 #include <filesystem>
 #include <iostream>
 #include <string_view>
+#include <deque>
 #include <vector>
 
 #include <glm/glm.hpp>
+
+
+template <typename T, int Size>
+struct CircularQueue
+{
+    void push_back(const T& new_data)
+    {
+        data.push_back(new_data);
+        if (data.size() > Size)
+        {
+            data.pop_front();
+        }
+    }
+
+    std::deque<T> data;
+};
+
 
 using epoch_t = long long;
 

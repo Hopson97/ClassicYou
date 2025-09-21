@@ -2,6 +2,7 @@
 
 #include <imgui.h>
 
+#include "../Util/ImGuiExtras.h"
 #include "Actions.h"
 #include "EditorLevel.h"
 
@@ -153,9 +154,11 @@ void CopyPasteHandler::handle_events(const sf::Event& event, const Selection& se
 // =======================================
 //          CopyPasteHandler
 // =======================================
-CopyPasteHandler::CopyPasteHandler(EditorLevel& level, ActionManager& action_manager)
+CopyPasteHandler::CopyPasteHandler(EditorLevel& level, ActionManager& action_manager,
+                                   MessagesManager& notifications)
     : p_level_(&level)
     , p_action_manager_(&action_manager)
+    , p_messages_manager_(&notifications)
 {
 }
 
@@ -169,6 +172,9 @@ void CopyPasteHandler::copy_selection(const Selection& selection, int current_fl
     copied_objects_ = std::move(objects);
     copied_objects_floors_ = std::move(floors);
     copy_start_floor_ = current_floor;
+
+    p_messages_manager_->add_message("Copied " + std::to_string(selection.objects.size()) +
+                                     " object(s).");
 }
 
 void CopyPasteHandler::paste_selection(int current_floor)
@@ -206,4 +212,7 @@ void CopyPasteHandler::paste_selection(int current_floor)
 
     p_action_manager_->push_action(std::make_unique<AddBulkObjectsAction>(copied_objects_, floors),
                                    true);
+
+    p_messages_manager_->add_message("Pasted " + std::to_string(copied_objects_.size()) +
+                                     " object(s).");
 }

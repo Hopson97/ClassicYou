@@ -15,6 +15,7 @@
 #include "../Graphics/OpenGL/BufferObject.h"
 #include "../Graphics/OpenGL/Framebuffer.h"
 #include "../Settings.h"
+#include "../Util/ImGuiExtras.h"
 #include "Screen.h"
 
 class ScreenEditGame final : public Screen
@@ -42,6 +43,8 @@ class ScreenEditGame final : public Screen
         float texture_mix = 0.75;
 
         bool jump_to_selection_floor = true;
+
+        bool render_message_log = true;
     } editor_settings_;
 
   private:
@@ -73,8 +76,8 @@ class ScreenEditGame final : public Screen
     void increase_floor();
     void decrease_floor();
 
-    /// Loads a level from disk
-    bool load_level(const std::string& name);
+    /// Loads a level from disk (Loads "level_name_")
+    bool load_level();
 
     /// Saves the current level to disk
     void save_level(const std::string& name);
@@ -151,4 +154,6 @@ class ScreenEditGame final : public Screen
     bool is_shift_down_ = false;
 
     LevelFileSelectGUI level_file_selector_;
+
+    MessagesManager messages_manager_;
 };

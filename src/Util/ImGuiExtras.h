@@ -1,10 +1,14 @@
 #pragma once
 
+#include <string>
+
+#include <SFML/System/Clock.hpp>
+#include <SFML/System/Time.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <imgui.h>
 #include <magic_enum/magic_enum_all.hpp>
 
-#include <string>
+#include "Util.h"
 
 // Adds helpers for ImGUI
 namespace ImGuiExtras
@@ -56,3 +60,23 @@ namespace ImGuiExtras
         return option_selected;
     }
 } // namespace ImGuiExtras
+
+// Displays the messages along the bottom of the window
+class MessagesManager
+{
+    struct Message
+    {
+        std::string message;
+        epoch_t timestamp;
+    };
+
+  public:
+    void add_message(const std::string& message);
+
+    void render();
+
+  private:
+    CircularQueue<Message, 7> messages_;
+    sf::Clock clock_;
+    sf::Time last_message_time_;
+};

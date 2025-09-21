@@ -68,7 +68,7 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens)
     , level_(drawing_pad_texture_map_)
     , action_manager_(editor_state_, level_)
     , object_move_handler_(level_, action_manager_)
-    , copy_paste_handler_(level_, action_manager_)
+    , copy_paste_handler_(level_, action_manager_, messages_manager_)
     , picker_fbo_(window().getSize().x, window().getSize().y)
 {
 }
@@ -197,7 +197,7 @@ bool ScreenEditGame::on_init()
     // -----------------------------
     if (!level_name_.empty())
     {
-        if (!load_level(level_name_))
+        if (!load_level())
         {
             return false;
         }
@@ -626,12 +626,17 @@ void ScreenEditGame::on_render(bool show_debug)
         action_manager_.clear();
         editor_state_.selection.clear_selection();
 
-        load_level(level_name_);
+        load_level();
     }
 
     if (tool_)
     {
         tool_->show_gui(editor_state_);
+    }
+
+    if (editor_settings_.render_message_log)
+    {
+        messages_manager_.render();
     }
 }
 
@@ -746,7 +751,7 @@ void ScreenEditGame::try_reset_update_wall_tool()
     }
 }
 
-bool ScreenEditGame::load_level(const std::string& name)
+bool ScreenEditGame::load_level()
 {
     LevelFileIO level_file_io;
     if (!level_file_io.open(level_name_, false))
@@ -758,6 +763,7 @@ bool ScreenEditGame::load_level(const std::string& name)
     {
         return false;
     }
+    messages_manager_.add_message(std::format("Successfully loaded {}.", level_name_));
     return true;
 }
 
@@ -783,7 +789,10 @@ void ScreenEditGame::save_level(const std::string& name)
 
     if (level_.serialise(level_file_io))
     {
-        level_file_io.save(name, true);
+        if (level_file_io.save(name, true))
+        {
+            messages_manager_.add_message(std::format("Successfully saved to {}.", name));
+        }
     }
 }
 
@@ -942,6 +951,7 @@ void ScreenEditGame::display_menu_bar_gui()
         if (ImGui::BeginMenu("View"))
         {
             ImGui::Checkbox("Show History?", &editor_settings_.show_history);
+            ImGui::Checkbox("Show Messages?", &editor_settings_.render_message_log);
             ImGui::Checkbox("Lock 2D To 3D View?", &editor_settings_.always_center_2d_to_3d_view);
 
             ImGui::Checkbox("Show Textures in 2D View?", &editor_settings_.show_textures_in_2d_view);

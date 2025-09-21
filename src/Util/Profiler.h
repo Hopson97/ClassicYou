@@ -7,20 +7,7 @@
 #include <SFML/System/Clock.hpp>
 #include <SFML/System/Time.hpp>
 
-template <typename T, int S>
-struct CircularQueue
-{
-    void push_back(const T& new_data)
-    {
-        data.push_back(new_data);
-        if (data.size() > 50)
-        {
-            data.pop_front();
-        }
-    }
-
-    std::deque<T> data;
-};
+#include "Util.h"
 
 struct ProfilerSection
 {

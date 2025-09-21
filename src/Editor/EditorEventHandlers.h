@@ -8,9 +8,9 @@
 #include "LevelObjects/LevelObject.h"
 #include "Tool.h"
 
-class EditorLevel;
 class ActionManager;
 struct EditorState;
+class MessagesManager;
 struct Selection;
 
 /// Handles moving selected objects in the editor.
@@ -52,7 +52,8 @@ class ObjectMoveHandler
 class CopyPasteHandler
 {
   public:
-    CopyPasteHandler(EditorLevel& level, ActionManager& action_manager);
+    CopyPasteHandler(EditorLevel& level, ActionManager& action_manager,
+                     MessagesManager& messages_manager);
 
     void handle_events(const sf::Event& event, const Selection& selection, int current_floor);
 
@@ -72,4 +73,6 @@ class CopyPasteHandler
 
     /// The floor where the copied objects will be pasted.
     int copy_start_floor_ = -1;
+
+    MessagesManager* p_messages_manager_ = nullptr;
 };
