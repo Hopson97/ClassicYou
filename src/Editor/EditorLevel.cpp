@@ -115,6 +115,15 @@ void EditorLevel::set_object_id(ObjectId current_id, ObjectId new_id)
             }
         }
 
+        for (auto& mesh : floor.meshes_2d)
+        {
+            if (mesh.id == current_id)
+            {
+                mesh.id = new_id;
+                break;
+            }
+        }
+
         for (auto& object : floor.objects)
         {
             if (object.object_id == current_id)

@@ -261,7 +261,7 @@ void UpdateWallTool::update_previews(const EditorState& state,
                                      const LevelTextures& drawing_pad_texture_map)
 {
     WallObject wall{
-        .properties = state.wall_default,
+        .properties = wall_.properties,
         .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
     };
 
