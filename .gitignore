@@ -23,17 +23,16 @@ vcpkg_installed/
 
 classic-you/
 
-*.cly
 
 
 ClassicYou/
 
-# Ignore levels
+# user data
+levels/_#old
 levels/**/*.json
 levels/**/*.cy
-levels/**/*.cly2
-levels/**/*.cly22
-levels/**/*.dat
+levels/**/*.cly
+settings.json
 
 backup
 

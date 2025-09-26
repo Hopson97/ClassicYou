@@ -1,5 +1,6 @@
 #include "ScreenEditGame.h"
 
+#include <fstream>
 #include <ranges>
 
 #include <imgui.h>
@@ -80,8 +81,16 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens, std::string level_name)
     level_name_actual_ = level_name;
 }
 
+ScreenEditGame::~ScreenEditGame()
+{
+    editor_settings_.save();
+}
+
 bool ScreenEditGame::on_init()
 {
+    // Start with loading settings
+    editor_settings_.load();
+
     // -----------------------
     // ==== Load textures ====
     // -----------------------
@@ -513,8 +522,9 @@ void ScreenEditGame::on_render(bool show_debug)
     gl::enable(gl::Capability::DepthTest);
     gl::enable(gl::Capability::CullFace);
     gl::cull_face(gl::Face::Back);
-    gl::polygon_mode(gl::Face::FrontAndBack,
-                     settings_.wireframe ? gl::PolygonMode::Line : gl::PolygonMode::Fill);
+    gl::polygon_mode(gl::Face::FrontAndBack, editor_settings_.render_as_wireframe
+                                                 ? gl::PolygonMode::Line
+                                                 : gl::PolygonMode::Fill);
 
     // Draw grid
     if (editor_settings_.show_grid)
@@ -634,7 +644,7 @@ void ScreenEditGame::on_render(bool show_debug)
         tool_->show_gui(editor_state_);
     }
 
-    if (editor_settings_.render_message_log)
+    if (editor_settings_.show_messages_log)
     {
         messages_manager_.render();
     }
@@ -886,6 +896,14 @@ void ScreenEditGame::display_editor_gui()
             "Adds  options such as custom wall start/end heights, and texturing both "
             "sides of  a platform differently.\n-Advanced: Adds advanced options "
             "such as extending heights of walls and pillars beyond a single floor.");
+
+        ImGui::Separator();
+        if (ImGui::Button("Reset Settings"))
+        {
+            editor_settings_.set_to_default();
+            messages_manager_.add_message("Settings reset to default.");
+        }
+
     }
     ImGui::End();
 
@@ -951,7 +969,7 @@ void ScreenEditGame::display_menu_bar_gui()
         if (ImGui::BeginMenu("View"))
         {
             ImGui::Checkbox("Show History?", &editor_settings_.show_history);
-            ImGui::Checkbox("Show Messages?", &editor_settings_.render_message_log);
+            ImGui::Checkbox("Show Messages?", &editor_settings_.show_messages_log);
             ImGui::Checkbox("Lock 2D To 3D View?", &editor_settings_.always_center_2d_to_3d_view);
 
             ImGui::Checkbox("Show Textures in 2D View?", &editor_settings_.show_textures_in_2d_view);
@@ -965,6 +983,9 @@ void ScreenEditGame::display_menu_bar_gui()
                 auto factor = editor_settings_.show_2d_view ? 2 : 1;
                 camera_.set_viewport_size({window().getSize().x / factor, window().getSize().y});
             }
+            ImGui::Checkbox("Render As Wireframe", &editor_settings_.render_as_wireframe);
+
+
             ImGui::EndMenu();
         }
 
@@ -1018,4 +1039,61 @@ void ScreenEditGame::display_debug_gui()
     camera_2d_.gui("Camera2D");
 
     // clang-format on
+}
+
+// ----------------------------------------
+// ==== Editor Settings saving/loading ====
+// ----------------------------------------
+void ScreenEditGame::EditorSettings::save() const
+{
+    nlohmann::json output = {
+        {"show_grid", show_grid},
+        {"show_2d_view", show_2d_view},
+        {"show_grid", show_grid},
+        {"always_center_2d_to_3d_view", always_center_2d_to_3d_view},
+        {"show_history", show_history},
+        {"show_textures_in_2d_view", show_textures_in_2d_view},
+        {"texture_mix", texture_mix},
+        {"jump_to_selection_floor", jump_to_selection_floor},
+        {"show_messages_log", show_messages_log},
+        {"render_as_wireframe", render_as_wireframe},
+    };
+
+    std::ofstream settings_file("settings.json");
+    settings_file << output;
+}
+
+void ScreenEditGame::EditorSettings::load()
+{
+    std::ifstream settings_file("settings.json");
+    if (settings_file)
+    {
+        nlohmann::json input;
+        settings_file >> input;
+
+        // clang-format off
+        show_grid                       = input.value("show_grid", show_grid);
+        show_2d_view                    = input.value("show_2d_view", show_2d_view);
+        always_center_2d_to_3d_view     = input.value("always_center_2d_to_3d_view", always_center_2d_to_3d_view);
+        show_history                    = input.value("show_history", show_history);
+        show_textures_in_2d_view        = input.value("show_textures_in_2d_view", show_textures_in_2d_view);
+        texture_mix                     = input.value("texture_mix", texture_mix);
+        jump_to_selection_floor         = input.value("jump_to_selection_floor", jump_to_selection_floor);
+        show_messages_log               = input.value("show_messages_log", show_messages_log);
+        render_as_wireframe             = input.value("render_as_wireframe", render_as_wireframe);
+        // clang-format on
+    }
+}
+
+void ScreenEditGame::EditorSettings::set_to_default()
+{
+    show_grid = true;
+    show_2d_view = true;
+    always_center_2d_to_3d_view = true;
+    show_history = false;
+    show_textures_in_2d_view = true;
+    texture_mix = 0.75;
+    jump_to_selection_floor = true;
+    show_messages_log = true;
+    render_as_wireframe = false;
 }

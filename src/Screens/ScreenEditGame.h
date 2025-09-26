@@ -14,7 +14,6 @@
 #include "../Graphics/Mesh.h"
 #include "../Graphics/OpenGL/BufferObject.h"
 #include "../Graphics/OpenGL/Framebuffer.h"
-#include "../Settings.h"
 #include "../Util/ImGuiExtras.h"
 #include "Screen.h"
 
@@ -23,6 +22,13 @@ class ScreenEditGame final : public Screen
   public:
     ScreenEditGame(ScreenManager& screens);
     ScreenEditGame(ScreenManager& screens, std::string level_name);
+
+    ScreenEditGame(const ScreenEditGame&) = delete;
+    ScreenEditGame& operator=(const ScreenEditGame&) = delete;
+    ScreenEditGame(ScreenEditGame&&) = delete;
+    ScreenEditGame& operator=(ScreenEditGame&&) = delete;
+
+    ~ScreenEditGame();
 
     bool on_init() override;
     void on_event(const sf::Event& event) override;
@@ -44,7 +50,13 @@ class ScreenEditGame final : public Screen
 
         bool jump_to_selection_floor = true;
 
-        bool render_message_log = true;
+        bool show_messages_log = true;
+
+        bool render_as_wireframe = false;
+
+        void save() const;
+        void load();
+        void set_to_default();
     } editor_settings_;
 
   private:
@@ -106,8 +118,6 @@ class ScreenEditGame final : public Screen
 
     Mesh3D selection_mesh_ = generate_cube_mesh({0.1, 1.0f, 0.1});
     Mesh2DWorld arrow_mesh_;
-
-    Settings settings_;
 
     /// Grid Mesh
     InfiniteGrid grid_;
