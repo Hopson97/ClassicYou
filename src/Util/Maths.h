@@ -8,6 +8,16 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+namespace Vector
+{
+    constexpr inline glm::vec3 UP = {0.0, 1.0, 0.0};
+    constexpr inline glm::vec3 DOWN = {0.0, -1.0, 0.0};
+    constexpr inline glm::vec3 LEFT = {-1.0, 0.0, 0.0};
+    constexpr inline glm::vec3 RIGHT = {1.0, 0.0, 0.0};
+    constexpr inline glm::vec3 FORWARDS = {0.0, 0.0, 1.0};
+    constexpr inline glm::vec3 BACK = {0.0, 0.0, -1.0};
+}
+
 struct Transform
 {
     glm::vec3 position{0.0f};

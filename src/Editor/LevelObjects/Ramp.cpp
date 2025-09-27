@@ -192,6 +192,7 @@ LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
     he += floor_number * FLOOR_HEIGHT;
 
     //  Layout of ramp heights can be controlled using the corner values
+    //  These are heights of the 4 corners
     //   ha----hd
     //   |      |
     //   hb----hc
@@ -199,6 +200,12 @@ LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
     auto hb = hs;
     auto hc = he;
     auto hd = he;
+
+    // The normal vector at the 4 corners
+    glm::vec3 na{0, 1, 0};
+    glm::vec3 nb{0, 1, 0};
+    glm::vec3 nc{0, 1, 0};
+    glm::vec3 nd{0, 1, 0};
 
     bool corner = props.style == RampStyle::Corner;
     bool corner_style = corner || props.style == RampStyle::InvertedCorner;
@@ -213,12 +220,28 @@ LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
         switch (props.direction)
         {
             case Direction::Left:
+            {
                 ha = corner ? he : hs;
-                break;
+
+                glm::vec3 a{p.x, ha, p.z};
+                glm::vec3 b{p.x + width, hc, p.z + depth};
+                auto ab_dir = glm::normalize(a - b);
+                na = glm::cross(ab_dir, glm::cross(ab_dir, Vector::UP));
+                nc = na;
+            }
+            break;
 
             case Direction::Right:
+            {
                 hb = corner ? he : hs;
-                break;
+
+                glm::vec3 a{p.x, ha, p.z};
+                glm::vec3 b{p.x + width, hc, p.z + depth};
+                auto ab_dir = glm::normalize(a - b);
+                na = glm::cross(ab_dir, glm::cross(ab_dir, Vector::UP));
+                nc = na;
+            }
+            break;
 
             case Direction::Back:
                 hc = corner ? he : hs;
@@ -258,21 +281,36 @@ LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
             default:
                 break;
         }
+
+        // Normal ramps are plane, define 3 points on the plane
+        glm::vec3 a{p.x, ha, p.z};
+        glm::vec3 b{p.x, hb, p.z + depth};
+        glm::vec3 c{p.x + width, hc, p.z + depth};
+
+        // Create a direction vector between the points
+        glm::vec3 u = b - a;
+        glm::vec3 v = c - a;
+
+        // Then the cross product of the directions is the normal to these
+        na = glm::normalize(glm::cross(u, v));
+        nb = na;
+        nc = na;
+        nd = na;
     }
 
     // clang-format off
     mesh.vertices = {
             // Top
-            {{p.x,          ha, p.z,        },  {0,     0,      texture_top},    {0, 1, 0}, colour_top},
-            {{p.x,          hb, p.z + depth,},  {0,     depth,  texture_top},    {0, 1, 0}, colour_top},
-            {{p.x + width,  hc, p.z + depth,},  {width, depth,  texture_top},    {0, 1, 0}, colour_top},
-            {{p.x + width,  hd, p.z,},          {width, 0,      texture_top},    {0, 1, 0}, colour_top},
+            {{p.x,          ha, p.z,        },  {0,     0,      texture_top}, na, colour_top},
+            {{p.x,          hb, p.z + depth,},  {0,     depth,  texture_top}, nb, colour_top},
+            {{p.x + width,  hc, p.z + depth,},  {width, depth,  texture_top}, nc, colour_top},
+            {{p.x + width,  hd, p.z,},          {width, 0,      texture_top}, nd, colour_top},
 
             // Bottom
-            {{p.x,          ha, p.z,        },  {0,     0,      texture_bottom},   {0, -1, 0}, colour_bottom},
-            {{p.x,          hb, p.z + depth,},  {0,     depth,  texture_bottom},   {0, -1, 0}, colour_bottom},
-            {{p.x + width,  hc, p.z + depth,},  {width, depth,  texture_bottom},   {0, -1, 0}, colour_bottom},
-            {{p.x + width,  hd, p.z,        },  {width, 0,      texture_bottom},   {0, -1, 0}, colour_bottom},
+            {{p.x,          ha, p.z,        },  {0,     0,      texture_bottom}, -na, colour_bottom},
+            {{p.x,          hb, p.z + depth,},  {0,     depth,  texture_bottom}, -nb, colour_bottom},
+            {{p.x + width,  hc, p.z + depth,},  {width, depth,  texture_bottom}, -nc, colour_bottom},
+            {{p.x + width,  hd, p.z,        },  {width, 0,      texture_bottom}, -nd, colour_bottom},
         };
     // clang-format on
 
