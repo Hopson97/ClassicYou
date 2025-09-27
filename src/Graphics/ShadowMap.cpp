@@ -1,20 +1,15 @@
 #include "ShadowMap.h"
 
+#include <vector>
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
-#include <vector>
+
+#include "../Util/Maths.h"
 
 namespace
 {
-
-    constexpr glm::vec3 UP = {0.0, 1.0, 0.0};
-    constexpr glm::vec3 DOWN = {0.0, -1.0, 0.0};
-    constexpr glm::vec3 LEFT = {-1.0, 0.0, 0.0};
-    constexpr glm::vec3 RIGHT = {1.0, 0.0, 0.0};
-    constexpr glm::vec3 FORWARDS = {0.0, 0.0, 1.0};
-    constexpr glm::vec3 BACK = {0.0, 0.0, -1.0};
-
     bool setup_fbo(gl::Framebuffer& framebuffer)
     {
         // Set the texture parameters for the shadow map. This is important for shadow mapping to
@@ -96,7 +91,7 @@ glm::mat4 DirectionalShadowMap::prepare_and_bind(const Camera& camera,
     // Add to the camera position such that the shadow map "follows" the camera.
     auto origin = -light_direction + camera.transform.position;
     auto target = camera.transform.position;
-    auto light_view = glm::lookAt(origin, target, UP);
+    auto light_view = glm::lookAt(origin, target, Vector::UP);
     auto light_space_matrix = light_projection * light_view;
 
     // Bind the framebuffer, and set the light space matrix in the shader.
