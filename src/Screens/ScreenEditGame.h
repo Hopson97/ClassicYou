@@ -54,6 +54,8 @@ class ScreenEditGame final : public Screen
 
         bool render_as_wireframe = false;
 
+        bool render_vertex_normals = false;
+
         void save() const;
         void load();
         void set_to_default();
@@ -121,6 +123,7 @@ class ScreenEditGame final : public Screen
     CameraControllerOptions camera_controller_options_;
 
     Mesh3D selection_mesh_ = generate_cube_mesh({0.1, 1.0f, 0.1});
+    Mesh3D sun_mesh_ = generate_cube_mesh({3.0f, 3.0f, 3.0f});
     Mesh2DWorld arrow_mesh_;
 
     /// Grid Mesh

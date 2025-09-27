@@ -127,8 +127,8 @@ bool ScreenEditGame::on_init()
     arrow_mesh_ = generate_2d_quad_mesh({0, 0}, {16, 16},
                                         (float)*drawing_pad_texture_map_.get_texture("Arrow"));
     arrow_mesh_.buffer();
-
     selection_mesh_.buffer();
+    sun_mesh_.buffer();
 
     // ----------------------------
     // ==== Load scene shaders ====
@@ -537,11 +537,7 @@ void ScreenEditGame::on_render(bool show_debug)
     {
         grid_.render(camera_.transform.position, editor_state_.current_floor);
     }
-    //=============================================
-    //      Render the level and previews
-    // ============================================
-    scene_shader_.bind();
-    // Draw the selection node
+
     if (tool_->get_tool_type() == ToolType::CreateWall)
     {
         scene_shader_.set_uniform(
@@ -552,6 +548,15 @@ void ScreenEditGame::on_render(bool show_debug)
         scene_shader_.set_uniform("use_texture", false);
         selection_mesh_.bind().draw_elements();
     }
+    glm::vec3 sun{60, 35, 70};
+    // Draw main light source position
+    scene_shader_.set_uniform("model_matrix",
+                              create_model_matrix({.position = sun - glm::vec3{1.5}}));
+    sun_mesh_.bind().draw_elements();
+
+    //=============================================
+    //      Render the level and previews
+    // ============================================
 
     // Draw the current tool preview
     world_geometry_shader_.bind();
@@ -578,10 +583,13 @@ void ScreenEditGame::on_render(bool show_debug)
     //=======================
     //      Debug Rendering
     // ======================
-    world_normal_shader_.bind();
-    world_normal_shader_.set_uniform("model_matrix", create_model_matrix({}));
-    level_.render(world_normal_shader_, editor_state_.selection.objects,
-                  editor_state_.current_floor, {offset.x, 0, offset.y}, true);
+    if (editor_settings_.render_vertex_normals)
+    {
+        world_normal_shader_.bind();
+        world_normal_shader_.set_uniform("model_matrix", create_model_matrix({}));
+        level_.render(world_normal_shader_, editor_state_.selection.objects,
+                      editor_state_.current_floor, {offset.x, 0, offset.y}, true);
+    }
 
     //======================================
     //      3D Mouse Picking Objects
@@ -997,6 +1005,7 @@ void ScreenEditGame::display_menu_bar_gui()
                 camera_.set_viewport_size({window().getSize().x / factor, window().getSize().y});
             }
             ImGui::Checkbox("Render As Wireframe", &editor_settings_.render_as_wireframe);
+            ImGui::Checkbox("Display Normals", &editor_settings_.render_vertex_normals);
 
 
             ImGui::EndMenu();
@@ -1070,6 +1079,7 @@ void ScreenEditGame::EditorSettings::save() const
         {"jump_to_selection_floor", jump_to_selection_floor},
         {"show_messages_log", show_messages_log},
         {"render_as_wireframe", render_as_wireframe},
+        {"render_vertex_normals", render_vertex_normals},
     };
 
     std::ofstream settings_file("settings.json");
@@ -1094,6 +1104,7 @@ void ScreenEditGame::EditorSettings::load()
         jump_to_selection_floor         = input.value("jump_to_selection_floor", jump_to_selection_floor);
         show_messages_log               = input.value("show_messages_log", show_messages_log);
         render_as_wireframe             = input.value("render_as_wireframe", render_as_wireframe);
+        render_vertex_normals             = input.value("render_vertex_normals", render_vertex_normals);
         // clang-format on
     }
 }
@@ -1109,4 +1120,5 @@ void ScreenEditGame::EditorSettings::set_to_default()
     jump_to_selection_floor = true;
     show_messages_log = true;
     render_as_wireframe = false;
+    render_vertex_normals = false;
 }
