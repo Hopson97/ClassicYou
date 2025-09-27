@@ -16,6 +16,7 @@ class ScreenMainMenu final : public Screen
     ScreenMainMenu(ScreenManager& screens);
 
     bool on_init() override;
+    void on_open() override;
     void on_render(bool show_debug) override;
 
   private:

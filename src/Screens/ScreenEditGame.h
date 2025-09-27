@@ -53,8 +53,9 @@ class ScreenEditGame final : public Screen
         bool show_messages_log = true;
 
         bool render_as_wireframe = false;
-
         bool render_vertex_normals = false;
+        bool render_main_light = false;
+        bool show_level_settings = false;
 
         void save() const;
         void load();
@@ -116,7 +117,6 @@ class ScreenEditGame final : public Screen
 
     /// Shader for viewing the normals for debugging light issues etc
     gl::Shader world_normal_shader_;
-
 
     CameraKeybinds camera_keybinds_;
     CameraKeybinds keybinds_2d_;

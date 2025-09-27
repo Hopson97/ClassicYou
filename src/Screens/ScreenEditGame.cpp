@@ -519,7 +519,12 @@ void ScreenEditGame::on_render(bool show_debug)
     //=============================================
     //      Render the 3D View
     // ============================================
+    auto& main_light = level_.get_light_settings();
     scene_shader_.bind();
+    scene_shader_.set_uniform("main_light_position", main_light.position);
+    scene_shader_.set_uniform("main_light_colour", main_light.colour);
+    scene_shader_.set_uniform("main_light_brightness", main_light.brightness);
+
     // Update the shader buffers
     matrices_ssbo_.buffer_sub_data(0, camera_.get_projection_matrix());
     matrices_ssbo_.buffer_sub_data(sizeof(glm::mat4), camera_.get_view_matrix());
@@ -548,21 +553,26 @@ void ScreenEditGame::on_render(bool show_debug)
         scene_shader_.set_uniform("use_texture", false);
         selection_mesh_.bind().draw_elements();
     }
-    glm::vec3 sun{60, 35, 70};
-    // Draw main light source position
-    scene_shader_.set_uniform("model_matrix",
-                              create_model_matrix({.position = sun - glm::vec3{1.5}}));
-    sun_mesh_.bind().draw_elements();
+
+    if (editor_settings_.render_main_light)
+    {
+        // Draw main light source position - the cube is 3x3x3 so offset by 1.5
+        scene_shader_.set_uniform(
+            "model_matrix",
+            create_model_matrix({.position = main_light.position - glm::vec3{1.5}}));
+        sun_mesh_.bind().draw_elements();
+    }
 
     //=============================================
     //      Render the level and previews
     // ============================================
-
-    // Draw the current tool preview
     world_geometry_shader_.bind();
     world_textures_.bind(0);
     world_geometry_shader_.set_uniform("use_texture", true);
     world_geometry_shader_.set_uniform("model_matrix", create_model_matrix({}));
+    world_geometry_shader_.set_uniform("main_light_position", main_light.position);
+    world_geometry_shader_.set_uniform("main_light_colour", main_light.colour);
+    world_geometry_shader_.set_uniform("main_light_brightness", main_light.brightness);
 
     // Render the level itself
     // All objects have their positions baked and are rendered where they are created. Selected
@@ -572,6 +582,7 @@ void ScreenEditGame::on_render(bool show_debug)
     level_.render(world_geometry_shader_, editor_state_.selection.objects,
                   editor_state_.current_floor, {offset.x, 0, offset.y}, false);
 
+    // Draw the current tool preview
     if (!object_move_handler_.is_moving_objects())
     {
         tool_->render_preview();
@@ -795,6 +806,10 @@ bool ScreenEditGame::load_level()
     {
         return false;
     }
+
+    auto& main_light = level_.get_light_settings();
+    glClearColor(main_light.sky_colour.r, main_light.sky_colour.g, main_light.sky_colour.b, 1.0f);
+
     messages_manager_.add_message(std::format("Successfully loaded {}.", level_name_));
     return true;
 }
@@ -918,6 +933,9 @@ void ScreenEditGame::display_editor_gui()
             "Adds  options such as custom wall start/end heights, and texturing both "
             "sides of  a platform differently.\n-Advanced: Adds advanced options "
             "such as extending heights of walls and pillars beyond a single floor.");
+        ImGui::Separator();
+
+        ImGui::Checkbox("Show Level Settings", &editor_settings_.show_level_settings);
 
         ImGui::Separator();
         if (ImGui::Button("Reset Settings"))
@@ -925,8 +943,18 @@ void ScreenEditGame::display_editor_gui()
             editor_settings_.set_to_default();
             messages_manager_.add_message("Settings reset to default.");
         }
+        if (ImGui::Button("Reset Level Light/Colour Settings"))
+        {
+            level_.reset_light_settings();
+            messages_manager_.add_message("Level light colours and settings reset to default.");
+        }
     }
     ImGui::End();
+
+    if (editor_settings_.show_level_settings)
+    {
+        level_.display_settings_gui();
+    }
 
     // When an object is selected, its properties is rendered
     if (editor_state_.selection.single_object_is_selected())
@@ -1006,8 +1034,8 @@ void ScreenEditGame::display_menu_bar_gui()
             }
             ImGui::Checkbox("Render As Wireframe", &editor_settings_.render_as_wireframe);
             ImGui::Checkbox("Display Normals", &editor_settings_.render_vertex_normals);
-
-
+            ImGui::Checkbox("Display Main Light", &editor_settings_.render_main_light);
+            ImGui::Checkbox("Show Level Settings", &editor_settings_.show_level_settings);
             ImGui::EndMenu();
         }
 
@@ -1080,6 +1108,8 @@ void ScreenEditGame::EditorSettings::save() const
         {"show_messages_log", show_messages_log},
         {"render_as_wireframe", render_as_wireframe},
         {"render_vertex_normals", render_vertex_normals},
+        {"render_main_light", render_main_light},
+        {"show_level_settings", show_level_settings},
     };
 
     std::ofstream settings_file("settings.json");
@@ -1104,21 +1134,14 @@ void ScreenEditGame::EditorSettings::load()
         jump_to_selection_floor         = input.value("jump_to_selection_floor", jump_to_selection_floor);
         show_messages_log               = input.value("show_messages_log", show_messages_log);
         render_as_wireframe             = input.value("render_as_wireframe", render_as_wireframe);
-        render_vertex_normals             = input.value("render_vertex_normals", render_vertex_normals);
+        render_vertex_normals           = input.value("render_vertex_normals", render_vertex_normals);
+        render_main_light               = input.value("render_main_light", render_main_light);
+        show_level_settings             = input.value("show_level_settings", show_level_settings);
         // clang-format on
     }
 }
 
 void ScreenEditGame::EditorSettings::set_to_default()
 {
-    show_grid = true;
-    show_2d_view = true;
-    always_center_2d_to_3d_view = true;
-    show_history = false;
-    show_textures_in_2d_view = true;
-    texture_mix = 0.75;
-    jump_to_selection_floor = true;
-    show_messages_log = true;
-    render_as_wireframe = false;
-    render_vertex_normals = false;
+    *this = EditorSettings{};
 }

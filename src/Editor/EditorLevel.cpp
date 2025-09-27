@@ -2,6 +2,7 @@
 
 #include <fstream>
 
+#include <imgui.h>
 #include <nlohmann/json.hpp>
 
 #include "../Util/Maths.h"
@@ -138,11 +139,11 @@ void EditorLevel::set_object_id(ObjectId current_id, ObjectId new_id)
 void EditorLevel::render(gl::Shader& scene_shader, const std::vector<ObjectId>& active_objects,
                          int current_floor, const glm::vec3& selected_offset, bool is_debug_render)
 {
+
     std::vector<LevelObjectsMesh3D*> p_active;
 
     if (!is_debug_render)
     {
-
         scene_shader.set_uniform("selected", false);
     }
 
@@ -452,7 +453,7 @@ void EditorLevel::ensure_floor_exists(int floor_number)
 
 void EditorLevel::clear_level()
 {
-
+    reset_light_settings();
     current_id_ = 0;
     floors_manager_.clear();
 }
@@ -545,4 +546,36 @@ bool EditorLevel::changes_made_since_last_save() const
 int EditorLevel::last_placed_id() const
 {
     return current_id_ - 1;
+}
+
+void EditorLevel::display_settings_gui()
+{
+    if (ImGui::Begin("Level Settings"))
+    {
+        ImGui::Text("Main Light");
+        ImGui::SliderFloat3("Position", &main_light_.position[0], -100, 100);
+        ImGui::SliderFloat("Brightness", &main_light_.brightness, 0.1, 2.0);
+
+        ImGui::Separator();
+        if (ImGui::CollapsingHeader("Level Colour Settings"))
+        {
+            ImGui::ColorPicker3("Main Light Colour", &main_light_.colour[0]);
+            if (ImGui::ColorPicker3("Sky Colour", &main_light_.sky_colour[0]))
+            {
+                glClearColor(main_light_.sky_colour.r, main_light_.sky_colour.g,
+                             main_light_.sky_colour.b, 1.0f);
+            }
+        }
+    }
+    ImGui::End();
+}
+
+void EditorLevel::reset_light_settings()
+{
+    main_light_ = MainLight{};
+}
+
+const EditorLevel::MainLight& EditorLevel::get_light_settings() const
+{
+    return main_light_;
 }

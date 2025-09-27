@@ -26,6 +26,8 @@ static constexpr auto HALF_TILE_SIZE_F = static_cast<float>(TILE_SIZE_F);
 static constexpr glm::u8vec4 MAIN_GRID_COLOUR{69, 103, 137, 255};
 static constexpr glm::u8vec4 SUB_GRID_COLOUR{18, 52, 86, 255};
 
+static constexpr glm::vec3 DEFAULT_CLEAR_COLOUR{0.0f, 35.0f / 255.0f, 70.0f / 255.0f};
+
 namespace Colour
 {
     static constexpr auto WHITE = glm::u8vec4{255};

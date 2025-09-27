@@ -36,8 +36,11 @@ bool ScreenManager::update()
                 break;
 
             case Action::Kind::Pop:
-                screen_stack_.pop();
-                restore();
+                if (!screen_stack_.empty())
+                {
+                    screen_stack_.pop();
+                    restore();
+                }
                 break;
 
             case Action::Kind::Change:
@@ -76,6 +79,10 @@ sf::Window& ScreenManager::get_window()
 
 void ScreenManager::restore()
 {
+    if (!screen_stack_.empty())
+    {
+        get_current().on_open();
+    }
 }
 
 Screen::Screen(ScreenManager& screen_manager)

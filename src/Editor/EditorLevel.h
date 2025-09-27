@@ -22,6 +22,21 @@ class LevelTextures;
  */
 class EditorLevel
 {
+
+  private:
+    /// The main light used to light up the level - TODO: Save this to the level file
+    struct MainLight
+    {
+        // The background colour used for glClearColor
+        glm::vec3 sky_colour = DEFAULT_CLEAR_COLOUR;
+
+        // The lighting itself
+        glm::vec3 position{60, 35, 70};
+        glm::vec3 colour{1, 1, 1};
+        float brightness = 1.0f;
+
+    } main_light_;
+
   public:
     EditorLevel(const LevelTextures& drawing_pad_texture_map);
 
@@ -80,6 +95,10 @@ class EditorLevel
 
     /// Returns the ID of the last object placed
     int last_placed_id() const;
+
+    void display_settings_gui();
+    void reset_light_settings();
+    const MainLight& get_light_settings() const;
 
   private:
     std::optional<std::pair<LevelObject*, int>> find_object_and_floor(ObjectId object_id);

@@ -56,6 +56,7 @@ class Screen
     virtual ~Screen() = default;
 
     virtual bool on_init() = 0;
+    virtual void on_open() {};
     virtual void on_event([[maybe_unused]] const sf::Event& event) {};
     virtual void on_update([[maybe_unused]] const Keyboard& keyboard,
                            [[maybe_unused]] sf::Time dt) {};

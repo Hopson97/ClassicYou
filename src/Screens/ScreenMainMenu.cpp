@@ -19,6 +19,11 @@ bool ScreenMainMenu::on_init()
     return true;
 }
 
+void ScreenMainMenu::on_open()
+{
+    glClearColor(DEFAULT_CLEAR_COLOUR.r, DEFAULT_CLEAR_COLOUR.g, DEFAULT_CLEAR_COLOUR.b, 1.0f);
+}
+
 void ScreenMainMenu::on_render([[maybe_unused]] bool show_debug)
 {
 
