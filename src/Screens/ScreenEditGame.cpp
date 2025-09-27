@@ -133,13 +133,12 @@ bool ScreenEditGame::on_init()
     // ----------------------------
     // ==== Load scene shaders ====
     // ----------------------------
+    // clang-format off
     // Load the shader for the basic parts of a scene
     scene_shader_.add_replace_word({"TEX_COORD_LENGTH", "vec2"});
     scene_shader_.add_replace_word({"SAMPLER_TYPE", "sampler2D"});
-    if (!scene_shader_.load_stage("assets/shaders/Scene/SceneVertex.glsl",
-                                  gl::ShaderType::Vertex) ||
-        !scene_shader_.load_stage("assets/shaders/Scene/SceneFragment.glsl",
-                                  gl::ShaderType::Fragment) ||
+    if (!scene_shader_.load_stage("assets/shaders/Scene/SceneVertex.glsl",      gl::ShaderType::Vertex) ||
+        !scene_shader_.load_stage("assets/shaders/Scene/SceneFragment.glsl",    gl::ShaderType::Fragment) ||
         !scene_shader_.link_shaders())
     {
         return false;
@@ -150,26 +149,33 @@ bool ScreenEditGame::on_init()
     // as it needs to use 3D texture coords to work with GL_TEXTURE_2D_ARRAY
     world_geometry_shader_.add_replace_word({"TEX_COORD_LENGTH", "vec3"});
     world_geometry_shader_.add_replace_word({"SAMPLER_TYPE", "sampler2DArray"});
-    if (!world_geometry_shader_.load_stage("assets/shaders/Scene/SceneVertex.glsl",
-                                           gl::ShaderType::Vertex) ||
-        !world_geometry_shader_.load_stage("assets/shaders/Scene/SceneFragment.glsl",
-                                           gl::ShaderType::Fragment) ||
+    if (!world_geometry_shader_.load_stage("assets/shaders/Scene/SceneVertex.glsl",     gl::ShaderType::Vertex) ||
+        !world_geometry_shader_.load_stage("assets/shaders/Scene/SceneFragment.glsl",   gl::ShaderType::Fragment) ||
         !world_geometry_shader_.link_shaders())
     {
         return false;
     }
     world_geometry_shader_.set_uniform("diffuse", 0);
 
-    if (!drawing_pad_shader_.load_stage("assets/shaders/Scene/Scene2DVertex.glsl",
-                                        gl::ShaderType::Vertex) ||
-        !drawing_pad_shader_.load_stage("assets/shaders/Scene/Scene2DFragment.glsl",
-                                        gl::ShaderType::Fragment) ||
+    // Load the shader for the 2D view
+    if (!drawing_pad_shader_.load_stage("assets/shaders/Scene/Scene2DVertex.glsl",   gl::ShaderType::Vertex) ||
+        !drawing_pad_shader_.load_stage("assets/shaders/Scene/Scene2DFragment.glsl", gl::ShaderType::Fragment) ||
         !drawing_pad_shader_.link_shaders())
     {
         return false;
     }
     drawing_pad_shader_.set_uniform("base_texture", 0);
     drawing_pad_shader_.set_uniform("world_texture", 1);
+
+    // Load the shader for showing vertex normals
+    if (!world_normal_shader_.load_stage("assets/shaders/Normals/NormalVisualiserVertex.glsl",      gl::ShaderType::Vertex) ||
+        !world_normal_shader_.load_stage("assets/shaders/Normals/NormalVisualiserGeometry.glsl",    gl::ShaderType::Geometry) ||
+        !world_normal_shader_.load_stage("assets/shaders/Normals/NormalVisualiserFragment.glsl",    gl::ShaderType::Fragment) ||
+        !world_normal_shader_.link_shaders())
+    {
+        return false;
+    }
+    // clang-format on
 
     // ----------------------------------------------------------------
     // ==== Set up the picker FBO and shader for 3D mouse picking  ====
@@ -531,10 +537,10 @@ void ScreenEditGame::on_render(bool show_debug)
     {
         grid_.render(camera_.transform.position, editor_state_.current_floor);
     }
-    scene_shader_.bind();
     //=============================================
-    //      Render the actual level and previews
+    //      Render the level and previews
     // ============================================
+    scene_shader_.bind();
     // Draw the selection node
     if (tool_->get_tool_type() == ToolType::CreateWall)
     {
@@ -559,7 +565,7 @@ void ScreenEditGame::on_render(bool show_debug)
     // moved around
     auto offset = object_move_handler_.get_move_offset();
     level_.render(world_geometry_shader_, editor_state_.selection.objects,
-                  editor_state_.current_floor, {offset.x, 0, offset.y});
+                  editor_state_.current_floor, {offset.x, 0, offset.y}, false);
 
     if (!object_move_handler_.is_moving_objects())
     {
@@ -568,6 +574,14 @@ void ScreenEditGame::on_render(bool show_debug)
 
     // Ensure GUI etc are rendered using fill
     gl::polygon_mode(gl::Face::FrontAndBack, gl::PolygonMode::Fill);
+
+    //=======================
+    //      Debug Rendering
+    // ======================
+    world_normal_shader_.bind();
+    world_normal_shader_.set_uniform("model_matrix", create_model_matrix({}));
+    level_.render(world_normal_shader_, editor_state_.selection.objects,
+                  editor_state_.current_floor, {offset.x, 0, offset.y}, true);
 
     //======================================
     //      3D Mouse Picking Objects
@@ -903,7 +917,6 @@ void ScreenEditGame::display_editor_gui()
             editor_settings_.set_to_default();
             messages_manager_.add_message("Settings reset to default.");
         }
-
     }
     ImGui::End();
 

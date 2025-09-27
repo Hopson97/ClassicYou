@@ -112,6 +112,10 @@ class ScreenEditGame final : public Screen
     gl::Shader drawing_pad_shader_;
     gl::Shader world_geometry_shader_;
 
+    /// Shader for viewing the normals for debugging light issues etc
+    gl::Shader world_normal_shader_;
+
+
     CameraKeybinds camera_keybinds_;
     CameraKeybinds keybinds_2d_;
     CameraControllerOptions camera_controller_options_;
