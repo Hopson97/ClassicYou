@@ -199,6 +199,19 @@ namespace
         float d = 0.0f;
     };
 
+    auto generate_vertex_positions(const RampCornerHeights& heights, float x, float z, float width,
+                                   float depth)
+    {
+        // clang-format off
+        return std::make_tuple(
+            glm::vec3{x, heights.a, z},
+            glm::vec3{x, heights.b, z + depth},
+            glm::vec3{x + width, heights.c, z + depth},
+            glm::vec3{x + width, heights.d, z}
+        );
+        // clang-format on
+    }
+
     LevelObjectsMesh3D generate_flat_ramp_mesh(const RampMeshParams& p, RampCornerHeights& heights,
                                                Direction direction, RampStyle style,
                                                float start_height, float end_height)
@@ -229,10 +242,7 @@ namespace
         }
 
         // The 4 corners
-        glm::vec3 a{p.pos.x, heights.a, p.pos.z};
-        glm::vec3 b{p.pos.x, heights.b, p.pos.z + p.depth};
-        glm::vec3 c{p.pos.x + p.width, heights.c, p.pos.z + p.depth};
-        glm::vec3 d{p.pos.x + p.width, heights.d, p.pos.z};
+        auto [a, b, c, d] = generate_vertex_positions(heights, p.pos.x, p.pos.z, p.width, p.depth);
 
         // Normal is the cross product between the directions of 3 points on the "plane"
         auto normal = glm::normalize(glm::cross(b - a, c - a));
@@ -284,82 +294,72 @@ namespace
                                                  float end_height)
     {
         bool corner = style == RampStyle::Corner;
-        // For corners, one point is higher than the rest (vice versa for inverted ramp)
+        // For corners, one point is higher than the rest (vice versa for inverted ramp), aka
+        // 'prominent_corner'
         heights.a = corner ? start_height : end_height;
         heights.b = corner ? start_height : end_height;
         heights.c = corner ? start_height : end_height;
         heights.d = corner ? start_height : end_height;
-
-        switch (direction)
+        float* prominent_corner = [&]()
         {
-            case Direction::Left:
+            // clang-format off
+            switch (direction)
             {
-                heights.a = corner ? end_height : start_height;
+                case Direction::Left:    return &heights.a;
+                case Direction::Right:   return &heights.b;
+                case Direction::Back:    return &heights.c;
+                case Direction::Forward: return &heights.d;
             }
-            break;
-
-            case Direction::Right:
-            {
-                heights.b = corner ? end_height : start_height;
-            }
-            break;
-
-            case Direction::Back:
-                heights.c = corner ? end_height : start_height;
-                break;
-
-            case Direction::Forward:
-                heights.d = corner ? end_height : start_height;
-                break;
-
-            default:
-                break;
-        }
+            // clang-format on
+        }();
+        *prominent_corner = corner ? end_height : start_height;
 
         // The 4 corners
-        glm::vec3 a{p.pos.x, heights.a, p.pos.z};
-        glm::vec3 b{p.pos.x, heights.b, p.pos.z + p.depth};
-        glm::vec3 c{p.pos.x + p.width, heights.c, p.pos.z + p.depth};
-        glm::vec3 d{p.pos.x + p.width, heights.d, p.pos.z};
+        auto [a, b, c, d] = generate_vertex_positions(heights, p.pos.x, p.pos.z, p.width, p.depth);
 
-        auto ac_dir = glm::normalize(a - c);
-        auto na = glm::cross(ac_dir, glm::cross(ac_dir, Vector::UP));
-        auto nc = na;
+        // auto ac_dir = glm::normalize(a - c);
+        // auto na = glm::cross(ac_dir, glm::cross(ac_dir, Vector::UP));
+        // auto nc = na;
 
-        auto nb = glm::normalize(glm::cross(b - a, c - a));
-        auto nd = glm::normalize(glm::cross(ac_dir, nb));
+        // auto nb = glm::normalize(glm::cross(b - a, c - a));
+        // auto nd = glm::normalize(glm::cross(ac_dir, nb));
+
+        auto na = Vector::UP;
+        auto nb = Vector::UP;
+        auto nc = Vector::UP;
+        auto nd = Vector::UP;
 
         LevelObjectsMesh3D mesh;
+
+        // For the lighting to be correct for corners, the two faces of the corner must be their own
+        // triangle such that they have their own normal vectors
         // clang-format off
         mesh.vertices = {
             // Top
             {a, {0,       0,       p.texture_top}, na, p.colour_top},
             {b, {0,       p.depth, p.texture_top}, nb, p.colour_top},
             {c, {p.width, p.depth, p.texture_top}, nc, p.colour_top},
+
+            {c, {p.width, p.depth, p.texture_top}, nc, p.colour_top},
             {d, {p.width, 0,       p.texture_top}, nd, p.colour_top},
+            {a, {0,       0,       p.texture_top}, na, p.colour_top},
              
             // Bottom
             {a, {0,       0,       p.texture_bottom}, -na, p.colour_bottom},
             {b, {0,       p.depth, p.texture_bottom}, -nb, p.colour_bottom},
             {c, {p.width, p.depth, p.texture_bottom}, -nc, p.colour_bottom},
+
+            {c, {p.width, p.depth, p.texture_bottom}, -nc, p.colour_bottom},
             {d, {p.width, 0,       p.texture_bottom}, -nd, p.colour_bottom},
+            {a, {0,       0,       p.texture_bottom}, -na, p.colour_bottom},
         };
         // clang-format on
 
-        if (direction == Direction::Right || direction == Direction::Forward)
-        {
-            mesh.indices = {// Front
-                            3, 1, 2, 0, 1, 3,
-                            // Back
-                            7, 5, 4, 6, 5, 7};
-        }
-        else
-        {
-            mesh.indices = {// Front
-                            0, 1, 2, 2, 3, 0,
-                            // Back
-                            6, 5, 4, 4, 7, 6};
-        }
+        mesh.indices = {
+            0, 1, 2, 3,  4,  5, // Top
+            8, 7, 6, 11, 10, 9, // Bottom
+        };
+
         return mesh;
     }
 } // namespace
