@@ -580,7 +580,7 @@ void ScreenEditGame::on_render(bool show_debug)
     // moved around
     auto offset = object_move_handler_.get_move_offset();
     level_.render(world_geometry_shader_, editor_state_.selection.objects,
-                  editor_state_.current_floor, {offset.x, 0, offset.y}, false);
+                  editor_state_.current_floor, {offset.x, 0, offset.y});
 
     // Draw the current tool preview
     if (!object_move_handler_.is_moving_objects())
@@ -599,7 +599,7 @@ void ScreenEditGame::on_render(bool show_debug)
         world_normal_shader_.bind();
         world_normal_shader_.set_uniform("model_matrix", create_model_matrix({}));
         level_.render(world_normal_shader_, editor_state_.selection.objects,
-                      editor_state_.current_floor, {offset.x, 0, offset.y}, true);
+                      editor_state_.current_floor, {offset.x, 0, offset.y});
     }
 
     //======================================
