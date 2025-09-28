@@ -311,11 +311,18 @@ namespace
                 case Direction::Forward: return &heights.d;
             }
             // clang-format on
-        }();
+        }(); // abd
         *prominent_corner = corner ? end_height : start_height;
 
         // The 4 corners
         auto [a, b, c, d] = generate_vertex_positions(heights, p.pos.x, p.pos.z, p.width, p.depth);
+
+        if (direction == Direction::Right || direction == Direction::Forward)
+        {
+            // b.y *= 0;
+            //   c.y *= 0;
+            //   d.y *= 0;
+        }
 
         // auto ac_dir = glm::normalize(a - c);
         // auto na = glm::cross(ac_dir, glm::cross(ac_dir, Vector::UP));
@@ -324,35 +331,58 @@ namespace
         // auto nb = glm::normalize(glm::cross(b - a, c - a));
         // auto nd = glm::normalize(glm::cross(ac_dir, nb));
 
-        auto na = Vector::UP;
-        auto nb = Vector::UP;
-        auto nc = Vector::UP;
-        auto nd = Vector::UP;
+        auto na = glm::normalize(glm::cross(b - a, c - a));
+        auto nb = na;
 
         LevelObjectsMesh3D mesh;
 
         // For the lighting to be correct for corners, the two faces of the corner must be their own
         // triangle such that they have their own normal vectors
         // clang-format off
-        mesh.vertices = {
-            // Top
-            {a, {0,       0,       p.texture_top}, na, p.colour_top},
-            {b, {0,       p.depth, p.texture_top}, nb, p.colour_top},
-            {c, {p.width, p.depth, p.texture_top}, nc, p.colour_top},
+        if (direction == Direction::Right || direction == Direction::Forward)
+        {
+            mesh.vertices = {
+                // Top
+                {b, {0,       p.depth, p.texture_top}, na, p.colour_top},
+                {c, {p.width, p.depth, p.texture_top}, na, p.colour_top},
+                {d, {p.width, 0,       p.texture_top}, na, p.colour_top},
 
-            {c, {p.width, p.depth, p.texture_top}, nc, p.colour_top},
-            {d, {p.width, 0,       p.texture_top}, nd, p.colour_top},
-            {a, {0,       0,       p.texture_top}, na, p.colour_top},
+                {b, {0,       0,       p.texture_top}, nb, p.colour_top},
+                {a, {0,       0,       p.texture_top}, nb, p.colour_top},
+                {d, {0,       0,       p.texture_top}, nb, p.colour_top},
              
-            // Bottom
-            {a, {0,       0,       p.texture_bottom}, -na, p.colour_bottom},
-            {b, {0,       p.depth, p.texture_bottom}, -nb, p.colour_bottom},
-            {c, {p.width, p.depth, p.texture_bottom}, -nc, p.colour_bottom},
+                // Bottom
+                {b, {0,       p.depth, p.texture_top}, nb, p.colour_top},
+                {c, {p.width, p.depth, p.texture_top}, nb, p.colour_top},
+                {d, {p.width, 0,       p.texture_top}, nb, p.colour_top},
 
-            {c, {p.width, p.depth, p.texture_bottom}, -nc, p.colour_bottom},
-            {d, {p.width, 0,       p.texture_bottom}, -nd, p.colour_bottom},
-            {a, {0,       0,       p.texture_bottom}, -na, p.colour_bottom},
-        };
+                {b, {p.width, p.depth, p.texture_bottom}, -nb, p.colour_bottom},
+                {a, {p.width, 0,       p.texture_bottom}, -nb, p.colour_bottom},
+                {d, {0,       0,       p.texture_bottom}, -nb, p.colour_bottom},
+            };
+        }
+        else 
+        {
+            mesh.vertices = {
+                // Top
+                {a, {0,       0,       p.texture_top}, na, p.colour_top},
+                {b, {0,       p.depth, p.texture_top}, na, p.colour_top},
+                {c, {p.width, p.depth, p.texture_top}, na, p.colour_top},
+
+                {c, {p.width, p.depth, p.texture_top}, nb, p.colour_top},
+                {d, {p.width, 0,       p.texture_top}, nb, p.colour_top},
+                {a, {0,       0,       p.texture_top}, nb, p.colour_top},
+             
+                // Bottom
+                {a, {0,       0,       p.texture_bottom}, -na, p.colour_bottom},
+                {b, {0,       p.depth, p.texture_bottom}, -na, p.colour_bottom},
+                {c, {p.width, p.depth, p.texture_bottom}, -na, p.colour_bottom},
+
+                {c, {p.width, p.depth, p.texture_bottom}, -nb, p.colour_bottom},
+                {d, {p.width, 0,       p.texture_bottom}, -nb, p.colour_bottom},
+                {a, {0,       0,       p.texture_bottom}, -nb, p.colour_bottom},
+            };
+        }
         // clang-format on
 
         mesh.indices = {
