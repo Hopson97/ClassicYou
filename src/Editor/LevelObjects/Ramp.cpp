@@ -167,9 +167,124 @@ object_to_geometry_2d(const RampObject& ramp, const LevelTextures& drawing_pad_t
             gl::PrimitiveType::Triangles};
 }
 
+namespace
+{
+    struct RampMeshParams
+    {
+        // The ramps position in the world
+        glm::vec3 pos;
+
+        // Size
+        float width = 0.0f;
+        float depth = 0.0f;
+
+        // Textures and colour
+        GLfloat texture_top;
+        GLfloat texture_bottom;
+
+        glm::u8vec4 colour_top;
+        glm::u8vec4 colour_bottom;
+    };
+
+    struct RampCornerHeights
+    {
+        // Layout of ramp heights can be controlled using the corner values
+        // These are heights of the 4 corners
+        // a----d
+        // |    |
+        // b----c
+        float a = 0.0f;
+        float b = 0.0f;
+        float c = 0.0f;
+        float d = 0.0f;
+    };
+
+    LevelObjectsMesh3D generate_flat_ramp_mesh(const RampMeshParams& p, RampCornerHeights& heights,
+                                               Direction direction, RampStyle style,
+                                               float start_height, float end_height)
+    {
+        switch (direction)
+        {
+            case Direction::Left:
+                std::swap(heights.a, heights.c);
+                std::swap(heights.b, heights.d);
+                break;
+
+            case Direction::Forward:
+                heights.a = end_height;
+                heights.b = start_height;
+                heights.c = start_height;
+                heights.d = end_height;
+                break;
+
+            case Direction::Back:
+                heights.a = start_height;
+                heights.b = end_height;
+                heights.c = end_height;
+                heights.d = start_height;
+                break;
+
+            default:
+                break;
+        }
+
+        // The 4 corners
+        glm::vec3 a{p.pos.x, heights.a, p.pos.z};
+        glm::vec3 b{p.pos.x, heights.b, p.pos.z + p.depth};
+        glm::vec3 c{p.pos.x + p.width, heights.c, p.pos.z + p.depth};
+        glm::vec3 d{p.pos.x + p.width, heights.d, p.pos.z};
+
+        // Normal is the cross product between the directions of 3 points on the "plane"
+        auto normal = glm::normalize(glm::cross(b - a, c - a));
+
+        LevelObjectsMesh3D mesh;
+        // clang-format off
+        mesh.vertices = {
+            // Top
+            {a, {0,       0,       p.texture_top}, normal, p.colour_top},
+            {b, {0,       p.depth, p.texture_top}, normal, p.colour_top},
+            {c, {p.width, p.depth, p.texture_top}, normal, p.colour_top},
+            {d, {p.width, 0,       p.texture_top}, normal, p.colour_top},
+             
+            // Bottom
+            {a, {0,       0,       p.texture_bottom}, -normal, p.colour_bottom},
+            {b, {0,       p.depth, p.texture_bottom}, -normal, p.colour_bottom},
+            {c, {p.width, p.depth, p.texture_bottom}, -normal, p.colour_bottom},
+            {d, {p.width, 0,       p.texture_bottom}, -normal, p.colour_bottom},
+        };
+        // clang-format on
+
+        if (style == RampStyle::TriRamp)
+        {
+            mesh.indices = {
+                2, 3, 0, // Top
+                4, 7, 6, // Bottom
+            };
+        }
+        else if (style == RampStyle::FlippedTriRamp)
+        {
+            mesh.indices = {
+                0, 1, 2, // Top
+                6, 5, 4, // Bottom
+            };
+        }
+        else
+        {
+            mesh.indices = {
+                0, 1, 2, 2, 3, 0, // Top
+                6, 5, 4, 4, 7, 6, // Bottom
+            };
+        }
+        return mesh;
+    }
+
+
+} // namespace
+
 template <>
 LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
 {
+
     LevelObjectsMesh3D mesh;
 
     const auto& params = ramp.parameters;
@@ -201,6 +316,28 @@ LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
     auto hc = he;
     auto hd = he;
 
+    RampMeshParams ramp_mesh_params{
+        .pos = glm::vec3{params.position.x, 0, params.position.y} / TILE_SIZE_F,
+
+        // Size
+        .width = props.width,
+        .depth = props.depth,
+
+        // Textures and colour
+        .texture_top = static_cast<GLfloat>(props.texture_top.id),
+        .texture_bottom = static_cast<GLfloat>(props.texture_bottom.id),
+
+        .colour_top = props.texture_top.colour,
+        .colour_bottom = props.texture_bottom.colour,
+    };
+
+    RampCornerHeights corner_heights = {
+        .a = hs,
+        .b = hs,
+        .c = he,
+        .d = he,
+    };
+
     // The normal vector at the 4 corners
     glm::vec3 na{0, 1, 0};
     glm::vec3 nb{0, 1, 0};
@@ -224,10 +361,14 @@ LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
                 ha = corner ? he : hs;
 
                 glm::vec3 a{p.x, ha, p.z};
-                glm::vec3 b{p.x + width, hc, p.z + depth};
-                auto ab_dir = glm::normalize(a - b);
-                na = glm::cross(ab_dir, glm::cross(ab_dir, Vector::UP));
+                glm::vec3 b{p.x, hb, p.z + depth};
+                glm::vec3 c{p.x + width, hc, p.z + depth};
+                auto ac_dir = glm::normalize(a - c);
+                na = glm::cross(ac_dir, glm::cross(ac_dir, Vector::UP));
                 nc = na;
+
+                nb = glm::normalize(glm::cross(b - a, c - a));
+                nd = glm::normalize(glm::cross(ac_dir, nb));
             }
             break;
 
@@ -236,10 +377,13 @@ LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
                 hb = corner ? he : hs;
 
                 glm::vec3 a{p.x, ha, p.z};
-                glm::vec3 b{p.x + width, hc, p.z + depth};
-                auto ab_dir = glm::normalize(a - b);
-                na = glm::cross(ab_dir, glm::cross(ab_dir, Vector::UP));
+                glm::vec3 b{p.x, hb, p.z + depth};
+                glm::vec3 c{p.x + width, hc, p.z + depth};
+                auto ac_dir = glm::normalize(a - c);
+                na = glm::cross(ac_dir, glm::cross(ac_dir, Vector::UP));
                 nc = na;
+
+                nb = glm::normalize(glm::cross(b - a, c - a));
             }
             break;
 
@@ -255,47 +399,11 @@ LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
                 break;
         }
     }
-    else
+
+    if (!corner_style)
     {
-        switch (props.direction)
-        {
-            case Direction::Left:
-                std::swap(ha, hc);
-                std::swap(hb, hd);
-                break;
-
-            case Direction::Forward:
-                ha = he;
-                hb = hs;
-                hc = hs;
-                hd = he;
-                break;
-
-            case Direction::Back:
-                ha = hs;
-                hb = he;
-                hc = he;
-                hd = hs;
-                break;
-
-            default:
-                break;
-        }
-
-        // Normal ramps are plane, define 3 points on the plane
-        glm::vec3 a{p.x, ha, p.z};
-        glm::vec3 b{p.x, hb, p.z + depth};
-        glm::vec3 c{p.x + width, hc, p.z + depth};
-
-        // Create a direction vector between the points
-        glm::vec3 u = b - a;
-        glm::vec3 v = c - a;
-
-        // Then the cross product of the directions is the normal to these
-        na = glm::normalize(glm::cross(u, v));
-        nb = na;
-        nc = na;
-        nd = na;
+        return generate_flat_ramp_mesh(ramp_mesh_params, corner_heights, props.direction,
+                                       props.style, hs, he);
     }
 
     // clang-format off
