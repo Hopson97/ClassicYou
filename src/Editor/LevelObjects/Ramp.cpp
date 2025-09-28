@@ -278,7 +278,90 @@ namespace
         return mesh;
     }
 
+    LevelObjectsMesh3D generate_corner_ramp_mesh(const RampMeshParams& p,
+                                                 RampCornerHeights& heights, Direction direction,
+                                                 RampStyle style, float start_height,
+                                                 float end_height)
+    {
+        bool corner = style == RampStyle::Corner;
+        // For corners, one point is higher than the rest (vice versa for inverted ramp)
+        heights.a = corner ? start_height : end_height;
+        heights.b = corner ? start_height : end_height;
+        heights.c = corner ? start_height : end_height;
+        heights.d = corner ? start_height : end_height;
 
+        switch (direction)
+        {
+            case Direction::Left:
+            {
+                heights.a = corner ? end_height : start_height;
+            }
+            break;
+
+            case Direction::Right:
+            {
+                heights.b = corner ? end_height : start_height;
+            }
+            break;
+
+            case Direction::Back:
+                heights.c = corner ? end_height : start_height;
+                break;
+
+            case Direction::Forward:
+                heights.d = corner ? end_height : start_height;
+                break;
+
+            default:
+                break;
+        }
+
+        // The 4 corners
+        glm::vec3 a{p.pos.x, heights.a, p.pos.z};
+        glm::vec3 b{p.pos.x, heights.b, p.pos.z + p.depth};
+        glm::vec3 c{p.pos.x + p.width, heights.c, p.pos.z + p.depth};
+        glm::vec3 d{p.pos.x + p.width, heights.d, p.pos.z};
+
+        auto ac_dir = glm::normalize(a - c);
+        auto na = glm::cross(ac_dir, glm::cross(ac_dir, Vector::UP));
+        auto nc = na;
+
+        auto nb = glm::normalize(glm::cross(b - a, c - a));
+        auto nd = glm::normalize(glm::cross(ac_dir, nb));
+
+        LevelObjectsMesh3D mesh;
+        // clang-format off
+        mesh.vertices = {
+            // Top
+            {a, {0,       0,       p.texture_top}, na, p.colour_top},
+            {b, {0,       p.depth, p.texture_top}, nb, p.colour_top},
+            {c, {p.width, p.depth, p.texture_top}, nc, p.colour_top},
+            {d, {p.width, 0,       p.texture_top}, nd, p.colour_top},
+             
+            // Bottom
+            {a, {0,       0,       p.texture_bottom}, -na, p.colour_bottom},
+            {b, {0,       p.depth, p.texture_bottom}, -nb, p.colour_bottom},
+            {c, {p.width, p.depth, p.texture_bottom}, -nc, p.colour_bottom},
+            {d, {p.width, 0,       p.texture_bottom}, -nd, p.colour_bottom},
+        };
+        // clang-format on
+
+        if (direction == Direction::Right || direction == Direction::Forward)
+        {
+            mesh.indices = {// Front
+                            3, 1, 2, 0, 1, 3,
+                            // Back
+                            7, 5, 4, 6, 5, 7};
+        }
+        else
+        {
+            mesh.indices = {// Front
+                            0, 1, 2, 2, 3, 0,
+                            // Back
+                            6, 5, 4, 4, 7, 6};
+        }
+        return mesh;
+    }
 } // namespace
 
 template <>
@@ -290,31 +373,11 @@ LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
     const auto& params = ramp.parameters;
     const auto& props = ramp.properties;
 
-    float width = props.width;
-    float depth = props.depth;
-
-    GLfloat texture_bottom = static_cast<float>(props.texture_bottom.id);
-    GLfloat texture_top = static_cast<float>(props.texture_top.id);
-    auto colour_bottom = props.texture_bottom.colour;
-    auto colour_top = props.texture_top.colour;
-
-    auto p = glm::vec3{params.position.x, 0, params.position.y} / TILE_SIZE_F;
-
     // Direction is assumed left by default for height start/end
     auto hs = props.start_height * FLOOR_HEIGHT;
     auto he = props.end_height * FLOOR_HEIGHT;
     hs += floor_number * FLOOR_HEIGHT;
     he += floor_number * FLOOR_HEIGHT;
-
-    //  Layout of ramp heights can be controlled using the corner values
-    //  These are heights of the 4 corners
-    //   ha----hd
-    //   |      |
-    //   hb----hc
-    auto ha = hs;
-    auto hb = hs;
-    auto hc = he;
-    auto hd = he;
 
     RampMeshParams ramp_mesh_params{
         .pos = glm::vec3{params.position.x, 0, params.position.y} / TILE_SIZE_F,
@@ -338,123 +401,14 @@ LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
         .d = he,
     };
 
-    // The normal vector at the 4 corners
-    glm::vec3 na{0, 1, 0};
-    glm::vec3 nb{0, 1, 0};
-    glm::vec3 nc{0, 1, 0};
-    glm::vec3 nd{0, 1, 0};
-
-    bool corner = props.style == RampStyle::Corner;
-    bool corner_style = corner || props.style == RampStyle::InvertedCorner;
-
-    if (corner_style)
+    if (props.style == RampStyle::InvertedCorner || props.style == RampStyle::Corner)
     {
-        // For corners, one point is higher than the rest (vice versa for inverted ramp)
-        ha = props.style == RampStyle::Corner ? hs : he;
-        hb = props.style == RampStyle::Corner ? hs : he;
-        hc = props.style == RampStyle::Corner ? hs : he;
-        hd = props.style == RampStyle::Corner ? hs : he;
-        switch (props.direction)
-        {
-            case Direction::Left:
-            {
-                ha = corner ? he : hs;
-
-                glm::vec3 a{p.x, ha, p.z};
-                glm::vec3 b{p.x, hb, p.z + depth};
-                glm::vec3 c{p.x + width, hc, p.z + depth};
-                auto ac_dir = glm::normalize(a - c);
-                na = glm::cross(ac_dir, glm::cross(ac_dir, Vector::UP));
-                nc = na;
-
-                nb = glm::normalize(glm::cross(b - a, c - a));
-                nd = glm::normalize(glm::cross(ac_dir, nb));
-            }
-            break;
-
-            case Direction::Right:
-            {
-                hb = corner ? he : hs;
-
-                glm::vec3 a{p.x, ha, p.z};
-                glm::vec3 b{p.x, hb, p.z + depth};
-                glm::vec3 c{p.x + width, hc, p.z + depth};
-                auto ac_dir = glm::normalize(a - c);
-                na = glm::cross(ac_dir, glm::cross(ac_dir, Vector::UP));
-                nc = na;
-
-                nb = glm::normalize(glm::cross(b - a, c - a));
-            }
-            break;
-
-            case Direction::Back:
-                hc = corner ? he : hs;
-                break;
-
-            case Direction::Forward:
-                hd = corner ? he : hs;
-                break;
-
-            default:
-                break;
-        }
+        return generate_corner_ramp_mesh(ramp_mesh_params, corner_heights, props.direction,
+                                         props.style, hs, he);
     }
-
-    if (!corner_style)
+    else
     {
         return generate_flat_ramp_mesh(ramp_mesh_params, corner_heights, props.direction,
                                        props.style, hs, he);
     }
-
-    // clang-format off
-    mesh.vertices = {
-            // Top
-            {{p.x,          ha, p.z,        },  {0,     0,      texture_top}, na, colour_top},
-            {{p.x,          hb, p.z + depth,},  {0,     depth,  texture_top}, nb, colour_top},
-            {{p.x + width,  hc, p.z + depth,},  {width, depth,  texture_top}, nc, colour_top},
-            {{p.x + width,  hd, p.z,},          {width, 0,      texture_top}, nd, colour_top},
-
-            // Bottom
-            {{p.x,          ha, p.z,        },  {0,     0,      texture_bottom}, -na, colour_bottom},
-            {{p.x,          hb, p.z + depth,},  {0,     depth,  texture_bottom}, -nb, colour_bottom},
-            {{p.x + width,  hc, p.z + depth,},  {width, depth,  texture_bottom}, -nc, colour_bottom},
-            {{p.x + width,  hd, p.z,        },  {width, 0,      texture_bottom}, -nd, colour_bottom},
-        };
-    // clang-format on
-
-    if (props.style == RampStyle::TriRamp)
-    {
-        mesh.indices = {// Front
-                        2, 3, 0,
-                        // Back
-                        4, 7, 6};
-    }
-    else if (props.style == RampStyle::FlippedTriRamp)
-    {
-        mesh.indices = {// Front
-                        0, 1, 2,
-                        // Back
-                        6, 5, 4};
-    }
-    else if (props.style == RampStyle::Full || corner_style)
-
-    {
-        if (corner_style &&
-            (props.direction == Direction::Right || props.direction == Direction::Forward))
-        {
-            mesh.indices = {// Front
-                            3, 1, 2, 0, 1, 3,
-                            // Back
-                            7, 5, 4, 6, 5, 7};
-        }
-        else
-        {
-            mesh.indices = {// Front
-                            0, 1, 2, 2, 3, 0,
-                            // Back
-                            6, 5, 4, 4, 7, 6};
-        }
-    }
-
-    return mesh;
 }
