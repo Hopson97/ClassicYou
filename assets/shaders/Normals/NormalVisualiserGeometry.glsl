@@ -7,6 +7,7 @@ in VS_OUT {
     vec3 normal;
 } gs_in[];
 
+uniform bool selected;
   
 layout(std430, binding = 0) readonly buffer Matrices 
 {
@@ -20,7 +21,7 @@ void generate_line(int index)
 {
     gl_Position = matrices.projection * gl_in[index].gl_Position;
     EmitVertex();
-    gl_Position = matrices.projection * (gl_in[index].gl_Position + vec4(gs_in[index].normal, 0.0) * MAGNITUDE);
+    gl_Position = matrices.projection * (gl_in[index].gl_Position + vec4(gs_in[index].normal, 0.0) * MAGNITUDE * (selected ? 1.5 : 1.0));
     EmitVertex();
     EndPrimitive();
 }

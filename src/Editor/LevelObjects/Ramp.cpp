@@ -317,23 +317,6 @@ namespace
         // The 4 corners
         auto [a, b, c, d] = generate_vertex_positions(heights, p.pos.x, p.pos.z, p.width, p.depth);
 
-        if (direction == Direction::Right || direction == Direction::Forward)
-        {
-            // b.y *= 0;
-            //   c.y *= 0;
-            //   d.y *= 0;
-        }
-
-        // auto ac_dir = glm::normalize(a - c);
-        // auto na = glm::cross(ac_dir, glm::cross(ac_dir, Vector::UP));
-        // auto nc = na;
-
-        // auto nb = glm::normalize(glm::cross(b - a, c - a));
-        // auto nd = glm::normalize(glm::cross(ac_dir, nb));
-
-        auto na = glm::normalize(glm::cross(b - a, c - a));
-        auto nb = na;
-
         LevelObjectsMesh3D mesh;
 
         // For the lighting to be correct for corners, the two faces of the corner must be their own
@@ -341,28 +324,38 @@ namespace
         // clang-format off
         if (direction == Direction::Right || direction == Direction::Forward)
         {
+            auto na = glm::normalize(glm::cross(c - b, d - c));
+            auto nb = glm::normalize(glm::cross(a - b, d - a));
             mesh.vertices = {
                 // Top
-                {b, {0,       p.depth, p.texture_top}, na, p.colour_top},
-                {c, {p.width, p.depth, p.texture_top}, na, p.colour_top},
-                {d, {p.width, 0,       p.texture_top}, na, p.colour_top},
+                {b, {0,       0,       p.texture_top}, na, p.colour_top},
+                {c, {0,       p.depth, p.texture_top}, na, p.colour_top},
+                {d, {p.width, p.depth, p.texture_top}, na, p.colour_top},
 
-                {b, {0,       0,       p.texture_top}, nb, p.colour_top},
-                {a, {0,       0,       p.texture_top}, nb, p.colour_top},
-                {d, {0,       0,       p.texture_top}, nb, p.colour_top},
+                {b, {p.width, p.depth, p.texture_top}, -nb, p.colour_top},
+                {a, {p.width, 0,       p.texture_top}, -nb, p.colour_top},
+                {d, {0,       0,       p.texture_top}, -nb, p.colour_top},
              
                 // Bottom
-                {b, {0,       p.depth, p.texture_top}, nb, p.colour_top},
-                {c, {p.width, p.depth, p.texture_top}, nb, p.colour_top},
-                {d, {p.width, 0,       p.texture_top}, nb, p.colour_top},
+                {b, {0,       0,       p.texture_bottom}, -na, p.colour_bottom},
+                {c, {0,       p.depth, p.texture_bottom}, -na, p.colour_bottom},
+                {d, {p.width, p.depth, p.texture_bottom}, -na, p.colour_bottom},
 
-                {b, {p.width, p.depth, p.texture_bottom}, -nb, p.colour_bottom},
-                {a, {p.width, 0,       p.texture_bottom}, -nb, p.colour_bottom},
-                {d, {0,       0,       p.texture_bottom}, -nb, p.colour_bottom},
+                {b, {p.width, p.depth, p.texture_bottom}, nb, p.colour_bottom},
+                {a, {p.width, 0,       p.texture_bottom}, nb, p.colour_bottom},
+                {d, {0,       0,       p.texture_bottom}, nb, p.colour_bottom},
+            };
+
+            mesh.indices = {
+                0, 1, 2,  5,  4,  3, // Top
+                8, 7, 6,  9,  10, 11, // Bottom
             };
         }
         else 
         {
+            auto na = glm::normalize(glm::cross(b - a, c - b));
+            auto nb = glm::normalize(glm::cross(d - c, a - d));
+
             mesh.vertices = {
                 // Top
                 {a, {0,       0,       p.texture_top}, na, p.colour_top},
@@ -382,13 +375,12 @@ namespace
                 {d, {p.width, 0,       p.texture_bottom}, -nb, p.colour_bottom},
                 {a, {0,       0,       p.texture_bottom}, -nb, p.colour_bottom},
             };
+            mesh.indices = {
+                0, 1, 2, 3,  4,  5, // Top
+                8, 7, 6, 11, 10, 9, // Bottom
+            };
         }
         // clang-format on
-
-        mesh.indices = {
-            0, 1, 2, 3,  4,  5, // Top
-            8, 7, 6, 11, 10, 9, // Bottom
-        };
 
         return mesh;
     }
