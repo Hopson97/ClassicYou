@@ -212,6 +212,39 @@ namespace
         // clang-format on
     }
 
+    // To prevent stretching the UVs, ramp texture coords must be mapped using planar
+    // mappping
+    auto generate_ramp_texture_coords(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c,
+                                      const glm::vec3& d)
+    {
+        auto tangent = glm::normalize(c - b);
+        auto bitangent = glm::normalize(a - b);
+
+        auto make_uv = [&](const glm::vec3& pos)
+        {
+            return glm::vec2{
+                glm::dot(pos - b, tangent),
+                glm::dot(pos - b, bitangent),
+            };
+        };
+
+        // clang-format off
+        return std::make_tuple(
+            make_uv(a),
+            make_uv(b),
+            make_uv(c),
+            make_uv(d)
+        );
+        // clang-format on
+    }
+
+    auto generate_corner_ramp_texture_coords(const glm::vec3& a, const glm::vec3& b,
+                                             const glm::vec3& c)
+    {
+        auto [uv_a, uv_b, uv_c, _] = generate_ramp_texture_coords(a, b, c, c);
+        return std::make_tuple(uv_a, uv_b, uv_c);
+    }
+
     LevelObjectsMesh3D generate_flat_ramp_mesh(const RampMeshParams& p, RampCornerHeights& heights,
                                                Direction direction, RampStyle style,
                                                float start_height, float end_height)
@@ -241,8 +274,9 @@ namespace
                 break;
         }
 
-        // The 4 corners
+        // The 4 corners positions and texture coords
         auto [a, b, c, d] = generate_vertex_positions(heights, p.pos.x, p.pos.z, p.width, p.depth);
+        auto [uv_a, uv_b, uv_c, uv_d] = generate_ramp_texture_coords(a, b, c, d);
 
         // Normal is the cross product between the directions of 3 points on the "plane"
         auto normal = glm::normalize(glm::cross(b - a, c - a));
@@ -251,16 +285,16 @@ namespace
         // clang-format off
         mesh.vertices = {
             // Top
-            {a, {0,       0,       p.texture_top}, normal, p.colour_top},
-            {b, {0,       p.depth, p.texture_top}, normal, p.colour_top},
-            {c, {p.width, p.depth, p.texture_top}, normal, p.colour_top},
-            {d, {p.width, 0,       p.texture_top}, normal, p.colour_top},
+            {a, {uv_a.x, uv_a.y, p.texture_top}, normal, p.colour_top},
+            {b, {uv_b.x, uv_b.y, p.texture_top}, normal, p.colour_top},
+            {c, {uv_c.x, uv_c.y, p.texture_top}, normal, p.colour_top},
+            {d, {uv_d.x, uv_d.y,  p.texture_top}, normal, p.colour_top},
              
             // Bottom
-            {a, {0,       0,       p.texture_bottom}, -normal, p.colour_bottom},
-            {b, {0,       p.depth, p.texture_bottom}, -normal, p.colour_bottom},
-            {c, {p.width, p.depth, p.texture_bottom}, -normal, p.colour_bottom},
-            {d, {p.width, 0,       p.texture_bottom}, -normal, p.colour_bottom},
+            {a, {uv_a.x, uv_a.y, p.texture_bottom}, -normal, p.colour_bottom},
+            {b, {uv_b.x, uv_b.y, p.texture_bottom}, -normal, p.colour_bottom},
+            {c, {uv_c.x, uv_c.y, p.texture_bottom}, -normal, p.colour_bottom},
+            {d, {uv_d.x, uv_d.y, p.texture_bottom}, -normal, p.colour_bottom},
         };
         // clang-format on
 
@@ -324,56 +358,61 @@ namespace
         // clang-format off
         if (direction == Direction::Right || direction == Direction::Forward)
         {
+            auto [uv_b1, uv_c1, uv_d1] = generate_corner_ramp_texture_coords(b, c, d);
+            auto [uv_b2, uv_a2, uv_d2] = generate_corner_ramp_texture_coords(b, a, d);
+
             auto na = glm::normalize(glm::cross(c - b, d - c));
             auto nb = glm::normalize(glm::cross(a - b, d - a));
             mesh.vertices = {
                 // Top
-                {b, {0,       0,       p.texture_top}, na, p.colour_top},
-                {c, {0,       p.depth, p.texture_top}, na, p.colour_top},
-                {d, {p.width, p.depth, p.texture_top}, na, p.colour_top},
+                {b, {uv_b1.x, uv_b1.y, p.texture_top}, na, p.colour_top},
+                {c, {uv_c1.x, uv_c1.y, p.texture_top}, na, p.colour_top},
+                {d, {uv_d1.x, uv_d1.y, p.texture_top}, na, p.colour_top},
 
-                {b, {p.width, p.depth, p.texture_top}, -nb, p.colour_top},
-                {a, {p.width, 0,       p.texture_top}, -nb, p.colour_top},
-                {d, {0,       0,       p.texture_top}, -nb, p.colour_top},
+                {b, {uv_b2.x, uv_b2.y, p.texture_top}, -nb, p.colour_top},
+                {a, {uv_a2.x, uv_a2.y, p.texture_top}, -nb, p.colour_top},
+                {d, {uv_d2.x, uv_d2.y, p.texture_top}, -nb, p.colour_top},
              
                 // Bottom
-                {b, {0,       0,       p.texture_bottom}, -na, p.colour_bottom},
-                {c, {0,       p.depth, p.texture_bottom}, -na, p.colour_bottom},
-                {d, {p.width, p.depth, p.texture_bottom}, -na, p.colour_bottom},
-
-                {b, {p.width, p.depth, p.texture_bottom}, nb, p.colour_bottom},
-                {a, {p.width, 0,       p.texture_bottom}, nb, p.colour_bottom},
-                {d, {0,       0,       p.texture_bottom}, nb, p.colour_bottom},
+                {b, {uv_b1.x, uv_b1.y, p.texture_bottom}, -na, p.colour_bottom},
+                {c, {uv_c1.x, uv_c1.y, p.texture_bottom}, -na, p.colour_bottom},
+                {d, {uv_d1.x, uv_d1.y, p.texture_bottom}, -na, p.colour_bottom},
+                
+                {b, {uv_b2.x, uv_b2.y, p.texture_bottom}, nb, p.colour_bottom},
+                {a, {uv_a2.x, uv_a2.y, p.texture_bottom}, nb, p.colour_bottom},
+                {d, {uv_d2.x, uv_d2.y, p.texture_bottom}, nb, p.colour_bottom},
             };
 
             mesh.indices = {
-                0, 1, 2,  5,  4,  3, // Top
-                8, 7, 6,  9,  10, 11, // Bottom
+                0, 1, 2, 5, 4,  3, // Top
+                8, 7, 6, 9, 10, 11, // Bottom
             };
         }
         else 
         {
             auto na = glm::normalize(glm::cross(b - a, c - b));
             auto nb = glm::normalize(glm::cross(d - c, a - d));
+            auto [uv_a1, uv_b1, uv_c1] = generate_corner_ramp_texture_coords(a, b, c);
+            auto [uv_c2, uv_d2, uv_a2] = generate_corner_ramp_texture_coords(c, d, a);
 
             mesh.vertices = {
                 // Top
-                {a, {0,       0,       p.texture_top}, na, p.colour_top},
-                {b, {0,       p.depth, p.texture_top}, na, p.colour_top},
-                {c, {p.width, p.depth, p.texture_top}, na, p.colour_top},
+                {a, {uv_a1.x, uv_a1.y, p.texture_top}, na, p.colour_top},
+                {b, {uv_b1.x, uv_b1.y, p.texture_top}, na, p.colour_top},
+                {c, {uv_c1.x, uv_c1.y, p.texture_top}, na, p.colour_top},
 
-                {c, {p.width, p.depth, p.texture_top}, nb, p.colour_top},
-                {d, {p.width, 0,       p.texture_top}, nb, p.colour_top},
-                {a, {0,       0,       p.texture_top}, nb, p.colour_top},
+                {c, {uv_c2.x, uv_c2.y, p.texture_top}, nb, p.colour_top},
+                {d, {uv_d2.x, uv_d2.y, p.texture_top}, nb, p.colour_top},
+                {a, {uv_a2.x, uv_a2.y, p.texture_top}, nb, p.colour_top},
              
                 // Bottom
-                {a, {0,       0,       p.texture_bottom}, -na, p.colour_bottom},
-                {b, {0,       p.depth, p.texture_bottom}, -na, p.colour_bottom},
-                {c, {p.width, p.depth, p.texture_bottom}, -na, p.colour_bottom},
+                {a, {uv_a1.x, uv_a1.y, p.texture_bottom}, -na, p.colour_bottom},
+                {b, {uv_b1.x, uv_b1.y, p.texture_bottom}, -na, p.colour_bottom},
+                {c, {uv_c1.x, uv_c1.y, p.texture_bottom}, -na, p.colour_bottom},
 
-                {c, {p.width, p.depth, p.texture_bottom}, -nb, p.colour_bottom},
-                {d, {p.width, 0,       p.texture_bottom}, -nb, p.colour_bottom},
-                {a, {0,       0,       p.texture_bottom}, -nb, p.colour_bottom},
+                {c, {uv_c2.x, uv_c2.y, p.texture_bottom}, -nb, p.colour_bottom},
+                {d, {uv_d2.x, uv_d2.y, p.texture_bottom}, -nb, p.colour_bottom},
+                {a, {uv_a2.x, uv_a2.y, p.texture_bottom}, -nb, p.colour_bottom},
             };
             mesh.indices = {
                 0, 1, 2, 3,  4,  5, // Top
