@@ -79,24 +79,28 @@ void object_rotate(RampObject& ramp, glm::vec2 rotation_origin, float degrees)
     props.width = copy.depth;
     position.x -= props.width * TILE_SIZE_F;
 
-    switch (props.direction)
+    // clang-format off
+    if (props.style == RampStyle::InvertedCorner || props.style == RampStyle::Corner)
     {
-        case Direction::Right:
-            props.direction = Direction::Back;
-            break;
-
-        case Direction::Back:
-            props.direction = Direction::Left;
-            break;
-
-        case Direction::Left:
-            props.direction = Direction::Forward;
-            break;
-
-        case Direction::Forward:
-            props.direction = Direction::Right;
-            break;
+        switch (props.direction)
+        {
+            case Direction::Right:      props.direction = Direction::Left;      break;
+            case Direction::Back:       props.direction = Direction::Right;     break;
+            case Direction::Left:       props.direction = Direction::Forward;   break;
+            case Direction::Forward:    props.direction = Direction::Back;      break;
+        }
     }
+    else
+    {
+        switch (props.direction)
+        {
+            case Direction::Right:      props.direction = Direction::Back;      break;
+            case Direction::Back:       props.direction = Direction::Left;      break;
+            case Direction::Left:       props.direction = Direction::Forward;   break;
+            case Direction::Forward:    props.direction = Direction::Right;     break;
+        }
+    }
+    // clang-format on
 }
 
 template <>
