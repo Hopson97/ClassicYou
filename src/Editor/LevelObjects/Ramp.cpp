@@ -223,7 +223,7 @@ namespace
         auto make_uv = [&](const glm::vec3& pos)
         {
             return glm::vec2{
-                glm::dot(pos - b, tangent),
+                glm::dot(b - pos, tangent),
                 glm::dot(pos - b, bitangent),
             };
         };
@@ -285,16 +285,16 @@ namespace
         // clang-format off
         mesh.vertices = {
             // Top
-            {a, {uv_a.x, uv_a.y, p.texture_top}, normal, p.colour_top},
-            {b, {uv_b.x, uv_b.y, p.texture_top}, normal, p.colour_top},
-            {c, {uv_c.x, uv_c.y, p.texture_top}, normal, p.colour_top},
-            {d, {uv_d.x, uv_d.y,  p.texture_top}, normal, p.colour_top},
+            {a, {uv_c.x, uv_c.y, p.texture_top}, normal, p.colour_top},
+            {b, {uv_d.x, uv_d.y, p.texture_top}, normal, p.colour_top},
+            {c, {uv_a.x, uv_a.y, p.texture_top}, normal, p.colour_top},
+            {d, {uv_b.x, uv_b.y,  p.texture_top}, normal, p.colour_top},
              
             // Bottom
-            {a, {uv_a.x, uv_a.y, p.texture_bottom}, -normal, p.colour_bottom},
-            {b, {uv_b.x, uv_b.y, p.texture_bottom}, -normal, p.colour_bottom},
-            {c, {uv_c.x, uv_c.y, p.texture_bottom}, -normal, p.colour_bottom},
-            {d, {uv_d.x, uv_d.y, p.texture_bottom}, -normal, p.colour_bottom},
+            {a, {uv_c.x, uv_c.y, p.texture_bottom}, -normal, p.colour_bottom},
+            {b, {uv_d.x, uv_d.y, p.texture_bottom}, -normal, p.colour_bottom},
+            {c, {uv_a.x, uv_a.y, p.texture_bottom}, -normal, p.colour_bottom},
+            {d, {uv_b.x, uv_b.y, p.texture_bottom}, -normal, p.colour_bottom},
         };
         // clang-format on
 
