@@ -287,6 +287,7 @@ namespace
 
         LevelObjectsMesh3D mesh;
         // clang-format off
+        // UV Coords are intentially swapped otherwise they appear upside-down
         mesh.vertices = {
             // Top
             {a, {uv_c.x, uv_c.y, p.texture_top}, normal, p.colour_top},
@@ -349,7 +350,7 @@ namespace
                 case Direction::Forward: return &heights.d;
             }
             // clang-format on
-        }(); // abd
+        }();
         *prominent_corner = corner ? end_height : start_height;
 
         // The 4 corners
@@ -358,15 +359,18 @@ namespace
         LevelObjectsMesh3D mesh;
 
         // For the lighting to be correct for corners, the two faces of the corner must be their own
-        // triangle such that they have their own normal vectors
+        // triangle face such that they have their own normal vectors
         // clang-format off
         if (direction == Direction::Right || direction == Direction::Forward)
         {
+            // Texture coords for each of the faces
             auto [uv_b1, uv_c1, uv_d1] = generate_corner_ramp_texture_coords(b, c, d);
             auto [uv_b2, uv_a2, uv_d2] = generate_corner_ramp_texture_coords(b, a, d);
 
+            // Normals for each a/b face of the corner
             auto na = glm::normalize(glm::cross(c - b, d - c));
             auto nb = glm::normalize(glm::cross(a - b, d - a));
+
             mesh.vertices = {
                 // Top
                 {b, {uv_b1.x, uv_b1.y, p.texture_top}, na, p.colour_top},
@@ -394,10 +398,13 @@ namespace
         }
         else 
         {
-            auto na = glm::normalize(glm::cross(b - a, c - b));
-            auto nb = glm::normalize(glm::cross(d - c, a - d));
+            // Texture coords for each of the faces
             auto [uv_a1, uv_b1, uv_c1] = generate_corner_ramp_texture_coords(a, b, c);
             auto [uv_c2, uv_d2, uv_a2] = generate_corner_ramp_texture_coords(c, d, a);
+
+            // Normals for each a/b face of the corner
+            auto na = glm::normalize(glm::cross(b - a, c - b));
+            auto nb = glm::normalize(glm::cross(d - c, a - d));
 
             mesh.vertices = {
                 // Top
