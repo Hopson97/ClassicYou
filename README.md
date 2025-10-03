@@ -15,23 +15,29 @@ New features that were missing from the original editor have been added:
 - Most objects can have different textures on "both sides"
 - More dynamic ramps and walls, with custom heights for start and end
 - JSON format for levels - potential for "programmable" level generation
+- Textures in the 2D view
 
 ## Editor Controls
 
 - `W`, `A`, `S`, `D` - Move camera in 3D view
 - Arrow keys - Move camera in 2D view (If not locked in 'View' dropdown)
-- 'L' - Toggle mouse lock
+- 'L' - Toggle free movement mode
+- 'T' - Toggle free mouse control
+- 'Space' - Move up
+- 'Q' - Move Down
 - `Ctrl + Z` - Undo
 - `Ctrl + Y` - Redo
-- Right Click - Select object in 3D view
-- Left Click - Place objects
+- 'Page Up' - Move editor up a floor
+- 'Page Down' - - Move editor down a floor
+- 'Right Click' - Select object in 2D/3D view (+ 'LShift' to select many multiple)
+- 'Left Click' - Place objects
 - (Wall Tool Only) Click and drag to place walls in 3D View
 
 ## Screenshots
 
-![Editor](Screenshots/Editor1.png)
+![Editor (Building)](Screenshots/Editor1.png)
 
-![Ramps](Screenshots/Ramps.png)
+![Editor (City)](Screenshots/Editor2.png)
 
 ![TMR](Screenshots/TMR.png)
 
@@ -110,14 +116,6 @@ sh scripts/build.sh release
 sh scripts/run.sh release
 ```
 
-## Planned Features
-
-- Selecting multiple objects to copy/paste and move around
-- Better rendering engine to support lighting
-- Actually playable games
-- Better 2D view (Currently it is just lines)
-- Zooming in and out of the 2D view
-- All objects from legacy CY
 
 ## Credits
 

@@ -34,7 +34,6 @@ void InfiniteGrid::render(const glm::vec3& camera_position, int current_floor)
 {
     if (camera_position.y > current_floor * FLOOR_HEIGHT)
     {
-
         gl::disable(gl::Capability::CullFace);
         gl::enable(gl::Capability::Blend);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
