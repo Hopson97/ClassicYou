@@ -55,7 +55,7 @@ class EditorLevel
     /// Assumes the camera, shader, and other OpenGL states are set up correctly.
     /// The "selected_offset" can be used to offset the selected objects
     void render(gl::Shader& scene_shader, const std::vector<ObjectId>& active_objects,
-                int current_floor, const glm::vec3& selected_offset, bool is_debug_render);
+                int current_floor, const glm::vec3& selected_offset);
 
     /// Render the 2D view of the level using the given shader and highlight the active object.
     /// Assumes the camera, shader, and other OpenGL states are set up correctly.

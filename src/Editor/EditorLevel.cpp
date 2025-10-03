@@ -137,15 +137,12 @@ void EditorLevel::set_object_id(ObjectId current_id, ObjectId new_id)
 }
 
 void EditorLevel::render(gl::Shader& scene_shader, const std::vector<ObjectId>& active_objects,
-                         int current_floor, const glm::vec3& selected_offset, bool is_debug_render)
+                         int current_floor, const glm::vec3& selected_offset)
 {
 
     std::vector<LevelObjectsMesh3D*> p_active;
 
-    if (!is_debug_render)
-    {
-        scene_shader.set_uniform("selected", false);
-    }
+    scene_shader.set_uniform("selected", false);
 
     for (auto& floor : floors_manager_.floors)
     {
@@ -174,20 +171,17 @@ void EditorLevel::render(gl::Shader& scene_shader, const std::vector<ObjectId>& 
     }
 
     // Render the selected object seperate
-    if (!is_debug_render)
-    {
-        scene_shader.set_uniform("selected", true);
-    }
+
+    scene_shader.set_uniform("selected", true);
+
     scene_shader.set_uniform("model_matrix",
                              create_model_matrix({.position = selected_offset / TILE_SIZE_F}));
     for (auto mesh : p_active)
     {
         mesh->bind().draw_elements();
     }
-    if (!is_debug_render)
-    {
-        scene_shader.set_uniform("selected", false);
-    }
+
+    scene_shader.set_uniform("selected", false);
 }
 
 void EditorLevel::render_2d(gl::Shader& scene_shader_2d,

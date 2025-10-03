@@ -537,12 +537,7 @@ void ScreenEditGame::on_render(bool show_debug)
                                                  ? gl::PolygonMode::Line
                                                  : gl::PolygonMode::Fill);
 
-    // Draw grid
-    if (editor_settings_.show_grid)
-    {
-        grid_.render(camera_.transform.position, editor_state_.current_floor);
-    }
-
+    scene_shader_.set_uniform("use_texture", false);
     if (tool_->get_tool_type() == ToolType::CreateWall)
     {
         scene_shader_.set_uniform(
@@ -550,7 +545,6 @@ void ScreenEditGame::on_render(bool show_debug)
             create_model_matrix({.position = {editor_state_.node_hovered.x / HALF_TILE_SIZE_F,
                                               editor_state_.current_floor * FLOOR_HEIGHT,
                                               editor_state_.node_hovered.y / HALF_TILE_SIZE_F}}));
-        scene_shader_.set_uniform("use_texture", false);
         selection_mesh_.bind().draw_elements();
     }
 
@@ -561,6 +555,12 @@ void ScreenEditGame::on_render(bool show_debug)
             "model_matrix",
             create_model_matrix({.position = main_light.position - glm::vec3{1.5}}));
         sun_mesh_.bind().draw_elements();
+    }
+
+    // Draw grid
+    if (editor_settings_.show_grid)
+    {
+        grid_.render(camera_.transform.position, editor_state_.current_floor);
     }
 
     //=============================================
@@ -580,7 +580,7 @@ void ScreenEditGame::on_render(bool show_debug)
     // moved around
     auto offset = object_move_handler_.get_move_offset();
     level_.render(world_geometry_shader_, editor_state_.selection.objects,
-                  editor_state_.current_floor, {offset.x, 0, offset.y}, false);
+                  editor_state_.current_floor, {offset.x, 0, offset.y});
 
     // Draw the current tool preview
     if (!object_move_handler_.is_moving_objects())
@@ -599,7 +599,7 @@ void ScreenEditGame::on_render(bool show_debug)
         world_normal_shader_.bind();
         world_normal_shader_.set_uniform("model_matrix", create_model_matrix({}));
         level_.render(world_normal_shader_, editor_state_.selection.objects,
-                      editor_state_.current_floor, {offset.x, 0, offset.y}, true);
+                      editor_state_.current_floor, {offset.x, 0, offset.y});
     }
 
     //======================================
@@ -685,6 +685,7 @@ void ScreenEditGame::on_render(bool show_debug)
 
 void ScreenEditGame::select_object(LevelObject* object)
 {
+    // Multi-select when shift is pressed
     if (is_shift_down_)
     {
         editor_state_.selection.add_to_selection(object);
