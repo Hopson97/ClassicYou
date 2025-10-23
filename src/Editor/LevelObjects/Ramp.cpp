@@ -287,7 +287,7 @@ namespace
 
         LevelObjectsMesh3D mesh;
         // clang-format off
-        // UV Coords are intentially swapped otherwise they appear upside-down
+        // UV Coords are intentionally swapped otherwise they textures appear upside-down
         mesh.vertices = {
             // Top
             {a, {uv_c.x, uv_c.y, p.texture_top}, normal, p.colour_top},
@@ -439,9 +439,7 @@ namespace
 template <>
 LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
 {
-
     LevelObjectsMesh3D mesh;
-
     const auto& params = ramp.parameters;
     const auto& props = ramp.properties;
 

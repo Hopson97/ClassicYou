@@ -422,6 +422,11 @@ void from_json(const nlohmann::json& json, LegacyRamp& ramp)
 template <typename T>
 void load_objects(const nlohmann::json& json, const char* json_key, FloorManager& new_level)
 {
+    if (json.find(json_key) == json.cend())
+    {
+        return;
+    }
+
     std::vector<T> objects;
     objects.reserve(json[json_key].size());
     json[json_key].get_to(objects);
