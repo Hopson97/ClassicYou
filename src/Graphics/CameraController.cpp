@@ -16,7 +16,7 @@ CameraController3D::CameraController3D(Camera& camera, const CameraKeybinds& key
 {
 }
 
-void CameraController3D::handle_events(const sf::Event& event)
+void CameraController3D::handle_event(const sf::Event& event)
 {
     // Ensures that the camera look does not jerk when the middle mouse button is pressed
     if (auto mouse = event.getIf<sf::Event::MouseMoved>())

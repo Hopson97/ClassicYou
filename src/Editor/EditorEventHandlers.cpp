@@ -122,14 +122,14 @@ bool ObjectMoveHandler::is_moving_objects() const
     return moving_object_;
 }
 
-void CopyPasteHandler::handle_events(const sf::Event& event, const Selection& selection,
-                                     int current_floor)
+void CopyPasteHandler::handle_event(const sf::Event& event, const Selection& selection,
+                                    int current_floor)
 {
     if (auto key = event.getIf<sf::Event::KeyReleased>())
     {
         switch (key->code)
         {
-                // Copy functionality with CTRL+C
+            // Copy functionality with CTRL+C
             case sf::Keyboard::Key::C:
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))
                 {
@@ -137,7 +137,7 @@ void CopyPasteHandler::handle_events(const sf::Event& event, const Selection& se
                 }
                 break;
 
-                // Paste functionality with CTRL+V
+            // Paste functionality with CTRL+V
             case sf::Keyboard::Key::V:
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))
                 {
