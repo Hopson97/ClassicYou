@@ -1047,6 +1047,7 @@ void ScreenEditGame::display_menu_bar_gui()
         if (ImGui::BeginMenu("Settings"))
         {
             ImGui::Checkbox("Auto-Jump to selection floor?", &editor_settings_.jump_to_selection_floor);
+            ImGui::SliderFloat("Look Sensitivity", &camera_controller_options_.look_sensitivity, 0.01f, 2.0f);
             ImGui::Checkbox("Lock Mouse?", &camera_controller_options_.lock_rotation);
             ImGui::Checkbox("Free camera movement?", &camera_controller_options_.free_movement);
             ImGui::EndMenu();
