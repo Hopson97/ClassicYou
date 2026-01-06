@@ -34,10 +34,10 @@ class ScreenPlaying final : public Screen
 
     void render_scene(gl::Shader& shader);
 
-    Camera perspective_camera_;
-    Camera ortho_camera_;
-
-    Camera* p_active_camera_ = nullptr;
+    CameraControllerOptions3D camera_options_;
+    CameraController3D camera_controller_;
+    CameraKeybinds camera_keybinds_;
+    Camera camera_;
 
     gl::Texture2D grass_material_;
 
@@ -51,5 +51,4 @@ class ScreenPlaying final : public Screen
     bool rotation_locked_ = false;
     Settings settings_;
 
-    CameraKeybinds camera_keybinds_;
 };
