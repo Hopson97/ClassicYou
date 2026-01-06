@@ -18,7 +18,6 @@ ScreenPlaying::ScreenPlaying(ScreenManager& screens)
       }}
     , camera_controller_{camera_, camera_keybinds_, camera_options_}
 {
-
 }
 
 bool ScreenPlaying::on_init()
@@ -60,15 +59,14 @@ bool ScreenPlaying::on_init()
     // -----------------------------------
     // ==== Entity Transform Creation ====
     // -----------------------------------
-    camera_.transform = {.position = {3.0f, 4.0f, 16.0f},
-                                     .rotation = {4.0f, 300.0f, 0.0f}};
+    camera_.transform = {.position = {3.0f, 4.0f, 16.0f}, .rotation = {4.0f, 300.0f, 0.0f}};
 
     return true;
 }
 
 void ScreenPlaying::on_event(const sf::Event& event)
 {
-    camera_controller_.handle_events(event);
+    camera_controller_.handle_event(event);
     if (auto key = event.getIf<sf::Event::KeyReleased>())
     {
         switch (key->code)

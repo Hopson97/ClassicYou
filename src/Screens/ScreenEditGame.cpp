@@ -207,7 +207,7 @@ bool ScreenEditGame::on_init()
     // ==== Entity Transform Creation ====
     // -----------------------------------
     camera_3d_.transform = {.position = {WORLD_SIZE / 2, CAMERA_BASE_Y, WORLD_SIZE + 3},
-                         .rotation = {-40, 270.0f, 0.0f}}; // Slightly pointing down
+                            .rotation = {-40, 270.0f, 0.0f}}; // Slightly pointing down
 
     // -----------------------------
     // ==== Optional load level ====
@@ -247,7 +247,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
     }
 
     // CTRL C and CTRL V handling
-    copy_paste_handler_.handle_events(event, editor_state_.selection, editor_state_.current_floor);
+    copy_paste_handler_.handle_event(event, editor_state_.selection, editor_state_.current_floor);
 
     // True when objects are moved - prevents placing objects where objects are moved to
     auto move_finished = object_move_handler_.handle_move_events(
@@ -257,7 +257,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
     // preview of deleting walls) so this prevents that.
     bool try_set_tool_to_wall = false;
 
-    camera_controller_3d_.handle_events(event);
+    camera_controller_3d_.handle_event(event);
 
     if (auto key = event.getIf<sf::Event::KeyReleased>())
     {
@@ -766,7 +766,8 @@ void ScreenEditGame::set_2d_to_3d_view()
 {
     const auto& viewport = camera_2d_.get_config().viewport_size;
     camera_2d_.transform.position = {camera_3d_.transform.position.x * TILE_SIZE - viewport.x / 2,
-                                     camera_3d_.transform.position.z * TILE_SIZE - viewport.y / 2, 1};
+                                     camera_3d_.transform.position.z * TILE_SIZE - viewport.y / 2,
+                                     1};
 }
 
 void ScreenEditGame::try_set_tool_to_create_wall()

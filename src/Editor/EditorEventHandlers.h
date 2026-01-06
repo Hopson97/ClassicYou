@@ -55,7 +55,7 @@ class CopyPasteHandler
     CopyPasteHandler(EditorLevel& level, ActionManager& action_manager,
                      MessagesManager& messages_manager);
 
-    void handle_events(const sf::Event& event, const Selection& selection, int current_floor);
+    void handle_event(const sf::Event& event, const Selection& selection, int current_floor);
 
     /// Copies the currently selected objects to the "clipboard".
     void copy_selection(const Selection& selection, int current_floor);

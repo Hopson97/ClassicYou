@@ -34,7 +34,7 @@ class CameraController3D
     CameraController3D(Camera& camera, const CameraKeybinds& keybinds,
                        const CameraControllerOptions3D& options);
 
-    void handle_events(const sf::Event& event);
+    void handle_event(const sf::Event& event);
     void handle_inputs(const Keyboard& keyboard, sf::Time dt, sf::Window& window);
 
   private:
