@@ -107,7 +107,7 @@ class ScreenEditGame final : public Screen
     void display_debug_gui();
 
   private:
-    Camera camera_;
+    Camera camera_3d_;
     Camera camera_2d_;
 
     gl::BufferObject matrices_ssbo_;
@@ -118,9 +118,12 @@ class ScreenEditGame final : public Screen
     /// Shader for viewing the normals for debugging light issues etc
     gl::Shader world_normal_shader_;
 
-    CameraKeybinds camera_keybinds_;
-    CameraKeybinds keybinds_2d_;
-    CameraControllerOptions camera_controller_options_;
+    // Camera
+    CameraKeybinds camera_keybinds_3d_;
+    CameraKeybinds camera_keybinds_2d_;
+    CameraControllerOptions3D camera_controller_options_;
+    CameraController3D camera_controller_3d_;
+    CameraController2D camera_controller_2d_;
 
     Mesh3D selection_mesh_ = generate_cube_mesh({0.1, 1.0f, 0.1});
     Mesh3D sun_mesh_ = generate_cube_mesh({3.0f, 3.0f, 3.0f});

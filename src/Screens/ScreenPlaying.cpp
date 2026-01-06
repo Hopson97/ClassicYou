@@ -100,8 +100,8 @@ void ScreenPlaying::on_event(const sf::Event& event)
 
 void ScreenPlaying::on_update(const Keyboard& keyboard, sf::Time dt)
 {
-    free_camera_controller(keyboard, *p_active_camera_, dt, camera_keybinds_, window(),
-                           {.lock_rotation = false, .free_movement = false});
+    //free_camera_controller(keyboard, *p_active_camera_, dt, camera_keybinds_, window(),
+    //                       {.lock_rotation = false, .free_movement = false});
 }
 
 void ScreenPlaying::on_fixed_update([[maybe_unused]] sf::Time dt)
