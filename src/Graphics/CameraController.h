@@ -2,6 +2,7 @@
 
 #include <SFML/System/Time.hpp>
 #include <SFML/Window/Window.hpp>
+#include <glm/glm.hpp>
 
 struct Camera;
 class Keyboard;
@@ -27,15 +28,19 @@ struct CameraControllerOptions3D
 class CameraController3D
 {
   public:
-    CameraController3D(Camera& camera, const CameraKeybinds& keybinds);
-
-    void handle_events(const sf::Event& event);
-    void handle_inputs(const Keyboard& keyboard, sf::Time dt, sf::Window& window,
+    CameraController3D(Camera& camera, const CameraKeybinds& keybinds,
                        const CameraControllerOptions3D& options);
 
+    void handle_events(const sf::Event& event);
+    void handle_inputs(const Keyboard& keyboard, sf::Time dt, sf::Window& window);
+
   private:
+    glm::vec3 get_keybord_input(const Keyboard& keyboard);
+    void handle_look(const sf::Window& window);
+
     Camera* p_camera_ = nullptr;
     const CameraKeybinds* p_keybinds_ = nullptr;
+    const CameraControllerOptions3D* p_camera_options_ = nullptr;
 
     sf::Vector2i last_mouse_position_{};
     bool middle_mouse_down_ = false;

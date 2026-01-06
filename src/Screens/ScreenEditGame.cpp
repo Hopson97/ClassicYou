@@ -66,7 +66,7 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens)
           .right = sf::Keyboard::Key::Right,
           .back = sf::Keyboard::Key::Up,
       }
-    , camera_controller_3d_{camera_3d_, camera_keybinds_3d_}
+    , camera_controller_3d_{camera_3d_, camera_keybinds_3d_, camera_controller_options_3d_}
     , camera_controller_2d_{camera_2d_, camera_keybinds_2d_}
     , level_(drawing_pad_texture_map_)
     , action_manager_(editor_state_, level_)
@@ -264,14 +264,14 @@ void ScreenEditGame::on_event(const sf::Event& event)
         switch (key->code)
         {
             case sf::Keyboard::Key::T:
-                camera_controller_options_.lock_rotation =
-                    !camera_controller_options_.lock_rotation;
-                window().setMouseCursorVisible(camera_controller_options_.lock_rotation);
+                camera_controller_options_3d_.lock_rotation =
+                    !camera_controller_options_3d_.lock_rotation;
+                window().setMouseCursorVisible(camera_controller_options_3d_.lock_rotation);
                 break;
 
             case sf::Keyboard::Key::L:
-                camera_controller_options_.free_movement =
-                    !camera_controller_options_.free_movement;
+                camera_controller_options_3d_.free_movement =
+                    !camera_controller_options_3d_.free_movement;
 
                 break;
 
@@ -435,7 +435,7 @@ void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
         return;
     }
 
-    camera_controller_3d_.handle_inputs(keyboard, dt, window(), camera_controller_options_);
+    camera_controller_3d_.handle_inputs(keyboard, dt, window());
     camera_controller_2d_.handle_inputs(keyboard, dt);
 
     if (editor_settings_.always_center_2d_to_3d_view)
@@ -1047,9 +1047,9 @@ void ScreenEditGame::display_menu_bar_gui()
         if (ImGui::BeginMenu("Settings"))
         {
             ImGui::Checkbox("Auto-Jump to selection floor?", &editor_settings_.jump_to_selection_floor);
-            ImGui::SliderFloat("Look Sensitivity", &camera_controller_options_.look_sensitivity, 0.01f, 2.0f);
-            ImGui::Checkbox("Lock Mouse?", &camera_controller_options_.lock_rotation);
-            ImGui::Checkbox("Free camera movement?", &camera_controller_options_.free_movement);
+            ImGui::SliderFloat("Look Sensitivity", &camera_controller_options_3d_.look_sensitivity, 0.01f, 2.0f);
+            ImGui::Checkbox("Lock Mouse?", &camera_controller_options_3d_.lock_rotation);
+            ImGui::Checkbox("Free camera movement?", &camera_controller_options_3d_.free_movement);
             ImGui::EndMenu();
         }
 

@@ -121,7 +121,7 @@ class ScreenEditGame final : public Screen
     // Camera
     CameraKeybinds camera_keybinds_3d_;
     CameraKeybinds camera_keybinds_2d_;
-    CameraControllerOptions3D camera_controller_options_;
+    CameraControllerOptions3D camera_controller_options_3d_;
     CameraController3D camera_controller_3d_;
     CameraController2D camera_controller_2d_;
 
