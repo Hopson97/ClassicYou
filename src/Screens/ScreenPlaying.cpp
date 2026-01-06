@@ -9,21 +9,16 @@
 
 ScreenPlaying::ScreenPlaying(ScreenManager& screens)
     : Screen(screens)
-    , perspective_camera_(CameraConfig{
+    , camera_{CameraConfig{
           .type = CameraType::Perspective,
           .viewport_size = {window().getSize().x, window().getSize().y},
           .near = 0.1f,
           .far = 1000.0f,
           .fov = 90.0f,
-      })
-    , ortho_camera_(CameraConfig{
-          .type = CameraType::OrthographicWorld,
-          .viewport_size = {window().getSize().x, window().getSize().y},
-          .near = 0.5f,
-          .far = 1000.0f,
-      })
+      }}
+    , camera_controller_{camera_, camera_keybinds_, camera_options_}
 {
-    p_active_camera_ = &perspective_camera_;
+
 }
 
 bool ScreenPlaying::on_init()
@@ -65,15 +60,15 @@ bool ScreenPlaying::on_init()
     // -----------------------------------
     // ==== Entity Transform Creation ====
     // -----------------------------------
-    perspective_camera_.transform = {.position = {3.0f, 4.0f, 16.0f},
+    camera_.transform = {.position = {3.0f, 4.0f, 16.0f},
                                      .rotation = {4.0f, 300.0f, 0.0f}};
-    ortho_camera_.transform = {.position = {6, 20, 5}, .rotation = {333.4f, 45.0f, 0.0f}};
 
     return true;
 }
 
 void ScreenPlaying::on_event(const sf::Event& event)
 {
+    camera_controller_.handle_events(event);
     if (auto key = event.getIf<sf::Event::KeyReleased>())
     {
         switch (key->code)
@@ -100,8 +95,7 @@ void ScreenPlaying::on_event(const sf::Event& event)
 
 void ScreenPlaying::on_update(const Keyboard& keyboard, sf::Time dt)
 {
-    //free_camera_controller(keyboard, *p_active_camera_, dt, camera_keybinds_, window(),
-    //                       {.lock_rotation = false, .free_movement = false});
+    camera_controller_.handle_inputs(keyboard, dt, window());
 }
 
 void ScreenPlaying::on_fixed_update([[maybe_unused]] sf::Time dt)
@@ -117,25 +111,13 @@ void ScreenPlaying::on_render(bool show_debug)
 
     if (show_debug)
     {
-        p_active_camera_->gui("Camera");
-
-        if (ImGui::Begin("Camera"))
-        {
-            if (ImGui::Button("Use Perspective"))
-            {
-                p_active_camera_ = &perspective_camera_;
-            }
-            if (ImGui::Button("Use Ortho"))
-            {
-                p_active_camera_ = &ortho_camera_;
-            }
-        }
+        camera_.gui("Camera Options");
         ImGui::End();
     }
 
     // Update the shader buffers
-    matrices_ssbo_.buffer_sub_data(0, p_active_camera_->get_projection_matrix());
-    matrices_ssbo_.buffer_sub_data(sizeof(glm::mat4), p_active_camera_->get_view_matrix());
+    matrices_ssbo_.buffer_sub_data(0, camera_.get_projection_matrix());
+    matrices_ssbo_.buffer_sub_data(sizeof(glm::mat4), camera_.get_view_matrix());
 
     scene_shader_.bind();
     render_scene(scene_shader_);
