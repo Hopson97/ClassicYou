@@ -43,7 +43,6 @@ void CameraController3D::handle_events(const sf::Event& event)
     }
 }
 
-
 void CameraController3D::handle_inputs(const Keyboard& keyboard, sf::Time dt, sf::Window& window)
 {
     if (!window.hasFocus())
@@ -51,7 +50,7 @@ void CameraController3D::handle_inputs(const Keyboard& keyboard, sf::Time dt, sf
         return;
     }
 
-    auto move = get_keybord_input(keyboard);
+    auto move = get_keyboard_input(keyboard);
     move.y = p_camera_->get_type() == CameraType::Perspective ? move.y : 0;
     p_camera_->transform.position += move * dt.asSeconds();
     p_camera_->update();
@@ -67,23 +66,26 @@ void CameraController3D::handle_inputs(const Keyboard& keyboard, sf::Time dt, sf
     }
 }
 
-glm::vec3 CameraController3D::get_keybord_input(const Keyboard& keyboard)
+glm::vec3 CameraController3D::get_keyboard_input(const Keyboard& keyboard)
 {
     glm::vec3 move{0.0f};
 
-    auto flat_movement = !p_camera_options_->free_movement || p_camera_->get_type() != CameraType::Perspective;
+    auto flat_movement =
+        !p_camera_options_->free_movement || p_camera_->get_type() != CameraType::Perspective;
 
+    // Forward/backward
     if (keyboard.is_key_down(p_keybinds_->forward))
     {
         move += flat_movement ? forward_vector_flat(p_camera_->transform.rotation)
-                     : forward_vector(p_camera_->transform.rotation);
+                              : forward_vector(p_camera_->transform.rotation);
     }
     else if (keyboard.is_key_down(p_keybinds_->back))
     {
         move += flat_movement ? backward_vector_flat(p_camera_->transform.rotation)
-                     : backward_vector(p_camera_->transform.rotation);
+                              : backward_vector(p_camera_->transform.rotation);
     }
 
+    // Left/right
     if (keyboard.is_key_down(p_keybinds_->left))
     {
         move += left_vector(p_camera_->transform.rotation);
@@ -93,6 +95,7 @@ glm::vec3 CameraController3D::get_keybord_input(const Keyboard& keyboard)
         move += right_vector(p_camera_->transform.rotation);
     }
 
+    // Up/down
     if (keyboard.is_key_down(p_keybinds_->up))
     {
         move.y += 1.5f;
@@ -102,6 +105,7 @@ glm::vec3 CameraController3D::get_keybord_input(const Keyboard& keyboard)
         move.y -= 1.5f;
     }
 
+    // Speed up normal movement
     move *= 4.0f;
 
     // Speed up when left shift is held
@@ -124,6 +128,7 @@ void CameraController3D::handle_look(const sf::Window& window)
     sf::Mouse::setPosition({(int)window.getSize().x / 2, (int)window.getSize().y / 2}, window);
     last_mouse_position_ = sf::Mouse::getPosition(window);
 
+    // Ensure the rotation values are within nice bounds.
     r.x = glm::clamp(r.x, -89.9f, 89.9f);
     if (r.y >= 360.0f)
     {
@@ -145,6 +150,7 @@ void CameraController2D::handle_inputs(const Keyboard& keyboard, sf::Time dt)
 {
     glm::vec3 move{0.0f};
 
+    // Forward/backward
     if (keyboard.is_key_down(p_keybinds_->forward))
     {
         move += glm::vec3{0, 1, 0};
@@ -154,6 +160,7 @@ void CameraController2D::handle_inputs(const Keyboard& keyboard, sf::Time dt)
         move += glm::vec3{0, -1, 0};
     }
 
+    // Left/right
     if (keyboard.is_key_down(p_keybinds_->left))
     {
         move += glm::vec3{-1, 0, 0};

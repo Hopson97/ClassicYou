@@ -7,6 +7,7 @@
 struct Camera;
 class Keyboard;
 
+/// Keybinds for controlling the camera.
 struct CameraKeybinds
 {
     sf::Keyboard::Key forward = sf::Keyboard::Key::W;
@@ -18,6 +19,7 @@ struct CameraKeybinds
     sf::Keyboard::Key down = sf::Keyboard::Key::Q;
 };
 
+/// Options for controlling the 3D camera.
 struct CameraControllerOptions3D
 {
     float look_sensitivity = 0.35;
@@ -25,6 +27,7 @@ struct CameraControllerOptions3D
     bool free_movement = false;
 };
 
+/// Camera controller for the 3D view.
 class CameraController3D
 {
   public:
@@ -35,17 +38,22 @@ class CameraController3D
     void handle_inputs(const Keyboard& keyboard, sf::Time dt, sf::Window& window);
 
   private:
-    glm::vec3 get_keybord_input(const Keyboard& keyboard);
+    glm::vec3 get_keyboard_input(const Keyboard& keyboard);
     void handle_look(const sf::Window& window);
 
     Camera* p_camera_ = nullptr;
     const CameraKeybinds* p_keybinds_ = nullptr;
     const CameraControllerOptions3D* p_camera_options_ = nullptr;
 
+    /// Last recorded mouse position. Stored to prevent sudden jumps when unlocking the mouse.
     sf::Vector2i last_mouse_position_{};
+
+    /// Whether the middle mouse button is currently held down, temporarily unlocking camera
+    /// rotation.
     bool middle_mouse_down_ = false;
 };
 
+/// Camera controller for the 2D view.
 class CameraController2D
 {
   public:
