@@ -47,7 +47,7 @@ namespace
 
 ScreenEditGame::ScreenEditGame(ScreenManager& screens)
     : Screen(screens)
-    , camera_(CameraConfig{
+    , camera_3d_(CameraConfig{
           .type = CameraType::Perspective,
           .viewport_size = {window().getSize().x / 2, window().getSize().y},
           .near = 0.1f,
@@ -60,12 +60,14 @@ ScreenEditGame::ScreenEditGame(ScreenManager& screens)
           .near = 0.5f,
           .far = 1000.0f,
       })
-      , keybinds_2d_{
+      , camera_keybinds_2d_{
           .forward = sf::Keyboard::Key::Down,
           .left = sf::Keyboard::Key::Left,
           .right = sf::Keyboard::Key::Right,
           .back = sf::Keyboard::Key::Up,
       }
+    , camera_controller_3d_{camera_3d_, camera_keybinds_3d_}
+    , camera_controller_2d_{camera_2d_, camera_keybinds_2d_}
     , level_(drawing_pad_texture_map_)
     , action_manager_(editor_state_, level_)
     , object_move_handler_(level_, action_manager_)
@@ -204,7 +206,7 @@ bool ScreenEditGame::on_init()
     // -----------------------------------
     // ==== Entity Transform Creation ====
     // -----------------------------------
-    camera_.transform = {.position = {WORLD_SIZE / 2, CAMERA_BASE_Y, WORLD_SIZE + 3},
+    camera_3d_.transform = {.position = {WORLD_SIZE / 2, CAMERA_BASE_Y, WORLD_SIZE + 3},
                          .rotation = {-40, 270.0f, 0.0f}}; // Slightly pointing down
 
     // -----------------------------
@@ -254,6 +256,8 @@ void ScreenEditGame::on_event(const sf::Event& event)
     // Certain events cause issues if the current tool is UpdateWall (such as rendering the 2D
     // preview of deleting walls) so this prevents that.
     bool try_set_tool_to_wall = false;
+
+    camera_controller_3d_.handle_events(event);
 
     if (auto key = event.getIf<sf::Event::KeyReleased>())
     {
@@ -430,9 +434,9 @@ void ScreenEditGame::on_update(const Keyboard& keyboard, sf::Time dt)
     {
         return;
     }
-    free_camera_controller(keyboard, camera_, dt, camera_keybinds_, window(),
-                           camera_controller_options_);
-    free_camera_controller_2d(keyboard, camera_2d_, dt, keybinds_2d_);
+
+    camera_controller_3d_.handle_inputs(keyboard, dt, window(), camera_controller_options_);
+    camera_controller_2d_.handle_inputs(keyboard, dt);
 
     if (editor_settings_.always_center_2d_to_3d_view)
     {
@@ -499,9 +503,9 @@ void ScreenEditGame::on_render(bool show_debug)
         drawing_pad_shader_.set_uniform(
             "model_matrix",
             create_model_matrix_orbit(
-                {.position = {camera_.transform.position.x * TILE_SIZE - TILE_SIZE / 4,
-                              camera_.transform.position.z * TILE_SIZE, 0},
-                 .rotation = {0, 0, camera_.transform.rotation.y + 90.0f}},
+                {.position = {camera_3d_.transform.position.x * TILE_SIZE - TILE_SIZE / 4,
+                              camera_3d_.transform.position.z * TILE_SIZE, 0},
+                 .rotation = {0, 0, camera_3d_.transform.rotation.y + 90.0f}},
                 {8, 8, 0}));
 
         arrow_mesh_.bind().draw_elements();
@@ -526,8 +530,8 @@ void ScreenEditGame::on_render(bool show_debug)
     scene_shader_.set_uniform("main_light_brightness", main_light.brightness);
 
     // Update the shader buffers
-    matrices_ssbo_.buffer_sub_data(0, camera_.get_projection_matrix());
-    matrices_ssbo_.buffer_sub_data(sizeof(glm::mat4), camera_.get_view_matrix());
+    matrices_ssbo_.buffer_sub_data(0, camera_3d_.get_projection_matrix());
+    matrices_ssbo_.buffer_sub_data(sizeof(glm::mat4), camera_3d_.get_view_matrix());
 
     // Set up the capabilities/ render states
     gl::enable(gl::Capability::DepthTest);
@@ -560,7 +564,7 @@ void ScreenEditGame::on_render(bool show_debug)
     // Draw grid
     if (editor_settings_.show_grid)
     {
-        grid_.render(camera_.transform.position, editor_state_.current_floor);
+        grid_.render(camera_3d_.transform.position, editor_state_.current_floor);
     }
 
     //=============================================
@@ -736,7 +740,7 @@ void ScreenEditGame::exit_editor()
 
 void ScreenEditGame::offset_camera_to_floor(int old_floor)
 {
-    camera_.transform.position.y += FLOOR_HEIGHT * (editor_state_.current_floor - old_floor);
+    camera_3d_.transform.position.y += FLOOR_HEIGHT * (editor_state_.current_floor - old_floor);
 }
 
 void ScreenEditGame::increase_floor()
@@ -761,8 +765,8 @@ bool ScreenEditGame::showing_dialog() const
 void ScreenEditGame::set_2d_to_3d_view()
 {
     const auto& viewport = camera_2d_.get_config().viewport_size;
-    camera_2d_.transform.position = {camera_.transform.position.x * TILE_SIZE - viewport.x / 2,
-                                     camera_.transform.position.z * TILE_SIZE - viewport.y / 2, 1};
+    camera_2d_.transform.position = {camera_3d_.transform.position.x * TILE_SIZE - viewport.x / 2,
+                                     camera_3d_.transform.position.z * TILE_SIZE - viewport.y / 2, 1};
 }
 
 void ScreenEditGame::try_set_tool_to_create_wall()
@@ -1031,7 +1035,7 @@ void ScreenEditGame::display_menu_bar_gui()
             if (ImGui::Checkbox("Show 2D View? (Full Screen 3D)", &editor_settings_.show_2d_view))
             {
                 auto factor = editor_settings_.show_2d_view ? 2 : 1;
-                camera_.set_viewport_size({window().getSize().x / factor, window().getSize().y});
+                camera_3d_.set_viewport_size({window().getSize().x / factor, window().getSize().y});
             }
             ImGui::Checkbox("Render As Wireframe", &editor_settings_.render_as_wireframe);
             ImGui::Checkbox("Display Normals", &editor_settings_.render_vertex_normals);
@@ -1079,15 +1083,15 @@ void ScreenEditGame::display_save_as_gui()
 void ScreenEditGame::display_debug_gui()
 {
     // clang-format off
-    camera_.gui("Camera");
-    if (ImGui::Begin("Camera Kind"))
+    if (ImGui::Begin("3D Camera Kind"))
     {
-        if (ImGui::Button("Perspective"))   { camera_.set_type(CameraType::Perspective);        }
-        if (ImGui::Button("Orthographic"))  { camera_.set_type(CameraType::OrthographicWorld);  }
+        if (ImGui::Button("Perspective"))   { camera_3d_.set_type(CameraType::Perspective);        }
+        if (ImGui::Button("Orthographic"))  { camera_3d_.set_type(CameraType::OrthographicWorld);  }
     }
     ImGui::End();
         
-    camera_2d_.gui("Camera2D");
+    camera_3d_.gui("3D Camera Options");
+    camera_2d_.gui("2D Camera Options");
 
     // clang-format on
 }

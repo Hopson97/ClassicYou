@@ -11,7 +11,7 @@
 namespace
 {
     glm::vec3 keyboard_input(const Keyboard& keyboard, const Camera& camera,
-                             const CameraKeybinds& keybinds, CameraControllerOptions options)
+                             const CameraKeybinds& keybinds, CameraControllerOptions3D options)
     {
         glm::vec3 move{0.0f};
         auto flat = !options.free_movement || camera.get_type() != CameraType::Perspective;
@@ -55,17 +55,16 @@ namespace
         return move;
     }
 
-    void mouse_input(const sf::Window& window, Camera& camera)
+    void mouse_input(const sf::Window& window, Camera& camera, sf::Vector2i& last_mouse_position, float look_sensitivity)
     {
-        static auto last_mouse = sf::Mouse::getPosition(window);
-        auto change = sf::Mouse::getPosition(window) - last_mouse;
+        auto change = sf::Mouse::getPosition(window) - last_mouse_position;
         auto& r = camera.transform.rotation;
 
         r.x -= static_cast<float>(change.y * 0.35);
         r.y += static_cast<float>(change.x * 0.35);
 
         sf::Mouse::setPosition({(int)window.getSize().x / 2, (int)window.getSize().y / 2}, window);
-        last_mouse = sf::Mouse::getPosition(window);
+        last_mouse_position = sf::Mouse::getPosition(window);
 
         r.x = glm::clamp(r.x, -89.9f, 89.9f);
         if (r.y >= 360.0f)
@@ -79,50 +78,86 @@ namespace
     }
 } // namespace
 
-void free_camera_controller(const Keyboard& keyboard, Camera& camera, sf::Time dt,
-                            const CameraKeybinds& keybinds, sf::Window& window,
-                            CameraControllerOptions options)
+CameraController3D::CameraController3D(Camera& camera, const CameraKeybinds& keybinds)
+    : p_camera_{&camera}
+    , p_keybinds_{&keybinds}
+{
+}
+
+void CameraController3D::handle_events(const sf::Event& event)
+{
+    if (auto mouse = event.getIf<sf::Event::MouseMoved>())
+    {
+        if (!middle_mouse_down_)
+        {
+            last_mouse_position_ = mouse->position;
+        }
+    }
+    else if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
+    {
+        if (mouse->button == sf::Mouse::Button::Middle)
+        {
+            middle_mouse_down_ = true;
+        }
+    }
+
+    else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
+    {
+        if (mouse->button == sf::Mouse::Button::Middle)
+        {
+            middle_mouse_down_ = false;
+        }
+    }
+}
+
+void CameraController3D::handle_inputs(const Keyboard& keyboard, sf::Time dt, sf::Window& window,
+                                       const CameraControllerOptions3D& options)
 {
     if (!window.hasFocus())
     {
         return;
     }
 
-    auto move = keyboard_input(keyboard, camera, keybinds, options);
-    move.y = camera.get_type() == CameraType::Perspective ? move.y : 0;
-    camera.transform.position += move * dt.asSeconds();
-    camera.update();
+    auto move = keyboard_input(keyboard, *p_camera_, *p_keybinds_, options);
+    move.y = p_camera_->get_type() == CameraType::Perspective ? move.y : 0;
+    p_camera_->transform.position += move * dt.asSeconds();
+    p_camera_->update();
 
-    if (!options.lock_rotation || sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
+    if (!options.lock_rotation || middle_mouse_down_)
     {
-        mouse_input(window, camera);
+        mouse_input(window, *p_camera_, last_mouse_position_, options.look_sensitivity);
     }
 
     if (options.lock_rotation)
     {
-        window.setMouseCursorVisible(!sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle));
+        window.setMouseCursorVisible(!middle_mouse_down_);
     }
 }
 
-void free_camera_controller_2d(const Keyboard& keyboard, Camera& camera, sf::Time dt,
-                               const CameraKeybinds& keybinds)
+CameraController2D::CameraController2D(Camera& camera, const CameraKeybinds& keybinds)
+    : p_camera_{&camera}
+    , p_keybinds_{&keybinds}
+{
+}
+
+void CameraController2D::handle_inputs(const Keyboard& keyboard, sf::Time dt)
 {
     glm::vec3 move{0.0f};
 
-    if (keyboard.is_key_down(keybinds.forward))
+    if (keyboard.is_key_down(p_keybinds_->forward))
     {
         move += glm::vec3{0, 1, 0};
     }
-    else if (keyboard.is_key_down(keybinds.back))
+    else if (keyboard.is_key_down(p_keybinds_->back))
     {
         move += glm::vec3{0, -1, 0};
     }
 
-    if (keyboard.is_key_down(keybinds.left))
+    if (keyboard.is_key_down(p_keybinds_->left))
     {
         move += glm::vec3{-1, 0, 0};
     }
-    else if (keyboard.is_key_down(keybinds.right))
+    else if (keyboard.is_key_down(p_keybinds_->right))
     {
         move += glm::vec3{1, 0, 0};
     }
@@ -133,6 +168,6 @@ void free_camera_controller_2d(const Keyboard& keyboard, Camera& camera, sf::Tim
         move *= 20.0f;
     }
 
-    camera.transform.position += move * 150.0f * dt.asSeconds();
-    camera.update();
+    p_camera_->transform.position += move * 150.0f * dt.asSeconds();
+    p_camera_->update();
 }

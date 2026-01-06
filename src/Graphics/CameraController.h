@@ -17,15 +17,37 @@ struct CameraKeybinds
     sf::Keyboard::Key down = sf::Keyboard::Key::Q;
 };
 
-struct CameraControllerOptions
+struct CameraControllerOptions3D
 {
     bool lock_rotation = true;
     bool free_movement = false;
 };
 
-void free_camera_controller(const Keyboard& keyboard, Camera& camera, sf::Time dt,
-                            const CameraKeybinds& keybinds, sf::Window& window,
-                            CameraControllerOptions options);
+class CameraController3D
+{
+  public:
+    CameraController3D(Camera& camera, const CameraKeybinds& keybinds);
 
-void free_camera_controller_2d(const Keyboard& keyboard, Camera& camera, sf::Time dt,
-                               const CameraKeybinds& keybinds);
+    void handle_events(const sf::Event& event);
+    void handle_inputs(const Keyboard& keyboard, sf::Time dt, sf::Window& window,
+                       const CameraControllerOptions3D& options);
+
+  private:
+    Camera* p_camera_ = nullptr;
+    const CameraKeybinds* p_keybinds_ = nullptr;
+
+    sf::Vector2i last_mouse_position_{};
+    bool middle_mouse_down_ = false;
+};
+
+class CameraController2D
+{
+  public:
+    CameraController2D(Camera& camera, const CameraKeybinds& keybinds);
+
+    void handle_inputs(const Keyboard& keyboard, sf::Time dt);
+
+  private:
+    Camera* p_camera_ = nullptr;
+    const CameraKeybinds* p_keybinds_ = nullptr;
+};

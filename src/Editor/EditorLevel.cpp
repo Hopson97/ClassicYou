@@ -547,8 +547,8 @@ void EditorLevel::display_settings_gui()
     if (ImGui::Begin("Level Settings"))
     {
         ImGui::Text("Main Light");
-        ImGui::SliderFloat3("Position", &main_light_.position[0], -100, 100);
-        ImGui::SliderFloat("Brightness", &main_light_.brightness, 0.1, 2.0);
+        ImGui::SliderFloat3("Position", &main_light_.position[0], -100.0f, 100.0f);
+        ImGui::SliderFloat("Brightness", &main_light_.brightness, 0.1f, 2.0f);
 
         ImGui::Separator();
         if (ImGui::CollapsingHeader("Level Colour Settings"))
