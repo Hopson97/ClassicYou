@@ -60,8 +60,8 @@ namespace
         auto change = sf::Mouse::getPosition(window) - last_mouse_position;
         auto& r = camera.transform.rotation;
 
-        r.x -= static_cast<float>(change.y * 0.35);
-        r.y += static_cast<float>(change.x * 0.35);
+        r.x -= static_cast<float>(change.y) * look_sensitivity;
+        r.y += static_cast<float>(change.x) * look_sensitivity;
 
         sf::Mouse::setPosition({(int)window.getSize().x / 2, (int)window.getSize().y / 2}, window);
         last_mouse_position = sf::Mouse::getPosition(window);
