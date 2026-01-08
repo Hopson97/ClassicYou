@@ -197,18 +197,75 @@ namespace
 
         // clang-format off
         return {
-            // Bottom
-            {{p.x + width / 2,  ob, p.z             }, {width / 2,  0,          texture_bottom}, {0, -1, 0}, colour_bottom},
-            {{p.x + width,      ob, p.z + depth / 2 }, {width,      depth / 2,  texture_bottom}, {0, -1, 0}, colour_bottom},
-            {{p.x + width / 2,  ob, p.z + depth     }, {width / 2,  depth,      texture_bottom}, {0, -1, 0}, colour_bottom},
-            {{p.x,              ob, p.z + depth / 2 }, {0,          depth / 2,  texture_bottom}, {0, -1, 0}, colour_bottom},
-
-
             // Top
             {{p.x + width / 2,  ob, p.z             }, {width / 2,  0,          texture_top}, {0, 1, 0}, colour_top},
             {{p.x + width,      ob, p.z + depth / 2 }, {width,      depth / 2,  texture_top}, {0, 1, 0}, colour_top},
             {{p.x + width / 2,  ob, p.z + depth     }, {width / 2,  depth,      texture_top}, {0, 1, 0}, colour_top},
-            {{p.x,              ob, p.z + depth / 2 }, {0,          depth / 2,  texture_top}, {0, 1, 0}, colour_top}
+            {{p.x,              ob, p.z + depth / 2 }, {0,          depth / 2,  texture_top}, {0, 1, 0}, colour_top},
+
+            // Bottom
+            {{p.x + width / 2,  ob, p.z             }, {width / 2,  0,          texture_bottom}, {0, -1, 0}, colour_bottom},
+            {{p.x + width,      ob, p.z + depth / 2 }, {width,      depth / 2,  texture_bottom}, {0, -1, 0}, colour_bottom},
+            {{p.x + width / 2,  ob, p.z + depth     }, {width / 2,  depth,      texture_bottom}, {0, -1, 0}, colour_bottom},
+            {{p.x,              ob, p.z + depth / 2 }, {0,          depth / 2,  texture_bottom}, {0, -1, 0}, colour_bottom}
+
+
+        };
+        // clang-format on
+    }
+
+    std::vector<VertexLevelObjects>
+    create_triangle_platform_vertices(const PlatformObject& platform, float ob)
+    {
+        const auto& params = platform.parameters;
+        const auto& props = platform.properties;
+
+        float width = props.width;
+        float depth = props.depth;
+
+        auto texture_top = static_cast<GLfloat>(props.texture_top.id);
+        auto texture_bottom = static_cast<GLfloat>(props.texture_bottom.id);
+        auto colour_top = props.texture_top.colour;
+        auto colour_bottom = props.texture_bottom.colour;
+        auto direction = props.direction;
+
+        auto p = glm::vec3{params.position.x, 0, params.position.y} / TILE_SIZE_F;
+
+        // clang-format off
+        // Triangle platforms are just quad platforms with a "missing" corner
+        glm::vec3 top_left      {p.x,          ob, p.z};
+        glm::vec3 bottom_left   {p.x,          ob, p.z + depth};
+        glm::vec3 bottom_right  {p.x + width,  ob, p.z + depth};
+        glm::vec3 top_right     {p.x + width,  ob, p.z};       
+
+        // Construct the triangle by removing a vertex
+        std::array<glm::vec3, 3> v;
+        switch (direction)
+        {
+            case Direction::Right:   v = {top_left,     bottom_left,  bottom_right}; break;
+            case Direction::Left:    v = {bottom_left,  bottom_right, top_right   }; break;
+            case Direction::Forward: v = {bottom_right, top_right,    top_left    }; break;
+            case Direction::Back:    v = {top_right,    top_left,     bottom_left }; break;
+        }
+
+        // Calculate the UVs using planar mapping to avoid stretching
+        auto make_uv = [&](const glm::vec3& pos, float texture) {
+            return glm::vec3{
+                std::abs(pos.x - p.x), 
+                std::abs(pos.z - p.z),
+                texture
+            };
+        };
+
+        return {
+            // Top
+            {v[0], make_uv(v[0], texture_top), {0, 1, 0}, colour_top},
+            {v[1], make_uv(v[1], texture_top), {0, 1, 0}, colour_top},
+            {v[2], make_uv(v[2], texture_top), {0, 1, 0}, colour_top},
+            // Bottom
+            {v[0], make_uv(v[0], texture_bottom), {0, -1, 0}, colour_bottom},
+            {v[1], make_uv(v[1], texture_bottom), {0, -1, 0}, colour_bottom},
+            {v[2], make_uv(v[2], texture_bottom), {0, -1, 0}, colour_bottom},
         };
         // clang-format on
     }
@@ -225,10 +282,11 @@ LevelObjectsMesh3D object_to_geometry(const PlatformObject& platform, int floor_
     LevelObjectsMesh3D mesh;
     mesh.vertices = [&]()
     {
-        // TODO: triangle platforms
         switch (props.style)
         {
             case PlatformStyle::Triangle:
+                return create_triangle_platform_vertices(platform, ob);
+
             case PlatformStyle::Quad:
                 return create_quad_platform_vertices(platform, ob);
 
@@ -243,7 +301,7 @@ LevelObjectsMesh3D object_to_geometry(const PlatformObject& platform, int floor_
         mesh.indices = {// Front
                         0, 1, 2,
                         // Back
-                        6, 5, 4};
+                        5, 4, 3};
     }
     else
     {
