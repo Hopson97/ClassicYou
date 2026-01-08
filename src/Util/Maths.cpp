@@ -127,3 +127,28 @@ glm::vec2 rotate_around(glm::vec2 point, glm::vec2 rotation_origin, float degree
 
     return glm::rotate(point - rotation_origin, glm::radians(degrees)) + rotation_origin;
 }
+
+bool point_in_triangle(glm::vec2 point, glm::vec2 v1, glm::vec2 v2, glm::vec2 v3)
+{
+    // clang-format off
+    // Gets the distance of `point` from the given edge  
+    // > 0 means left side 
+    // < 0 means right side
+    auto edge = [&](glm::vec2 a, glm::vec2 b)
+    { 
+        return (point.x - a.x) * (b.y - a.y) - 
+               (point.y - a.y) * (b.x - a.x); 
+    };
+    // clang-format on
+
+    // Calculate the position/distance the of point on each side of the triangle
+    float e1 = edge(v1, v2);
+    float e2 = edge(v2, v3);
+    float e3 = edge(v3, v1);
+
+    // Check distances. All must be on the SAME side to be inside the triangle.
+    bool has_negative = (e1 < 0) || (e2 < 0) || (e3 < 0);
+    bool has_positive = (e1 > 0) || (e2 > 0) || (e3 > 0);
+
+    return !(has_negative && has_positive);
+}

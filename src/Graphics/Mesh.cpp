@@ -394,6 +394,7 @@ Mesh2DWorld generate_2d_triangle_mesh(glm::vec2 position, glm::vec2 size, float 
                                      .top_right     = {p.x + s.x, p.y}},
         direction);
 
+    // TODO - As the verticies are rotated, the texture coords are also rotated in the 2D which must be accounted for.
     mesh.vertices = {
         {.position = v[0], .texture_coord = {tex_coords[0].x, tex_coords[0].y, base_texture}, .world_texture_coord = {0,     0,     world_texture}, .colour = colour},
         {.position = v[1], .texture_coord = {tex_coords[1].x, tex_coords[1].y, base_texture}, .world_texture_coord = {0,     depth, world_texture}, .colour = colour},
