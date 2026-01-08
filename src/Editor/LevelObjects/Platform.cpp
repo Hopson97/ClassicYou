@@ -39,10 +39,31 @@ template <>
     const auto& params = platform.parameters;
     const auto& props = platform.properties;
 
-    return selection_tile.x >= params.position.x &&
-           selection_tile.x <= params.position.x + props.width * TILE_SIZE &&
-           selection_tile.y >= params.position.y &&
-           selection_tile.y <= params.position.y + props.depth * TILE_SIZE;
+    if (props.style == PlatformStyle::Quad || props.style == PlatformStyle::Diamond)
+    {
+        // AABB works for quadd
+        // TODO - maybe need better checks for diamond platforms
+        return selection_tile.x >= params.position.x &&
+               selection_tile.x <= params.position.x + props.width * TILE_SIZE &&
+               selection_tile.y >= params.position.y &&
+               selection_tile.y <= params.position.y + props.depth * TILE_SIZE;
+    }
+    else
+    {
+
+        glm::vec2 size{props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F};
+
+        // Triangle have a non-quad mesh, so need to use triangle-point intersection to check if a
+        // tri-platform has been selected
+        // So need to get the actual vertex positions for this to work
+        auto verts = generate_2d_triangle_mesh(params.position, size, 0, props.texture_top.id,
+                                               props.texture_top.colour, props.direction)
+                         .vertices;
+
+        // Triangle-point insection test
+        return point_in_triangle(selection_tile, verts[0].position, verts[1].position,
+                                 verts[2].position);
+    }
 }
 
 template <>
@@ -135,6 +156,7 @@ std::pair<Mesh2DWorld, gl::PrimitiveType>
 object_to_geometry_2d(const PlatformObject& platform, const LevelTextures& drawing_pad_texture_map)
 {
     // TODO: Diamond and tri plats
+    auto& params = platform.parameters;
     auto& props = platform.properties;
     auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Platform"));
     glm::vec2 size{props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F};
@@ -142,25 +164,20 @@ object_to_geometry_2d(const PlatformObject& platform, const LevelTextures& drawi
     switch (props.style)
     {
         case PlatformStyle::Triangle:
-            return {generate_2d_triangle_mesh(platform.parameters.position, size, texture,
-                                              props.texture_top.id, props.texture_top.colour,
-                                              props.direction),
+            return {generate_2d_triangle_mesh(params.position, size, texture, props.texture_top.id,
+                                              props.texture_top.colour, props.direction),
                     gl::PrimitiveType::Triangles};
 
-    return {generate_2d_quad_mesh(platform.parameters.position,
-                                  {props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F}, texture,
         case PlatformStyle::Diamond:
-            return {generate_2d_diamond_mesh(platform.parameters.position, size, texture,
-                                  props.texture_top.id, props.texture_top.colour,
-                                  Direction::Forward),
-            gl::PrimitiveType::Triangles};
+            return {generate_2d_diamond_mesh(params.position, size, texture, props.texture_top.id,
+                                             props.texture_top.colour, Direction::Forward),
+                    gl::PrimitiveType::Triangles};
 
         default:
-            return {generate_2d_quad_mesh(platform.parameters.position, size, texture,
-                                          props.texture_top.id, props.texture_top.colour,
-                                          Direction::Forward),
+            return {generate_2d_quad_mesh(params.position, size, texture, props.texture_top.id,
+                                          props.texture_top.colour, Direction::Forward),
                     gl::PrimitiveType::Triangles};
-}
+    }
 }
 
 namespace
@@ -250,12 +267,6 @@ namespace
         auto p = glm::vec3{params.position.x, 0, params.position.y} / TILE_SIZE_F;
 
         // clang-format off
-        // Triangle platforms are just quad platforms with a "missing" corner
-        glm::vec3 top_left      {p.x,          ob, p.z};
-        glm::vec3 bottom_left   {p.x,          ob, p.z + depth};
-        glm::vec3 bottom_right  {p.x + width,  ob, p.z + depth};
-        glm::vec3 top_right     {p.x + width,  ob, p.z};       
-
         // Construct the triangle by removing a vertex
         auto v = direction_to_triangle_vertices<glm::vec3>(
             NamedQuadVertices<glm::vec3>{.top_left      = {p.x,         ob, p.z},
