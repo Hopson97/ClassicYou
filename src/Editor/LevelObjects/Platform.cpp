@@ -137,12 +137,30 @@ object_to_geometry_2d(const PlatformObject& platform, const LevelTextures& drawi
     // TODO: Diamond and tri plats
     auto& props = platform.properties;
     auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Platform"));
+    glm::vec2 size{props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F};
+
+    switch (props.style)
+    {
+        case PlatformStyle::Triangle:
+            return {generate_2d_triangle_mesh(platform.parameters.position, size, texture,
+                                              props.texture_top.id, props.texture_top.colour,
+                                              props.direction),
+                    gl::PrimitiveType::Triangles};
 
     return {generate_2d_quad_mesh(platform.parameters.position,
                                   {props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F}, texture,
+        case PlatformStyle::Diamond:
+            return {generate_2d_diamond_mesh(platform.parameters.position, size, texture,
                                   props.texture_top.id, props.texture_top.colour,
                                   Direction::Forward),
             gl::PrimitiveType::Triangles};
+
+        default:
+            return {generate_2d_quad_mesh(platform.parameters.position, size, texture,
+                                          props.texture_top.id, props.texture_top.colour,
+                                          Direction::Forward),
+                    gl::PrimitiveType::Triangles};
+}
 }
 
 namespace
@@ -239,24 +257,16 @@ namespace
         glm::vec3 top_right     {p.x + width,  ob, p.z};       
 
         // Construct the triangle by removing a vertex
-        std::array<glm::vec3, 3> v;
-        switch (direction)
-        {
-            case Direction::Right:   v = {top_left,     bottom_left,  bottom_right}; break;
-            case Direction::Left:    v = {bottom_left,  bottom_right, top_right   }; break;
-            case Direction::Forward: v = {bottom_right, top_right,    top_left    }; break;
-            case Direction::Back:    v = {top_right,    top_left,     bottom_left }; break;
-        }
+        auto v = direction_to_triangle_vertices<glm::vec3>(
+            NamedQuadVertices<glm::vec3>{.top_left      = {p.x,         ob, p.z},
+                                         .bottom_left   = {p.x,         ob, p.z + depth},
+                                         .bottom_right  = {p.x + width, ob, p.z + depth},
+                                         .top_right     = {p.x + width, ob, p.z}},
+            direction);
 
         // Calculate the UVs using planar mapping to avoid stretching
-        auto make_uv = [&](const glm::vec3& pos, float texture) {
-            return glm::vec3{
-                std::abs(pos.x - p.x), 
-                std::abs(pos.z - p.z),
-                texture
-            };
-        };
-
+        auto make_uv = [&](const glm::vec3& pos, float texture)
+        { return glm::vec3{std::abs(pos.x - p.x), std::abs(pos.z - p.z), texture}; };
         return {
             // Top
             {v[0], make_uv(v[0], texture_top), {0, 1, 0}, colour_top},
