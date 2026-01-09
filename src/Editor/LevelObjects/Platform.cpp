@@ -39,10 +39,31 @@ template <>
     const auto& params = platform.parameters;
     const auto& props = platform.properties;
 
-    return selection_tile.x >= params.position.x &&
-           selection_tile.x <= params.position.x + props.width * TILE_SIZE &&
-           selection_tile.y >= params.position.y &&
-           selection_tile.y <= params.position.y + props.depth * TILE_SIZE;
+    if (props.style == PlatformStyle::Quad || props.style == PlatformStyle::Diamond)
+    {
+        // AABB works for quad
+        // TODO - maybe need better checks for diamond platforms
+        return selection_tile.x >= params.position.x &&
+               selection_tile.x <= params.position.x + props.width * TILE_SIZE &&
+               selection_tile.y >= params.position.y &&
+               selection_tile.y <= params.position.y + props.depth * TILE_SIZE;
+    }
+    else
+    {
+
+        glm::vec2 size{props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F};
+
+        // Triangle have a non-quad mesh, so need to use triangle-point intersection to check if a
+        // tri-platform has been selected
+        // So need to get the actual vertex positions for this to work
+        auto verts = generate_2d_triangle_mesh(params.position, size, 0, props.texture_top.id,
+                                               props.texture_top.colour, props.direction)
+                         .vertices;
+
+        // Triangle-point insection test
+        return point_in_triangle(selection_tile, verts[0].position, verts[1].position,
+                                 verts[2].position);
+    }
 }
 
 template <>
@@ -134,15 +155,29 @@ template <>
 std::pair<Mesh2DWorld, gl::PrimitiveType>
 object_to_geometry_2d(const PlatformObject& platform, const LevelTextures& drawing_pad_texture_map)
 {
-    // TODO: Diamond and tri plats
+    auto& params = platform.parameters;
     auto& props = platform.properties;
     auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Platform"));
+    glm::vec2 size{props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F};
 
-    return {generate_2d_quad_mesh(platform.parameters.position,
-                                  {props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F}, texture,
-                                  props.texture_top.id, props.texture_top.colour,
-                                  Direction::Forward),
-            gl::PrimitiveType::Triangles};
+    switch (props.style)
+    {
+        case PlatformStyle::Triangle:
+            return {generate_2d_triangle_mesh(params.position, size, texture, props.texture_top.id,
+                                              props.texture_top.colour, props.direction),
+                    gl::PrimitiveType::Triangles};
+
+        case PlatformStyle::Diamond:
+            return {generate_2d_diamond_mesh(params.position, size, texture, props.texture_top.id,
+                                             props.texture_top.colour, Direction::Forward),
+                    gl::PrimitiveType::Triangles};
+
+        // Default to quad
+        default:
+            return {generate_2d_quad_mesh(params.position, size, texture, props.texture_top.id,
+                                          props.texture_top.colour, Direction::Forward),
+                    gl::PrimitiveType::Triangles};
+    }
 }
 
 namespace
@@ -197,18 +232,59 @@ namespace
 
         // clang-format off
         return {
-            // Bottom
-            {{p.x + width / 2,  ob, p.z             }, {width / 2,  0,          texture_bottom}, {0, -1, 0}, colour_bottom},
-            {{p.x + width,      ob, p.z + depth / 2 }, {width,      depth / 2,  texture_bottom}, {0, -1, 0}, colour_bottom},
-            {{p.x + width / 2,  ob, p.z + depth     }, {width / 2,  depth,      texture_bottom}, {0, -1, 0}, colour_bottom},
-            {{p.x,              ob, p.z + depth / 2 }, {0,          depth / 2,  texture_bottom}, {0, -1, 0}, colour_bottom},
-
-
             // Top
-            {{p.x + width / 2,  ob, p.z             }, {width / 2,  0,          texture_top}, {0, 1, 0}, colour_top},
-            {{p.x + width,      ob, p.z + depth / 2 }, {width,      depth / 2,  texture_top}, {0, 1, 0}, colour_top},
-            {{p.x + width / 2,  ob, p.z + depth     }, {width / 2,  depth,      texture_top}, {0, 1, 0}, colour_top},
-            {{p.x,              ob, p.z + depth / 2 }, {0,          depth / 2,  texture_top}, {0, 1, 0}, colour_top}
+            {{p.x + width,     ob, p.z + depth / 2}, {width,     depth / 2, texture_top}, {0, 1, 0}, colour_top},
+            {{p.x + width / 2, ob, p.z            }, {width / 2, 0,         texture_top}, {0, 1, 0}, colour_top},
+            {{p.x,             ob, p.z + depth / 2}, {0,         depth / 2, texture_top}, {0, 1, 0}, colour_top},
+            {{p.x + width / 2, ob, p.z + depth    }, {width / 2, depth,     texture_top}, {0, 1, 0}, colour_top},
+
+            // Bottom
+            {{p.x + width,     ob, p.z + depth / 2}, {width,     depth / 2, texture_bottom}, {0, -1, 0}, colour_bottom},
+            {{p.x + width / 2, ob, p.z            }, {width / 2, 0,         texture_bottom}, {0, -1, 0}, colour_bottom}, 
+            {{p.x,             ob, p.z + depth / 2}, {0,         depth / 2, texture_bottom}, {0, -1, 0}, colour_bottom}, 
+            {{p.x + width / 2, ob, p.z + depth    }, {width / 2, depth,     texture_bottom}, {0, -1, 0}, colour_bottom}, 
+        };
+        // clang-format on
+    }
+
+    std::vector<VertexLevelObjects>
+    create_triangle_platform_vertices(const PlatformObject& platform, float ob)
+    {
+        const auto& params = platform.parameters;
+        const auto& props = platform.properties;
+
+        float width = props.width;
+        float depth = props.depth;
+
+        auto texture_top = static_cast<GLfloat>(props.texture_top.id);
+        auto texture_bottom = static_cast<GLfloat>(props.texture_bottom.id);
+        auto colour_top = props.texture_top.colour;
+        auto colour_bottom = props.texture_bottom.colour;
+        auto direction = props.direction;
+
+        auto p = glm::vec3{params.position.x, 0, params.position.y} / TILE_SIZE_F;
+
+        // clang-format off
+        // Construct the triangle by removing a vertex
+        auto v = direction_to_triangle_vertices<glm::vec3>(
+            NamedQuadVertices<glm::vec3>{.top_left      = {p.x,         ob, p.z},
+                                         .bottom_left   = {p.x,         ob, p.z + depth},
+                                         .bottom_right  = {p.x + width, ob, p.z + depth},
+                                         .top_right     = {p.x + width, ob, p.z}},
+            direction);
+
+        // Calculate the UVs using planar mapping to avoid stretching
+        auto make_uv = [&](const glm::vec3& pos, float texture)
+        { return glm::vec3{std::abs(pos.x - p.x), std::abs(pos.z - p.z), texture}; };
+        return {
+            // Top
+            {v[0], make_uv(v[0], texture_top), {0, 1, 0}, colour_top},
+            {v[1], make_uv(v[1], texture_top), {0, 1, 0}, colour_top},
+            {v[2], make_uv(v[2], texture_top), {0, 1, 0}, colour_top},
+            // Bottom
+            {v[0], make_uv(v[0], texture_bottom), {0, -1, 0}, colour_bottom},
+            {v[1], make_uv(v[1], texture_bottom), {0, -1, 0}, colour_bottom},
+            {v[2], make_uv(v[2], texture_bottom), {0, -1, 0}, colour_bottom},
         };
         // clang-format on
     }
@@ -225,10 +301,11 @@ LevelObjectsMesh3D object_to_geometry(const PlatformObject& platform, int floor_
     LevelObjectsMesh3D mesh;
     mesh.vertices = [&]()
     {
-        // TODO: triangle platforms
         switch (props.style)
         {
             case PlatformStyle::Triangle:
+                return create_triangle_platform_vertices(platform, ob);
+
             case PlatformStyle::Quad:
                 return create_quad_platform_vertices(platform, ob);
 
@@ -243,7 +320,7 @@ LevelObjectsMesh3D object_to_geometry(const PlatformObject& platform, int floor_
         mesh.indices = {// Front
                         0, 1, 2,
                         // Back
-                        6, 5, 4};
+                        5, 4, 3};
     }
     else
     {

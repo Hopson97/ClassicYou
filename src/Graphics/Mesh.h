@@ -220,7 +220,43 @@ void add_line_to_mesh(MeshType& mesh, glm::vec2 from, glm::vec2 to, glm::u8vec4 
 [[nodiscard]] Mesh2DWorld generate_line_mesh(glm::vec2 from, glm::vec2 to, glm::u8vec4 colour);
 [[nodiscard]] Mesh2DWorld generate_2d_quad_mesh(glm::vec2 position, glm::vec2 size,
                                                 float base_texture, float world_texture = 0,
-                                                glm::u8vec4 = Colour::WHITE,
+                                                glm::u8vec4 colour = Colour::WHITE,
                                                 Direction direction = Direction::Forward);
 
+[[nodiscard]] Mesh2DWorld generate_2d_triangle_mesh(glm::vec2 position, glm::vec2 size,
+                                                    float base_texture, float world_texture = 0,
+                                                    glm::u8vec4 colour = Colour::WHITE,
+                                                    Direction direction = Direction::Forward);
+
+[[nodiscard]] Mesh2DWorld generate_2d_diamond_mesh(glm::vec2 position, glm::vec2 size,
+                                                   float base_texture, float world_texture = 0,
+                                                   glm::u8vec4 colour = Colour::WHITE,
+                                                   Direction direction = Direction::Forward);
+
 [[nodiscard]] Mesh2DWorld generate_2d_outline_quad_mesh(glm::vec2 position, glm::vec2 size);
+
+template <typename T>
+struct NamedQuadVertices
+{
+    T top_left;
+    T bottom_left;
+    T bottom_right;
+    T top_right;
+};
+
+template <typename T>
+auto direction_to_triangle_vertices(const NamedQuadVertices<T>& vertices, Direction direction)
+{
+    std::array<T, 3> v;
+
+    // clang-format off
+    switch (direction)
+    {
+        case Direction::Right:   v = {vertices.top_left,     vertices.bottom_left,  vertices.bottom_right}; break;
+        case Direction::Left:    v = {vertices.bottom_left,  vertices.bottom_right, vertices.top_right};    break;
+        case Direction::Forward: v = {vertices.bottom_right, vertices.top_right,    vertices.top_left};     break;
+        case Direction::Back:    v = {vertices.top_right,    vertices.top_left,     vertices.bottom_left};  break;
+    }
+    // clang-format on
+    return v;
+}

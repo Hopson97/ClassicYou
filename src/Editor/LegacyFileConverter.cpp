@@ -13,11 +13,12 @@
 
 namespace
 {
-    // Must be global to work with the "from_json" functions
+    // Must be global to work with the "from_json" functions (only visible in this file)
     LevelFileIO g_level_file_io;
 
     // Map for colour from the legacy format to the new format
-    // For platforms, floors
+    // For Platforms, TriPlats, DiaPlats, Floors, Ramps
+    // Mapping is (Legacy <-> ClassicYou)
     const std::unordered_map<int, int> TEXTURE_MAP = {
         {1, 6},   // Grass
         {2, 14},  // Stucco
@@ -35,7 +36,8 @@ namespace
     };
 
     // Map for colour from the legacy format to the new format
-    // For walls, pillars
+    // For Walls, Pillars, TriWall
+    // Mapping is (Legacy <-> ClassicYou)
     const std::unordered_map<int, int> TEXTURE_MAP_WALL = {
         {1, 0},   // Red bricks
         {2, 4},   // Bars
@@ -57,6 +59,8 @@ namespace
     constexpr std::array<float, 10> MIN_WALL_HEIGHTS = {0, 0, 0, 0, 1, 2, 3, 2, 1, 1};
     constexpr std::array<float, 10> MAX_WALL_HEIGHTS = {4, 3, 2, 1, 2, 3, 4, 4, 4, 3};
     constexpr std::array<float, 10> PLATFORM_HEIGHTS = {0, 1, 2, 3};
+
+    // Mappings using the TriWall direction property
     constexpr std::array<glm::vec2, 4> TRI_WALL_OFFSETS = {
         glm::vec2{0, -4 * TILE_SIZE_F},
         {0, 4 * TILE_SIZE_F},
@@ -70,6 +74,8 @@ namespace
         {-4 * TILE_SIZE_F, 0},
     };
 
+    // In the new versions have a height and an offset, but in the legacy version these were
+    // "hardcoded IDs" from 0 to 9, so these must be converted into a {base, height} pair
     std::pair<float, float> extract_wall_base_and_height(const nlohmann::json& height)
     {
         float min = MIN_WALL_HEIGHTS[height - 1] / 4.0f;
@@ -110,10 +116,24 @@ namespace
         return map_texture(TEXTURE_MAP_WALL, legacy_texture);
     }
 
+    Direction map_triangle_platform_direction(int legacy_direction)
+    {
+        // clang-format off
+        switch (legacy_direction)
+        {
+            case 1:     return Direction::Left;
+            case 2:     return Direction::Back;
+            case 3:     return Direction::Forward;
+            case 4:     return Direction::Right;
+            default:    return Direction::Right;
+        }
+        // clang-format on
+    }
+
     // Converts a legacy ChallengeYou.com level format to JSON
     auto legacy_to_json(std::string& legacy_file_content)
     {
-        // Replace the #name: to "name":
+        // Replace the #name: to "name:" to be JSON compliant
         while (auto match = ctre::search<R"(#([a-zA-Z_][a-zA-Z0-9_]*)\s*:)">(legacy_file_content))
         {
             std::string key = match.get<1>().to_string();
@@ -257,6 +277,48 @@ void from_json(const nlohmann::json& json, LegacyTriWall& wall)
 // ============================
 //      Platform Conversion
 // ============================
+namespace
+{
+    // All platforms are nearly indentical in their property layout, so this generic method works
+    // for all
+    template <typename LegacyPlatformType>
+    void load_basic_platform(const nlohmann::json& json, LegacyPlatformType& platform,
+                             int height_index)
+    {
+        auto& position = json[0];
+        auto& props = json[1];
+
+        auto& platform_params = platform.object.parameters;
+        auto& platform_props = platform.object.properties;
+
+        auto size = std::powf(2.0f, static_cast<float>(props[0]));
+        platform_props.width = size;
+        platform_props.depth = size;
+
+        platform_params.position = extract_vec2(position[0], position[1]) -
+                                   glm::vec2{(platform_props.width * TILE_SIZE_F) / 2.0f};
+
+        if (props.size() > 1)
+        {
+            platform_props.texture_bottom = map_texture(props[1]);
+            platform_props.texture_top = platform_props.texture_bottom;
+
+            if (props.size() > 2)
+            {
+                platform_props.base = PLATFORM_HEIGHTS[(int)props[height_index] - 1] / 4.0f;
+            }
+        }
+        else
+        {
+            // Platforms default to wood textures in older versions
+            platform_props.texture_bottom.id = 12;
+            platform_props.texture_top.id = 12;
+        }
+
+        platform.floor = (int)json[2] - 1;
+    }
+} // namespace
+
 struct LegacyPlatform
 {
     PlatformObject object;
@@ -264,39 +326,52 @@ struct LegacyPlatform
 };
 
 // [[X, Y], [Size], Floor]
+// [[X, Y], [Size, Texture], Floor]
 // [[X, Y], [Size, Texture, Height], Floor]
 void from_json(const nlohmann::json& json, LegacyPlatform& platform)
 {
-    auto& position = json[0];
-    auto& props = json[1];
+    load_basic_platform(json, platform, 2);
+}
 
-    auto& platform_params = platform.object.parameters;
+// ============================
+//      TriPlat Conversion
+// ============================
+struct LegacyTriPlatform
+{
+    PlatformObject object;
+    int floor = 0;
+};
+
+// [[X, Y], [Size, Direction], Floor]
+// [[X, Y], [Size, Texture, Direction], Floor]
+// [[X, Y], [Size, Texture, Direction, Height], Floor]
+void from_json(const nlohmann::json& json, LegacyTriPlatform& platform)
+{
+    load_basic_platform(json, platform, 3);
+    auto& props = json[1];
     auto& platform_props = platform.object.properties;
 
-    platform_props.width = static_cast<float>(props[0]) * 2;
-    platform_props.depth = static_cast<float>(props[0]) * 2;
+    int direction_index = props.size() > 2 ? 2 : 1;
+    platform_props.style = PlatformStyle::Triangle;
+    platform_props.direction = map_triangle_platform_direction(props[direction_index]);
+}
 
-    platform_params.position = extract_vec2(position[0], position[1]) -
-                               glm::vec2{(platform_props.width * TILE_SIZE_F) / 2.0f};
+// ============================
+//      DiaPlat Conversion
+// ============================
+struct LegacyDiaPlatform
+{
+    PlatformObject object;
+    int floor = 0;
+};
 
-    if (props.size() > 1)
-    {
-        platform_props.texture_bottom = map_texture(props[1]);
-        platform_props.texture_top = platform_props.texture_bottom;
-
-        if (props.size() > 2)
-        {
-            platform_props.base = PLATFORM_HEIGHTS[(int)props[2] - 1] / 4.0f;
-        }
-    }
-    else
-    {
-        // Platforms default to wood textures in older versions
-        platform_props.texture_bottom.id = 12;
-        platform_props.texture_top.id = 12;
-    }
-
-    platform.floor = (int)json[2] - 1;
+// [[X, Y], [Size], Floor]
+// [[X, Y], [Size, Texture], Floor]
+// [[X, Y], [Size, Texture, Height], Floor]
+void from_json(const nlohmann::json& json, LegacyDiaPlatform& platform)
+{
+    load_basic_platform(json, platform, 2);
+    platform.object.properties.style = PlatformStyle::Diamond;
 }
 
 // ============================
@@ -308,36 +383,38 @@ struct LegacyPillar
     int floor = 0;
 };
 
+// [[X, Y], [Angled], Floor]
+// [[X, Y], [Angled, Texture], Floor]
 // [[X, Y], [Angled, Texture, Size, Height], Floor]
 void from_json(const nlohmann::json& json, LegacyPillar& pillar)
 {
     auto& position = json[0];
     auto& props = json[1];
 
-    auto& platform_params = pillar.object.parameters;
-    auto& platform_props = pillar.object.properties;
+    auto& pillar_params = pillar.object.parameters;
+    auto& pillar_props = pillar.object.properties;
 
-    platform_params.position = extract_vec2(position[0], position[1]);
+    pillar_params.position = extract_vec2(position[0], position[1]);
 
-    platform_props.angled = (props[0] == 1);
+    pillar_props.angled = (props[0] == 1);
     if (props.size() > 1)
     {
-        platform_props.texture = map_wall_texture(props[1]);
+        pillar_props.texture = map_wall_texture(props[1]);
 
         if (props.size() > 2)
         {
             // TODO: Is divide by 6 the correct factor?
-            platform_props.size = (float)props[2] / 6.0f;
+            pillar_props.size = (float)props[2] / 6.0f;
 
             auto [base, height] = extract_wall_base_and_height(props[3]);
-            platform_props.base_height = base;
-            platform_props.height = height;
+            pillar_props.base_height = base;
+            pillar_props.height = height;
         }
     }
     else
     {
-        // Default to red brick
-        platform_props.texture.id = 0;
+        // Pillars default to brick textures in older versions
+        pillar_props.texture.id = 0;
     }
 
     pillar.floor = (int)json[2] - 1;
@@ -352,7 +429,8 @@ struct LegacyRamp
     int floor = 0;
 };
 
-//[[position_x, position_y], [direction, material], level]
+//[[X, Y], [Direction], Floor]
+//[[X, Y], [Direction, Texture], Floor]
 void from_json(const nlohmann::json& json, LegacyRamp& ramp)
 {
     auto& position = json[0];
@@ -479,7 +557,9 @@ void convert_legacy_level(const std::filesystem::path& path)
     load_objects<LegacyPlatform>(legacy_json, "Plat", new_level);
     load_objects<LegacyPillar>(legacy_json, "Pillar", new_level);
     load_objects<LegacyTriWall>(legacy_json, "TriWall", new_level);
-    load_objects<LegacyRamp>(legacy_json, "Ramp", new_level);
+    load_objects<LegacyRamp>(legacy_json, "Ramp", new_level); // TO-DO - diagonal ramps
+    load_objects<LegacyTriPlatform>(legacy_json, "TriPlat", new_level);
+    load_objects<LegacyDiaPlatform>(legacy_json, "DiaPlat", new_level);
 
     // After level is loaded, write it the JSON object
     auto output = new_level.serialise(g_level_file_io);

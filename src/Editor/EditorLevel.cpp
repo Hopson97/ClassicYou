@@ -383,7 +383,6 @@ LevelObject* EditorLevel::get_object(ObjectId object_id)
     return nullptr;
 }
 
-// TODO - is there is
 std::optional<int> EditorLevel::get_object_floor(ObjectId object_id)
 {
     if (auto object = find_object_and_floor(object_id))

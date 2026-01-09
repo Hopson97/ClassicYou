@@ -43,6 +43,20 @@ namespace
         glm::vec2{1.0f, 0.0f},
         glm::vec2{0.0f, 0.0f},
     };
+
+    constexpr auto direction_to_texture_coords(Direction direction)
+    {
+        // clang-format off
+        switch (direction)
+        {
+            case Direction::Forward:    return QUAD_TEXTURE_COORDS_FORWARDS;
+            case Direction::Left:       return QUAD_TEXTURE_COORDS_LEFT;
+            case Direction::Back:       return QUAD_TEXTURE_COORDS_BACK;
+            case Direction::Right:      return QUAD_TEXTURE_COORDS_RIGHT;
+        }
+        // clang-format on
+        return QUAD_TEXTURE_COORDS_FORWARDS;
+    }
 } // namespace
 
 // -----------------------------------
@@ -333,24 +347,7 @@ Mesh2DWorld generate_2d_quad_mesh(glm::vec2 position, glm::vec2 size, float base
     auto& p = position;
     auto& s = size;
 
-    const auto& tex_coords = [&]()
-    {
-        switch (direction)
-        {
-            case Direction::Forward:
-                return QUAD_TEXTURE_COORDS_FORWARDS;
-
-            case Direction::Left:
-                return QUAD_TEXTURE_COORDS_LEFT;
-
-            case Direction::Back:
-                return QUAD_TEXTURE_COORDS_BACK;
-
-            case Direction::Right:
-                return QUAD_TEXTURE_COORDS_RIGHT;
-        }
-        return QUAD_TEXTURE_COORDS_FORWARDS;
-    }();
+    const auto& tex_coords = direction_to_texture_coords(direction);
 
     float width = size.x / TILE_SIZE;
     float depth = size.y / TILE_SIZE;
@@ -364,6 +361,70 @@ Mesh2DWorld generate_2d_quad_mesh(glm::vec2 position, glm::vec2 size, float base
     };
     // clang-format on
 
+    mesh.indices = {0, 1, 2, 2, 3, 0};
+
+    return mesh;
+}
+
+Mesh2DWorld generate_2d_triangle_mesh(glm::vec2 position, glm::vec2 size, float base_texture,
+                                      float world_texture, glm::u8vec4 colour, Direction direction)
+{
+    Mesh2DWorld mesh;
+
+    auto& p = position;
+    auto& s = size;
+
+    const auto& tex_coords = direction_to_texture_coords(direction);
+
+    float width = size.x / TILE_SIZE;
+    float depth = size.y / TILE_SIZE;
+
+    // clang-format off
+    auto v = direction_to_triangle_vertices<glm::vec2>(
+        NamedQuadVertices<glm::vec2>{.top_left      = {p.x,       p.y},
+                                     .bottom_left   = {p.x,       p.y + s.y},
+                                     .bottom_right  = {p.x + s.x, p.y + s.y},
+                                     .top_right     = {p.x + s.x, p.y}},
+        direction);
+
+    // World texture coords must be remapped such that rotating the triangle verts does not rotate the texture
+    glm::vec3 world_tex0{(v[0].x - p.x) / TILE_SIZE, (v[0].y - p.y) / TILE_SIZE, world_texture};
+    glm::vec3 world_tex1{(v[1].x - p.x) / TILE_SIZE, (v[1].y - p.y) / TILE_SIZE, world_texture};
+    glm::vec3 world_tex2{(v[2].x - p.x) / TILE_SIZE, (v[2].y - p.y) / TILE_SIZE, world_texture};
+
+    mesh.vertices = {
+        {.position = v[0], .texture_coord = {tex_coords[0].x, tex_coords[0].y, base_texture}, .world_texture_coord = world_tex0, .colour = colour},
+        {.position = v[1], .texture_coord = {tex_coords[1].x, tex_coords[1].y, base_texture}, .world_texture_coord = world_tex1, .colour = colour},
+        {.position = v[2], .texture_coord = {tex_coords[2].x, tex_coords[2].y, base_texture}, .world_texture_coord = world_tex2, .colour = colour},
+    };
+    // clang-format on
+
+    mesh.indices = {0, 1, 2};
+
+    return mesh;
+}
+
+Mesh2DWorld generate_2d_diamond_mesh(glm::vec2 position, glm::vec2 size, float base_texture,
+                                     float world_texture, glm::u8vec4 colour, Direction direction)
+{
+    Mesh2DWorld mesh;
+
+    auto& p = position;
+    auto& s = size;
+
+    const auto& tex_coords = direction_to_texture_coords(direction);
+
+    float width = size.x / TILE_SIZE;
+    float depth = size.y / TILE_SIZE;
+
+    // clang-format off
+    mesh.vertices = {
+        {.position = {p.x + s.x,     p.y + s.y / 2  }, .texture_coord = {tex_coords[0].x, tex_coords[0].y, base_texture}, .world_texture_coord = {width,     depth / 2, world_texture}, .colour = colour},
+        {.position = {p.x + s.x / 2, p.y            }, .texture_coord = {tex_coords[1].x, tex_coords[1].y, base_texture}, .world_texture_coord = {width / 2, 0,         world_texture}, .colour = colour},
+        {.position = {p.x,           p.y + s.y / 2  }, .texture_coord = {tex_coords[2].x, tex_coords[2].y, base_texture}, .world_texture_coord = {0,         depth / 2, world_texture}, .colour = colour},
+        {.position = {p.x + s.x / 2, p.y + s.y      }, .texture_coord = {tex_coords[3].x, tex_coords[3].y, base_texture}, .world_texture_coord = {width / 2, depth,     world_texture}, .colour = colour},
+    };
+    // clang-format on
 
     mesh.indices = {0, 1, 2, 2, 3, 0};
 
@@ -374,9 +435,11 @@ Mesh2DWorld generate_2d_outline_quad_mesh(glm::vec2 position, glm::vec2 size)
 {
     glm::u8vec4 colour = {255, 255, 255, 255};
     Mesh2DWorld mesh;
-    add_line_to_mesh(mesh, {position.x,             position.y         }, {position.x + size.x, position.y         }, colour);
-    add_line_to_mesh(mesh, {position.x + size.x,    position.y         }, {position.x + size.x, position.y + size.y}, colour);
-    add_line_to_mesh(mesh, {position.x + size.x,    position.y + size.y}, {position.x,          position.y + size.y}, colour);
-    add_line_to_mesh(mesh, {position.x,             position.y + size.y}, {position.x,          position.y         }, colour);
+    add_line_to_mesh(mesh, {position.x, position.y}, {position.x + size.x, position.y}, colour);
+    add_line_to_mesh(mesh, {position.x + size.x, position.y},
+                     {position.x + size.x, position.y + size.y}, colour);
+    add_line_to_mesh(mesh, {position.x + size.x, position.y + size.y},
+                     {position.x, position.y + size.y}, colour);
+    add_line_to_mesh(mesh, {position.x, position.y + size.y}, {position.x, position.y}, colour);
     return mesh;
 }

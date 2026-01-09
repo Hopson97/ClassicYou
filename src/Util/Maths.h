@@ -54,3 +54,7 @@ struct Line
 [[nodiscard]] float distance_to_line(const glm::vec2& point, const Line& line);
 
 [[nodiscard]] glm::vec2 rotate_around(glm::vec2 point, glm::vec2 rotation_origin, float degrees);
+
+
+/// Calculate if the given `point` is within the triangle defined by the points v1, v2 & v3
+[[nodiscard]] bool point_in_triangle(glm::vec2 point, glm::vec2 v1, glm::vec2 v2, glm::vec2 v3);

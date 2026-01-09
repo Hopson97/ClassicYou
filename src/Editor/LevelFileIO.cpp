@@ -1,7 +1,7 @@
 #include "LevelFileIO.h"
 
-#include <print>
 #include <fstream>
+#include <print>
 
 #include <SFML/System/Clock.hpp>
 #include <SFML/System/Time.hpp>
@@ -24,7 +24,7 @@ namespace
                               reinterpret_cast<const Bytef*>(json_dump.c_str()), size);
         if (result != Z_OK)
         {
-            std::cerr << "Error compressing data" << std::endl;
+            std::println(std::cerr, "Error compressing data");
             return {};
         }
         compressed.resize(compressed_length);
@@ -190,7 +190,7 @@ bool LevelFileIO::save(const std::string& level_name, bool save_uncompressed)
     auto json_dump = json_.dump();
 
     // All level files are saved to a a directory.
-    // TODO: Sanatise the level name to ensure the directory is a valid filename across all
+    // TODO: Sanitize the level name to ensure the directory is a valid filename across all
     // platforms
     auto directory = path.parent_path();
     if (!std::filesystem::exists(directory))
