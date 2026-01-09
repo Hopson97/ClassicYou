@@ -41,7 +41,7 @@ template <>
 
     if (props.style == PlatformStyle::Quad || props.style == PlatformStyle::Diamond)
     {
-        // AABB works for quadd
+        // AABB works for quad
         // TODO - maybe need better checks for diamond platforms
         return selection_tile.x >= params.position.x &&
                selection_tile.x <= params.position.x + props.width * TILE_SIZE &&
@@ -155,7 +155,6 @@ template <>
 std::pair<Mesh2DWorld, gl::PrimitiveType>
 object_to_geometry_2d(const PlatformObject& platform, const LevelTextures& drawing_pad_texture_map)
 {
-    // TODO: Diamond and tri plats
     auto& params = platform.parameters;
     auto& props = platform.properties;
     auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Platform"));
@@ -173,6 +172,7 @@ object_to_geometry_2d(const PlatformObject& platform, const LevelTextures& drawi
                                              props.texture_top.colour, Direction::Forward),
                     gl::PrimitiveType::Triangles};
 
+        // Default to quad
         default:
             return {generate_2d_quad_mesh(params.position, size, texture, props.texture_top.id,
                                           props.texture_top.colour, Direction::Forward),
@@ -232,17 +232,17 @@ namespace
 
         // clang-format off
         return {
-            // Top 
-            {{p.x + width,      ob, p.z + depth / 2}, {width,      depth / 2, texture_top}, {0, 1, 0}, colour_top},
-            {{p.x + width / 2,  ob, p.z            }, {width / 2,  0,         texture_top}, {0, 1, 0}, colour_top},
-            {{p.x,              ob, p.z + depth / 2}, {0,          depth / 2, texture_top}, {0, 1, 0}, colour_top},
-            {{p.x + width / 2,  ob, p.z + depth    }, {width / 2,  depth,     texture_top}, {0, 1, 0}, colour_top},
+            // Top
+            {{p.x + width,     ob, p.z + depth / 2}, {width,     depth / 2, texture_top}, {0, 1, 0}, colour_top},
+            {{p.x + width / 2, ob, p.z            }, {width / 2, 0,         texture_top}, {0, 1, 0}, colour_top},
+            {{p.x,             ob, p.z + depth / 2}, {0,         depth / 2, texture_top}, {0, 1, 0}, colour_top},
+            {{p.x + width / 2, ob, p.z + depth    }, {width / 2, depth,     texture_top}, {0, 1, 0}, colour_top},
 
             // Bottom
-            {{p.x + width,      ob, p.z + depth / 2}, {width,      depth / 2, texture_bottom}, {0, -1, 0}, colour_bottom},
-            {{p.x + width / 2,  ob, p.z + depth    }, {width / 2,  depth,     texture_bottom}, {0, -1, 0}, colour_bottom},
-            {{p.x,              ob, p.z + depth / 2}, {0,          depth / 2, texture_bottom}, {0, -1, 0}, colour_bottom},
-            {{p.x + width / 2,  ob, p.z            }, {width / 2,  0,         texture_bottom}, {0, -1, 0}, colour_bottom},
+            {{p.x + width,     ob, p.z + depth / 2}, {width,     depth / 2, texture_bottom}, {0, -1, 0}, colour_bottom},
+            {{p.x + width / 2, ob, p.z            }, {width / 2, 0,         texture_bottom}, {0, -1, 0}, colour_bottom}, 
+            {{p.x,             ob, p.z + depth / 2}, {0,         depth / 2, texture_bottom}, {0, -1, 0}, colour_bottom}, 
+            {{p.x + width / 2, ob, p.z + depth    }, {width / 2, depth,     texture_bottom}, {0, -1, 0}, colour_bottom}, 
         };
         // clang-format on
     }
