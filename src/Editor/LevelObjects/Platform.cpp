@@ -232,19 +232,17 @@ namespace
 
         // clang-format off
         return {
-            // Top
-            {{p.x + width / 2,  ob, p.z             }, {width / 2,  0,          texture_top}, {0, 1, 0}, colour_top},
-            {{p.x + width,      ob, p.z + depth / 2 }, {width,      depth / 2,  texture_top}, {0, 1, 0}, colour_top},
-            {{p.x + width / 2,  ob, p.z + depth     }, {width / 2,  depth,      texture_top}, {0, 1, 0}, colour_top},
-            {{p.x,              ob, p.z + depth / 2 }, {0,          depth / 2,  texture_top}, {0, 1, 0}, colour_top},
+            // Top 
+            {{p.x + width,      ob, p.z + depth / 2}, {width,      depth / 2, texture_top}, {0, 1, 0}, colour_top},
+            {{p.x + width / 2,  ob, p.z            }, {width / 2,  0,         texture_top}, {0, 1, 0}, colour_top},
+            {{p.x,              ob, p.z + depth / 2}, {0,          depth / 2, texture_top}, {0, 1, 0}, colour_top},
+            {{p.x + width / 2,  ob, p.z + depth    }, {width / 2,  depth,     texture_top}, {0, 1, 0}, colour_top},
 
             // Bottom
-            {{p.x + width / 2,  ob, p.z             }, {width / 2,  0,          texture_bottom}, {0, -1, 0}, colour_bottom},
-            {{p.x + width,      ob, p.z + depth / 2 }, {width,      depth / 2,  texture_bottom}, {0, -1, 0}, colour_bottom},
-            {{p.x + width / 2,  ob, p.z + depth     }, {width / 2,  depth,      texture_bottom}, {0, -1, 0}, colour_bottom},
-            {{p.x,              ob, p.z + depth / 2 }, {0,          depth / 2,  texture_bottom}, {0, -1, 0}, colour_bottom}
-
-
+            {{p.x + width,      ob, p.z + depth / 2}, {width,      depth / 2, texture_bottom}, {0, -1, 0}, colour_bottom},
+            {{p.x + width / 2,  ob, p.z + depth    }, {width / 2,  depth,     texture_bottom}, {0, -1, 0}, colour_bottom},
+            {{p.x,              ob, p.z + depth / 2}, {0,          depth / 2, texture_bottom}, {0, -1, 0}, colour_bottom},
+            {{p.x + width / 2,  ob, p.z            }, {width / 2,  0,         texture_bottom}, {0, -1, 0}, colour_bottom},
         };
         // clang-format on
     }
