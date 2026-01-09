@@ -110,6 +110,20 @@ namespace
         return map_texture(TEXTURE_MAP_WALL, legacy_texture);
     }
 
+    Direction map_triangle_platform_direction(int legacy_direction)
+    {
+        // clang-format off
+        switch (legacy_direction)
+        {
+            case 1:     return Direction::Left;
+            case 2:     return Direction::Back;
+            case 3:     return Direction::Forward;
+            case 4:     return Direction::Right;
+            default:    return Direction::Right;
+        }
+        // clang-format on
+    }
+
     // Converts a legacy ChallengeYou.com level format to JSON
     auto legacy_to_json(std::string& legacy_file_content)
     {
@@ -264,6 +278,7 @@ struct LegacyPlatform
 };
 
 // [[X, Y], [Size], Floor]
+// [[X, Y], [Size, Texture], Floor]
 // [[X, Y], [Size, Texture, Height], Floor]
 void from_json(const nlohmann::json& json, LegacyPlatform& platform)
 {
@@ -273,8 +288,9 @@ void from_json(const nlohmann::json& json, LegacyPlatform& platform)
     auto& platform_params = platform.object.parameters;
     auto& platform_props = platform.object.properties;
 
-    platform_props.width = static_cast<float>(props[0]) * 2;
-    platform_props.depth = static_cast<float>(props[0]) * 2;
+    auto size = std::pow(2, static_cast<float>(props[0]));
+    platform_props.width = size;
+    platform_props.depth = size;
 
     platform_params.position = extract_vec2(position[0], position[1]) -
                                glm::vec2{(platform_props.width * TILE_SIZE_F) / 2.0f};
@@ -300,6 +316,59 @@ void from_json(const nlohmann::json& json, LegacyPlatform& platform)
 }
 
 // ============================
+//      TriPlat Conversion
+// ============================
+struct LegacyTriPlatform
+{
+    PlatformObject object;
+    int floor = 0;
+};
+
+// [[X, Y], [Size, Direction], Floor]
+// [[X, Y], [Size, Texture, Direction], Floor]
+// [[X, Y], [Size, Texture, Height, Direction], Floor]
+void from_json(const nlohmann::json& json, LegacyTriPlatform& tri_platform)
+{
+    auto& position = json[0];
+    auto& props = json[1];
+
+    auto& platform_params = tri_platform.object.parameters;
+    auto& platform_props = tri_platform.object.properties;
+
+    auto size = std::pow(2, static_cast<float>(props[0]));
+    platform_props.width = size;
+    platform_props.depth = size;
+    platform_props.style = PlatformStyle::Triangle;
+
+    platform_params.position = extract_vec2(position[0], position[1]) -
+                               glm::vec2{(platform_props.width * TILE_SIZE_F) / 2.0f};
+
+    if (props.size() > 2)
+    {
+        platform_props.texture_bottom = map_texture(props[1]);
+        platform_props.texture_top = platform_props.texture_bottom;
+
+        if (props.size() > 3)
+        {
+            platform_props.base = PLATFORM_HEIGHTS[(int)props[3] - 1] / 4.0f;
+            platform_props.direction = map_triangle_platform_direction(props[2]);
+        }
+        else
+        {
+            platform_props.direction = map_triangle_platform_direction(props[2]);
+        }
+    }
+    else
+    {
+        // Platforms default to wood textures in older versions
+        platform_props.texture_bottom.id = 12;
+        platform_props.texture_top.id = 12;
+        platform_props.direction = map_triangle_platform_direction(props[1]);
+    }
+    tri_platform.floor = (int)json[2] - 1;
+}
+
+// ============================
 //      Pillar Conversion
 // ============================
 struct LegacyPillar
@@ -308,6 +377,8 @@ struct LegacyPillar
     int floor = 0;
 };
 
+// [[X, Y], [Angled], Floor]
+// [[X, Y], [Angled, Texture], Floor]
 // [[X, Y], [Angled, Texture, Size, Height], Floor]
 void from_json(const nlohmann::json& json, LegacyPillar& pillar)
 {
@@ -352,7 +423,8 @@ struct LegacyRamp
     int floor = 0;
 };
 
-//[[position_x, position_y], [direction, material], level]
+//[[X, Y], [Direction], Floor]
+//[[X, Y], [Direction, Texture], Floor]
 void from_json(const nlohmann::json& json, LegacyRamp& ramp)
 {
     auto& position = json[0];
@@ -479,7 +551,8 @@ void convert_legacy_level(const std::filesystem::path& path)
     load_objects<LegacyPlatform>(legacy_json, "Plat", new_level);
     load_objects<LegacyPillar>(legacy_json, "Pillar", new_level);
     load_objects<LegacyTriWall>(legacy_json, "TriWall", new_level);
-    load_objects<LegacyRamp>(legacy_json, "Ramp", new_level);
+    load_objects<LegacyRamp>(legacy_json, "Ramp", new_level); // TO-DO - diagonal ramps
+    load_objects<LegacyTriPlatform>(legacy_json, "TriPlat", new_level);
 
     // After level is loaded, write it the JSON object
     auto output = new_level.serialise(g_level_file_io);
