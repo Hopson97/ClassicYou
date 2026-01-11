@@ -8,7 +8,7 @@
 namespace
 {
     // Minimum distance the selection is required to be to select a wall.
-    constexpr float SELECTION_DISTANCE = 8.0f;
+    constexpr float SELECTION_DISTANCE = 10.0f;
 } // namespace
 
 bool operator==(const WallProps& lhs, const WallProps& rhs)
