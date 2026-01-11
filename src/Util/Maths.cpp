@@ -2,6 +2,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
+#include <print>
 
 Rectangle Line::to_bounds() const
 {
@@ -16,6 +17,12 @@ bool Rectangle::is_entirely_within(const Rectangle& other)
     return other.position.x <= position.x && other.position.y <= position.y &&
            other.position.x + other.size.x >= position.x + size.x &&
            other.position.y + other.size.y >= position.y + size.y;
+}
+
+bool Rectangle::contains(const glm::vec2& point)
+{
+    return point.x >= position.x && point.x <= position.x + size.x && point.y >= position.y &&
+           point.y <= position.y + size.y;
 }
 
 glm::mat4 create_model_matrix(const Transform& transform)
