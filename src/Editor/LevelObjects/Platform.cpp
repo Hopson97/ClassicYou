@@ -39,18 +39,28 @@ template <>
     const auto& params = platform.parameters;
     const auto& props = platform.properties;
 
-    if (props.style == PlatformStyle::Quad || props.style == PlatformStyle::Diamond)
+    // Do the AABB check first - This works for all shapes as a broadphase before diamond and triangle checks are performed
+    if (!(selection_tile.x >= params.position.x &&
+          selection_tile.x <= params.position.x + props.width * TILE_SIZE &&
+          selection_tile.y >= params.position.y &&
+          selection_tile.y <= params.position.y + props.depth * TILE_SIZE))
     {
-        // AABB works for quad
-        // TODO - maybe need better checks for diamond platforms
-        return selection_tile.x >= params.position.x &&
-               selection_tile.x <= params.position.x + props.width * TILE_SIZE &&
-               selection_tile.y >= params.position.y &&
-               selection_tile.y <= params.position.y + props.depth * TILE_SIZE;
+        return false;
+    }
+
+    if (props.style == PlatformStyle::Diamond)
+    {
+        auto half_width = props.width * TILE_SIZE / 2.0f;
+        auto half_depth = props.depth * TILE_SIZE / 2.0f;
+
+        auto center = params.position + glm::vec2{half_width, half_depth};
+        auto dx = std::abs(selection_tile.x - center.x);
+        auto dy = std::abs(selection_tile.y - center.y);
+
+        return (dx / half_width) + (dy / half_depth) <= 1.0f;
     }
     else
     {
-
         glm::vec2 size{props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F};
 
         // Triangle have a non-quad mesh, so need to use triangle-point intersection to check if a
@@ -60,10 +70,12 @@ template <>
                                                props.texture_top.colour, props.direction)
                          .vertices;
 
-        // Triangle-point insection test
         return point_in_triangle(selection_tile, verts[0].position, verts[1].position,
                                  verts[2].position);
     }
+
+    // Should reach here for successful quad-shape selection
+    return true;
 }
 
 template <>
