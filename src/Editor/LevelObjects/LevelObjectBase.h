@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../../Graphics/Mesh.h"
-#include "../EditConstants.h"
 
 class LevelTextures;
 
@@ -37,14 +36,3 @@ object_to_geometry_2d(const T& object, const LevelTextures& drawing_pad_texture_
 template <typename T>
 [[nodiscard]] LevelObjectsMesh3D object_to_geometry(const T& object, int floor_number);
 
-/**
- * Common Helpers
- */
-template <typename T>
-Rectangle object_to_rectangle(const T& object)
-{
-    return {
-        .position = object.parameters.position,
-        .size = {object.properties.width * TILE_SIZE, object.properties.depth * TILE_SIZE},
-    };
-}

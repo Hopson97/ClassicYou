@@ -3,9 +3,9 @@
 #include <glm/gtx/rotate_vector.hpp>
 #include <magic_enum/magic_enum.hpp>
 
-#include "../../Util/Maths.h"
 #include "../LevelFileIO.h"
 #include "../LevelTextures.h"
+#include "LevelObjectHelpers.h"
 
 bool operator==(const RampProps& lhs, const RampProps& rhs)
 {

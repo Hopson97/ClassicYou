@@ -2,9 +2,9 @@
 
 #include <magic_enum/magic_enum.hpp>
 
-#include "../../Util/Maths.h"
 #include "../LevelFileIO.h"
 #include "../LevelTextures.h"
+#include "LevelObjectHelpers.h"
 
 bool operator==(const PlatformProps& lhs, const PlatformProps& rhs)
 {
@@ -56,7 +56,7 @@ template <>
 
         return (dx / half_width) + (dy / half_depth) <= 1.0f;
     }
-    else if(props.style == PlatformStyle::Triangle)
+    else if (props.style == PlatformStyle::Triangle)
     {
         glm::vec2 size{props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F};
 
