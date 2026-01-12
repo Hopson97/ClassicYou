@@ -3,9 +3,20 @@
 #include <magic_enum/magic_enum.hpp>
 
 #include "../../Util/Maths.h"
-#include "../EditConstants.h"
 #include "../LevelFileIO.h"
 #include "../LevelTextures.h"
+
+namespace
+{
+    Rectangle to_rectangle(const PillarObject& pillar)
+    {
+        auto real_size = pillar.properties.size * TILE_SIZE_F;
+        return {
+            .position = pillar.parameters.position - real_size / 2.0f,
+            .size = {real_size, real_size},
+        };
+    }
+} // namespace
 
 bool operator==(const PillarProps& lhs, const PillarProps& rhs)
 {
@@ -36,22 +47,13 @@ std::string object_to_string(const PillarObject& pillar)
 template <>
 [[nodiscard]] bool object_try_select_2d(const PillarObject& pillar, glm::vec2 selection_tile)
 {
-    const auto& params = pillar.parameters;
-    const auto& props = pillar.properties;
-
-    return selection_tile.x >= params.position.x &&
-           selection_tile.x <= params.position.x + props.size * TILE_SIZE &&
-           selection_tile.y >= params.position.y &&
-           selection_tile.y <= params.position.y + props.size * TILE_SIZE;
+    return to_rectangle(pillar).contains(selection_tile);
 }
 
 template <>
 bool object_is_within(const PillarObject& pillar, const Rectangle& selection_area)
 {
-    return Rectangle{
-        .position = {pillar.parameters.position.x, pillar.parameters.position.y},
-        .size = {pillar.properties.size * TILE_SIZE_F, pillar.properties.size * TILE_SIZE_F}}
-        .is_entirely_within(selection_area);
+    return to_rectangle(pillar).is_entirely_within(selection_area);
 }
 
 template <>
@@ -130,7 +132,7 @@ object_to_geometry_2d(const PillarObject& pillar, const LevelTextures& drawing_p
     auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Pillar"));
 
     return {generate_2d_quad_mesh(pillar.parameters.position - (props.size * TILE_SIZE_F / 2.0f),
-                                  {props.size * TILE_SIZE_F, props.size * TILE_SIZE_F}, texture, 
+                                  {props.size * TILE_SIZE_F, props.size * TILE_SIZE_F}, texture,
                                   props.texture.id, props.texture.colour),
             gl::PrimitiveType::Triangles};
 }

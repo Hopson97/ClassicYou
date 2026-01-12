@@ -2,10 +2,9 @@
 
 #include <magic_enum/magic_enum.hpp>
 
-#include "../../Util/Maths.h"
-#include "../EditConstants.h"
 #include "../LevelFileIO.h"
 #include "../LevelTextures.h"
+#include "LevelObjectHelpers.h"
 
 bool operator==(const PlatformProps& lhs, const PlatformProps& rhs)
 {
@@ -39,11 +38,9 @@ template <>
     const auto& params = platform.parameters;
     const auto& props = platform.properties;
 
-    // Do the AABB check first - This works for all shapes as a broadphase before diamond and triangle checks are performed
-    if (!(selection_tile.x >= params.position.x &&
-          selection_tile.x <= params.position.x + props.width * TILE_SIZE &&
-          selection_tile.y >= params.position.y &&
-          selection_tile.y <= params.position.y + props.depth * TILE_SIZE))
+    // Do the AABB check first - This works for all shapes as a broadphase before diamond and
+    // triangle checks are performed
+    if (!object_to_rectangle(platform).contains(selection_tile))
     {
         return false;
     }
@@ -59,7 +56,7 @@ template <>
 
         return (dx / half_width) + (dy / half_depth) <= 1.0f;
     }
-    else
+    else if (props.style == PlatformStyle::Triangle)
     {
         glm::vec2 size{props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F};
 
@@ -74,18 +71,14 @@ template <>
                                  verts[2].position);
     }
 
-    // Should reach here for successful quad-shape selection
+    // Successful quad-shape selection just uses the AABB at the function start
     return true;
 }
 
 template <>
 bool object_is_within(const PlatformObject& platform, const Rectangle& selection_area)
 {
-    return Rectangle{
-        .position = {platform.parameters.position.x, platform.parameters.position.y},
-        .size = {platform.properties.width * TILE_SIZE_F, platform.properties.depth * TILE_SIZE_F},
-    }
-        .is_entirely_within(selection_area);
+    return object_to_rectangle(platform).is_entirely_within(selection_area);
 }
 
 template <>

@@ -41,6 +41,17 @@ namespace
         };
     }
 
+
+    glm::vec2 map_pixel_to_world(glm::vec2 point, const Camera& camera)
+    {
+        auto& transform = camera.transform.position;
+        auto cam_scale = camera.get_orthographic_scale();
+        return {
+            (point.x * cam_scale + transform.x),
+            (point.y * cam_scale + transform.y),
+        };
+    }
+
     constexpr float CAMERA_BASE_Y = 10.0f;
 
 } // namespace
@@ -362,7 +373,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
             editor_settings_.show_2d_view)
         {
             auto selection = level_.try_select(
-                map_pixel_to_tile({mouse->position.x, mouse->position.y}, camera_2d_),
+                map_pixel_to_world({mouse->position.x, mouse->position.y}, camera_2d_),
                 editor_state_.selection.p_active_object, editor_state_.current_floor);
 
             if (selection)

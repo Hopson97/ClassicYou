@@ -35,3 +35,4 @@ object_to_geometry_2d(const T& object, const LevelTextures& drawing_pad_texture_
 
 template <typename T>
 [[nodiscard]] LevelObjectsMesh3D object_to_geometry(const T& object, int floor_number);
+

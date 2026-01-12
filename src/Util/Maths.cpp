@@ -2,6 +2,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
+#include <print>
 
 Rectangle Line::to_bounds() const
 {
@@ -16,6 +17,12 @@ bool Rectangle::is_entirely_within(const Rectangle& other)
     return other.position.x <= position.x && other.position.y <= position.y &&
            other.position.x + other.size.x >= position.x + size.x &&
            other.position.y + other.size.y >= position.y + size.y;
+}
+
+bool Rectangle::contains(const glm::vec2& point)
+{
+    return point.x >= position.x && point.x <= position.x + size.x && point.y >= position.y &&
+           point.y <= position.y + size.y;
 }
 
 glm::mat4 create_model_matrix(const Transform& transform)
@@ -98,26 +105,18 @@ glm::vec3 backward_vector_flat(const glm::vec3& rotation)
 
 float distance_to_line(const glm::vec2& point, const Line& line)
 {
-    auto length = glm::distance2(line.start, line.end);
-    if (length == 0)
+    auto line_length = glm::distance2(line.start, line.end);
+    if (line_length == 0)
     {
         return 1234.0f;
     }
 
-    // Consider the line extline.ending the segment, parameterized as v + t (w - v).
-    // Find projection of point p onto the line.
-    // It falls where t = [(p-v) . (w-v)] / |w-v|^2
-    auto t = ((point.x - line.start.x) * (line.end.x - line.start.x) +
-              (point.y - line.start.y) * (line.end.y - line.start.y)) /
-             length;
+    // Calculate the projection of the point onto the line segment
+    auto v = line.end - line.start;
+    auto t = glm::clamp(glm::dot(point - line.start, v) / line_length, 0.0f, 1.0f);
 
-    // Clamp to handle points that fall outside of the line
-    t = glm::clamp(t, 0.0f, 1.0f);
-
-    auto dist = glm::distance2(point, {line.start.x + t * (line.end.x - line.start.x),
-                                       line.start.y + t * (line.end.y - line.start.y)});
-
-    return glm::sqrt(dist);
+    // Find the closest point on the segment (start + t * v), and return the distance to it
+    return glm::distance(point, line.start + t * v);
 }
 
 glm::vec2 rotate_around(glm::vec2 point, glm::vec2 rotation_origin, float degrees)

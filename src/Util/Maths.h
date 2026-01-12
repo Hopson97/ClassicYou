@@ -16,7 +16,7 @@ namespace Vector
     constexpr inline glm::vec3 RIGHT = {1.0, 0.0, 0.0};
     constexpr inline glm::vec3 FORWARDS = {0.0, 0.0, 1.0};
     constexpr inline glm::vec3 BACK = {0.0, 0.0, -1.0};
-}
+} // namespace Vector
 
 struct Transform
 {
@@ -31,6 +31,7 @@ struct Rectangle
     glm::vec2 size{0};
 
     [[nodiscard]] bool is_entirely_within(const Rectangle& other);
+    [[nodiscard]] bool contains(const glm::vec2& point);
 };
 
 struct Line
@@ -42,7 +43,8 @@ struct Line
 };
 
 [[nodiscard]] glm::mat4 create_model_matrix(const Transform& transform);
-[[nodiscard]] glm::mat4 create_model_matrix_orbit(const Transform& transform, const glm::vec3& origin);
+[[nodiscard]] glm::mat4 create_model_matrix_orbit(const Transform& transform,
+                                                  const glm::vec3& origin);
 [[nodiscard]] glm::vec3 forward_vector(const glm::vec3& rotation);
 [[nodiscard]] glm::vec3 backward_vector(const glm::vec3& rotation);
 [[nodiscard]] glm::vec3 left_vector(const glm::vec3& rotation);
@@ -54,7 +56,6 @@ struct Line
 [[nodiscard]] float distance_to_line(const glm::vec2& point, const Line& line);
 
 [[nodiscard]] glm::vec2 rotate_around(glm::vec2 point, glm::vec2 rotation_origin, float degrees);
-
 
 /// Calculate if the given `point` is within the triangle defined by the points v1, v2 & v3
 [[nodiscard]] bool point_in_triangle(glm::vec2 point, glm::vec2 v1, glm::vec2 v2, glm::vec2 v3);
