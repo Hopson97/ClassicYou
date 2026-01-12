@@ -3,21 +3,8 @@
 #include <magic_enum/magic_enum.hpp>
 
 #include "../../Util/Maths.h"
-#include "../EditConstants.h"
 #include "../LevelFileIO.h"
 #include "../LevelTextures.h"
-
-namespace
-{
-    Rectangle to_rectangle(const PlatformObject& platform)
-    {
-        auto& props = platform.properties;
-        return {
-            .position = platform.parameters.position,
-            .size = {props.width * TILE_SIZE, props.depth * TILE_SIZE},
-        };
-    }
-} // namespace
 
 bool operator==(const PlatformProps& lhs, const PlatformProps& rhs)
 {
@@ -53,7 +40,7 @@ template <>
 
     // Do the AABB check first - This works for all shapes as a broadphase before diamond and
     // triangle checks are performed
-    if (!to_rectangle(platform).contains(selection_tile))
+    if (!object_to_rectangle(platform).contains(selection_tile))
     {
         return false;
     }
@@ -91,7 +78,7 @@ template <>
 template <>
 bool object_is_within(const PlatformObject& platform, const Rectangle& selection_area)
 {
-    return to_rectangle(platform).is_entirely_within(selection_area);
+    return object_to_rectangle(platform).is_entirely_within(selection_area);
 }
 
 template <>

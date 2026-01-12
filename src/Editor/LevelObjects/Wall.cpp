@@ -2,7 +2,6 @@
 
 #include <magic_enum/magic_enum.hpp>
 
-#include "../EditConstants.h"
 #include "../LevelFileIO.h"
 
 namespace

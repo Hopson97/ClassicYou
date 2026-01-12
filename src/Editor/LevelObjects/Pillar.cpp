@@ -3,7 +3,6 @@
 #include <magic_enum/magic_enum.hpp>
 
 #include "../../Util/Maths.h"
-#include "../EditConstants.h"
 #include "../LevelFileIO.h"
 #include "../LevelTextures.h"
 

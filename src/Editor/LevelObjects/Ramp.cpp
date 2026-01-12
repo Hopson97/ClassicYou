@@ -4,7 +4,6 @@
 #include <magic_enum/magic_enum.hpp>
 
 #include "../../Util/Maths.h"
-#include "../EditConstants.h"
 #include "../LevelFileIO.h"
 #include "../LevelTextures.h"
 
@@ -40,23 +39,13 @@ std::string object_to_string(const RampObject& ramp)
 template <>
 [[nodiscard]] bool object_try_select_2d(const RampObject& ramp, glm::vec2 selection_tile)
 {
-    const auto& params = ramp.parameters;
-    const auto& props = ramp.properties;
-
-    return selection_tile.x >= params.position.x &&
-           selection_tile.x <= params.position.x + props.width * TILE_SIZE &&
-           selection_tile.y >= params.position.y &&
-           selection_tile.y <= params.position.y + props.depth * TILE_SIZE;
+    return object_to_rectangle(ramp).contains(selection_tile);
 }
 
 template <>
 bool object_is_within(const RampObject& ramp, const Rectangle& selection_area)
 {
-    return Rectangle{
-        .position = {ramp.parameters.position.x, ramp.parameters.position.y},
-        .size = {ramp.properties.width * TILE_SIZE_F, ramp.properties.depth * TILE_SIZE_F},
-    }
-        .is_entirely_within(selection_area);
+    return object_to_rectangle(ramp).is_entirely_within(selection_area);
 }
 
 template <>
