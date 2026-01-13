@@ -9,11 +9,10 @@
 
 bool operator==(const RampProps& lhs, const RampProps& rhs)
 {
-    return lhs.texture_top.id == rhs.texture_top.id &&
-           lhs.texture_bottom.id == rhs.texture_bottom.id && lhs.width == rhs.width &&
-           lhs.depth == rhs.depth && lhs.start_height == rhs.start_height &&
-           lhs.end_height == rhs.end_height && lhs.direction == rhs.direction &&
-           lhs.style == rhs.style;
+    return lhs.texture_top == rhs.texture_top && lhs.texture_bottom == rhs.texture_bottom &&
+           lhs.width == rhs.width && lhs.depth == rhs.depth &&
+           lhs.start_height == rhs.start_height && lhs.end_height == rhs.end_height &&
+           lhs.direction == rhs.direction && lhs.style == rhs.style;
 }
 
 bool operator!=(const RampProps& lhs, const RampProps& rhs)

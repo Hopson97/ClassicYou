@@ -366,32 +366,37 @@ Mesh2DWorld generate_2d_quad_mesh(glm::vec2 position, glm::vec2 size, float base
     return mesh;
 }
 
+std::array<glm::vec2, 3> generate_2d_triangle_vertex_positions(glm::vec2 position, glm::vec2 size,
+                                                               Direction direction)
+{
+    auto& p = position;
+    auto& s = size;
+    return direction_to_triangle_vertices<glm::vec2>(
+        NamedQuadVertices<glm::vec2>{.top_left = {p.x, p.y},
+                                     .bottom_left = {p.x, p.y + s.y},
+                                     .bottom_right = {p.x + s.x, p.y + s.y},
+                                     .top_right = {p.x + s.x, p.y}},
+        direction);
+}
+
 Mesh2DWorld generate_2d_triangle_mesh(glm::vec2 position, glm::vec2 size, float base_texture,
                                       float world_texture, glm::u8vec4 colour, Direction direction)
 {
     Mesh2DWorld mesh;
 
     auto& p = position;
-    auto& s = size;
 
     const auto& tex_coords = direction_to_texture_coords(direction);
 
-    float width = size.x / TILE_SIZE;
-    float depth = size.y / TILE_SIZE;
+    auto v = generate_2d_triangle_vertex_positions(position, size, direction);
 
-    // clang-format off
-    auto v = direction_to_triangle_vertices<glm::vec2>(
-        NamedQuadVertices<glm::vec2>{.top_left      = {p.x,       p.y},
-                                     .bottom_left   = {p.x,       p.y + s.y},
-                                     .bottom_right  = {p.x + s.x, p.y + s.y},
-                                     .top_right     = {p.x + s.x, p.y}},
-        direction);
-
-    // World texture coords must be remapped such that rotating the triangle verts does not rotate the texture
+    // World texture coords must be remapped such that rotating the triangle verts does not rotate
+    // the texture
     glm::vec3 world_tex0{(v[0].x - p.x) / TILE_SIZE, (v[0].y - p.y) / TILE_SIZE, world_texture};
     glm::vec3 world_tex1{(v[1].x - p.x) / TILE_SIZE, (v[1].y - p.y) / TILE_SIZE, world_texture};
     glm::vec3 world_tex2{(v[2].x - p.x) / TILE_SIZE, (v[2].y - p.y) / TILE_SIZE, world_texture};
 
+    // clang-format off
     mesh.vertices = {
         {.position = v[0], .texture_coord = {tex_coords[0].x, tex_coords[0].y, base_texture}, .world_texture_coord = world_tex0, .colour = colour},
         {.position = v[1], .texture_coord = {tex_coords[1].x, tex_coords[1].y, base_texture}, .world_texture_coord = world_tex1, .colour = colour},

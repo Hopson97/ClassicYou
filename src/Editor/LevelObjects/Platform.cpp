@@ -59,16 +59,8 @@ template <>
     else if (props.style == PlatformStyle::Triangle)
     {
         glm::vec2 size{props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F};
-
-        // Triangle have a non-quad mesh, so need to use triangle-point intersection to check if a
-        // tri-platform has been selected
-        // So need to get the actual vertex positions for this to work
-        auto verts = generate_2d_triangle_mesh(params.position, size, 0, props.texture_top.id,
-                                               props.texture_top.colour, props.direction)
-                         .vertices;
-
-        return point_in_triangle(selection_tile, verts[0].position, verts[1].position,
-                                 verts[2].position);
+        return point_in_triangle(selection_tile, generate_2d_triangle_vertex_positions(
+                                                     params.position, size, props.direction));
     }
 
     // Successful quad-shape selection just uses the AABB at the function start
