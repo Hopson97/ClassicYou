@@ -260,3 +260,6 @@ auto direction_to_triangle_vertices(const NamedQuadVertices<T>& vertices, Direct
     // clang-format on
     return v;
 }
+
+std::array<glm::vec2, 3> generate_2d_triangle_vertex_positions(glm::vec2 position, glm::vec2 size,
+                                                               Direction direction);

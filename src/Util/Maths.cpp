@@ -127,7 +127,7 @@ glm::vec2 rotate_around(glm::vec2 point, glm::vec2 rotation_origin, float degree
     return glm::rotate(point - rotation_origin, glm::radians(degrees)) + rotation_origin;
 }
 
-bool point_in_triangle(glm::vec2 point, glm::vec2 v1, glm::vec2 v2, glm::vec2 v3)
+bool point_in_triangle(glm::vec2 point, const std::array<glm::vec2, 3>& triangle)
 {
     // clang-format off
     // Gets the distance of `point` from the given edge  
@@ -141,9 +141,9 @@ bool point_in_triangle(glm::vec2 point, glm::vec2 v1, glm::vec2 v2, glm::vec2 v3
     // clang-format on
 
     // Calculate the position/distance the of point on each side of the triangle
-    float e1 = edge(v1, v2);
-    float e2 = edge(v2, v3);
-    float e3 = edge(v3, v1);
+    float e1 = edge(triangle[0], triangle[1]);
+    float e2 = edge(triangle[1], triangle[2]);
+    float e3 = edge(triangle[2], triangle[0]);
 
     // Check distances. All must be on the SAME side to be inside the triangle.
     bool has_negative = (e1 < 0) || (e2 < 0) || (e3 < 0);
