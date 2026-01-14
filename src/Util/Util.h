@@ -1,13 +1,39 @@
 #pragma once
 
+#include <deque>
 #include <filesystem>
 #include <iostream>
 #include <string_view>
-#include <deque>
 #include <vector>
 
+#include <earcut/earcut.hpp>
 #include <glm/glm.hpp>
 
+namespace mapbox
+{
+    namespace util
+    {
+
+        template <>
+        struct nth<0, glm::vec2>
+        {
+            inline static float get(const glm::vec2& t)
+            {
+                return t.x;
+            };
+        };
+
+        template <>
+        struct nth<1, glm::vec2>
+        {
+            inline static float get(const glm::vec2& t)
+            {
+                return t.y;
+            };
+        };
+
+    } // namespace util
+} // namespace mapbox
 
 template <typename T, int Size>
 struct CircularQueue
@@ -23,7 +49,6 @@ struct CircularQueue
 
     std::deque<T> data;
 };
-
 
 using epoch_t = long long;
 

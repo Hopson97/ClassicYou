@@ -182,10 +182,10 @@ void from_json(const nlohmann::json& json, PolygonPlatformObject& poly)
     auto& points = json[0];
     auto& props = json[1];
 
-    poly.parameters = {.corner_top_left = extract_vec2(points[3][0], points[3][1]),
-                       .corner_top_right = extract_vec2(points[2][0], points[2][1]),
-                       .corner_bottom_right = extract_vec2(points[1][0], points[1][1]),
-                       .corner_bottom_left = extract_vec2(points[0][0], points[0][1])};
+    //poly.parameters = {.corner_top_left = extract_vec2(points[3][0], points[3][1]),
+    //                   .corner_top_right = extract_vec2(points[2][0], points[2][1]),
+    //                   .corner_bottom_right = extract_vec2(points[1][0], points[1][1]),
+    //                   .corner_bottom_left = extract_vec2(points[0][0], points[0][1])};
 
     poly.properties.base = 0;
     poly.properties.texture_bottom = map_texture(props[1]);
