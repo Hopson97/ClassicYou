@@ -34,8 +34,9 @@ namespace
 
 CreateWallTool::CreateWallTool(const LevelTextures& drawing_pad_texture_map)
 {
-    selection_node_ = generate_2d_quad_mesh({0, 0}, WALL_NODE_ICON_SIZE,
-                                            static_cast<float>(*drawing_pad_texture_map.get_texture("Selection")));
+    selection_node_ = generate_2d_quad_mesh(
+        {0, 0}, WALL_NODE_ICON_SIZE,
+        static_cast<float>(*drawing_pad_texture_map.get_texture("Selection")));
     selection_node_.buffer();
 }
 
@@ -329,18 +330,12 @@ void CreateObjectTool::update_previews(const EditorState& state,
             object_.object_type = PlatformObject{
                 .properties = state.platform_default,
                 .parameters = {.position = tile_},
-
             };
             break;
         case ObjectTypeName::PolygonPlatform:
             object_.object_type = PolygonPlatformObject{
-                .parameters =
-                    {
-                        .corner_top_left = tile_,
-                        .corner_top_right = tile_ + glm::vec2{10.0f, 0} * TILE_SIZE_F,
-                        .corner_bottom_right = tile_ + glm::vec2{10.0f, 10.0f} * TILE_SIZE_F,
-                        .corner_bottom_left = tile_ + glm::vec2{0, 10.0f} * TILE_SIZE_F,
-                    },
+                .properties = state.polygon_platform_default,
+                .parameters = {.position = tile_},
             };
             break;
 
