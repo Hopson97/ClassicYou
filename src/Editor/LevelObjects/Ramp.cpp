@@ -7,6 +7,20 @@
 #include "../LevelTextures.h"
 #include "LevelObjectHelpers.h"
 
+namespace
+{
+    constexpr bool is_tri_ramp(RampStyle style)
+    {
+        return style == RampStyle::TriRamp || style == RampStyle::FlippedTriRamp;
+    }
+
+    // Tr
+    constexpr Direction to_actual_tri_ramp_direction(RampStyle style)
+    {
+        return style == RampStyle::TriRamp ? Direction::Forward : Direction::Right;
+    }
+} // namespace
+
 bool operator==(const RampProps& lhs, const RampProps& rhs)
 {
     return lhs.texture_top == rhs.texture_top && lhs.texture_bottom == rhs.texture_bottom &&
@@ -38,7 +52,24 @@ std::string object_to_string(const RampObject& ramp)
 template <>
 [[nodiscard]] bool object_try_select_2d(const RampObject& ramp, glm::vec2 selection_tile)
 {
-    return object_to_rectangle(ramp).contains(selection_tile);
+    const auto& params = ramp.parameters;
+    const auto& props = ramp.properties;
+
+    if (!object_to_rectangle(ramp).contains(selection_tile))
+    {
+        return false;
+    }
+
+    if (is_tri_ramp(props.style))
+    {
+        glm::vec2 size{props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F};
+        return point_in_triangle(
+            selection_tile, generate_2d_triangle_vertex_positions(
+                                params.position, size, to_actual_tri_ramp_direction(props.style)));
+    }
+
+    // Successful quad-shape selection just uses the AABB at the function start
+    return true;
 }
 
 template <>
@@ -154,15 +185,12 @@ object_to_geometry_2d(const RampObject& ramp, const LevelTextures& drawing_pad_t
     auto& props = ramp.properties;
     auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Ramp"));
 
-    if (props.style == RampStyle::TriRamp || props.style == RampStyle::FlippedTriRamp)
+    if (is_tri_ramp(props.style))
     {
         glm::vec2 size{props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F};
-
-        auto actual_direction =
-            props.style == RampStyle::TriRamp ? Direction::Forward : Direction::Right;
-
         return {generate_2d_triangle_mesh(params.position, size, texture, props.texture_top.id,
-                                          props.texture_top.colour, actual_direction),
+                                          props.texture_top.colour,
+                                          to_actual_tri_ramp_direction(props.style)),
                 gl::PrimitiveType::Triangles};
     }
 
