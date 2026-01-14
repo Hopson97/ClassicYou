@@ -150,8 +150,21 @@ template <>
 std::pair<Mesh2DWorld, gl::PrimitiveType>
 object_to_geometry_2d(const RampObject& ramp, const LevelTextures& drawing_pad_texture_map)
 {
+    auto& params = ramp.parameters;
     auto& props = ramp.properties;
     auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Ramp"));
+
+    if (props.style == RampStyle::TriRamp || props.style == RampStyle::FlippedTriRamp)
+    {
+        glm::vec2 size{props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F};
+
+        auto actual_direction =
+            props.style == RampStyle::TriRamp ? Direction::Forward : Direction::Right;
+
+        return {generate_2d_triangle_mesh(params.position, size, texture, props.texture_top.id,
+                                          props.texture_top.colour, actual_direction),
+                gl::PrimitiveType::Triangles};
+    }
 
     return {generate_2d_quad_mesh(ramp.parameters.position,
                                   {props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F}, texture,
@@ -163,7 +176,7 @@ namespace
 {
     struct RampMeshParams
     {
-        // The ramps position in the world
+        // The ramp's position in the world
         glm::vec3 pos;
 
         // Size
@@ -173,7 +186,6 @@ namespace
         // Textures and colour
         GLfloat texture_top;
         GLfloat texture_bottom;
-
         glm::u8vec4 colour_top;
         glm::u8vec4 colour_bottom;
     };
