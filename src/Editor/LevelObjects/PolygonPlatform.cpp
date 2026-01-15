@@ -100,7 +100,6 @@ SerialiseResponse object_serialise(const PolygonPlatformObject& poly, LevelFileI
 
     nlohmann::json json_props = {};
 
-
     nlohmann::json points;
     for (auto& point : props.points[0])
     {
@@ -150,11 +149,8 @@ bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json,
         return false;
     }
 
-
     params.position = {jparams[0], jparams[1]};
     params.position *= TILE_SIZE_F;
-
-
 
     // Ensure a clean slate when reading points
     props.points.clear();
@@ -222,29 +218,52 @@ LevelObjectsMesh3D object_to_geometry(const PolygonPlatformObject& poly, int flo
 
     auto ob = props.base * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT;
 
-    // auto texture_bottom = static_cast<float>(props.texture_bottom.id);
+    auto texture_bottom = static_cast<float>(props.texture_bottom.id);
     auto texture_top = static_cast<float>(props.texture_top.id);
-    // auto colour_bottom = props.texture_bottom.colour;
+    auto colour_bottom = props.texture_bottom.colour;
     auto colour_top = props.texture_top.colour;
 
     auto p = glm::vec3{params.position.x / TILE_SIZE_F, 0, params.position.y / TILE_SIZE_F};
-    auto indices = mapbox::earcut<>(props.points);
     LevelObjectsMesh3D mesh;
-    // Loop the points and then the hole
-    for (const auto& ring : props.points)
+
+    // Mapbox's Earcut triangulates the polygon's points and holes which gets a list of INDICES
+    // within all of of the "props.points" vectors.
+    // When creating the mesh,this enables simply adding all points to the mesh, and then let the
+    // order of the indices returned do the rest.
+    auto earcut_indices = mapbox::earcut<>(props.points);
+
+    // Top face
+    for (auto& point_array : props.points)
     {
-        for (const auto& point : ring)
+        for (auto& point : point_array)
         {
             glm::vec3 pos = {point.x / TILE_SIZE_F + p.x, ob, point.y / TILE_SIZE_F + p.z};
             mesh.vertices.push_back({pos, {pos.x, pos.z, texture_top}, {0, 1, 0}, colour_top});
         }
     }
 
-    for (auto i = indices.rbegin(); i != indices.rend(); ++i)
+    // The indices vector is given in clockwise order, so must be reversed to get anti-clockwise
+    // ordering for the top face.
+    for (auto i = earcut_indices.rbegin(); i != earcut_indices.rend(); ++i)
     {
         mesh.indices.push_back(*i);
     }
 
+    // Bottom face
+    for (auto& point_array : props.points)
+    {
+        for (auto& point : point_array)
+        {
+            glm::vec3 pos = {point.x / TILE_SIZE_F + p.x, ob, point.y / TILE_SIZE_F + p.z};
+            mesh.vertices.push_back(
+                {pos, {pos.x, pos.z, texture_bottom}, {0, 1, 0}, colour_bottom});
+        }
+    }
+
+    auto max_index = *std::max_element(mesh.indices.cbegin(), mesh.indices.cend());
+    for (auto& i : earcut_indices)
+    {
+        mesh.indices.push_back(i + max_index + 1);
+    }
     return mesh;
-    // clang-format on
 }
