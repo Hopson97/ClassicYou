@@ -260,6 +260,18 @@ LevelObjectsMesh3D object_to_geometry(const PolygonPlatformObject& poly, int flo
         }
     }
 
+    std::println("=#=#=#=#=");
+    for (auto& point_array : props.points)
+    {
+        for (auto& point : point_array)
+        {
+            glm::vec3 pos = {point.x / TILE_SIZE_F + p.x, ob, point.y / TILE_SIZE_F + p.z};
+            std::print(" ({} {} {}) ", pos.x, pos.y, pos.z);
+        }
+        std::println("");
+    }
+    std::println("=#=#=#=#=\n");
+
     auto max_index = *std::max_element(mesh.indices.cbegin(), mesh.indices.cend());
     for (auto& i : earcut_indices)
     {
