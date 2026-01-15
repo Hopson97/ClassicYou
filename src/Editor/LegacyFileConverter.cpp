@@ -176,16 +176,44 @@ namespace
 // ===========================================================
 //      Floor/ Ground Conversion (to PolygonPlatformObject)
 // ============================================================
-//  [[X0, Y0, X1, Y1, X2, Y2, X3, Y3], [[TextureTop, Visible], TextureBottom]
+struct LegacyHole
+{
+    std::vector<glm::vec2> points;
+    int level;
+};
+
+// Holes
+// [[X, Y], [Size] Floor]
+void from_json(const nlohmann::json& json, LegacyHole& hole)
+{
+    auto size = std::powf(2.0f, static_cast<float>(json[1][0]));
+    auto position = extract_vec2(json[0][0], json[0][1]) - glm::vec2{(size * TILE_SIZE_F) / 2.0f};
+
+    size *= TILE_SIZE_F;
+
+    hole.points.reserve(4);
+    hole.points.push_back(position);
+    hole.points.push_back({position.x + size, position.y});
+    hole.points.push_back({position.x + size, position.y + size});
+    hole.points.push_back({position.x, position.y + size});
+    hole.level = (int)json[2] - 1;
+}
+
+// Floors
+// [[X0, Y0, X1, Y1, X2, Y2, X3, Y3], [[TextureTop, Visible], TextureBottom]
 void from_json(const nlohmann::json& json, PolygonPlatformObject& poly)
 {
-    auto& points = json[0];
     auto& props = json[1];
 
-    //poly.parameters = {.corner_top_left = extract_vec2(points[3][0], points[3][1]),
-    //                   .corner_top_right = extract_vec2(points[2][0], points[2][1]),
-    //                   .corner_bottom_right = extract_vec2(points[1][0], points[1][1]),
-    //                   .corner_bottom_left = extract_vec2(points[0][0], points[0][1])};
+    // Legacy defines the polygon points as offsets from the "north west" of the level, so the
+    // position is always relative to the origin
+    poly.parameters.position = {0, 0};
+
+    // Ordered top left, top right, bottom right, bottom right;
+    auto& points = json[0];
+    poly.properties.points[0] = {
+        extract_vec2(points[3][0], points[3][1]), extract_vec2(points[2][0], points[2][1]),
+        extract_vec2(points[1][0], points[1][1]), extract_vec2(points[0][0], points[0][1])};
 
     poly.properties.base = 0;
     poly.properties.texture_bottom = map_texture(props[1]);
@@ -517,9 +545,35 @@ void load_objects(const nlohmann::json& json, const char* json_key, FloorManager
 
 void load_floors(const nlohmann::json& json, FloorManager& new_level)
 {
-    int floor_n = 0;
+    // Extract holes
+    std::vector<LegacyHole> legacy_holes;
+    json["Hole"].get_to(legacy_holes);
+
+    // Extract floors as polygons
     std::vector<PolygonPlatformObject> legacy_floors;
     json["Floor"].get_to(legacy_floors);
+
+    // Map the holes to the floor
+    std::unordered_map<size_t, std::vector<size_t>> level_to_holes;
+    for (size_t i = 0; i < legacy_holes.size(); i++)
+    {
+        auto& hole = legacy_holes[i];
+        if (level_to_holes.find(hole.level) == level_to_holes.end())
+        {
+            level_to_holes[hole.level] = std::vector<size_t>{};
+        }
+        level_to_holes[hole.level].push_back(i);
+    }
+
+    for (size_t i = 0; i < legacy_floors.size(); i++)
+    {
+        for (auto& hole : level_to_holes[i])
+        {
+            legacy_floors[i].properties.points.push_back(std::move(legacy_holes[hole].points));
+        }
+    }
+
+    int floor_n = 0;
     for (auto& legacy_floor : legacy_floors)
     {
         auto& floor = new_level.ensure_floor_exists(floor_n++);
@@ -529,7 +583,7 @@ void load_floors(const nlohmann::json& json, FloorManager& new_level)
 
 void convert_legacy_level(const std::filesystem::path& path)
 {
-    // Reset the level file io object
+    // Reset the level file io object and other globals (all local to this file)
     g_level_file_io = LevelFileIO{};
 
     std::println("Converting {}", path.string());
@@ -549,7 +603,7 @@ void convert_legacy_level(const std::filesystem::path& path)
     // Begin conversion from JSON to new format
     FloorManager new_level;
 
-    // First load the floors
+    // First load the floors as "polygon platforms"
     load_floors(legacy_json, new_level);
 
     // Extract geometric object
