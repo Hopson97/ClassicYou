@@ -31,7 +31,6 @@ std::string object_to_string(const PolygonPlatformObject& poly)
     }
 
     std::string holes_string;
-
     for (int i = 1; i < props.points.size(); i++)
     {
         std::string hole_string;
@@ -44,9 +43,10 @@ std::string object_to_string(const PolygonPlatformObject& poly)
 
     return std::format(
         "Props:\n Texture Top: {}\n Texture Bottom: {}\n Base: {:.2f}\n Visible: {}\n"
-        "Parameters:\n Points: {}\nHoles: {}",
+        "Points: {}\nHoles: {}"
+        "Parameters:\n Position: ({:.2f}, {:.2f})",
         props.texture_top.id, props.texture_bottom.id, props.base, props.visible ? "true" : "false",
-        points_string, holes_string);
+        points_string, holes_string, params.position.x, params.position.y);
 }
 
 template <>
@@ -192,15 +192,40 @@ object_to_geometry_2d(const PolygonPlatformObject& poly,
 {
     const auto& params = poly.parameters;
     const auto& props = poly.properties;
+    auto& position = params.position;
+
+    // Colours for the outline, and outline vertices
+    constexpr static glm::i8vec4 OL_COLOUR{60, 179, 113, 255};
+    constexpr static glm::i8vec4 HOLE_COLOUR{255, 255, 80, 255};
 
     Mesh2DWorld mesh;
 
-    for (auto& point : props.points[0])
+    // Create the lines, the first array is the outer polygon (outline), thereafter are the inner
+    // hole polygons
+    bool is_outline = true;
+    for (auto& point_array : props.points)
     {
-        add_line_to_mesh(mesh, point + params.position,
-                         point + glm::vec2(TILE_SIZE, 0) + params.position,
-                         poly.properties.texture_top.colour);
+        for (size_t i = 0; i < point_array.size(); i++)
+        {
+            auto p1 = point_array[i];
+            auto p2 = i == point_array.size() - 1 ? point_array[0] : point_array[i + 1];
+            auto colour = is_outline ? OL_COLOUR : HOLE_COLOUR;
+
+            add_line_to_mesh(mesh, p1 + position, p2 + position, colour);
+        }
+        is_outline = false;
     }
+
+    // Polygon verticies are shown with a small cross, these are offsets to create that
+    // constexpr static glm::vec2 OFFSET{TILE_SIZE / 4, TILE_SIZE / 4};
+    // constexpr static glm::vec2 OFFSET2{-TILE_SIZE / 4, TILE_SIZE / 4};
+    // constexpr static glm::i8vec4 OL_COLOUR{255, 127, 80, 255};
+    //// Create crosses at each vertex within the polygon
+    // for (auto& point : props.points[0])
+    //{
+    //     add_line_to_mesh(mesh, point + position - OFFSET, point + position + OFFSET, V_COLOUR);
+    //     add_line_to_mesh(mesh, point + position + OFFSET2, point + position - OFFSET2, V_COLOUR);
+    // }
 
     return std::make_pair(std::move(mesh), gl::PrimitiveType::Lines);
 }
@@ -260,17 +285,13 @@ LevelObjectsMesh3D object_to_geometry(const PolygonPlatformObject& poly, int flo
         }
     }
 
-    std::println("=#=#=#=#=");
     for (auto& point_array : props.points)
     {
         for (auto& point : point_array)
         {
             glm::vec3 pos = {point.x / TILE_SIZE_F + p.x, ob, point.y / TILE_SIZE_F + p.z};
-            std::print(" ({} {} {}) ", pos.x, pos.y, pos.z);
         }
-        std::println("");
     }
-    std::println("=#=#=#=#=\n");
 
     auto max_index = *std::max_element(mesh.indices.cbegin(), mesh.indices.cend());
     for (auto& i : earcut_indices)
