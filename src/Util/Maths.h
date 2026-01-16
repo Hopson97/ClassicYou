@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <vector>
 
 #include <SFML/System/Angle.hpp>
 #include <glm/common.hpp>
@@ -30,8 +31,10 @@ struct Rectangle
     glm::vec2 position{0};
     glm::vec2 size{0};
 
-    [[nodiscard]] bool is_entirely_within(const Rectangle& other);
-    [[nodiscard]] bool contains(const glm::vec2& point);
+    [[nodiscard]] bool is_entirely_within(const Rectangle& other) const;
+    [[nodiscard]] bool contains(const glm::vec2& point) const;
+    [[nodiscard]] bool contains(const std::vector<glm::vec2>& points,
+                                        const glm::vec2& points_offset) const;
 };
 
 struct Line
@@ -58,3 +61,6 @@ struct Line
 [[nodiscard]] glm::vec2 rotate_around(glm::vec2 point, glm::vec2 rotation_origin, float degrees);
 
 [[nodiscard]] bool point_in_triangle(glm::vec2 point, const std::array<glm::vec2, 3>& triangle);
+
+[[nodiscard]] bool point_in_polygon(const glm::vec2& point, const std::vector<glm::vec2>& points,
+                                    const glm::vec2& points_offset);

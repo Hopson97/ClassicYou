@@ -52,17 +52,13 @@ std::string object_to_string(const PolygonPlatformObject& poly)
 template <>
 [[nodiscard]] bool object_try_select_2d(const PolygonPlatformObject& poly, glm::vec2 selection_tile)
 {
-    const auto& params = poly.parameters;
-    // TODO implment
-    return false;
+    return point_in_polygon(selection_tile, poly.properties.points[0], poly.parameters.position);
 }
 
 template <>
 bool object_is_within(const PolygonPlatformObject& poly, const Rectangle& selection_area)
 {
-    auto& params = poly.parameters;
-    // TODO implment
-    return false;
+    return selection_area.contains(poly.properties.points[0], poly.parameters.position);
 }
 
 template <>
