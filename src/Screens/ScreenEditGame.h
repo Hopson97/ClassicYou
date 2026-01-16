@@ -8,7 +8,7 @@
 #include "../Editor/Grids.h"
 #include "../Editor/LevelFileIO.h"
 #include "../Editor/LevelTextures.h"
-#include "../Editor/Tool.h"
+#include "../Editor/Tools/Tool.h"
 #include "../Graphics/Camera.h"
 #include "../Graphics/CameraController.h"
 #include "../Graphics/Mesh.h"

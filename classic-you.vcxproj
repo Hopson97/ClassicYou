@@ -160,6 +160,8 @@
     <ClCompile Include="deps\imgui_sfml\imgui-SFML.cpp" />
     <ClCompile Include="deps\imgui_sfml\imgui_impl_opengl3.cpp" />
     <ClCompile Include="src\Editor\Actions.cpp" />
+    <ClCompile Include="src\Editor\Tools\AreaSelectTool.cpp" />
+    <ClCompile Include="src\Editor\Tools\CreateObjectTool.cpp" />
     <ClCompile Include="src\Editor\EditorEventHandlers.cpp" />
     <ClCompile Include="src\Editor\EditorGUI.cpp" />
     <ClCompile Include="src\Editor\EditorLevel.cpp" />
@@ -176,7 +178,8 @@
     <ClCompile Include="src\Editor\LevelObjects\Ramp.cpp" />
     <ClCompile Include="src\Editor\LevelObjects\Wall.cpp" />
     <ClCompile Include="src\Editor\LevelTextures.cpp" />
-    <ClCompile Include="src\Editor\Tool.cpp" />
+    <ClCompile Include="src\Editor\Tools\WallTools.cpp" />
+    <ClCompile Include="src\Editor\Tools\UpdatePolygonPlatformTool.cpp" />
     <ClCompile Include="src\Graphics\CameraController.cpp" />
     <ClCompile Include="src\Graphics\Camera.cpp" />
     <ClCompile Include="src\Graphics\ShadowMap.cpp" />
@@ -251,7 +254,7 @@
     <ClInclude Include="src\Editor\LevelObjects\Platform.h" />
     <ClInclude Include="src\Editor\LevelObjects\PolygonPlatform.h" />
     <ClInclude Include="src\Editor\LevelObjects\Wall.h" />
-    <ClInclude Include="src\Editor\Tool.h" />
+    <ClInclude Include="src\Editor\Tools\Tool.h" />
     <ClInclude Include="src\Editor\LevelObjects\LevelObject.h" />
     <ClInclude Include="src\Graphics\CameraController.h" />
     <ClInclude Include="src\Graphics\Camera.h" />

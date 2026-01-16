@@ -911,6 +911,8 @@ void ScreenEditGame::display_editor_gui()
 
         ImGui::Separator();
 
+        ImGui::Text("Current Tool: %s", magic_enum::enum_name(tool_->get_tool_type()).data());
+
         // Display the floor options, so going up or down a floor
         ImGui::Text("Floors");
         if (ImGui::Button("Floor Down (PgDown)"))
