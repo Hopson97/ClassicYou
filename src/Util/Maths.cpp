@@ -12,17 +12,30 @@ Rectangle Line::to_bounds() const
     };
 }
 
-bool Rectangle::is_entirely_within(const Rectangle& other)
+bool Rectangle::is_entirely_within(const Rectangle& other) const
 {
     return other.position.x <= position.x && other.position.y <= position.y &&
            other.position.x + other.size.x >= position.x + size.x &&
            other.position.y + other.size.y >= position.y + size.y;
 }
 
-bool Rectangle::contains(const glm::vec2& point)
+bool Rectangle::contains(const glm::vec2& point) const
 {
     return point.x >= position.x && point.x <= position.x + size.x && point.y >= position.y &&
            point.y <= position.y + size.y;
+}
+
+bool Rectangle::contains(const std::vector<glm::vec2>& points, const glm::vec2& points_offset) const
+{
+
+    for (auto& point : points)
+    {
+        if (!contains(point + points_offset))
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 glm::mat4 create_model_matrix(const Transform& transform)
@@ -150,4 +163,29 @@ bool point_in_triangle(glm::vec2 point, const std::array<glm::vec2, 3>& triangle
     bool has_positive = (e1 > 0) || (e2 > 0) || (e3 > 0);
 
     return !(has_negative && has_positive);
+}
+
+bool point_in_polygon(const glm::vec2& point, const std::vector<glm::vec2>& points,
+                      const glm::vec2& points_offset)
+{
+    // Rraycast intesection test
+    unsigned intersections = 0;
+    for (size_t i = 0; i < points.size(); ++i)
+    {
+        auto p1 = points[i] + points_offset;
+        auto p2 = points[(i + 1) % points.size()] + points_offset;
+
+        if ((point.y > std::min(p1.y, p2.y)) && (point.y <= std::max(p1.y, p2.y)))
+        {
+            float x_intersect = p1.x + (point.y - p1.y) * (p2.x - p1.x) / (p2.y - p1.y);
+
+            if (x_intersect > point.x)
+            {
+                intersections++;
+            }
+        }
+    }
+
+    // Point is inside if intersections count is odd
+    return intersections % 2 == 1;
 }
