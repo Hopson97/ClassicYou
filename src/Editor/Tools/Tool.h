@@ -4,9 +4,9 @@
 
 #include <SFML/Window/Event.hpp>
 
-#include "../Graphics/Mesh.h"
-#include "../Util/Maths.h"
-#include "LevelObjects/LevelObject.h"
+#include "../../Graphics/Mesh.h"
+#include "../../Util/Maths.h"
+#include "../LevelObjects/LevelObject.h"
 
 class LevelTextures;
 struct EditorState;
@@ -23,7 +23,8 @@ enum class ToolType
     CreateWall,
     UpdateWall,
     CreateObject,
-    AreaSelectTool
+    AreaSelectTool,
+    UpdatePolygonTool
 };
 
 class ITool
@@ -162,4 +163,36 @@ class AreaSelectTool : public ITool
     int start_floor_ = 0;
     int max_floor_ = 0;
     int min_floor_ = 0;
+};
+
+class UpdatePolygonTool : public ITool
+{
+  public:
+    UpdatePolygonTool(LevelObject object, PolygonPlatformObject& wall, int wall_floor,
+                      const LevelTextures& drawing_pad_texture_map);
+    void on_event(sf::Event event, glm::vec2 node, EditorState& state, ActionManager& actions,
+                  const LevelTextures& drawing_pad_texture_map) override;
+    void render_preview() override;
+    void render_preview_2d(gl::Shader& scene_shader_2d) override;
+
+    ToolType get_tool_type() const override;
+
+  private:
+    void update_previews(const EditorState& state, const LevelTextures& drawing_pad_texture_map);
+
+  private:
+    LevelObjectsMesh3D ploygon_preview_;
+    Mesh2DWorld vertex_selector_mesh_;
+    Mesh2DWorld polygon_preview_2d_;
+    LevelObject object_;
+    PolygonPlatformObject polygon_;
+
+    /// Used to ensure walls can only be resized on the current floor as the editor
+    const int floor_;
+    int state_floor_ = 0;
+
+    size_t target_index_ = 0;
+    glm::vec2 target_new_position_{0};
+
+    bool active_dragging_ = false;
 };

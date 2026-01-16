@@ -6,7 +6,7 @@
 #include <glm/glm.hpp>
 
 #include "LevelObjects/LevelObject.h"
-#include "Tool.h"
+#include "Tools/Tool.h"
 
 class ActionManager;
 struct EditorState;

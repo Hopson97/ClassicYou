@@ -1,0 +1,111 @@
+#include "Tool.h"
+
+#include <print>
+
+#include <imgui.h>
+#include <magic_enum/magic_enum.hpp>
+
+#include "../../Graphics/OpenGL/GLUtils.h"
+#include "../../Graphics/OpenGL/Shader.h"
+#include "../Actions.h"
+#include "../EditConstants.h"
+#include "../EditorLevel.h"
+#include "../EditorState.h"
+#include "../LevelTextures.h"
+
+CreateObjectTool::CreateObjectTool(ObjectTypeName object_type)
+    : object_type_(object_type)
+    , object_(-1)
+{
+}
+
+void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
+                                ActionManager& actions,
+                                const LevelTextures& drawing_pad_texture_map)
+{
+    tile_ = node;
+    if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
+    {
+        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
+        {
+            update_previews(state, drawing_pad_texture_map);
+            actions.push_action(std::make_unique<AddObjectAction>(object_, state.current_floor));
+        }
+    }
+    else if (event.is<sf::Event::MouseMoved>())
+    {
+        update_previews(state, drawing_pad_texture_map);
+    }
+}
+
+void CreateObjectTool::render_preview()
+{
+    if (object_preview_.has_buffered())
+    {
+        object_preview_.bind().draw_elements();
+    }
+}
+
+void CreateObjectTool::render_preview_2d(gl::Shader& scene_shader_2d)
+{
+    if (object_preview_2d_.has_buffered())
+    {
+        scene_shader_2d.set_uniform("use_texture",
+                                    preview_2d_primitive_ != gl::PrimitiveType::Lines);
+        scene_shader_2d.set_uniform("is_selected", true);
+        scene_shader_2d.set_uniform("on_floor_below", false);
+        object_preview_2d_.bind().draw_elements(preview_2d_primitive_);
+    }
+}
+
+void CreateObjectTool::update_previews(const EditorState& state,
+                                       const LevelTextures& drawing_pad_texture_map)
+{
+    switch (object_type_)
+    {
+        case ObjectTypeName::Platform:
+            object_.object_type = PlatformObject{
+                .properties = state.platform_default,
+                .parameters = {.position = tile_},
+            };
+            break;
+        case ObjectTypeName::PolygonPlatform:
+            object_.object_type = PolygonPlatformObject{
+                .properties = state.polygon_platform_default,
+                .parameters = {.position = tile_},
+            };
+            break;
+
+        case ObjectTypeName::Pillar:
+            object_.object_type = PillarObject{
+                .properties = state.pillar_default,
+                .parameters = {.position = tile_},
+            };
+            break;
+
+        case ObjectTypeName::Ramp:
+            object_.object_type = RampObject{
+                .properties = state.ramp_default,
+                .parameters = {.position = tile_},
+            };
+            break;
+
+        default:
+            std::println("Missing implementation for CreateObjectTool for {}",
+                         magic_enum::enum_name(object_type_));
+            break;
+    }
+
+    object_preview_ = object_.to_geometry(state.current_floor);
+    object_preview_.update();
+
+    auto [preview, primitive] = object_.to_2d_geometry(drawing_pad_texture_map);
+    object_preview_2d_ = std::move(preview);
+    preview_2d_primitive_ = primitive;
+    object_preview_2d_.update();
+}
+
+ToolType CreateObjectTool::get_tool_type() const
+{
+    return ToolType::CreateObject;
+}
