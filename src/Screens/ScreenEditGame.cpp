@@ -41,7 +41,6 @@ namespace
         };
     }
 
-
     glm::vec2 map_pixel_to_world(glm::vec2 point, const Camera& camera)
     {
         auto& transform = camera.transform.position;
@@ -728,6 +727,12 @@ void ScreenEditGame::select_object(LevelObject* object)
             tool_ =
                 std::make_unique<UpdateWallTool>(*object, *wall, *floor, drawing_pad_texture_map_);
         }
+        else if (auto polygon = std::get_if<PolygonPlatformObject>(&object->object_type))
+        {
+            auto floor = level_.get_object_floor(object->object_id);
+            tool_ = std::make_unique<UpdatePolygonTool>(*object, *polygon, *floor,
+                                                        drawing_pad_texture_map_);
+        }
         else
         {
             tool_ = std::make_unique<CreateWallTool>(drawing_pad_texture_map_);
@@ -788,7 +793,8 @@ void ScreenEditGame::try_set_tool_to_create_wall()
     // For example, selecting a wall and then moving up a floor, you should not be able to then
     // resize that wall from the "wrong floor"
     // So this explicitly prevents that from happening
-    if (tool_ && tool_->get_tool_type() == ToolType::UpdateWall)
+    if (tool_ && (tool_->get_tool_type() == ToolType::UpdateWall ||
+                  tool_->get_tool_type() == ToolType::UpdatePolygonTool))
     {
         tool_ = std::make_unique<CreateWallTool>(drawing_pad_texture_map_);
     }
