@@ -181,13 +181,13 @@ class UpdatePolygonTool : public ITool
     void update_previews(const EditorState& state, const LevelTextures& drawing_pad_texture_map);
 
   private:
-    LevelObjectsMesh3D ploygon_preview_;
-    Mesh2DWorld vertex_selector_mesh_;
+    LevelObjectsMesh3D polygon_preview_;
     Mesh2DWorld polygon_preview_2d_;
+    Mesh2DWorld vertex_selector_mesh_;
     LevelObject object_;
     PolygonPlatformObject polygon_;
 
-    /// Used to ensure walls can only be resized on the current floor as the editor
+    /// Used to ensure polygons can only be resized on the current floor as the editor
     const int floor_;
     int state_floor_ = 0;
 
