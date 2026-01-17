@@ -9,7 +9,7 @@
 // =======================================
 struct PolygonPlatformParameters
 {
-    glm::vec2 position;
+    glm::vec2 position{0.0f};
 };
 
 struct PolygonPlatformProps
