@@ -204,7 +204,8 @@ object_to_geometry_2d(const PolygonPlatformObject& poly,
         for (size_t i = 0; i < point_array.size(); i++)
         {
             auto p1 = point_array[i];
-            auto p2 = i == point_array.size() - 1 ? point_array[0] : point_array[i + 1];
+            auto p2 = point_array[(i + 1) % point_array.size()];
+
             auto colour = is_outline ? OL_COLOUR : HOLE_COLOUR;
 
             add_line_to_mesh(mesh, p1 + position, p2 + position, colour);

@@ -27,6 +27,12 @@ enum class ToolType
     UpdatePolygon
 };
 
+class VertexPuller
+{
+
+};
+
+/// Base interface for all tool types
 class ITool
 {
   public:
@@ -179,6 +185,7 @@ class UpdatePolygonTool : public ITool
 
   private:
     void update_previews(const EditorState& state, const LevelTextures& drawing_pad_texture_map);
+    void update_polygon(int current_floor, ActionManager& actions);
 
   private:
     LevelObjectsMesh3D polygon_preview_;
