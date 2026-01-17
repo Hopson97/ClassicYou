@@ -42,15 +42,44 @@ void UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
-            // Try to select one of the points within the polygon
-            for (size_t i = 0; i < polygon_.properties.points[0].size(); i++)
-            {
-                auto point = polygon_.properties.points[0][i] + polygon_.parameters.position;
+            auto& points_array = polygon_.properties.points[0];
+            const auto& hover_position = state.world_position_hovered;
+            const auto& polygon_position = polygon_.parameters.position;
 
-                if (glm::distance(state.world_position_hovered, point) < MIN_SELECT_DISTANCE)
+            // Try to select one of the points within the polygon
+            for (size_t i = 0; i < points_array.size(); i++)
+            {
+                auto p = points_array[i] + polygon_position;
+
+                if (glm::distance(hover_position, p) < MIN_SELECT_DISTANCE)
                 {
                     target_index_ = i;
                     active_dragging_ = true;
+                    break;
+                }
+            }
+
+            // Try to add a new vertex to the polygon if a vertex did not get selected
+            if (!active_dragging_)
+            {
+                for (size_t i = 0; i < points_array.size(); i++)
+                {
+                    auto p1 = points_array[i] + polygon_position;
+                    auto p2 = points_array[(i + 1) % points_array.size()] + polygon_position;
+
+                    // If a line is clicked, then add a new point to the polygon
+                    auto distance = distance_to_line(hover_position, {p1, p2});
+                    if (distance < MIN_SELECT_DISTANCE)
+                    {
+                        auto new_point = glm::vec2{state.node_hovered} - polygon_position;
+                        points_array.insert(points_array.begin() + i + 1, new_point);
+                        update_polygon(state.current_floor, actions);
+
+                        // Allow dragging the newly added point immediately after adding it
+                        target_index_ = i + 1;
+                        active_dragging_ = true;
+                        break;
+                    }
                 }
             }
 
@@ -64,6 +93,7 @@ void UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
             }
         }
     }
+
     else if (event.is<sf::Event::MouseMoved>())
     {
         if (active_dragging_)
@@ -77,18 +107,7 @@ void UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left &&
             active_dragging_)
         {
-            auto new_object = object_;
-            auto& new_polygon = std::get<PolygonPlatformObject>(new_object.object_type);
-
-            new_polygon.properties.points[0] = polygon_.properties.points[0];
-            new_polygon.properties.points[0][target_index_] = target_new_position_;
-
-            actions.push_action(
-                std::make_unique<UpdateObjectAction>(object_, new_object, state.current_floor));
-
-            object_ = new_object;
-            polygon_ = new_polygon;
-
+            update_polygon(state.current_floor, actions);
             active_dragging_ = false;
         }
     }
@@ -146,6 +165,22 @@ void UpdatePolygonTool::update_previews(const EditorState& state,
 
     polygon_preview_ = object_to_geometry(polygon_, state.current_floor);
     polygon_preview_.update();
+}
+
+void UpdatePolygonTool::update_polygon(int current_floor, ActionManager& actions)
+{
+    auto new_object = object_;
+    auto& new_polygon = std::get<PolygonPlatformObject>(new_object.object_type);
+
+    new_polygon.properties.points[0] = polygon_.properties.points[0];
+    new_polygon.properties.points[0][target_index_] = target_new_position_;
+
+    actions.push_action(std::make_unique<UpdateObjectAction>(object_, new_object, current_floor));
+
+    object_ = new_object;
+    polygon_ = new_polygon;
+
+    active_dragging_ = false;
 }
 
 ToolType UpdatePolygonTool::get_tool_type() const
