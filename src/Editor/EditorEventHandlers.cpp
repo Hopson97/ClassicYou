@@ -51,7 +51,7 @@ bool ObjectMoveHandler::handle_move_events(const sf::Event& event, const EditorS
             bool moving_selection = false;
             for (auto object : p_level_->get_objects(state.selection.objects))
             {
-                moving_selection |= object->try_select_2d(state.node_hovered);
+                moving_selection |= object->try_select_2d(state.world_position_hovered);
             }
 
             // Start dragging the selected object

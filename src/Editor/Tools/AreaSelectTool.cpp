@@ -16,8 +16,8 @@ AreaSelectTool::AreaSelectTool(EditorLevel& level)
 {
 }
 
-void AreaSelectTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
-                              ActionManager& actions, const LevelTextures& drawing_pad_texture_map)
+void AreaSelectTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
+                              const LevelTextures& drawing_pad_texture_map)
 {
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {
@@ -29,8 +29,8 @@ void AreaSelectTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
             min_floor_ = state.current_floor;
 
             active_dragging_ = true;
-            selection_area_.start = node;
-            selection_area_.end = node;
+            selection_area_.start = state.node_hovered;
+            selection_area_.end = state.node_hovered;
             update_previews();
         }
     }
@@ -38,7 +38,7 @@ void AreaSelectTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
     {
         if (active_dragging_)
         {
-            selection_area_.end = node;
+            selection_area_.end = state.node_hovered;
             update_previews();
         }
     }

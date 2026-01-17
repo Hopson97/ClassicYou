@@ -19,11 +19,10 @@ CreateObjectTool::CreateObjectTool(ObjectTypeName object_type)
 {
 }
 
-void CreateObjectTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
-                                ActionManager& actions,
+void CreateObjectTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                                 const LevelTextures& drawing_pad_texture_map)
 {
-    tile_ = node;
+    tile_ = state.node_hovered;
     if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
