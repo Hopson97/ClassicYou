@@ -100,8 +100,8 @@ void object_rotate(PlatformObject& platform, glm::vec2 rotation_origin, float de
         {
             case Direction::Right:      props.direction = Direction::Back;      break;
             case Direction::Back:       props.direction = Direction::Forward;   break;
-            case Direction::Left:       props.direction = Direction::Right;      break;
-            case Direction::Forward:    props.direction = Direction::Left;     break;
+            case Direction::Left:       props.direction = Direction::Right;     break;
+            case Direction::Forward:    props.direction = Direction::Left;      break;
         }
         // clang-format on
     }

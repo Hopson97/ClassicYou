@@ -26,9 +26,8 @@ namespace
         "Slate",      "Board",
     };
 
-    constexpr std::array TEXTURE_NAMES_2D = {
-        "Arrow", "Selection", "SelectCircle", "Platform", "Ramp", "Pillar",
-    };
+    constexpr std::array TEXTURE_NAMES_2D = {"Arrow", "Selection", "SelectCircle",   "Platform",
+                                             "Ramp",  "Pillar",    "PolygonPlatform"};
 
     glm::ivec2 map_pixel_to_tile(glm::vec2 point, const Camera& camera)
     {
@@ -107,7 +106,7 @@ bool ScreenEditGame::on_init()
     // ==== Load textures ====
     // -----------------------
     world_textures_.create(16, static_cast<GLint>(TEXTURE_NAMES.size()),
-                           gl::TEXTURE_PARAMS_NEAREST);
+                           gl::TEXTURE_PARAMS_MIPMAP_NEAREST);
     for (auto& texture : TEXTURE_NAMES)
     {
         std::string name = texture;
@@ -493,7 +492,8 @@ void ScreenEditGame::on_render(bool show_debug)
                          editor_state_.current_floor, object_move_handler_.get_move_offset());
 
         // Render the tool preview
-        if (tool_->get_tool_type() == ToolType::UpdateWall || !ImGui::GetIO().WantCaptureMouse)
+        if (tool_ && tool_->get_tool_type() == ToolType::UpdateWall ||
+            !ImGui::GetIO().WantCaptureMouse)
         {
             if (!object_move_handler_.is_moving_objects())
             {
@@ -550,7 +550,7 @@ void ScreenEditGame::on_render(bool show_debug)
                                                  : gl::PolygonMode::Fill);
 
     scene_shader_.set_uniform("use_texture", false);
-    if (tool_->get_tool_type() == ToolType::CreateWall)
+    if (tool_ && tool_->get_tool_type() == ToolType::CreateWall)
     {
         scene_shader_.set_uniform(
             "model_matrix",
@@ -839,6 +839,10 @@ bool ScreenEditGame::load_level()
 
     auto& main_light = level_.get_light_settings();
     glClearColor(main_light.sky_colour.r, main_light.sky_colour.g, main_light.sky_colour.b, 1.0f);
+
+    // Reset state
+    editor_state_.selection.clear_selection();
+    tool_ = std::make_unique<CreateWallTool>(drawing_pad_texture_map_);
 
     messages_manager_.add_message(std::format("Successfully loaded {}.", level_name_));
     return true;

@@ -3,6 +3,7 @@
 #include "../../Util/Maths.h"
 #include "../../Util/Util.h"
 #include "../LevelFileIO.h"
+#include "../LevelTextures.h"
 
 #include <earcut/earcut.hpp>
 
@@ -192,13 +193,46 @@ std::pair<Mesh2DWorld, gl::PrimitiveType>
 object_to_geometry_2d(const PolygonPlatformObject& poly,
                       const LevelTextures& drawing_pad_texture_map)
 {
+    auto base_texture = static_cast<float>(*drawing_pad_texture_map.get_texture("PolygonPlatform"));
     const auto& params = poly.parameters;
     const auto& props = poly.properties;
     auto& position = params.position;
 
-    // Colours for the outline, and outline vertices
-    constexpr static glm::i8vec4 OL_COLOUR{60, 179, 113, 255};
-    constexpr static glm::i8vec4 HOLE_COLOUR{255, 255, 80, 255};
+    auto texture_top = static_cast<float>(props.texture_top.id);
+
+    Mesh2DWorld mesh;
+    auto earcut_indices = mapbox::earcut<>(props.geometry);
+
+    // Top face
+    for (auto& point_array : props.geometry)
+    {
+        for (auto& point : point_array)
+        {
+            glm::vec2 world_pos{point.x + position.x, point.y + position.y};
+            glm::vec2 tex_coords = world_pos / TILE_SIZE_F;
+            mesh.vertices.push_back({world_pos,
+                                     {tex_coords.x, tex_coords.y, base_texture},
+                                     {tex_coords.x, tex_coords.y, texture_top}});
+        }
+    }
+
+    // The indices vector is given in clockwise order, so must be reversed to get anti-clockwise
+    // ordering for the top face.
+    for (auto i = earcut_indices.rbegin(); i != earcut_indices.rend(); ++i)
+    {
+        mesh.indices.push_back(*i);
+    }
+    return std::make_pair(std::move(mesh), gl::PrimitiveType::Triangles);
+}
+
+Mesh2DWorld object_to_outline_2d(const PolygonPlatformObject& poly)
+{
+    const auto& params = poly.parameters;
+    const auto& props = poly.properties;
+    auto& position = params.position;
+
+    constexpr static glm::i8vec4 OL_COLOUR{255, 0, 0, 255};
+    constexpr static glm::i8vec4 HOLE_COLOUR{255, 255, 0, 255};
 
     Mesh2DWorld mesh;
 
@@ -218,7 +252,7 @@ object_to_geometry_2d(const PolygonPlatformObject& poly,
         }
         is_outline = false;
     }
-    return std::make_pair(std::move(mesh), gl::PrimitiveType::Lines);
+    return mesh;
 }
 
 template <>

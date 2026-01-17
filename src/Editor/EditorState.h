@@ -37,7 +37,6 @@ struct Selection
 struct EditorState
 {
     // When placing objects, these are the default values for the properties.
-
     WallProps wall_default;
     PlatformProps platform_default;
     PolygonPlatformProps polygon_platform_default;
