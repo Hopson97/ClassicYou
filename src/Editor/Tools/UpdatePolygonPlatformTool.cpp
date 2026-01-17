@@ -10,6 +10,13 @@
 #include "../EditorState.h"
 #include "../LevelTextures.h"
 
+namespace
+{
+    constexpr float AREA_SIZE = 32.0f;
+    constexpr float MIN_SELECT_DISTANCE = AREA_SIZE / 2.0f;
+
+} // namespace
+
 UpdatePolygonTool::UpdatePolygonTool(LevelObject object, PolygonPlatformObject& polygon, int floor,
                                      const LevelTextures& drawing_pad_texture_map)
     : object_(object)
@@ -17,34 +24,37 @@ UpdatePolygonTool::UpdatePolygonTool(LevelObject object, PolygonPlatformObject& 
     , floor_(floor)
 {
     vertex_selector_mesh_ = generate_2d_quad_mesh(
-        {0, 0}, {16, 16}, static_cast<float>(*drawing_pad_texture_map.get_texture("SelectCircle")));
+        {0, 0}, {AREA_SIZE, AREA_SIZE},
+        static_cast<float>(*drawing_pad_texture_map.get_texture("SelectCircle")));
     vertex_selector_mesh_.buffer();
 }
 
-void UpdatePolygonTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
-                                 ActionManager& actions,
+void UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                                  const LevelTextures& drawing_pad_texture_map)
 {
-    const float MIN_DISTANCE = 16.0f;
-
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
+            // Try to select one of the points within the polygon
             for (size_t i = 0; i < polygon_.properties.points[0].size(); i++)
             {
-                auto& point = polygon_.properties.points[0][i];
-                if (glm::distance(node, point + polygon_.parameters.position) < MIN_DISTANCE)
+                auto point = polygon_.properties.points[0][i] + polygon_.parameters.position;
+
+                if (glm::distance(state.world_position_hovered, point) < MIN_SELECT_DISTANCE)
                 {
                     target_index_ = i;
                     active_dragging_ = true;
                 }
             }
 
+            // If one of the points was selected, then it must update the preview to prep for the
+            // next frame
             if (active_dragging_)
             {
+                target_new_position_ =
+                    state.node_hovered - glm::ivec2{polygon_.parameters.position};
                 update_previews(state, drawing_pad_texture_map);
-                target_new_position_ = node - polygon_.parameters.position;
             }
         }
     }
@@ -52,7 +62,7 @@ void UpdatePolygonTool::on_event(sf::Event event, glm::vec2 node, EditorState& s
     {
         if (active_dragging_)
         {
-            target_new_position_ = node - polygon_.parameters.position;
+            target_new_position_ = state.node_hovered - glm::ivec2{polygon_.parameters.position};
             update_previews(state, drawing_pad_texture_map);
         }
     }
@@ -98,42 +108,24 @@ void UpdatePolygonTool::render_preview_2d(gl::Shader& scene_shader_2d)
     scene_shader_2d.set_uniform("use_texture_alpha_channel", true);
     scene_shader_2d.set_uniform("is_selected", false);
 
-    for (size_t i = 0; i < polygon_.properties.points[0].size(); i++)
-    {
-        auto point = polygon_.properties.points[0][i];
-
-        if (i == target_index_)
-        {
-            point = target_new_position_;
-        }
-        glm::vec3 p{point + polygon_.parameters.position - glm::vec2{8}, 0};
-
-        scene_shader_2d.set_uniform("model_matrix", create_model_matrix({.position = p}));
-        vertex_selector_mesh_.bind().draw_elements();
-    }
-
     for (auto& point : polygon_.properties.points[0])
     {
-        glm::vec3 p{point + polygon_.parameters.position - glm::vec2{8}, 0};
+        glm::vec3 p{point + polygon_.parameters.position - glm::vec2{MIN_SELECT_DISTANCE}, 0};
         scene_shader_2d.set_uniform("model_matrix", create_model_matrix({.position = p}));
         vertex_selector_mesh_.bind().draw_elements();
     }
-}
-
-ToolType UpdatePolygonTool::get_tool_type() const
-{
-    return ToolType::UpdatePolygonTool;
 }
 
 void UpdatePolygonTool::update_previews(const EditorState& state,
                                         const LevelTextures& drawing_pad_texture_map)
 {
-    PolygonPlatformObject polygon = polygon_;
-    polygon.properties.points[0][target_index_] = target_new_position_;
+    polygon_.properties.points[0][target_index_] = target_new_position_;
 
-    //    wall_preview_ = object_to_geometry(wall, state.current_floor);
-    // wall_preview_.update();
-
-    polygon_preview_2d_ = object_to_geometry_2d(polygon, drawing_pad_texture_map).first;
+    polygon_preview_2d_ = object_to_geometry_2d(polygon_, drawing_pad_texture_map).first;
     polygon_preview_2d_.update();
+}
+
+ToolType UpdatePolygonTool::get_tool_type() const
+{
+    return ToolType::UpdatePolygon;
 }

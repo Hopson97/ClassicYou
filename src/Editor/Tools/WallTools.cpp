@@ -40,24 +40,24 @@ CreateWallTool::CreateWallTool(const LevelTextures& drawing_pad_texture_map)
     selection_node_.buffer();
 }
 
-void CreateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
-                              ActionManager& actions, const LevelTextures& drawing_pad_texture_map)
+void CreateWallTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
+                              const LevelTextures& drawing_pad_texture_map)
 {
-    selected_node_ = node;
+    selected_node_ = state.node_hovered;
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
 
             active_dragging_ = true;
-            wall_line_.start = node;
-            wall_line_.end = node;
+            wall_line_.start = state.node_hovered;
+            wall_line_.end = state.node_hovered;
             update_previews(state, drawing_pad_texture_map);
         }
     }
     else if (event.is<sf::Event::MouseMoved>())
     {
-        wall_line_.end = node;
+        wall_line_.end = state.node_hovered;
         update_previews(state, drawing_pad_texture_map);
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
@@ -144,8 +144,8 @@ UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall, int wall_fl
     wall_line_ = wall.parameters.line;
 }
 
-void UpdateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& state,
-                              ActionManager& actions, const LevelTextures& drawing_pad_texture_map)
+void UpdateWallTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
+                              const LevelTextures& drawing_pad_texture_map)
 {
     state_floor_ = state.current_floor;
     // Walls should only be edited on the same floor
@@ -160,12 +160,14 @@ void UpdateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
-            if (glm::distance(node, wall_.parameters.line.start) < MIN_DISTANCE)
+            if (glm::distance(state.world_position_hovered, wall_.parameters.line.start) <
+                MIN_DISTANCE)
             {
                 active_dragging_ = true;
                 target_ = DragTarget::Start;
             }
-            else if (glm::distance(node, wall_.parameters.line.end) < MIN_DISTANCE)
+            else if (glm::distance(state.world_position_hovered, wall_.parameters.line.end) <
+                     MIN_DISTANCE)
             {
                 active_dragging_ = true;
                 target_ = DragTarget::End;
@@ -187,11 +189,11 @@ void UpdateWallTool::on_event(sf::Event event, glm::vec2 node, EditorState& stat
             switch (target_)
             {
                 case UpdateWallTool::DragTarget::Start:
-                    wall_line_.start = node;
+                    wall_line_.start = state.node_hovered;
                     break;
 
                 case UpdateWallTool::DragTarget::End:
-                    wall_line_.end = node;
+                    wall_line_.end = state.node_hovered;
                     break;
                 default:
                     break;

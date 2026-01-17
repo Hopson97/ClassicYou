@@ -76,11 +76,11 @@ class ScreenEditGame final : public Screen
     // Sets the tool to create wall if the current tool is "UpdateWallTool"
     void try_set_tool_to_create_wall();
 
-    /// If the current tool is UpdateWallTool, then this resets it to be the current selected
-    /// object. This is done as if the wall properties change while it is selected, and then the
-    /// wall is moved, then the moved wall will have "old" props as it is cached when the tool is
-    /// created.
-    void try_reset_update_wall_tool();
+    /// If the current tool is UpdateWallTool or UpdatePolygonTool or similar, then this resets it
+    /// to be the current selected object. This is done as if the wall properties change while it is
+    /// selected, and then the wall is moved, then the moved wall will have "old" props as it is
+    /// cached when the tool is created.
+    void try_update_object_tools();
 
     /// Set the position of the 2D camera to be the same position as the 3D camera
     void set_2d_to_3d_view();

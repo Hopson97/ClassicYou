@@ -356,6 +356,8 @@ void ScreenEditGame::on_event(const sf::Event& event)
     {
         editor_state_.node_hovered =
             map_pixel_to_tile({mouse->position.x, mouse->position.y}, camera_2d_);
+        editor_state_.world_position_hovered =
+            map_pixel_to_world({mouse->position.x, mouse->position.y}, camera_2d_);
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
@@ -412,19 +414,14 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
     if (!object_move_handler_.is_moving_objects() && !move_finished)
     {
-        tool_->on_event(event, editor_state_.node_hovered, editor_state_, action_manager_,
-                        drawing_pad_texture_map_);
+        tool_->on_event(event, editor_state_, action_manager_, drawing_pad_texture_map_);
     }
 
     if (move_finished)
     {
-        if (tool_->get_tool_type() == ToolType::UpdateWall)
-        {
-            // When updating a wall, this ensures the the start/end render points are drawn in the
-            // correct location
-            try_reset_update_wall_tool();
-        }
-        else if (tool_->get_tool_type() == ToolType::AreaSelectTool)
+        try_update_object_tools();
+
+        if (tool_->get_tool_type() == ToolType::AreaSelectTool)
         {
             // After the selection has been moved, the old selection area is invalidated
             // TODO: Find a way to move the selection rather than just set to wall
@@ -794,27 +791,36 @@ void ScreenEditGame::try_set_tool_to_create_wall()
     // resize that wall from the "wrong floor"
     // So this explicitly prevents that from happening
     if (tool_ && (tool_->get_tool_type() == ToolType::UpdateWall ||
-                  tool_->get_tool_type() == ToolType::UpdatePolygonTool))
+                  tool_->get_tool_type() == ToolType::UpdatePolygon))
     {
         tool_ = std::make_unique<CreateWallTool>(drawing_pad_texture_map_);
     }
 }
 
-void ScreenEditGame::try_reset_update_wall_tool()
+void ScreenEditGame::try_update_object_tools()
 {
-    if (tool_->get_tool_type() == ToolType::UpdateWall)
+    auto current_tool = tool_->get_tool_type();
+
+    auto try_reset_tool = [&]<ToolType Type, typename Tool, typename Object>()
     {
-        // When updating a wall, this ensures the the start/end render points are drawn in
-        // the correct location and that the wall is the correct if props get updated
-        assert(editor_state_.selection.p_active_object);
-        auto object = editor_state_.selection.p_active_object;
-        if (auto wall = std::get_if<WallObject>(&object->object_type))
+        if (current_tool == Type)
         {
-            auto floor = level_.get_object_floor(object->object_id);
-            tool_ =
-                std::make_unique<UpdateWallTool>(*object, *wall, *floor, drawing_pad_texture_map_);
+
+            assert(editor_state_.selection.p_active_object);
+            auto active_object = editor_state_.selection.p_active_object;
+            if (auto object = std::get_if<Object>(&active_object->object_type))
+            {
+                auto floor = level_.get_object_floor(active_object->object_id);
+                tool_ = std::make_unique<Tool>(*active_object, *object, *floor,
+                                               drawing_pad_texture_map_);
+            }
         }
-    }
+    };
+
+    // When updating a wall, this ensures the the start/end render points are drawn in
+    // the correct location and that the wall is the correct if props get updated
+    try_reset_tool.operator()<ToolType::UpdateWall, UpdateWallTool, WallObject>();
+    try_reset_tool.operator()<ToolType::UpdatePolygon, UpdatePolygonTool, PolygonPlatformObject>();
 }
 
 bool ScreenEditGame::load_level()
@@ -995,7 +1001,7 @@ void ScreenEditGame::display_editor_gui()
                 // updating a wall and then moving its start/end resets the walls props to how it
                 // was before.
                 // This ensures that the wall props stay correct
-                try_reset_update_wall_tool();
+                try_update_object_tools();
             }
         }
         ImGui::End();
