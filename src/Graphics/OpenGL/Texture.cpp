@@ -48,6 +48,7 @@ namespace gl
         set_wrap_s(filters.wrap_s);
         set_wrap_t(filters.wrap_t);
         set_wrap_r(filters.wrap_r);
+        set_anisotropy(filters.anisotropy);
     }
 
     void TextureResource::set_min_filter(TextureMinFilter filter)
@@ -90,6 +91,18 @@ namespace gl
     {
         assert(id != 0);
         glTextureParameteri(id, GL_TEXTURE_COMPARE_MODE, static_cast<GLenum>(mode));
+    }
+
+    void TextureResource::set_anisotropy(GLfloat level)
+    {
+        assert(id != 0);
+
+        auto max_supported = 0.0f;
+        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &max_supported);
+        level = std::clamp(level, 1.0f, max_supported);
+
+        glTextureParameterf(id, GL_TEXTURE_MAX_ANISOTROPY, level);
+
     }
 
     //================================
@@ -265,7 +278,6 @@ namespace gl
         texture_size_ = texture_size;
         max_textures_ = texture_count;
         glTextureStorage3D(id, 1, GL_RGBA8, texture_size, texture_size, texture_count);
-
         set_filters(filters);
     }
 

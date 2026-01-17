@@ -73,6 +73,8 @@ template <>
 object_to_geometry_2d<PolygonPlatformObject>(const PolygonPlatformObject& poly,
                                              const LevelTextures& drawing_pad_texture_map);
 
+[[nodiscard]] Mesh2DWorld object_to_outline_2d(const PolygonPlatformObject& poly);
+
 template <>
 [[nodiscard]] LevelObjectsMesh3D
 object_to_geometry<PolygonPlatformObject>(const PolygonPlatformObject& poly, int floor_number);

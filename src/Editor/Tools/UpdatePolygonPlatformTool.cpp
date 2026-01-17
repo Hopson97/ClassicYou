@@ -27,6 +27,10 @@ UpdatePolygonTool::UpdatePolygonTool(LevelObject object, PolygonPlatformObject& 
         {0, 0}, {AREA_SIZE, AREA_SIZE},
         static_cast<float>(*drawing_pad_texture_map.get_texture("SelectCircle")));
     vertex_selector_mesh_.buffer();
+
+    // Ensure the polygon outline can always be seen
+    polygon_preview_2d_ = object_to_outline_2d(polygon_);
+    polygon_preview_2d_.update();
 }
 
 void UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
@@ -105,6 +109,7 @@ void UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
             delete_holes_outside_polygon();
             update_polygon(state.current_floor, actions, PolygonUpdateAction::MovePoint);
             active_dragging_ = false;
+            update_previews(state, drawing_pad_texture_map);
         }
     }
     else if (auto key = event.getIf<sf::Event::KeyReleased>())
@@ -118,6 +123,7 @@ void UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
                 delete_holes_outside_polygon();
                 update_polygon(state.current_floor, actions, PolygonUpdateAction::AddOrDeletePoint);
                 active_dragging_ = false;
+                update_previews(state, drawing_pad_texture_map);
             }
         }
     }
@@ -141,20 +147,17 @@ void UpdatePolygonTool::render_preview_2d(gl::Shader& scene_shader_2d)
 {
     if (state_floor_ == floor_)
     {
-        if (active_dragging_)
-        {
-            scene_shader_2d.set_uniform("use_texture", false);
-            scene_shader_2d.set_uniform("is_selected", true);
-            scene_shader_2d.set_uniform("on_floor_below", false);
-            polygon_preview_2d_.bind().draw_elements(gl::PrimitiveType::Lines);
-        }
+        // Render the outline of the polygon so it is clear
+        scene_shader_2d.set_uniform("use_texture", false);
+        scene_shader_2d.set_uniform("is_selected", false);
+        scene_shader_2d.set_uniform("on_floor_below", false);
+        polygon_preview_2d_.bind().draw_elements(gl::PrimitiveType::Lines);
 
+        // Render the circles that show the grabbable verticies
         scene_shader_2d.set_uniform("on_floor_below", false);
         scene_shader_2d.set_uniform("use_texture", true);
         scene_shader_2d.set_uniform("use_world_texture", false);
         scene_shader_2d.set_uniform("use_texture_alpha_channel", true);
-        scene_shader_2d.set_uniform("is_selected", false);
-
         for (auto& point : polygon_.properties.geometry[0])
         {
             glm::vec3 p{point + polygon_.parameters.position - glm::vec2{MIN_SELECT_DISTANCE}, 0};
@@ -169,7 +172,7 @@ void UpdatePolygonTool::update_previews(const EditorState& state,
 {
     polygon_.properties.geometry[0][target_index_] = target_new_position_;
 
-    polygon_preview_2d_ = object_to_geometry_2d(polygon_, drawing_pad_texture_map).first;
+    polygon_preview_2d_ = object_to_outline_2d(polygon_);
     polygon_preview_2d_.update();
 
     polygon_preview_ = object_to_geometry(polygon_, state.current_floor);
