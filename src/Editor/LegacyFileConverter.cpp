@@ -211,7 +211,7 @@ void from_json(const nlohmann::json& json, PolygonPlatformObject& poly)
 
     // Ordered top left, top right, bottom right, bottom right;
     auto& points = json[0];
-    poly.properties.points[0] = {
+    poly.properties.geometry[0] = {
         extract_vec2(points[3][0], points[3][1]), extract_vec2(points[2][0], points[2][1]),
         extract_vec2(points[1][0], points[1][1]), extract_vec2(points[0][0], points[0][1])};
 
@@ -569,7 +569,7 @@ void load_floors(const nlohmann::json& json, FloorManager& new_level)
     {
         for (auto& hole : level_to_holes[i])
         {
-            legacy_floors[i].properties.points.push_back(std::move(legacy_holes[hole].points));
+            legacy_floors[i].properties.geometry.push_back(std::move(legacy_holes[hole].points));
         }
     }
 

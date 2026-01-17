@@ -29,7 +29,6 @@ enum class ToolType
 
 class VertexPuller
 {
-
 };
 
 /// Base interface for all tool types
@@ -173,6 +172,12 @@ class AreaSelectTool : public ITool
 
 class UpdatePolygonTool : public ITool
 {
+    enum class PolygonUpdateAction
+    {
+        MovePoint,
+        AddOrDeletePoint
+    };
+
   public:
     UpdatePolygonTool(LevelObject object, PolygonPlatformObject& wall, int wall_floor,
                       const LevelTextures& drawing_pad_texture_map);
@@ -185,7 +190,11 @@ class UpdatePolygonTool : public ITool
 
   private:
     void update_previews(const EditorState& state, const LevelTextures& drawing_pad_texture_map);
-    void update_polygon(int current_floor, ActionManager& actions);
+    void update_polygon(int current_floor, ActionManager& actions, PolygonUpdateAction action);
+
+    /// Gets the index of the vertex closest to the given 2D world position if there is one within
+    /// MIN_SELECT_DISTANCE (defined in UpdatePolygonPlatformTool.cpp
+    std::optional<size_t> closest_point_index(const std::vector<glm::vec2>& points, const glm::vec2& world_position) const;
 
   private:
     LevelObjectsMesh3D polygon_preview_;
