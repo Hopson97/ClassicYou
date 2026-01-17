@@ -299,7 +299,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
             // Undo functionality with CTRL+Z
             case sf::Keyboard::Key::Z:
-                if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))
+                if (key->control)
                 {
                     action_manager_.undo_action();
                     try_set_tool_to_wall = true;
@@ -308,7 +308,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
             // Redo functionality with CTRL+Y
             case sf::Keyboard::Key::Y:
-                if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl))
+                if (key->control)
                 {
                     action_manager_.redo_action();
                     try_set_tool_to_wall = true;
@@ -336,6 +336,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
                     }
                     action_manager_.push_action(
                         std::make_unique<BulkUpdateObjectAction>(cached, objects));
+                    try_update_object_tools();
                 }
                 break;
 
@@ -817,8 +818,8 @@ void ScreenEditGame::try_update_object_tools()
         }
     };
 
-    // When updating a wall, this ensures the the start/end render points are drawn in
-    // the correct location and that the wall is the correct if props get updated
+    // When using vertex update objects, this ensures the the start/end render points are drawn in
+    // the correct location and that the wall is the correct if props get updated externally
     try_reset_tool.operator()<ToolType::UpdateWall, UpdateWallTool, WallObject>();
     try_reset_tool.operator()<ToolType::UpdatePolygon, UpdatePolygonTool, PolygonPlatformObject>();
 }

@@ -38,42 +38,38 @@ void UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
         return;
     }
 
+    auto& outer_points = polygon_.properties.geometry[0];
+    const auto& hover_position = state.world_position_hovered;
+
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
-            auto& points_array = polygon_.properties.points[0];
-            const auto& hover_position = state.world_position_hovered;
+
             const auto& polygon_position = polygon_.parameters.position;
 
-            // Try to select one of the points within the polygon
-            for (size_t i = 0; i < points_array.size(); i++)
+            if (auto i = closest_point_index(outer_points, hover_position))
             {
-                auto p = points_array[i] + polygon_position;
-
-                if (glm::distance(hover_position, p) < MIN_SELECT_DISTANCE)
-                {
-                    target_index_ = i;
-                    active_dragging_ = true;
-                    break;
-                }
+                target_index_ = *i;
+                active_dragging_ = true;
             }
 
             // Try to add a new vertex to the polygon if a vertex did not get selected
             if (!active_dragging_)
             {
-                for (size_t i = 0; i < points_array.size(); i++)
+                for (size_t i = 0; i < outer_points.size(); i++)
                 {
-                    auto p1 = points_array[i] + polygon_position;
-                    auto p2 = points_array[(i + 1) % points_array.size()] + polygon_position;
+                    auto p1 = outer_points[i] + polygon_position;
+                    auto p2 = outer_points[(i + 1) % outer_points.size()] + polygon_position;
 
                     // If a line is clicked, then add a new point to the polygon
                     auto distance = distance_to_line(hover_position, {p1, p2});
                     if (distance < MIN_SELECT_DISTANCE)
                     {
                         auto new_point = glm::vec2{state.node_hovered} - polygon_position;
-                        points_array.insert(points_array.begin() + i + 1, new_point);
-                        update_polygon(state.current_floor, actions);
+                        outer_points.insert(outer_points.begin() + i + 1, new_point);
+                        update_polygon(state.current_floor, actions,
+                                       PolygonUpdateAction::AddOrDeletePoint);
 
                         // Allow dragging the newly added point immediately after adding it
                         target_index_ = i + 1;
@@ -93,7 +89,6 @@ void UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
             }
         }
     }
-
     else if (event.is<sf::Event::MouseMoved>())
     {
         if (active_dragging_)
@@ -107,8 +102,21 @@ void UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left &&
             active_dragging_)
         {
-            update_polygon(state.current_floor, actions);
+            update_polygon(state.current_floor, actions, PolygonUpdateAction::MovePoint);
             active_dragging_ = false;
+        }
+    }
+    else if (auto key = event.getIf<sf::Event::KeyReleased>())
+    {
+        // Delete a vertex if the mouse is close and backspace is pressed
+        if (key->code == sf::Keyboard::Key::Backspace && outer_points.size() > 3)
+        {
+            if (auto i = closest_point_index(outer_points, hover_position))
+            {
+                outer_points.erase(outer_points.begin() + *i);
+                update_polygon(state.current_floor, actions, PolygonUpdateAction::AddOrDeletePoint);
+                active_dragging_ = false;
+            }
         }
     }
 }
@@ -146,7 +154,7 @@ void UpdatePolygonTool::render_preview_2d(gl::Shader& scene_shader_2d)
         scene_shader_2d.set_uniform("use_texture_alpha_channel", true);
         scene_shader_2d.set_uniform("is_selected", false);
 
-        for (auto& point : polygon_.properties.points[0])
+        for (auto& point : polygon_.properties.geometry[0])
         {
             glm::vec3 p{point + polygon_.parameters.position - glm::vec2{MIN_SELECT_DISTANCE}, 0};
             scene_shader_2d.set_uniform("model_matrix", create_model_matrix({.position = p}));
@@ -158,7 +166,7 @@ void UpdatePolygonTool::render_preview_2d(gl::Shader& scene_shader_2d)
 void UpdatePolygonTool::update_previews(const EditorState& state,
                                         const LevelTextures& drawing_pad_texture_map)
 {
-    polygon_.properties.points[0][target_index_] = target_new_position_;
+    polygon_.properties.geometry[0][target_index_] = target_new_position_;
 
     polygon_preview_2d_ = object_to_geometry_2d(polygon_, drawing_pad_texture_map).first;
     polygon_preview_2d_.update();
@@ -167,13 +175,19 @@ void UpdatePolygonTool::update_previews(const EditorState& state,
     polygon_preview_.update();
 }
 
-void UpdatePolygonTool::update_polygon(int current_floor, ActionManager& actions)
+void UpdatePolygonTool::update_polygon(int current_floor, ActionManager& actions,
+                                       PolygonUpdateAction action)
 {
     auto new_object = object_;
     auto& new_polygon = std::get<PolygonPlatformObject>(new_object.object_type);
 
-    new_polygon.properties.points[0] = polygon_.properties.points[0];
-    new_polygon.properties.points[0][target_index_] = target_new_position_;
+    new_polygon.properties.geometry[0] = polygon_.properties.geometry[0];
+
+    // If not moving a vertex, this can cause OOB error if points have been removed
+    if (action == PolygonUpdateAction::MovePoint)
+    {
+        new_polygon.properties.geometry[0][target_index_] = target_new_position_;
+    }
 
     actions.push_action(std::make_unique<UpdateObjectAction>(object_, new_object, current_floor));
 
@@ -181,6 +195,22 @@ void UpdatePolygonTool::update_polygon(int current_floor, ActionManager& actions
     polygon_ = new_polygon;
 
     active_dragging_ = false;
+}
+
+std::optional<size_t> UpdatePolygonTool::closest_point_index(const std::vector<glm::vec2>& points,
+                                                             const glm::vec2& world_position) const
+{
+    const auto& polygon_position = polygon_.parameters.position;
+
+    for (size_t i = 0; i < points.size(); i++)
+    {
+        auto p = points[i] + polygon_position;
+        if (glm::distance(world_position, p) < MIN_SELECT_DISTANCE)
+        {
+            return i;
+        }
+    }
+    return std::nullopt;
 }
 
 ToolType UpdatePolygonTool::get_tool_type() const

@@ -15,16 +15,15 @@ struct PolygonPlatformParameters
 struct PolygonPlatformProps
 {
     constexpr static auto DEFAULT_SIZE = 10.0f * TILE_SIZE_F;
+
     // Double vector for mapbox earcut, the first vector are the points around the polygon edge,
     // following vectors are holes within the polygon
-    std::vector<std::vector<glm::vec2>> points = {
-        {
-            glm::vec2{0},
-            glm::vec2{0, DEFAULT_SIZE},
-            glm::vec2{DEFAULT_SIZE, DEFAULT_SIZE},
-            glm::vec2{DEFAULT_SIZE, 0},
-        }
-    };
+    std::vector<std::vector<glm::vec2>> geometry = {{
+        glm::vec2{0},
+        glm::vec2{0, DEFAULT_SIZE},
+        glm::vec2{DEFAULT_SIZE, DEFAULT_SIZE},
+        glm::vec2{DEFAULT_SIZE, 0},
+    }};
 
     TextureProp texture_top;
     TextureProp texture_bottom;

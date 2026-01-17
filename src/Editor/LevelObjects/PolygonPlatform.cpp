@@ -24,17 +24,17 @@ std::string object_to_string(const PolygonPlatformObject& poly)
     auto& props = poly.properties;
 
     std::string points_string;
-    points_string.reserve(props.points.size() * 8);
-    for (auto& point : props.points[0])
+    points_string.reserve(props.geometry.size() * 8);
+    for (auto& point : props.geometry[0])
     {
         points_string += std::format("({:.2f}, {:.2f}), ", point.x, point.y);
     }
 
     std::string holes_string;
-    for (int i = 1; i < props.points.size(); i++)
+    for (int i = 1; i < props.geometry.size(); i++)
     {
         std::string hole_string;
-        for (auto& point : props.points[i])
+        for (auto& point : props.geometry[i])
         {
             hole_string += std::format("({:.2f}, {:.2f}), ", point.x, point.y);
         }
@@ -52,13 +52,13 @@ std::string object_to_string(const PolygonPlatformObject& poly)
 template <>
 [[nodiscard]] bool object_try_select_2d(const PolygonPlatformObject& poly, glm::vec2 selection_tile)
 {
-    return point_in_polygon(selection_tile, poly.properties.points[0], poly.parameters.position);
+    return point_in_polygon(selection_tile, poly.properties.geometry[0], poly.parameters.position);
 }
 
 template <>
 bool object_is_within(const PolygonPlatformObject& poly, const Rectangle& selection_area)
 {
-    return selection_area.contains(poly.properties.points[0], poly.parameters.position);
+    return selection_area.contains(poly.properties.geometry[0], poly.parameters.position);
 }
 
 template <>
@@ -72,12 +72,18 @@ void object_rotate(PolygonPlatformObject& poly, glm::vec2 rotation_origin, float
 {
     auto& props = poly.properties;
     auto& position = poly.parameters.position;
-    position = rotate_around(position, rotation_origin, degrees);
 
-    for (auto& point : props.points[0])
+    glm::vec2 new_position = rotate_around(position, rotation_origin, degrees);
+    for (auto& point_array : props.geometry)
     {
-        point = rotate_around(point, rotation_origin, degrees);
+        for (auto& point : point_array)
+        {
+            point = rotate_around(point + position, rotation_origin, degrees);
+            point -= new_position;
+        }
     }
+
+    position = new_position;
 }
 
 template <>
@@ -97,17 +103,17 @@ SerialiseResponse object_serialise(const PolygonPlatformObject& poly, LevelFileI
     nlohmann::json json_props = {};
 
     nlohmann::json points;
-    for (auto& point : props.points[0])
+    for (auto& point : props.geometry[0])
     {
         points.push_back(point.x);
         points.push_back(point.y);
     }
 
     nlohmann::json holes;
-    for (int i = 1; i < props.points.size(); i++)
+    for (int i = 1; i < props.geometry.size(); i++)
     {
         nlohmann::json hole;
-        for (auto& point : props.points[i])
+        for (auto& point : props.geometry[i])
         {
             hole.push_back(point.x);
             hole.push_back(point.y);
@@ -149,10 +155,10 @@ bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json,
     params.position *= TILE_SIZE_F;
 
     // Ensure a clean slate when reading points
-    props.points.clear();
+    props.geometry.clear();
 
     // Read the edge points of the polygon
-    auto& points = props.points.emplace_back();
+    auto& points = props.geometry.emplace_back();
     size_t points_size = jprops[0].size();
     for (size_t i = 0; i < points_size; i += 2)
     {
@@ -160,11 +166,11 @@ bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json,
     }
 
     // Read the holes
-    props.points.reserve(jprops[1].size() + 1);
+    props.geometry.reserve(jprops[1].size() + 1);
     for (auto& hole : jprops[1])
     {
         size_t hole_size = hole.size();
-        auto& hole_vector = props.points.emplace_back();
+        auto& hole_vector = props.geometry.emplace_back();
         hole_vector.reserve(hole_size / 2 + 1);
         for (size_t i = 0; i < hole_size; i += 2)
         {
@@ -199,7 +205,7 @@ object_to_geometry_2d(const PolygonPlatformObject& poly,
     // Create the lines, the first array is the outer polygon (outline), thereafter are the inner
     // hole polygons
     bool is_outline = true;
-    for (auto& point_array : props.points)
+    for (auto& point_array : props.geometry)
     {
         for (size_t i = 0; i < point_array.size(); i++)
         {
@@ -212,18 +218,6 @@ object_to_geometry_2d(const PolygonPlatformObject& poly,
         }
         is_outline = false;
     }
-
-    // Polygon verticies are shown with a small cross, these are offsets to create that
-    // constexpr static glm::vec2 OFFSET{TILE_SIZE / 4, TILE_SIZE / 4};
-    // constexpr static glm::vec2 OFFSET2{-TILE_SIZE / 4, TILE_SIZE / 4};
-    // constexpr static glm::i8vec4 OL_COLOUR{255, 127, 80, 255};
-    //// Create crosses at each vertex within the polygon
-    // for (auto& point : props.points[0])
-    //{
-    //     add_line_to_mesh(mesh, point + position - OFFSET, point + position + OFFSET, V_COLOUR);
-    //     add_line_to_mesh(mesh, point + position + OFFSET2, point + position - OFFSET2, V_COLOUR);
-    // }
-
     return std::make_pair(std::move(mesh), gl::PrimitiveType::Lines);
 }
 
@@ -250,12 +244,10 @@ LevelObjectsMesh3D object_to_geometry(const PolygonPlatformObject& poly, int flo
 
     // Mapbox's Earcut triangulates the polygon's points and holes which gets a list of INDICES
     // within all of of the "props.points" vectors.
-    // When creating the mesh,this enables simply adding all points to the mesh, and then let the
-    // order of the indices returned do the rest.
-    auto earcut_indices = mapbox::earcut<>(props.points);
+    auto earcut_indices = mapbox::earcut<>(props.geometry);
 
     // Top face
-    for (auto& point_array : props.points)
+    for (auto& point_array : props.geometry)
     {
         for (auto& point : point_array)
         {
@@ -272,7 +264,7 @@ LevelObjectsMesh3D object_to_geometry(const PolygonPlatformObject& poly, int flo
     }
 
     // Bottom face
-    for (auto& point_array : props.points)
+    for (auto& point_array : props.geometry)
     {
         for (auto& point : point_array)
         {
@@ -282,7 +274,7 @@ LevelObjectsMesh3D object_to_geometry(const PolygonPlatformObject& poly, int flo
         }
     }
 
-    for (auto& point_array : props.points)
+    for (auto& point_array : props.geometry)
     {
         for (auto& point : point_array)
         {
