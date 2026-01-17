@@ -192,6 +192,9 @@ class UpdatePolygonTool : public ITool
     void update_previews(const EditorState& state, const LevelTextures& drawing_pad_texture_map);
     void update_polygon(int current_floor, ActionManager& actions, PolygonUpdateAction action);
 
+    /// Deletes holes that are partially or fully outside of the outer region of the polygon.
+    void delete_holes_outside_polygon();
+
     /// Gets the index of the vertex closest to the given 2D world position if there is one within
     /// MIN_SELECT_DISTANCE (defined in UpdatePolygonPlatformTool.cpp
     std::optional<size_t> closest_point_index(const std::vector<glm::vec2>& points, const glm::vec2& world_position) const;

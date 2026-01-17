@@ -102,6 +102,7 @@ void UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left &&
             active_dragging_)
         {
+            delete_holes_outside_polygon();
             update_polygon(state.current_floor, actions, PolygonUpdateAction::MovePoint);
             active_dragging_ = false;
         }
@@ -114,6 +115,7 @@ void UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
             if (auto i = closest_point_index(outer_points, hover_position))
             {
                 outer_points.erase(outer_points.begin() + *i);
+                delete_holes_outside_polygon();
                 update_polygon(state.current_floor, actions, PolygonUpdateAction::AddOrDeletePoint);
                 active_dragging_ = false;
             }
@@ -139,7 +141,6 @@ void UpdatePolygonTool::render_preview_2d(gl::Shader& scene_shader_2d)
 {
     if (state_floor_ == floor_)
     {
-
         if (active_dragging_)
         {
             scene_shader_2d.set_uniform("use_texture", false);
@@ -181,7 +182,7 @@ void UpdatePolygonTool::update_polygon(int current_floor, ActionManager& actions
     auto new_object = object_;
     auto& new_polygon = std::get<PolygonPlatformObject>(new_object.object_type);
 
-    new_polygon.properties.geometry[0] = polygon_.properties.geometry[0];
+    new_polygon.properties.geometry = polygon_.properties.geometry;
 
     // If not moving a vertex, this can cause OOB error if points have been removed
     if (action == PolygonUpdateAction::MovePoint)
@@ -195,6 +196,34 @@ void UpdatePolygonTool::update_polygon(int current_floor, ActionManager& actions
     polygon_ = new_polygon;
 
     active_dragging_ = false;
+}
+
+void UpdatePolygonTool::delete_holes_outside_polygon()
+{
+    //  When deleting points, or moving points, holes outside the outer region causes buggy
+    //  geometry, so it is best to just remove them
+    for (auto itr = polygon_.properties.geometry.begin() + 1;
+         itr != polygon_.properties.geometry.end();)
+    {
+        bool remove = false;
+        for (auto& hole_vertex : *itr)
+        {
+            if (!point_in_polygon(hole_vertex, polygon_.properties.geometry[0], {0, 0}))
+            {
+                remove = true;
+                break;
+            }
+        }
+
+        if (remove)
+        {
+            itr = polygon_.properties.geometry.erase(itr);
+        }
+        else
+        {
+            itr++;
+        }
+    }
 }
 
 std::optional<size_t> UpdatePolygonTool::closest_point_index(const std::vector<glm::vec2>& points,
