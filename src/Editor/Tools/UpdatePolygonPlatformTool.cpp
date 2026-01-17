@@ -32,6 +32,12 @@ UpdatePolygonTool::UpdatePolygonTool(LevelObject object, PolygonPlatformObject& 
 void UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                                  const LevelTextures& drawing_pad_texture_map)
 {
+    state_floor_ = state.current_floor;
+    if (state.current_floor != floor_)
+    {
+        return;
+    }
+
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
@@ -90,29 +96,43 @@ void UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
 
 void UpdatePolygonTool::render_preview()
 {
+    if (polygon_preview_.has_buffered() && active_dragging_)
+    {
+        // Use polygon offset to prevent Z-Fighting the existing polygon
+        gl::enable(gl::Capability::PolygonOffsetFill);
+        glPolygonOffset(-1.0f, -1.0f);
+
+        polygon_preview_.bind().draw_elements();
+
+        gl::disable(gl::Capability::PolygonOffsetFill);
+    }
 }
 
 void UpdatePolygonTool::render_preview_2d(gl::Shader& scene_shader_2d)
 {
-    if (active_dragging_)
+    if (state_floor_ == floor_)
     {
-        scene_shader_2d.set_uniform("use_texture", false);
-        scene_shader_2d.set_uniform("is_selected", true);
+
+        if (active_dragging_)
+        {
+            scene_shader_2d.set_uniform("use_texture", false);
+            scene_shader_2d.set_uniform("is_selected", true);
+            scene_shader_2d.set_uniform("on_floor_below", false);
+            polygon_preview_2d_.bind().draw_elements(gl::PrimitiveType::Lines);
+        }
+
         scene_shader_2d.set_uniform("on_floor_below", false);
-        polygon_preview_2d_.bind().draw_elements(gl::PrimitiveType::Lines);
-    }
+        scene_shader_2d.set_uniform("use_texture", true);
+        scene_shader_2d.set_uniform("use_world_texture", false);
+        scene_shader_2d.set_uniform("use_texture_alpha_channel", true);
+        scene_shader_2d.set_uniform("is_selected", false);
 
-    scene_shader_2d.set_uniform("on_floor_below", false);
-    scene_shader_2d.set_uniform("use_texture", true);
-    scene_shader_2d.set_uniform("use_world_texture", false);
-    scene_shader_2d.set_uniform("use_texture_alpha_channel", true);
-    scene_shader_2d.set_uniform("is_selected", false);
-
-    for (auto& point : polygon_.properties.points[0])
-    {
-        glm::vec3 p{point + polygon_.parameters.position - glm::vec2{MIN_SELECT_DISTANCE}, 0};
-        scene_shader_2d.set_uniform("model_matrix", create_model_matrix({.position = p}));
-        vertex_selector_mesh_.bind().draw_elements();
+        for (auto& point : polygon_.properties.points[0])
+        {
+            glm::vec3 p{point + polygon_.parameters.position - glm::vec2{MIN_SELECT_DISTANCE}, 0};
+            scene_shader_2d.set_uniform("model_matrix", create_model_matrix({.position = p}));
+            vertex_selector_mesh_.bind().draw_elements();
+        }
     }
 }
 
@@ -123,6 +143,9 @@ void UpdatePolygonTool::update_previews(const EditorState& state,
 
     polygon_preview_2d_ = object_to_geometry_2d(polygon_, drawing_pad_texture_map).first;
     polygon_preview_2d_.update();
+
+    polygon_preview_ = object_to_geometry(polygon_, state.current_floor);
+    polygon_preview_.update();
 }
 
 ToolType UpdatePolygonTool::get_tool_type() const

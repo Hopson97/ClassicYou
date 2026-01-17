@@ -7,7 +7,7 @@
 namespace
 {
     // Minimum distance the selection is required to be to select a wall.
-    constexpr float SELECTION_DISTANCE = 5.0f;
+    constexpr float SELECTION_DISTANCE = 8.0f;
 } // namespace
 
 bool operator==(const WallProps& lhs, const WallProps& rhs)
@@ -70,11 +70,6 @@ template <>
 [[nodiscard]] glm::vec2 object_get_position(const WallObject& wall)
 {
     return wall.parameters.line.start;
-
-    /*
-        auto x = std::midpoint(line.start.x, line.end.x);
-        auto y = std::midpoint(line.start.y, line.end.y);
-    */
 }
 
 template <>

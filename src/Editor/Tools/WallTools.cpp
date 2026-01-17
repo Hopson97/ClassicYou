@@ -225,7 +225,13 @@ void UpdateWallTool::render_preview()
 {
     if (wall_preview_.has_buffered() && active_dragging_)
     {
+        // Use polygon offset to prevent Z-Fighting the existing wall
+        gl::enable(gl::Capability::PolygonOffsetFill);
+        glPolygonOffset(-1.0f, -1.0f);
+
         wall_preview_.bind().draw_elements();
+
+        gl::disable(gl::Capability::PolygonOffsetFill);
     }
 }
 

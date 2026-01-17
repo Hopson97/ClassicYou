@@ -168,7 +168,7 @@ bool point_in_triangle(glm::vec2 point, const std::array<glm::vec2, 3>& triangle
 bool point_in_polygon(const glm::vec2& point, const std::vector<glm::vec2>& points,
                       const glm::vec2& points_offset)
 {
-    // Rraycast intesection test
+    // Raycast intersection test
     unsigned intersections = 0;
     for (size_t i = 0; i < points.size(); ++i)
     {
