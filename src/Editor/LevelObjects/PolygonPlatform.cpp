@@ -1,7 +1,11 @@
 #include "PolygonPlatform.h"
 
 #include "../../Util/Maths.h"
+#include "../../Util/Util.h"
 #include "../LevelFileIO.h"
+#include "../LevelTextures.h"
+
+#include <earcut/earcut.hpp>
 
 bool operator==(const PolygonPlatformProps& lhs, const PolygonPlatformProps& rhs)
 {
@@ -20,67 +24,73 @@ std::string object_to_string(const PolygonPlatformObject& poly)
     auto& params = poly.parameters;
     auto& props = poly.properties;
 
+    std::string points_string;
+    points_string.reserve(props.geometry.size() * 8);
+    for (auto& point : props.geometry[0])
+    {
+        points_string += std::format("({:.2f}, {:.2f}), ", point.x, point.y);
+    }
+
+    std::string holes_string;
+    for (int i = 1; i < props.geometry.size(); i++)
+    {
+        std::string hole_string;
+        for (auto& point : props.geometry[i])
+        {
+            hole_string += std::format("({:.2f}, {:.2f}), ", point.x, point.y);
+        }
+        holes_string += std::format("Hole: {}", hole_string);
+    }
+
     return std::format(
         "Props:\n Texture Top: {}\n Texture Bottom: {}\n Base: {:.2f}\n Visible: {}\n"
-        "Parameters:\n Corner Top Left: ({:.2f}, {:.2f})\n Corner Top Right: ({:.2f}, {:.2f})\n "
-        "Corner Bottom Right: ({:.2f}, {:.2f})\n Corner Bottom Left: ({:.2f}, {:.2f})",
+        "Points: {}\nHoles: {}"
+        "Parameters:\n Position: ({:.2f}, {:.2f})",
         props.texture_top.id, props.texture_bottom.id, props.base, props.visible ? "true" : "false",
-        params.corner_top_left.x, params.corner_top_left.y, params.corner_top_right.x,
-        params.corner_top_right.y, params.corner_bottom_right.x, params.corner_bottom_right.y,
-        params.corner_bottom_left.x, params.corner_bottom_left.y);
+        points_string, holes_string, params.position.x, params.position.y);
 }
 
 template <>
 [[nodiscard]] bool object_try_select_2d(const PolygonPlatformObject& poly, glm::vec2 selection_tile)
 {
-    const auto& params = poly.parameters;
-
-    return selection_tile.x >= params.corner_top_left.x &&
-           selection_tile.x <= params.corner_top_right.x &&
-           selection_tile.y >= params.corner_top_left.y &&
-           selection_tile.y <= params.corner_bottom_left.y;
+    return point_in_polygon(selection_tile, poly.properties.geometry[0], poly.parameters.position);
 }
 
 template <>
 bool object_is_within(const PolygonPlatformObject& poly, const Rectangle& selection_area)
 {
-    auto& params = poly.parameters;
-
-    return Rectangle{
-        .position = {params.corner_top_left.x, params.corner_top_left.y},
-        .size = {params.corner_top_right.x - params.corner_top_left.x,
-                 params.corner_bottom_left.y - params.corner_top_left.y},
-    }
-        .is_entirely_within(selection_area);
+    return selection_area.contains(poly.properties.geometry[0], poly.parameters.position);
 }
 
 template <>
 void object_move(PolygonPlatformObject& poly, glm::vec2 offset)
 {
-    auto& params = poly.parameters;
-
-    params.corner_top_left += offset;
-    params.corner_top_right += offset;
-    params.corner_bottom_right += offset;
-    params.corner_bottom_left += offset;
+    poly.parameters.position += offset;
 }
 
 template <>
 void object_rotate(PolygonPlatformObject& poly, glm::vec2 rotation_origin, float degrees)
 {
-    auto& params = poly.parameters;
+    auto& props = poly.properties;
+    auto& position = poly.parameters.position;
 
-    params.corner_bottom_left = rotate_around(params.corner_bottom_left, rotation_origin, degrees);
-    params.corner_bottom_right =
-        rotate_around(params.corner_bottom_right, rotation_origin, degrees);
-    params.corner_top_right = rotate_around(params.corner_top_right, rotation_origin, degrees);
-    params.corner_top_left = rotate_around(params.corner_top_left, rotation_origin, degrees);
+    glm::vec2 new_position = rotate_around(position, rotation_origin, degrees);
+    for (auto& point_array : props.geometry)
+    {
+        for (auto& point : point_array)
+        {
+            point = rotate_around(point + position, rotation_origin, degrees);
+            point -= new_position;
+        }
+    }
+
+    position = new_position;
 }
 
 template <>
 [[nodiscard]] glm::vec2 object_get_position(const PolygonPlatformObject& poly)
 {
-    return poly.parameters.corner_top_left;
+    return poly.parameters.position;
 }
 
 template <>
@@ -89,14 +99,32 @@ SerialiseResponse object_serialise(const PolygonPlatformObject& poly, LevelFileI
     auto& params = poly.parameters;
     auto& props = poly.properties;
 
-    nlohmann::json json_params = {
-        params.corner_top_left.x / TILE_SIZE_F,     params.corner_top_left.y / TILE_SIZE_F,
-        params.corner_top_right.x / TILE_SIZE_F,    params.corner_top_right.y / TILE_SIZE_F,
-        params.corner_bottom_right.x / TILE_SIZE_F, params.corner_bottom_right.y / TILE_SIZE_F,
-        params.corner_bottom_left.x / TILE_SIZE_F,  params.corner_bottom_left.y / TILE_SIZE_F,
-    };
+    nlohmann::json json_params = {params.position.x / TILE_SIZE_F, params.position.y / TILE_SIZE_F};
 
     nlohmann::json json_props = {};
+
+    nlohmann::json points;
+    for (auto& point : props.geometry[0])
+    {
+        points.push_back(point.x);
+        points.push_back(point.y);
+    }
+
+    nlohmann::json holes;
+    for (int i = 1; i < props.geometry.size(); i++)
+    {
+        nlohmann::json hole;
+        for (auto& point : props.geometry[i])
+        {
+            hole.push_back(point.x);
+            hole.push_back(point.y);
+        }
+        holes.push_back(hole);
+    }
+
+    json_props.push_back(points);
+    json_props.push_back(holes);
+
     level_file_io.serialise_texture(json_props, props.texture_top);
     level_file_io.serialise_texture(json_props, props.texture_bottom);
     json_props.push_back(props.base);
@@ -112,31 +140,51 @@ bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json,
 
     auto jparams = json[0];
     auto jprops = json[1];
-    if (jparams.size() != 8)
+
+    if (jparams.size() != 2)
     {
-        std::println("Invalid polygon_platform parameters, expected 8 values");
+        std::println("Invalid polygon platform parameters, expected 2 values");
         return false;
     }
-    if (jprops.size() != 4)
+    if (jprops.size() != 6)
     {
-        std::println("Invalid polygon_platform properties, expected 4 values");
+        std::println("Invalid polygon platform properties, expected 2 values");
         return false;
     }
 
-    params.corner_top_left = {jparams[0], jparams[1]};
-    params.corner_top_right = {jparams[2], jparams[3]};
-    params.corner_bottom_right = {jparams[4], jparams[5]};
-    params.corner_bottom_left = {jparams[6], jparams[7]};
+    params.position = {jparams[0], jparams[1]};
+    params.position *= TILE_SIZE_F;
 
-    params.corner_top_left *= TILE_SIZE_F;
-    params.corner_top_right *= TILE_SIZE_F;
-    params.corner_bottom_right *= TILE_SIZE_F;
-    params.corner_bottom_left *= TILE_SIZE_F;
+    // Ensure a clean slate when reading points
+    props.geometry.clear();
 
-    props.texture_top = level_file_io.deserialise_texture(jprops[0]);
-    props.texture_bottom = level_file_io.deserialise_texture(jprops[1]);
-    props.base = jprops[2];
-    props.visible = jprops[3];
+    // Read the edge points of the polygon
+    auto& points = props.geometry.emplace_back();
+    size_t points_size = jprops[0].size();
+    for (size_t i = 0; i < points_size; i += 2)
+    {
+        points.push_back({jprops[0][i], jprops[0][i + 1]});
+    }
+
+    // Read the holes
+    props.geometry.reserve(jprops[1].size() + 1);
+    for (auto& hole : jprops[1])
+    {
+        size_t hole_size = hole.size();
+        auto& hole_vector = props.geometry.emplace_back();
+        hole_vector.reserve(hole_size / 2 + 1);
+        for (size_t i = 0; i < hole_size; i += 2)
+        {
+            hole_vector.push_back({hole[i], hole[i + 1]});
+        }
+    }
+
+    // Rwad the rest of the props
+    props.texture_top = level_file_io.deserialise_texture(jprops[2]);
+    props.texture_bottom = level_file_io.deserialise_texture(jprops[3]);
+    props.base = jprops[4];
+    props.visible = jprops[5];
+
     return true;
 }
 
@@ -145,24 +193,66 @@ std::pair<Mesh2DWorld, gl::PrimitiveType>
 object_to_geometry_2d(const PolygonPlatformObject& poly,
                       const LevelTextures& drawing_pad_texture_map)
 {
+    auto base_texture = static_cast<float>(*drawing_pad_texture_map.get_texture("PolygonPlatform"));
     const auto& params = poly.parameters;
-    auto tl = params.corner_top_left;
-    auto tr = params.corner_top_right;
-    auto br = params.corner_bottom_right;
-    auto bl = params.corner_bottom_left;
+    const auto& props = poly.properties;
+    auto& position = params.position;
+
+    auto texture_top = static_cast<float>(props.texture_top.id);
+
+    Mesh2DWorld mesh;
+    auto earcut_indices = mapbox::earcut<>(props.geometry);
+
+    // Top face
+    for (auto& point_array : props.geometry)
+    {
+        for (auto& point : point_array)
+        {
+            glm::vec2 world_pos{point.x + position.x, point.y + position.y};
+            glm::vec2 tex_coords = world_pos / TILE_SIZE_F;
+            mesh.vertices.push_back({world_pos,
+                                     {tex_coords.x, tex_coords.y, base_texture},
+                                     {tex_coords.x, tex_coords.y, texture_top}});
+        }
+    }
+
+    // The indices vector is given in clockwise order, so must be reversed to get anti-clockwise
+    // ordering for the top face.
+    for (auto i = earcut_indices.rbegin(); i != earcut_indices.rend(); ++i)
+    {
+        mesh.indices.push_back(*i);
+    }
+    return std::make_pair(std::move(mesh), gl::PrimitiveType::Triangles);
+}
+
+Mesh2DWorld object_to_outline_2d(const PolygonPlatformObject& poly)
+{
+    const auto& params = poly.parameters;
+    const auto& props = poly.properties;
+    auto& position = params.position;
+
+    constexpr static glm::i8vec4 OL_COLOUR{255, 0, 0, 255};
+    constexpr static glm::i8vec4 HOLE_COLOUR{255, 255, 0, 255};
 
     Mesh2DWorld mesh;
 
-    add_line_to_mesh(mesh, tl, tl + glm::vec2(TILE_SIZE, 0), poly.properties.texture_top.colour);
-    add_line_to_mesh(mesh, tl, tl + glm::vec2(0, TILE_SIZE), poly.properties.texture_top.colour);
-    add_line_to_mesh(mesh, tr, tr - glm::vec2(TILE_SIZE, 0), poly.properties.texture_top.colour);
-    add_line_to_mesh(mesh, tr, tr + glm::vec2(0, TILE_SIZE), poly.properties.texture_top.colour);
-    add_line_to_mesh(mesh, br, br - glm::vec2(TILE_SIZE, 0), poly.properties.texture_top.colour);
-    add_line_to_mesh(mesh, br, br - glm::vec2(0, TILE_SIZE), poly.properties.texture_top.colour);
-    add_line_to_mesh(mesh, bl, bl + glm::vec2(TILE_SIZE, 0), poly.properties.texture_top.colour);
-    add_line_to_mesh(mesh, bl, bl - glm::vec2(0, TILE_SIZE), poly.properties.texture_top.colour);
+    // Create the lines, the first array is the outer polygon (outline), thereafter are the inner
+    // hole polygons
+    bool is_outline = true;
+    for (auto& point_array : props.geometry)
+    {
+        for (size_t i = 0; i < point_array.size(); i++)
+        {
+            auto p1 = point_array[i];
+            auto p2 = point_array[(i + 1) % point_array.size()];
 
-    return std::make_pair(std::move(mesh), gl::PrimitiveType::Lines);
+            auto colour = is_outline ? OL_COLOUR : HOLE_COLOUR;
+
+            add_line_to_mesh(mesh, p1 + position, p2 + position, colour);
+        }
+        is_outline = false;
+    }
+    return mesh;
 }
 
 template <>
@@ -183,35 +273,53 @@ LevelObjectsMesh3D object_to_geometry(const PolygonPlatformObject& poly, int flo
     auto colour_bottom = props.texture_bottom.colour;
     auto colour_top = props.texture_top.colour;
 
-    auto p1 = glm::vec3{params.corner_top_left.x, 0, params.corner_top_left.y} / TILE_SIZE_F;
-    auto p2 = glm::vec3{params.corner_top_right.x, 0, params.corner_top_right.y} / TILE_SIZE_F;
-    auto p3 =
-        glm::vec3{params.corner_bottom_right.x, 0, params.corner_bottom_right.y} / TILE_SIZE_F;
-    auto p4 = glm::vec3{params.corner_bottom_left.x, 0, params.corner_bottom_left.y} / TILE_SIZE_F;
-
+    auto p = glm::vec3{params.position.x / TILE_SIZE_F, 0, params.position.y / TILE_SIZE_F};
     LevelObjectsMesh3D mesh;
 
-    // clang-format off
-    mesh.vertices = {
-            // Bottom
-            {{p1.x, ob, p1.z,},  {0,                    0,                      texture_bottom},    {0, -1, 0}, colour_bottom},
-            {{p2.x, ob, p2.z,},  {0,                    glm::length(p2 - p1),   texture_bottom},    {0, -1, 0}, colour_bottom},
-            {{p3.x, ob, p3.z },  {glm::length(p3 - p2), glm::length(p3 - p2),   texture_bottom},    {0, -1, 0}, colour_bottom},
-            {{p4.x, ob, p4.z,},  {glm::length(p4 - p1), 0,                      texture_bottom},    {0, -1, 0}, colour_bottom},
+    // Mapbox's Earcut triangulates the polygon's points and holes which gets a list of INDICES
+    // within all of of the "props.points" vectors.
+    auto earcut_indices = mapbox::earcut<>(props.geometry);
 
-            // Top
-            {{p1.x, ob, p1.z},  {0,                     0,                      texture_top},   {0, 1, 0}, colour_top},
-            {{p2.x, ob, p2.z},  {0,                     glm::length(p2 - p1),   texture_top},   {0, 1, 0}, colour_top},
-            {{p3.x, ob, p3.z},  {glm::length(p3 - p2),  glm::length(p3 - p2),   texture_top},   {0, 1, 0}, colour_top},
-            {{p4.x, ob, p4.z},  {glm::length(p4 - p1),  0,                      texture_top},   {0, 1, 0}, colour_top},
-        };
-    // clang-format on
+    // Top face
+    for (auto& point_array : props.geometry)
+    {
+        for (auto& point : point_array)
+        {
+            glm::vec3 pos = {point.x / TILE_SIZE_F + p.x, ob, point.y / TILE_SIZE_F + p.z};
+            mesh.vertices.push_back({pos, {pos.x, pos.z, texture_top}, {0, 1, 0}, colour_top});
+        }
+    }
 
-    mesh.indices = {// Front
-                    0, 1, 2, 2, 3, 0,
-                    // Back
-                    6, 5, 4, 4, 7, 6};
+    // The indices vector is given in clockwise order, so must be reversed to get anti-clockwise
+    // ordering for the top face.
+    for (auto i = earcut_indices.rbegin(); i != earcut_indices.rend(); ++i)
+    {
+        mesh.indices.push_back(*i);
+    }
 
+    // Bottom face
+    for (auto& point_array : props.geometry)
+    {
+        for (auto& point : point_array)
+        {
+            glm::vec3 pos = {point.x / TILE_SIZE_F + p.x, ob, point.y / TILE_SIZE_F + p.z};
+            mesh.vertices.push_back(
+                {pos, {pos.x, pos.z, texture_bottom}, {0, 1, 0}, colour_bottom});
+        }
+    }
+
+    for (auto& point_array : props.geometry)
+    {
+        for (auto& point : point_array)
+        {
+            glm::vec3 pos = {point.x / TILE_SIZE_F + p.x, ob, point.y / TILE_SIZE_F + p.z};
+        }
+    }
+
+    auto max_index = *std::max_element(mesh.indices.cbegin(), mesh.indices.cend());
+    for (auto& i : earcut_indices)
+    {
+        mesh.indices.push_back(i + max_index + 1);
+    }
     return mesh;
-    // clang-format on
 }

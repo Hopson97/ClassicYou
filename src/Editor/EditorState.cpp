@@ -1,7 +1,6 @@
 #include "EditorState.h"
 
 #include "LevelObjects/LevelObject.h"
-#include "Tool.h"
 
 namespace
 {

@@ -22,7 +22,7 @@ struct CameraKeybinds
 /// Options for controlling the 3D camera.
 struct CameraControllerOptions3D
 {
-    float look_sensitivity = 0.35;
+    float look_sensitivity = 0.35f;
     bool lock_rotation = true;
     bool free_movement = false;
 };

@@ -4,9 +4,9 @@
 
 #include <SFML/Window/Event.hpp>
 
-#include "../Graphics/Mesh.h"
-#include "../Util/Maths.h"
-#include "LevelObjects/LevelObject.h"
+#include "../../Graphics/Mesh.h"
+#include "../../Util/Maths.h"
+#include "../LevelObjects/LevelObject.h"
 
 class LevelTextures;
 struct EditorState;
@@ -23,16 +23,22 @@ enum class ToolType
     CreateWall,
     UpdateWall,
     CreateObject,
-    AreaSelectTool
+    AreaSelectTool,
+    UpdatePolygon
 };
 
+class VertexPuller
+{
+};
+
+/// Base interface for all tool types
 class ITool
 {
   public:
     virtual ~ITool() = default;
 
-    virtual void on_event(sf::Event event, glm::vec2 node, EditorState& state,
-                          ActionManager& actions, const LevelTextures& drawing_pad_texture_map) = 0;
+    virtual void on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
+                          const LevelTextures& drawing_pad_texture_map) = 0;
     virtual void render_preview() = 0;
     virtual void render_preview_2d(gl::Shader& scene_shader_2d) {};
 
@@ -46,7 +52,7 @@ class CreateWallTool : public ITool
   public:
     CreateWallTool(const LevelTextures& drawing_pad_texture_map);
 
-    void on_event(sf::Event event, glm::vec2 node, EditorState& state, ActionManager& actions,
+    void on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                   const LevelTextures& drawing_pad_texture_map) override;
     void render_preview() override;
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
@@ -70,7 +76,7 @@ class UpdateWallTool : public ITool
   public:
     UpdateWallTool(LevelObject object, WallObject& wall, int wall_floor,
                    const LevelTextures& drawing_pad_texture_map);
-    void on_event(sf::Event event, glm::vec2 node, EditorState& state, ActionManager& actions,
+    void on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                   const LevelTextures& drawing_pad_texture_map) override;
     void render_preview() override;
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
@@ -107,7 +113,7 @@ class CreateObjectTool : public ITool
   public:
     CreateObjectTool(ObjectTypeName object_type);
 
-    void on_event(sf::Event event, glm::vec2 node, EditorState& state, ActionManager& actions,
+    void on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                   const LevelTextures& drawing_pad_texture_map) override;
     void render_preview() override;
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
@@ -131,7 +137,7 @@ class AreaSelectTool : public ITool
   public:
     AreaSelectTool(EditorLevel& level);
 
-    void on_event(sf::Event event, glm::vec2 node, EditorState& state, ActionManager& actions,
+    void on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                   const LevelTextures& drawing_pad_texture_map) override;
     void render_preview() override;
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
@@ -162,4 +168,50 @@ class AreaSelectTool : public ITool
     int start_floor_ = 0;
     int max_floor_ = 0;
     int min_floor_ = 0;
+};
+
+class UpdatePolygonTool : public ITool
+{
+    enum class PolygonUpdateAction
+    {
+        MovePoint,
+        AddOrDeletePoint
+    };
+
+  public:
+    UpdatePolygonTool(LevelObject object, PolygonPlatformObject& wall, int wall_floor,
+                      const LevelTextures& drawing_pad_texture_map);
+    void on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
+                  const LevelTextures& drawing_pad_texture_map) override;
+    void render_preview() override;
+    void render_preview_2d(gl::Shader& scene_shader_2d) override;
+
+    ToolType get_tool_type() const override;
+
+  private:
+    void update_previews(const EditorState& state, const LevelTextures& drawing_pad_texture_map);
+    void update_polygon(int current_floor, ActionManager& actions, PolygonUpdateAction action);
+
+    /// Deletes holes that are partially or fully outside of the outer region of the polygon.
+    void delete_holes_outside_polygon();
+
+    /// Gets the index of the vertex closest to the given 2D world position if there is one within
+    /// MIN_SELECT_DISTANCE (defined in UpdatePolygonPlatformTool.cpp
+    std::optional<size_t> closest_point_index(const std::vector<glm::vec2>& points, const glm::vec2& world_position) const;
+
+  private:
+    LevelObjectsMesh3D polygon_preview_;
+    Mesh2DWorld polygon_preview_2d_;
+    Mesh2DWorld vertex_selector_mesh_;
+    LevelObject object_;
+    PolygonPlatformObject polygon_;
+
+    /// Used to ensure polygons can only be resized on the current floor as the editor
+    const int floor_;
+    int state_floor_ = 0;
+
+    size_t target_index_ = 0;
+    glm::vec2 target_new_position_{0};
+
+    bool active_dragging_ = false;
 };

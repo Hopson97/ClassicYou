@@ -81,6 +81,8 @@ namespace gl
         TextureWrap wrap_s = TextureWrap::ClampToEdge;
         TextureWrap wrap_t = TextureWrap::ClampToEdge;
         TextureWrap wrap_r = TextureWrap::ClampToEdge;
+
+        GLfloat anisotropy = 16.0f;
     };
 
     constexpr static TextureParameters TEXTURE_PARAMS_MIPMAP = {
@@ -90,6 +92,16 @@ namespace gl
         .wrap_t = TextureWrap::Repeat,
         .wrap_r = TextureWrap::Repeat,
     };
+
+
+    constexpr static TextureParameters TEXTURE_PARAMS_MIPMAP_NEAREST = {
+        .min_filter = TextureMinFilter::NearestMipmapNearest,
+        .mag_filter = TextureMagFilter::Nearest,
+        .wrap_s = TextureWrap::Repeat,
+        .wrap_t = TextureWrap::Repeat,
+        .wrap_r = TextureWrap::Repeat,
+    };
+
 
     constexpr static TextureParameters TEXTURE_PARAMS_NEAREST = {
         .min_filter = gl::TextureMinFilter::Nearest,
@@ -124,6 +136,7 @@ namespace gl
         void set_wrap_r(TextureWrap wrap);
         void set_compare_function(TextureCompareFunction function);
         void set_compare_mode(TextureCompareMode mode);
+        void set_anisotropy(GLfloat level);
     };
 
     enum class Texture2DTarget

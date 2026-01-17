@@ -9,16 +9,22 @@
 // =======================================
 struct PolygonPlatformParameters
 {
-    constexpr static auto DEFAULT_SIZE = 10.0f * TILE_SIZE_F;
-    // std::vector<glm::vec2> points{4};
-    glm::vec2 corner_top_left{0};
-    glm::vec2 corner_top_right{0, DEFAULT_SIZE};
-    glm::vec2 corner_bottom_right{DEFAULT_SIZE, DEFAULT_SIZE};
-    glm::vec2 corner_bottom_left{DEFAULT_SIZE, 0};
+    glm::vec2 position{0.0f};
 };
 
 struct PolygonPlatformProps
 {
+    constexpr static auto DEFAULT_SIZE = 10.0f * TILE_SIZE_F;
+
+    // Double vector for mapbox earcut, the first vector are the points around the polygon edge,
+    // following vectors are holes within the polygon
+    std::vector<std::vector<glm::vec2>> geometry = {{
+        glm::vec2{0},
+        glm::vec2{0, DEFAULT_SIZE},
+        glm::vec2{DEFAULT_SIZE, DEFAULT_SIZE},
+        glm::vec2{DEFAULT_SIZE, 0},
+    }};
+
     TextureProp texture_top;
     TextureProp texture_bottom;
     float base = 0;
@@ -66,6 +72,8 @@ template <>
 [[nodiscard]] std::pair<Mesh2DWorld, gl::PrimitiveType>
 object_to_geometry_2d<PolygonPlatformObject>(const PolygonPlatformObject& poly,
                                              const LevelTextures& drawing_pad_texture_map);
+
+[[nodiscard]] Mesh2DWorld object_to_outline_2d(const PolygonPlatformObject& poly);
 
 template <>
 [[nodiscard]] LevelObjectsMesh3D

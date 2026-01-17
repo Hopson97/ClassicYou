@@ -37,7 +37,6 @@ struct Selection
 struct EditorState
 {
     // When placing objects, these are the default values for the properties.
-
     WallProps wall_default;
     PlatformProps platform_default;
     PolygonPlatformProps polygon_platform_default;
@@ -46,6 +45,9 @@ struct EditorState
 
     /// The currently hovered node/tile in the editor.
     glm::ivec2 node_hovered{0};
+
+    // The "world pixel" currently hovered in the 2D view
+    glm::vec2 world_position_hovered{0};
 
     /// The current floor number that the editor is working on.
     int current_floor = 0;

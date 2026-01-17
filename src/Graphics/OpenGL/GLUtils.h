@@ -17,7 +17,8 @@ namespace gl
         DepthTest = GL_DEPTH_TEST,
         CullFace = GL_CULL_FACE,
         ScissorTest = GL_SCISSOR_TEST,
-        StencilTest = GL_STENCIL_TEST
+        StencilTest = GL_STENCIL_TEST,
+        PolygonOffsetFill = GL_POLYGON_OFFSET_FILL,
     };
 
     enum class PolygonMode
