@@ -16,7 +16,7 @@ AreaSelectTool::AreaSelectTool(EditorLevel& level)
 {
 }
 
-void AreaSelectTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
+bool AreaSelectTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                               const LevelTextures& drawing_pad_texture_map)
 {
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
@@ -68,6 +68,7 @@ void AreaSelectTool::on_event(const sf::Event& event, EditorState& state, Action
             }
         }
     }
+    return false;
 }
 
 void AreaSelectTool::render_preview()
