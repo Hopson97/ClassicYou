@@ -116,20 +116,25 @@ glm::vec3 backward_vector_flat(const glm::vec3& rotation)
     return -forward_vector_flat(rotation);
 }
 
-float distance_to_line(const glm::vec2& point, const Line& line)
+glm::vec2 closest_point_on_line(const glm::vec2& point, const Line& line)
 {
     auto line_length = glm::distance2(line.start, line.end);
     if (line_length == 0)
     {
-        return 1234.0f;
+        return {10000, 10000};
     }
 
     // Calculate the projection of the point onto the line segment
     auto v = line.end - line.start;
     auto t = glm::clamp(glm::dot(point - line.start, v) / line_length, 0.0f, 1.0f);
 
-    // Find the closest point on the segment (start + t * v), and return the distance to it
-    return glm::distance(point, line.start + t * v);
+
+    return line.start + t * v;
+}
+
+float distance_to_line(const glm::vec2& point, const Line& line)
+{
+    return glm::distance(point, closest_point_on_line(point, line));
 }
 
 glm::vec2 rotate_around(glm::vec2 point, glm::vec2 rotation_origin, float degrees)

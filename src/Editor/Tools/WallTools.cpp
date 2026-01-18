@@ -145,10 +145,10 @@ UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall, int wall_fl
     , wall_{wall}
     , wall_floor_(wall_floor)
 {
-    edge_mesh_ = generate_2d_quad_mesh(
+    vertex_selector_mesh_ = generate_2d_quad_mesh(
         {0, 0}, {SELECT_AREA_SIZE, SELECT_AREA_SIZE},
         static_cast<float>(*drawing_pad_texture_map.get_texture("SelectCircle")));
-    edge_mesh_.buffer();
+    vertex_selector_mesh_.buffer();
 
     wall_line_ = wall.parameters.line;
 }
@@ -167,17 +167,9 @@ bool UpdateWallTool::on_event(const sf::Event& event, EditorState& state, Action
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
-            if (glm::distance(state.world_position_hovered, wall_.parameters.line.start) <
-                MIN_SELECT_DISTANCE)
+            if (target_ != DragTarget::None)
             {
                 active_dragging_ = true;
-                target_ = DragTarget::Start;
-            }
-            else if (glm::distance(state.world_position_hovered, wall_.parameters.line.end) <
-                     MIN_SELECT_DISTANCE)
-            {
-                active_dragging_ = true;
-                target_ = DragTarget::End;
             }
 
             if (active_dragging_)
@@ -192,6 +184,21 @@ bool UpdateWallTool::on_event(const sf::Event& event, EditorState& state, Action
     }
     else if (event.is<sf::Event::MouseMoved>())
     {
+        if (!active_dragging_)
+        {
+            target_ = DragTarget::None;
+            if (glm::distance(state.world_position_hovered, wall_.parameters.line.start) <
+                MIN_SELECT_DISTANCE)
+            {
+                target_ = DragTarget::Start;
+            }
+            else if (glm::distance(state.world_position_hovered, wall_.parameters.line.end) <
+                     MIN_SELECT_DISTANCE)
+            {
+                target_ = DragTarget::End;
+            }
+        }
+
         if (active_dragging_)
         {
             switch (target_)
@@ -246,6 +253,17 @@ void UpdateWallTool::render_preview()
 
 void UpdateWallTool::render_preview_2d(gl::Shader& scene_shader_2d)
 {
+    auto draw_selection_point = [&](const glm::vec2& position, float scale = 1.0f)
+    {
+        scene_shader_2d.set_uniform(
+            "model_matrix",
+            create_model_matrix(
+                {.position = glm::vec3{position - glm::vec2{MIN_SELECT_DISTANCE * scale}, 0.0},
+                 .scale = glm::vec3{scale}}));
+
+        vertex_selector_mesh_.bind().draw_elements();
+    };
+
     if (state_floor_ == wall_floor_)
     {
         render_wall(active_dragging_, wall_preview_2d_, scene_shader_2d);
@@ -258,11 +276,8 @@ void UpdateWallTool::render_preview_2d(gl::Shader& scene_shader_2d)
         glm::vec3 start{wall_line_.start - MIN_SELECT_DISTANCE, 0};
         glm::vec3 end{wall_line_.end - MIN_SELECT_DISTANCE, 0};
 
-        scene_shader_2d.set_uniform("model_matrix", create_model_matrix({.position = start}));
-        edge_mesh_.bind().draw_elements();
-
-        scene_shader_2d.set_uniform("model_matrix", create_model_matrix({.position = end}));
-        edge_mesh_.bind().draw_elements();
+        draw_selection_point(wall_line_.start, target_ == DragTarget::Start ? 1.5f : 1.0f);
+        draw_selection_point(wall_line_.end, target_ == DragTarget::End ? 1.5f : 1.0f);
     }
 }
 

@@ -34,7 +34,7 @@ struct Rectangle
     [[nodiscard]] bool is_entirely_within(const Rectangle& other) const;
     [[nodiscard]] bool contains(const glm::vec2& point) const;
     [[nodiscard]] bool contains(const std::vector<glm::vec2>& points,
-                                        const glm::vec2& points_offset) const;
+                                const glm::vec2& points_offset) const;
 };
 
 struct Line
@@ -56,6 +56,7 @@ struct Line
 [[nodiscard]] glm::vec3 forward_vector_flat(const glm::vec3& rotation);
 [[nodiscard]] glm::vec3 backward_vector_flat(const glm::vec3& rotation);
 
+[[nodiscard]] glm::vec2 closest_point_on_line(const glm::vec2& point, const Line& line);
 [[nodiscard]] float distance_to_line(const glm::vec2& point, const Line& line);
 
 [[nodiscard]] glm::vec2 rotate_around(glm::vec2 point, glm::vec2 rotation_origin, float degrees);
