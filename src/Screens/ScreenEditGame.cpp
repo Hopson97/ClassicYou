@@ -660,6 +660,7 @@ void ScreenEditGame::on_render(bool show_debug)
         else
         {
             editor_state_.selection.clear_selection();
+            try_set_tool_to_create_wall();
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }

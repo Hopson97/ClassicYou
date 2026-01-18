@@ -182,16 +182,16 @@ LevelObjectsMesh3D object_to_geometry(const WallObject& wall, int floor_number)
     // clang-format off
     mesh.vertices = {
         // Back
-        {{b.x + ox, obs, b.z + oz}, {0.0f,   obs, texture_back},  back_normal, colour_back},
-        {{b.x + ox, hs,  b.z + oz}, {0.0,    hs,  texture_back},  back_normal, colour_back},
-        {{e.x + ox, he,  e.z + oz}, {length, he,  texture_back},  back_normal, colour_back},
-        {{e.x + ox, obe, e.z + oz}, {length, obe, texture_back},  back_normal, colour_back},
+        {{b.x + ox, obs, b.z + oz}, {0.0f,   hs,  texture_back},  back_normal, colour_back},
+        {{b.x + ox, hs,  b.z + oz}, {0.0f,   obs, texture_back},  back_normal, colour_back},
+        {{e.x + ox, he,  e.z + oz}, {length, obe, texture_back},  back_normal, colour_back},
+        {{e.x + ox, obe, e.z + oz}, {length, he,  texture_back},  back_normal, colour_back}, 
 
         // Front 
-        {{b.x - ox, obs, b.z - oz}, {0.0f,   obs, texture_front}, front_normal, colour_front},
-        {{b.x - ox, hs,  b.z - oz}, {0.0,    hs,  texture_front}, front_normal, colour_front},
-        {{e.x - ox, he,  e.z - oz}, {length, he,  texture_front}, front_normal, colour_front},
-        {{e.x - ox, obe, e.z - oz}, {length, obe, texture_front}, front_normal, colour_front},
+        {{b.x - ox, obs, b.z - oz}, {0.0f,   hs,  texture_front}, front_normal, colour_front},
+        {{b.x - ox, hs,  b.z - oz}, {0.0f,   obs, texture_front}, front_normal, colour_front},
+        {{e.x - ox, he,  e.z - oz}, {length, obe, texture_front}, front_normal, colour_front},
+        {{e.x - ox, obe, e.z - oz}, {length, he,  texture_front}, front_normal, colour_front},
     };
     // clang-format on
 

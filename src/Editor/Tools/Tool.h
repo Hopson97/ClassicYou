@@ -94,7 +94,7 @@ class UpdateWallTool : public ITool
 
   private:
     LevelObjectsMesh3D wall_preview_;
-    Mesh2DWorld edge_mesh_;
+    Mesh2DWorld vertex_selector_mesh_;
     Mesh2DWorld wall_preview_2d_;
     LevelObject object_;
     WallObject wall_;
@@ -109,9 +109,10 @@ class UpdateWallTool : public ITool
 
     enum class DragTarget
     {
+        None,
         Start,
         End
-    } target_ = DragTarget::End;
+    } target_ = DragTarget::None;
 };
 
 class CreateObjectTool : public ITool
@@ -195,7 +196,7 @@ class UpdatePolygonTool : public ITool
     ToolType get_tool_type() const override;
 
   private:
-    void update_previews(const EditorState& state, const LevelTextures& drawing_pad_texture_map);
+    void update_previews(PolygonUpdateAction action);
     void update_polygon(int current_floor, ActionManager& actions, PolygonUpdateAction action);
 
     /// Deletes holes that are partially or fully outside of the outer region of the polygon.
@@ -207,6 +208,15 @@ class UpdatePolygonTool : public ITool
                                               const glm::vec2& world_position) const;
 
   private:
+    /// When adding a vertex to a line of the polygon, this represents the point
+    struct SelectedLine
+    {
+        glm::vec2 world_point{0};
+        glm::ivec2 node_point{0};
+        size_t index;
+        bool is_selected_;
+    } line_;
+
     LevelObjectsMesh3D polygon_preview_;
     Mesh2DWorld polygon_preview_2d_;
     Mesh2DWorld vertex_selector_mesh_;
@@ -217,7 +227,10 @@ class UpdatePolygonTool : public ITool
     const int floor_;
     int state_floor_ = 0;
 
-    size_t target_index_ = 0;
+    glm::vec2 state_world_position_hovered{0};
+    glm::ivec2 state_node_hovered_{0};
+
+    std::optional<size_t> target_index_;
     glm::vec2 target_new_position_{0};
 
     bool active_dragging_ = false;
