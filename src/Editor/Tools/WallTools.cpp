@@ -13,6 +13,8 @@
 namespace
 {
     constexpr glm::vec2 WALL_NODE_ICON_SIZE{8, 8};
+    constexpr float SELECT_AREA_SIZE = 16.0f;
+    constexpr float MIN_SELECT_DISTANCE = SELECT_AREA_SIZE / 2.0f;
 
     void render_wall(bool should_draw, const Mesh2DWorld& wall_mesh, gl::Shader& scene_shader_2d)
     {
@@ -40,7 +42,7 @@ CreateWallTool::CreateWallTool(const LevelTextures& drawing_pad_texture_map)
     selection_node_.buffer();
 }
 
-void CreateWallTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
+bool CreateWallTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                               const LevelTextures& drawing_pad_texture_map)
 {
     selected_node_ = state.node_hovered;
@@ -80,6 +82,7 @@ void CreateWallTool::on_event(const sf::Event& event, EditorState& state, Action
             }
         }
     }
+    return false;
 }
 
 void CreateWallTool::render_preview()
@@ -113,6 +116,11 @@ ToolType CreateWallTool::get_tool_type() const
     return ToolType::CreateWall;
 }
 
+void CreateWallTool::cancel_events()
+{
+    active_dragging_ = false;
+}
+
 void CreateWallTool::update_previews(const EditorState& state,
                                      const LevelTextures& drawing_pad_texture_map)
 {
@@ -138,36 +146,35 @@ UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall, int wall_fl
     , wall_floor_(wall_floor)
 {
     edge_mesh_ = generate_2d_quad_mesh(
-        {0, 0}, {32, 32}, static_cast<float>(*drawing_pad_texture_map.get_texture("SelectCircle")));
+        {0, 0}, {SELECT_AREA_SIZE, SELECT_AREA_SIZE},
+        static_cast<float>(*drawing_pad_texture_map.get_texture("SelectCircle")));
     edge_mesh_.buffer();
 
     wall_line_ = wall.parameters.line;
 }
 
-void UpdateWallTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
+bool UpdateWallTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                               const LevelTextures& drawing_pad_texture_map)
 {
     state_floor_ = state.current_floor;
     // Walls should only be edited on the same floor
     if (state.current_floor != wall_floor_)
     {
-        return;
+        return false;
     }
-
-    const float MIN_DISTANCE = 32.0f;
 
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
             if (glm::distance(state.world_position_hovered, wall_.parameters.line.start) <
-                MIN_DISTANCE)
+                MIN_SELECT_DISTANCE)
             {
                 active_dragging_ = true;
                 target_ = DragTarget::Start;
             }
             else if (glm::distance(state.world_position_hovered, wall_.parameters.line.end) <
-                     MIN_DISTANCE)
+                     MIN_SELECT_DISTANCE)
             {
                 active_dragging_ = true;
                 target_ = DragTarget::End;
@@ -179,6 +186,7 @@ void UpdateWallTool::on_event(const sf::Event& event, EditorState& state, Action
                 wall_line_.end = wall_.parameters.line.end;
 
                 update_previews(state, drawing_pad_texture_map);
+                return true;
             }
         }
     }
@@ -219,6 +227,7 @@ void UpdateWallTool::on_event(const sf::Event& event, EditorState& state, Action
             active_dragging_ = false;
         }
     }
+    return false;
 }
 
 void UpdateWallTool::render_preview()
@@ -235,7 +244,6 @@ void UpdateWallTool::render_preview()
     }
 }
 
-constexpr glm::vec2 OFFSET{16, 16};
 void UpdateWallTool::render_preview_2d(gl::Shader& scene_shader_2d)
 {
     if (state_floor_ == wall_floor_)
@@ -247,8 +255,8 @@ void UpdateWallTool::render_preview_2d(gl::Shader& scene_shader_2d)
         scene_shader_2d.set_uniform("use_texture_alpha_channel", true);
         scene_shader_2d.set_uniform("is_selected", false);
 
-        glm::vec3 start{wall_line_.start - OFFSET, 0};
-        glm::vec3 end{wall_line_.end - OFFSET, 0};
+        glm::vec3 start{wall_line_.start - MIN_SELECT_DISTANCE, 0};
+        glm::vec3 end{wall_line_.end - MIN_SELECT_DISTANCE, 0};
 
         scene_shader_2d.set_uniform("model_matrix", create_model_matrix({.position = start}));
         edge_mesh_.bind().draw_elements();

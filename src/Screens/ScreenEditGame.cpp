@@ -258,9 +258,26 @@ void ScreenEditGame::on_event(const sf::Event& event)
     // CTRL C and CTRL V handling
     copy_paste_handler_.handle_event(event, editor_state_.selection, editor_state_.current_floor);
 
+    if (!object_move_handler_.is_moving_objects())
+    {
+        // Certain tool events prevent further event processing, for example when trying to re-size
+        // a wall, it should not move the wall if the mouse is within the radius of the selection
+        // circle while also within the distance of the wall where it would normally be moved
+        if (tool_->on_event(event, editor_state_, action_manager_, drawing_pad_texture_map_))
+        {
+            return;
+        }
+    }
+
     // True when objects are moved - prevents placing objects where objects are moved to
     auto move_finished = object_move_handler_.handle_move_events(
         event, editor_state_, tool_ ? tool_->get_tool_type() : ToolType::CreateWall);
+
+    // Prevent unintentionally creating "false walls" when an object has been moved
+    if (move_finished)
+    {
+        tool_->cancel_events();
+    }
 
     // Certain events cause issues if the current tool is UpdateWall (such as rendering the 2D
     // preview of deleting walls) so this prevents that.
@@ -410,11 +427,6 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 try_pick_3d_ = true;
             }
         }
-    }
-
-    if (!object_move_handler_.is_moving_objects() && !move_finished)
-    {
-        tool_->on_event(event, editor_state_, action_manager_, drawing_pad_texture_map_);
     }
 
     if (move_finished)

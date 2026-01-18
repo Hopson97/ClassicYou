@@ -19,7 +19,7 @@ CreateObjectTool::CreateObjectTool(ObjectTypeName object_type)
 {
 }
 
-void CreateObjectTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
+bool CreateObjectTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                                 const LevelTextures& drawing_pad_texture_map)
 {
     tile_ = state.node_hovered;
@@ -35,6 +35,7 @@ void CreateObjectTool::on_event(const sf::Event& event, EditorState& state, Acti
     {
         update_previews(state, drawing_pad_texture_map);
     }
+    return false;
 }
 
 void CreateObjectTool::render_preview()

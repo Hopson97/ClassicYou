@@ -12,7 +12,7 @@
 
 namespace
 {
-    constexpr float AREA_SIZE = 32.0f;
+    constexpr float AREA_SIZE = 16.0f;
     constexpr float MIN_SELECT_DISTANCE = AREA_SIZE / 2.0f;
 
 } // namespace
@@ -33,13 +33,13 @@ UpdatePolygonTool::UpdatePolygonTool(LevelObject object, PolygonPlatformObject& 
     polygon_preview_2d_.update();
 }
 
-void UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
+bool UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                                  const LevelTextures& drawing_pad_texture_map)
 {
     state_floor_ = state.current_floor;
     if (state.current_floor != floor_)
     {
-        return;
+        return false;
     }
 
     auto& outer_points = polygon_.properties.geometry[0];
@@ -90,6 +90,7 @@ void UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
                 target_new_position_ =
                     state.node_hovered - glm::ivec2{polygon_.parameters.position};
                 update_previews(state, drawing_pad_texture_map);
+                return true;
             }
         }
     }
@@ -124,9 +125,11 @@ void UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
                 update_polygon(state.current_floor, actions, PolygonUpdateAction::AddOrDeletePoint);
                 active_dragging_ = false;
                 update_previews(state, drawing_pad_texture_map);
+                return true;
             }
         }
     }
+    return false;
 }
 
 void UpdatePolygonTool::render_preview()

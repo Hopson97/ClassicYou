@@ -37,14 +37,18 @@ class ITool
   public:
     virtual ~ITool() = default;
 
-    virtual void on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
-                          const LevelTextures& drawing_pad_texture_map) = 0;
+    /// Handles a given return. Returns true if an event was consumed and should prevent further
+    /// processing of that event
+    [[nodiscard]] virtual bool on_event(const sf::Event& event, EditorState& state,
+                                        ActionManager& actions,
+                                        const LevelTextures& drawing_pad_texture_map) = 0;
     virtual void render_preview() = 0;
     virtual void render_preview_2d(gl::Shader& scene_shader_2d) {};
 
-    virtual ToolType get_tool_type() const = 0;
+    [[nodiscard]] virtual ToolType get_tool_type() const = 0;
 
     virtual void show_gui(EditorState& state) {};
+    virtual void cancel_events() {};
 };
 
 class CreateWallTool : public ITool
@@ -52,12 +56,14 @@ class CreateWallTool : public ITool
   public:
     CreateWallTool(const LevelTextures& drawing_pad_texture_map);
 
-    void on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
+    bool on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                   const LevelTextures& drawing_pad_texture_map) override;
     void render_preview() override;
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
 
     ToolType get_tool_type() const override;
+
+    void cancel_events() override;
 
   private:
     void update_previews(const EditorState& state, const LevelTextures& drawing_pad_texture_map);
@@ -76,7 +82,7 @@ class UpdateWallTool : public ITool
   public:
     UpdateWallTool(LevelObject object, WallObject& wall, int wall_floor,
                    const LevelTextures& drawing_pad_texture_map);
-    void on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
+    bool on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                   const LevelTextures& drawing_pad_texture_map) override;
     void render_preview() override;
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
@@ -113,7 +119,7 @@ class CreateObjectTool : public ITool
   public:
     CreateObjectTool(ObjectTypeName object_type);
 
-    void on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
+    bool on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                   const LevelTextures& drawing_pad_texture_map) override;
     void render_preview() override;
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
@@ -137,7 +143,7 @@ class AreaSelectTool : public ITool
   public:
     AreaSelectTool(EditorLevel& level);
 
-    void on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
+    bool on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                   const LevelTextures& drawing_pad_texture_map) override;
     void render_preview() override;
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
@@ -181,7 +187,7 @@ class UpdatePolygonTool : public ITool
   public:
     UpdatePolygonTool(LevelObject object, PolygonPlatformObject& wall, int wall_floor,
                       const LevelTextures& drawing_pad_texture_map);
-    void on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
+    bool on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                   const LevelTextures& drawing_pad_texture_map) override;
     void render_preview() override;
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
@@ -197,7 +203,8 @@ class UpdatePolygonTool : public ITool
 
     /// Gets the index of the vertex closest to the given 2D world position if there is one within
     /// MIN_SELECT_DISTANCE (defined in UpdatePolygonPlatformTool.cpp
-    std::optional<size_t> closest_point_index(const std::vector<glm::vec2>& points, const glm::vec2& world_position) const;
+    std::optional<size_t> closest_point_index(const std::vector<glm::vec2>& points,
+                                              const glm::vec2& world_position) const;
 
   private:
     LevelObjectsMesh3D polygon_preview_;
