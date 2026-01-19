@@ -278,8 +278,8 @@ platform_gui(const LevelTextures& textures, const PlatformObject& platform, Edit
     PropGUIUpdateResult result;
     PlatformProps new_props = platform.properties;
 
-    slider(result, "Width", new_props.width, 0.5f, 20.0f, 0.5f);
-    slider(result, "Depth", new_props.depth, 0.5f, 20.0f, 0.5f);
+    slider(result, "Width", new_props.size.x, 0.5f, 20.0f, 0.5f);
+    slider(result, "Depth", new_props.size.y, 0.5f, 20.0f, 0.5f);
 
     // Multiplied by "FLOOR_HEIGHT" when mesh is created
     slider(result, "Base Height", new_props.base, 0.0f, 0.9f, 0.1f);
@@ -389,8 +389,8 @@ std::pair<PropGUIUpdateResult, RampProps> ramp_gui(const LevelTextures& textures
     auto new_props = ramp.properties;
     auto max_height = get_max_height(edit_mode);
 
-    slider(result, "Width", new_props.width, 0.5f, 20.0f, 0.5f);
-    slider(result, "Depth", new_props.depth, 0.5f, 20.0f, 0.5f);
+    slider(result, "Width", new_props.size.x, 0.5f, 20.0f, 0.5f);
+    slider(result, "Depth", new_props.size.y, 0.5f, 20.0f, 0.5f);
 
     if (edit_mode > EditMode::Extended)
     {

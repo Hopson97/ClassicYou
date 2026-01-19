@@ -307,7 +307,7 @@ void from_json(const nlohmann::json& json, LegacyTriWall& wall)
 // ============================
 namespace
 {
-    // All platforms are nearly indentical in their property layout, so this generic method works
+    // All platforms are nearly identical in their property layout, so this generic method works
     // for all
     template <typename LegacyPlatformType>
     void load_basic_platform(const nlohmann::json& json, LegacyPlatformType& platform,
@@ -320,11 +320,11 @@ namespace
         auto& platform_props = platform.object.properties;
 
         auto size = std::powf(2.0f, static_cast<float>(props[0]));
-        platform_props.width = size;
-        platform_props.depth = size;
+        platform_props.size.x = size;
+        platform_props.size.y = size;
 
         platform_params.position = extract_vec2(position[0], position[1]) -
-                                   glm::vec2{(platform_props.width * TILE_SIZE_F) / 2.0f};
+                                   glm::vec2{(platform_props.size.x * TILE_SIZE_F) / 2.0f};
 
         if (props.size() > 1)
         {
@@ -473,27 +473,27 @@ void from_json(const nlohmann::json& json, LegacyRamp& ramp)
     switch (direction)
     {
         case 1:
-            ramp_props.depth = 4;
-            ramp_props.width = 2;
+            ramp_props.size.y = 4;
+            ramp_props.size.x = 2;
             ramp_props.direction = Direction::Forward; // confirmed
             ramp_params.position.x -= TILE_SIZE_F;
             break;
         case 2:
-            ramp_props.depth = 4;
-            ramp_props.width = 2;
+            ramp_props.size.y = 4;
+            ramp_props.size.x = 2;
             ramp_props.direction = Direction::Back;
             ramp_params.position.y -= 4 * TILE_SIZE_F;
             ramp_params.position.x -= TILE_SIZE_F;
             break;
         case 3:
-            ramp_props.depth = 2;
-            ramp_props.width = 4;
+            ramp_props.size.y = 2;
+            ramp_props.size.x = 4;
             ramp_params.position.y -= TILE_SIZE_F;
             ramp_props.direction = Direction::Left; // confirmed
             break;
         case 4:
-            ramp_props.depth = 2;
-            ramp_props.width = 4;
+            ramp_props.size.y = 2;
+            ramp_props.size.x = 4;
             ramp_props.direction = Direction::Right;
             ramp_params.position.x -= 4 * TILE_SIZE_F;
             ramp_params.position.y -= TILE_SIZE_F;
@@ -501,8 +501,8 @@ void from_json(const nlohmann::json& json, LegacyRamp& ramp)
             break;
 
         default:
-            ramp_props.depth = 1;
-            ramp_props.width = 1;
+            ramp_props.size.y = 1;
+            ramp_props.size.x = 1;
             ramp_props.direction = Direction::Right;
             break;
     }
@@ -552,6 +552,10 @@ void load_floors(const nlohmann::json& json, FloorManager& new_level)
     // Extract floors as polygons
     std::vector<PolygonPlatformObject> legacy_floors;
     json["Floor"].get_to(legacy_floors);
+
+    // If the floor is not visible, it likely covers the entire 2D view even thought it is not
+    // there. So best to just remove it.
+    std::erase_if(legacy_floors, [](const auto& floor) { return !floor.properties.visible; });
 
     // Map the holes to the floor
     std::unordered_map<size_t, std::vector<size_t>> level_to_holes;

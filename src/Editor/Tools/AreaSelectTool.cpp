@@ -23,7 +23,6 @@ bool AreaSelectTool::on_event(const sf::Event& event, EditorState& state, Action
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
-            state.selection.clear_selection();
             start_floor_ = state.current_floor;
             max_floor_ = state.current_floor;
             min_floor_ = state.current_floor;

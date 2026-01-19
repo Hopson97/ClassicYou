@@ -9,8 +9,8 @@
 bool operator==(const PlatformProps& lhs, const PlatformProps& rhs)
 {
     return lhs.texture_top == rhs.texture_top && lhs.texture_bottom == rhs.texture_bottom &&
-           lhs.width == rhs.width && lhs.depth == rhs.depth && lhs.base == rhs.base &&
-           lhs.style == rhs.style && lhs.direction == rhs.direction;
+           lhs.size == rhs.size && lhs.base == rhs.base && lhs.style == rhs.style &&
+           lhs.direction == rhs.direction;
 }
 
 bool operator!=(const PlatformProps& lhs, const PlatformProps& rhs)
@@ -27,7 +27,7 @@ std::string object_to_string(const PlatformObject& platform)
     return std::format("Props:\n Texture Top: {}\n Texture Bottom: {}\n Width: {:.2f}\n Depth: "
                        "{:.2f}\n Base: {:.2f}\n Style: {}\n"
                        "Parameters:\n Position: ({:.2f}, {:.2f})",
-                       props.texture_top.id, props.texture_bottom.id, props.width, props.depth,
+                       props.texture_top.id, props.texture_bottom.id, props.size.x, props.size.y,
                        props.base, magic_enum::enum_name(props.style), params.position.x,
                        params.position.y);
 }
@@ -47,8 +47,8 @@ template <>
 
     if (props.style == PlatformStyle::Diamond)
     {
-        auto half_width = props.width * TILE_SIZE / 2.0f;
-        auto half_depth = props.depth * TILE_SIZE / 2.0f;
+        auto half_width = props.size.x * TILE_SIZE / 2.0f;
+        auto half_depth = props.size.y * TILE_SIZE / 2.0f;
 
         auto center = params.position + glm::vec2{half_width, half_depth};
         auto dx = std::abs(selection_tile.x - center.x);
@@ -58,7 +58,7 @@ template <>
     }
     else if (props.style == PlatformStyle::Triangle)
     {
-        glm::vec2 size{props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F};
+        glm::vec2 size = props.size * TILE_SIZE_F;
         return point_in_triangle(selection_tile, generate_2d_triangle_vertex_positions(
                                                      params.position, size, props.direction));
     }
@@ -89,9 +89,9 @@ void object_rotate(PlatformObject& platform, glm::vec2 rotation_origin, float de
     position = rotate_around(position, rotation_origin, degrees);
 
     // Swap width and depth
-    props.depth = copy.width;
-    props.width = copy.depth;
-    position.x -= props.width * TILE_SIZE_F;
+    props.size.y = copy.size.x;
+    props.size.x = copy.size.y;
+    position.x -= props.size.x * TILE_SIZE_F;
 
     if (props.style == PlatformStyle::Triangle)
     {
@@ -124,7 +124,7 @@ SerialiseResponse object_serialise(const PlatformObject& platform, LevelFileIO& 
     nlohmann::json json_props = {};
     level_file_io.serialise_texture(json_props, props.texture_top);
     level_file_io.serialise_texture(json_props, props.texture_bottom);
-    json_props.insert(json_props.end(), {props.width, props.depth, props.base, (int)props.style,
+    json_props.insert(json_props.end(), {props.size.x, props.size.y, props.base, (int)props.style,
                                          (int)props.direction});
 
     return {{json_params, json_props}, "platform"};
@@ -152,8 +152,8 @@ bool object_deserialise(PlatformObject& platform, const nlohmann::json& json,
 
     props.texture_top = level_file_io.deserialise_texture(jprops[0]);
     props.texture_bottom = level_file_io.deserialise_texture(jprops[1]);
-    props.width = jprops[2];
-    props.depth = jprops[3];
+    props.size.x = jprops[2];
+    props.size.y = jprops[3];
     props.base = jprops[4];
     props.style = (PlatformStyle)(jprops[5]);
     props.direction = (Direction)(jprops[6]);
@@ -168,7 +168,7 @@ object_to_geometry_2d(const PlatformObject& platform, const LevelTextures& drawi
     auto& params = platform.parameters;
     auto& props = platform.properties;
     auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Platform"));
-    glm::vec2 size{props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F};
+    glm::vec2 size = props.size * TILE_SIZE_F;
 
     switch (props.style)
     {
@@ -198,8 +198,8 @@ namespace
         const auto& params = platform.parameters;
         const auto& props = platform.properties;
 
-        float width = props.width;
-        float depth = props.depth;
+        float width = props.size.x;
+        float depth = props.size.y;
 
         auto texture_bottom = static_cast<GLfloat>(props.texture_bottom.id);
         auto texture_top = static_cast<GLfloat>(props.texture_top.id);
@@ -230,8 +230,8 @@ namespace
         const auto& params = platform.parameters;
         const auto& props = platform.properties;
 
-        float width = props.width;
-        float depth = props.depth;
+        float width = props.size.x;
+        float depth = props.size.y;
 
         auto texture_bottom = static_cast<GLfloat>(props.texture_bottom.id);
         auto texture_top = static_cast<GLfloat>(props.texture_top.id);
@@ -263,8 +263,8 @@ namespace
         const auto& params = platform.parameters;
         const auto& props = platform.properties;
 
-        float width = props.width;
-        float depth = props.depth;
+        float width = props.size.x;
+        float depth = props.size.y;
 
         auto texture_top = static_cast<GLfloat>(props.texture_top.id);
         auto texture_bottom = static_cast<GLfloat>(props.texture_bottom.id);

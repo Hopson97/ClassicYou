@@ -24,9 +24,9 @@ namespace
 bool operator==(const RampProps& lhs, const RampProps& rhs)
 {
     return lhs.texture_top == rhs.texture_top && lhs.texture_bottom == rhs.texture_bottom &&
-           lhs.width == rhs.width && lhs.depth == rhs.depth &&
-           lhs.start_height == rhs.start_height && lhs.end_height == rhs.end_height &&
-           lhs.direction == rhs.direction && lhs.style == rhs.style;
+           lhs.size == rhs.size && lhs.start_height == rhs.start_height &&
+           lhs.end_height == rhs.end_height && lhs.direction == rhs.direction &&
+           lhs.style == rhs.style;
 }
 
 bool operator!=(const RampProps& lhs, const RampProps& rhs)
@@ -44,8 +44,8 @@ std::string object_to_string(const RampObject& ramp)
         "Props:\n Texture Top: {}\n Texture Bottom: {}\n Width: {:.2f}\n Depth: {:.2f}\n"
         " Start Height: {:.2f}\n End Height: {:.2f}\n Direction: {}\n Style: {}\n"
         "Parameters:\n Position: ({:.2f}, {:.2f})",
-        props.texture_top.id, props.texture_bottom.id, props.width, props.depth, props.start_height,
-        props.end_height, magic_enum::enum_name(props.direction),
+        props.texture_top.id, props.texture_bottom.id, props.size.x, props.size.y,
+        props.start_height, props.end_height, magic_enum::enum_name(props.direction),
         magic_enum::enum_name(props.style), params.position.x, params.position.y);
 }
 
@@ -62,7 +62,7 @@ template <>
 
     if (is_tri_ramp(props.style))
     {
-        glm::vec2 size{props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F};
+        glm::vec2 size = props.size * TILE_SIZE_F;
         return point_in_triangle(
             selection_tile, generate_2d_triangle_vertex_positions(
                                 params.position, size, to_actual_tri_ramp_direction(props.style)));
@@ -94,9 +94,9 @@ void object_rotate(RampObject& ramp, glm::vec2 rotation_origin, float degrees)
     position = rotate_around(position, rotation_origin, degrees);
 
     // Swap width and depth
-    props.depth = copy.width;
-    props.width = copy.depth;
-    position.x -= props.width * TILE_SIZE_F;
+    props.size.y = copy.size.x;
+    props.size.x = copy.size.y;
+    position.x -= props.size.x * TILE_SIZE_F;
 
     // clang-format off
     if (props.style == RampStyle::InvertedCorner || props.style == RampStyle::Corner)
@@ -139,7 +139,7 @@ SerialiseResponse object_serialise(const RampObject& ramp, LevelFileIO& level_fi
     nlohmann::json json_props = {};
     level_file_io.serialise_texture(json_props, props.texture_top);
     level_file_io.serialise_texture(json_props, props.texture_bottom);
-    json_props.insert(json_props.end(), {props.width, props.depth, props.start_height,
+    json_props.insert(json_props.end(), {props.size.x, props.size.y, props.start_height,
                                          props.end_height, (int)props.direction, (int)props.style});
 
     return {{json_params, json_props}, "ramp"};
@@ -167,8 +167,8 @@ bool object_deserialise(RampObject& ramp, const nlohmann::json& json,
 
     props.texture_top = level_file_io.deserialise_texture(jprops[0]);
     props.texture_bottom = level_file_io.deserialise_texture(jprops[1]);
-    props.width = jprops[2];
-    props.depth = jprops[3];
+    props.size.x = jprops[2];
+    props.size.y = jprops[3];
     props.start_height = jprops[4];
     props.end_height = jprops[5];
     props.direction = (Direction)jprops[6];
@@ -187,15 +187,14 @@ object_to_geometry_2d(const RampObject& ramp, const LevelTextures& drawing_pad_t
 
     if (is_tri_ramp(props.style))
     {
-        glm::vec2 size{props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F};
+        glm::vec2 size = props.size * TILE_SIZE_F;
         return {generate_2d_triangle_mesh(params.position, size, texture, props.texture_top.id,
                                           props.texture_top.colour,
                                           to_actual_tri_ramp_direction(props.style)),
                 gl::PrimitiveType::Triangles};
     }
 
-    return {generate_2d_quad_mesh(ramp.parameters.position,
-                                  {props.width * TILE_SIZE_F, props.depth * TILE_SIZE_F}, texture,
+    return {generate_2d_quad_mesh(ramp.parameters.position, props.size * TILE_SIZE_F, texture,
                                   props.texture_top.id, props.texture_top.colour, props.direction),
             gl::PrimitiveType::Triangles};
 }
@@ -204,12 +203,8 @@ namespace
 {
     struct RampMeshParams
     {
-        // The ramp's position in the world
         glm::vec3 pos;
-
-        // Size
-        float width = 0.0f;
-        float depth = 0.0f;
+        glm::vec2 size;
 
         // Textures and colour
         GLfloat texture_top;
@@ -307,7 +302,8 @@ namespace
         }
 
         // The 4 corners positions and texture coords
-        auto [a, b, c, d] = generate_vertex_positions(heights, p.pos.x, p.pos.z, p.width, p.depth);
+        auto [a, b, c, d] =
+            generate_vertex_positions(heights, p.pos.x, p.pos.z, p.size.x, p.size.y);
         auto [uv_a, uv_b, uv_c, uv_d] = generate_ramp_texture_coords(a, b, c, d);
 
         // Normal is the cross product between the directions of 3 points on the "plane"
@@ -382,7 +378,8 @@ namespace
         *prominent_corner = corner ? end_height : start_height;
 
         // The 4 corners
-        auto [a, b, c, d] = generate_vertex_positions(heights, p.pos.x, p.pos.z, p.width, p.depth);
+        auto [a, b, c, d] =
+            generate_vertex_positions(heights, p.pos.x, p.pos.z, p.size.x, p.size.y);
 
         LevelObjectsMesh3D mesh;
 
@@ -478,11 +475,9 @@ LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
     he += floor_number * FLOOR_HEIGHT;
 
     RampMeshParams ramp_mesh_params{
+        // Position and size
         .pos = glm::vec3{params.position.x, 0, params.position.y} / TILE_SIZE_F,
-
-        // Size
-        .width = props.width,
-        .depth = props.depth,
+        .size = props.size,
 
         // Textures and colour
         .texture_top = static_cast<GLfloat>(props.texture_top.id),

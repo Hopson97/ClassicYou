@@ -37,6 +37,7 @@ namespace ImGuiExtras
         }
         return false;
     }
+
     bool BeginCentredWindow(const char* name, const ImVec2& size)
     {
         ImGuiIO& io = ImGui::GetIO();

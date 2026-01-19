@@ -8,6 +8,6 @@ template <typename T>
 {
     return {
         .position = object.parameters.position,
-        .size = {object.properties.width * TILE_SIZE, object.properties.depth * TILE_SIZE},
+        .size = object.properties.size * (float)(TILE_SIZE),
     };
 }

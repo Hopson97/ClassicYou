@@ -64,4 +64,4 @@ struct Line
 [[nodiscard]] bool point_in_triangle(glm::vec2 point, const std::array<glm::vec2, 3>& triangle);
 
 [[nodiscard]] bool point_in_polygon(const glm::vec2& point, const std::vector<glm::vec2>& points,
-                                    const glm::vec2& points_offset);
+                                    const glm::vec2& points_offset = {0, 0});
