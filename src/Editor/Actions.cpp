@@ -157,25 +157,28 @@ void AddBulkObjectsAction::execute(EditorState& state, EditorLevel& level)
     if (!executed_)
     {
         state.selection.clear_selection();
-        object_ids.clear();
-        for (int i = 0; i < objects_.size(); i++)
+        object_ids_.clear();
+
+        for (auto&& [object, floor] : std::views::zip(objects_, floors_))
         {
-            auto& level_object = level.add_object(objects_[i], floors_[i]);
-            object_ids.push_back(level_object.object_id);
+            auto& level_object = level.add_object(object, floor);
+
+            object_ids_.push_back(level_object.object_id);
             state.selection.add_to_selection(level_object.object_id);
 
             last_object = &level_object;
         }
+
         executed_ = true;
     }
     else
     {
         state.selection.clear_selection();
-        for (int i = 0; i < objects_.size(); i++)
+        for (auto&& [object, floor, object_id] : std::views::zip(objects_, floors_, object_ids_))
         {
-            auto& level_object = level.add_object(objects_[i], floors_[i]);
+            auto& level_object = level.add_object(object, floor);
             state.selection.add_to_selection(level_object.object_id);
-            level.set_object_id(level_object.object_id, object_ids[i]);
+            level.set_object_id(level_object.object_id, object_id);
             last_object = &level_object;
         }
     }
@@ -189,7 +192,7 @@ void AddBulkObjectsAction::execute(EditorState& state, EditorLevel& level)
 void AddBulkObjectsAction::undo(EditorState& state, EditorLevel& level)
 {
     state.selection.clear_selection();
-    for (auto id : object_ids)
+    for (auto id : object_ids_)
     {
         level.remove_object(id);
     }
@@ -300,14 +303,14 @@ void DeleteObjectAction::execute(EditorState& state, EditorLevel& level)
 void DeleteObjectAction::undo(EditorState& state, EditorLevel& level)
 {
     state.selection.clear_selection();
-    for (int i = 0; i < objects_.size(); i++)
+    for (auto&& [object, floor] : std::views::zip(objects_, floors_))
     {
-        auto& new_object = level.add_object(objects_[i], floors_[i]);
+        auto& new_object = level.add_object(object, floor);
 
-        level.set_object_id(new_object.object_id, objects_[i].object_id);
-        assert(new_object.object_id == objects_[i].object_id);
+        level.set_object_id(new_object.object_id, object.object_id);
+        assert(new_object.object_id == object.object_id);
 
-        objects_[i] = new_object;
+        object = new_object;
         state.selection.add_to_selection(new_object.object_id);
     }
 }

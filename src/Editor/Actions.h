@@ -67,7 +67,7 @@ class AddBulkObjectsAction final : public Action
     std::vector<int> floors_;
 
     /// The ID of the object added to the level. This for undo/redo to ensure the ID is preserved.
-    std::vector<ObjectId> object_ids;
+    std::vector<ObjectId> object_ids_;
 
     // Flag for when re-doing this action, it uses the stored props rather than the default
     bool executed_ = false;
