@@ -38,7 +38,7 @@ bool UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
                                  const LevelTextures& drawing_pad_texture_map)
 {
     state_floor_ = state.current_floor;
-    state_world_position_hovered = state.world_position_hovered;
+    state_world_position_hovered_ = state.world_position_hovered;
     state_node_hovered_ = state.node_hovered;
     if (state.current_floor != floor_)
     {
@@ -86,7 +86,7 @@ bool UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
 
         if (!active_dragging_)
         {
-            target_index_ = closest_point_index(outer_points, state_world_position_hovered);
+            target_index_ = closest_point_index(outer_points, state_world_position_hovered_);
 
             // Try to find a point along the line where a new vertex could be added if the mouse
             // cursor is close to it
@@ -97,11 +97,11 @@ bool UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
                 auto p2 = outer_points[(i + 1) % outer_points.size()] + polygon_position;
                 Line line{p1, p2};
 
-                auto distance = distance_to_line(state_world_position_hovered, line);
+                auto distance = distance_to_line(state_world_position_hovered_, line);
                 if (distance < MIN_SELECT_DISTANCE)
                 {
                     line_ = {
-                        .world_point = closest_point_on_line(state_world_position_hovered, line),
+                        .world_point = closest_point_on_line(state_world_position_hovered_, line),
                         .node_point = glm::vec2{state_node_hovered_} - polygon_position,
                         .index = i,
                         .is_selected_ = true,
@@ -134,7 +134,7 @@ bool UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
         if (key->code == sf::Keyboard::Key::Backspace && outer_points.size() > 3)
         {
 
-            if (auto i = closest_point_index(outer_points, state_world_position_hovered))
+            if (auto i = closest_point_index(outer_points, state_world_position_hovered_))
             {
                 outer_points.erase(outer_points.begin() + *i);
                 delete_holes_outside_polygon();
@@ -264,7 +264,7 @@ void UpdatePolygonTool::delete_holes_outside_polygon()
                                        { return !point_in_polygon(vertex, geometry[0]); });
         });
     geometry.erase(first, last);
-} 
+}
 
 std::optional<size_t> UpdatePolygonTool::closest_point_index(const std::vector<glm::vec2>& points,
                                                              const glm::vec2& world_position) const

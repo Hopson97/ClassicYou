@@ -258,6 +258,18 @@ void ScreenEditGame::on_event(const sf::Event& event)
     // CTRL C and CTRL V handling
     copy_paste_handler_.handle_event(event, editor_state_.selection, editor_state_.current_floor);
 
+    if (editor_state_.selection.single_object_is_selected())
+    {
+        for (auto& prop_updater : property_updater_.editors)
+        {
+            if (prop_updater->handle_event(event, editor_state_, action_manager_,
+                                           drawing_pad_texture_map_))
+            {
+                return;
+            }
+        }
+    }
+
     if (!object_move_handler_.is_moving_objects())
     {
         // Certain tool events prevent further event processing, for example when trying to re-size
@@ -743,6 +755,13 @@ void ScreenEditGame::select_object(LevelObject* object)
             auto floor = level_.get_object_floor(object->object_id);
             tool_ = std::make_unique<UpdatePolygonTool>(*object, *polygon, *floor,
                                                         drawing_pad_texture_map_);
+        }
+        else if (auto platform = std::get_if<PlatformObject>(&object->object_type))
+        {
+            auto floor = level_.get_object_floor(object->object_id);
+
+            property_updater_.editors.push_back(std::make_unique<ObjectSizeEditor>(
+                *object, platform->parameters.position, platform->properties.size));
         }
         else
         {

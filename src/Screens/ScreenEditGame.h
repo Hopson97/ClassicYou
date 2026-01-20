@@ -7,6 +7,7 @@
 #include "../Editor/EditorState.h"
 #include "../Editor/Grids.h"
 #include "../Editor/LevelFileIO.h"
+#include "../Editor/LevelObjectPropertyEditor.h"
 #include "../Editor/LevelTextures.h"
 #include "../Editor/Tools/Tool.h"
 #include "../Graphics/Camera.h"
@@ -176,4 +177,6 @@ class ScreenEditGame final : public Screen
     LevelFileSelectGUI level_file_selector_;
 
     MessagesManager messages_manager_;
+
+    LevelObjectPropertyEditor property_updater_;
 };
