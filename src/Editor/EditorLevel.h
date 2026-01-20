@@ -22,7 +22,6 @@ class LevelTextures;
  */
 class EditorLevel
 {
-
   private:
     /// The main light used to light up the level - TODO: Save this to the level file
     struct MainLight

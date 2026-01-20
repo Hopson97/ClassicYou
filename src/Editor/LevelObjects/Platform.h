@@ -22,8 +22,7 @@ struct PlatformProps
 {
     TextureProp texture_top;
     TextureProp texture_bottom;
-    float width = 1.0f;
-    float depth = 1.0f;
+    glm::vec2 size{2.0f};
     float base = 0.0f;
 
     PlatformStyle style = PlatformStyle::Quad;

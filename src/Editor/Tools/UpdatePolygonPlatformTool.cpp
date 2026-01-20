@@ -250,31 +250,21 @@ void UpdatePolygonTool::update_polygon(int current_floor, ActionManager& actions
 
 void UpdatePolygonTool::delete_holes_outside_polygon()
 {
-    //  When deleting points, or moving points, holes outside the outer region causes buggy
-    //  geometry, so it is best to just remove them
-    for (auto itr = polygon_.properties.geometry.begin() + 1;
-         itr != polygon_.properties.geometry.end();)
-    {
-        bool remove = false;
-        for (auto& hole_vertex : *itr)
-        {
-            if (!point_in_polygon(hole_vertex, polygon_.properties.geometry[0], {0, 0}))
-            {
-                remove = true;
-                break;
-            }
-        }
+    // When deleting points, or moving points, holes outside the outer region causes buggy
+    // geometry, so it is best to just remove them
+    auto& geometry = polygon_.properties.geometry;
 
-        if (remove)
+    auto holes = geometry | std::views::drop(1);
+
+    auto [first, last] = std::ranges::remove_if(
+        holes,
+        [&](const auto& hole)
         {
-            itr = polygon_.properties.geometry.erase(itr);
-        }
-        else
-        {
-            itr++;
-        }
-    }
-}
+            return std::ranges::any_of(hole, [&](const auto& vertex)
+                                       { return !point_in_polygon(vertex, geometry[0]); });
+        });
+    geometry.erase(first, last);
+} 
 
 std::optional<size_t> UpdatePolygonTool::closest_point_index(const std::vector<glm::vec2>& points,
                                                              const glm::vec2& world_position) const

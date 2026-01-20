@@ -24,8 +24,7 @@ struct RampProps
 {
     TextureProp texture_top;
     TextureProp texture_bottom;
-    float width = 2.0f;
-    float depth = 2.0f;
+    glm::vec2 size{2.0f};
 
     float start_height = 0.0f;
     float end_height = 1.0f;

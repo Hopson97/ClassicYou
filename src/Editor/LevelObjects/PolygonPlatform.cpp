@@ -32,10 +32,11 @@ std::string object_to_string(const PolygonPlatformObject& poly)
     }
 
     std::string holes_string;
-    for (int i = 1; i < props.geometry.size(); i++)
+
+    for (auto hole : props.geometry | std::views::drop(1))
     {
         std::string hole_string;
-        for (auto& point : props.geometry[i])
+        for (auto& point : hole)
         {
             hole_string += std::format("({:.2f}, {:.2f}), ", point.x, point.y);
         }
@@ -111,19 +112,18 @@ SerialiseResponse object_serialise(const PolygonPlatformObject& poly, LevelFileI
     }
 
     nlohmann::json holes;
-    for (int i = 1; i < props.geometry.size(); i++)
+    for (const auto& hole : props.geometry | std::views::drop(1))
     {
-        nlohmann::json hole;
-        for (auto& point : props.geometry[i])
+        nlohmann::json json_hole;
+        for (auto& point : hole)
         {
-            hole.push_back(point.x);
-            hole.push_back(point.y);
+            json_hole.push_back(point.x);
+            json_hole.push_back(point.y);
         }
-        holes.push_back(hole);
+        holes.push_back(std::move(json_hole));
     }
-
-    json_props.push_back(points);
-    json_props.push_back(holes);
+    json_props.push_back(std::move(points));
+    json_props.push_back(std::move(holes));
 
     level_file_io.serialise_texture(json_props, props.texture_top);
     level_file_io.serialise_texture(json_props, props.texture_bottom);
@@ -199,6 +199,7 @@ object_to_geometry_2d(const PolygonPlatformObject& poly,
     auto& position = params.position;
 
     auto texture_top = static_cast<float>(props.texture_top.id);
+    auto colour_top = props.texture_top.colour;
 
     Mesh2DWorld mesh;
     auto earcut_indices = mapbox::earcut<>(props.geometry);
@@ -212,7 +213,8 @@ object_to_geometry_2d(const PolygonPlatformObject& poly,
             glm::vec2 tex_coords = world_pos / TILE_SIZE_F;
             mesh.vertices.push_back({world_pos,
                                      {tex_coords.x, tex_coords.y, base_texture},
-                                     {tex_coords.x, tex_coords.y, texture_top}});
+                                     {tex_coords.x, tex_coords.y, texture_top},
+                                     colour_top});
         }
     }
 

@@ -562,7 +562,7 @@ void ScreenEditGame::on_render(bool show_debug)
                                                  : gl::PolygonMode::Fill);
 
     scene_shader_.set_uniform("use_texture", false);
-    if (tool_ && tool_->get_tool_type() == ToolType::CreateWall)
+    if (tool_ && tool_->get_tool_type() != ToolType::CreateObject)
     {
         scene_shader_.set_uniform(
             "model_matrix",
