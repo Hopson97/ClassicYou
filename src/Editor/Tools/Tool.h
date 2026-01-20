@@ -227,7 +227,7 @@ class UpdatePolygonTool : public ITool
     const int floor_;
     int state_floor_ = 0;
 
-    glm::vec2 state_world_position_hovered{0};
+    glm::vec2 state_world_position_hovered_{0};
     glm::ivec2 state_node_hovered_{0};
 
     std::optional<size_t> target_index_;

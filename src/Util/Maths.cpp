@@ -128,7 +128,6 @@ glm::vec2 closest_point_on_line(const glm::vec2& point, const Line& line)
     auto v = line.end - line.start;
     auto t = glm::clamp(glm::dot(point - line.start, v) / line_length, 0.0f, 1.0f);
 
-
     return line.start + t * v;
 }
 
