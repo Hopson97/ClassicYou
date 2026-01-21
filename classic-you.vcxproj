@@ -247,6 +247,7 @@
     <ClInclude Include="src\Editor\LevelFileIO.h" />
     <ClInclude Include="src\Editor\LevelObjectPropertyEditor.h" />
     <ClInclude Include="src\Editor\LevelObjects\LevelObjectBase.h" />
+    <ClInclude Include="src\Editor\LevelObjects\LevelObjectConcepts.h" />
     <ClInclude Include="src\Editor\LevelObjects\LevelObjectHelpers.h" />
     <ClInclude Include="src\Editor\LevelObjects\Ramp.h" />
     <ClInclude Include="src\Editor\LevelTextures.h" />

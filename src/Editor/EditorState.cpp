@@ -27,6 +27,7 @@ void Selection::set_selection(LevelObject* object)
     {
         objects.push_back(object->object_id);
     }
+    notify_callbacks(object);
 }
 
 void Selection::add_to_selection(LevelObject* object)
@@ -37,6 +38,7 @@ void Selection::add_to_selection(LevelObject* object)
     {
         objects.push_back(object->object_id);
     }
+    notify_callbacks(object);
 }
 
 void Selection::add_to_selection(ObjectId id)
@@ -61,4 +63,12 @@ bool Selection::single_object_is_selected() const
 bool Selection::has_selection() const
 {
     return p_active_object || !objects.empty();
+}
+
+void Selection::notify_callbacks(LevelObject* object)
+{
+    for (auto& callback : on_selection_changed)
+    {
+        callback(object, !single_object_is_selected());
+    }
 }

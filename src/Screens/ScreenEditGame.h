@@ -68,6 +68,10 @@ class ScreenEditGame final : public Screen
     /// Selecting walls sets the tool type to be "UpdateWallTool" such that it can be resized
     void select_object(LevelObject* object);
 
+    /// Creates property editors for the given object that enable editing via the 2D view
+    /// TODO: Propety editors in the 3D view
+    void create_property_editors(LevelObject* object);
+
     /// Exit to the main menu, saving the current level to "backup/backup.cly"
     void exit_editor();
 
