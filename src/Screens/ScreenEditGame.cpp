@@ -722,6 +722,8 @@ void ScreenEditGame::on_render(bool show_debug)
 
 void ScreenEditGame::select_object(LevelObject* object)
 {
+    property_updater_.editors.clear();
+
     // Multi-select when shift is pressed
     if (is_shift_down_)
     {
@@ -758,10 +760,13 @@ void ScreenEditGame::select_object(LevelObject* object)
         }
         else if (auto platform = std::get_if<PlatformObject>(&object->object_type))
         {
-            auto floor = level_.get_object_floor(object->object_id);
-
             property_updater_.editors.push_back(std::make_unique<ObjectSizeEditor>(
                 *object, platform->parameters.position, platform->properties.size));
+        }
+        else if (auto ramp = std::get_if<RampObject>(&object->object_type))
+        {
+            property_updater_.editors.push_back(std::make_unique<ObjectSizeEditor>(
+                *object, ramp->parameters.position, ramp->properties.size));
         }
         else
         {

@@ -19,8 +19,6 @@ class PropertyEditor
   public:
     const ObjectId object_id;
 
-   
-
     PropertyEditor(ObjectId object_id)
         : object_id(object_id)
     {
@@ -30,12 +28,13 @@ class PropertyEditor
                               const LevelTextures& drawing_pad_texture_map) = 0;
     virtual void display_2d_editor() = 0;
 
-     //virtual bool display_gui() = 0;
+    // virtual bool display_gui() = 0;
 };
 
 /// Class for updating the size of certain objects via the world views
 class ObjectSizeEditor : public PropertyEditor
 {
+  public:
     /// The "face" being dragged. For corners this can be two faces
     enum PullDirection
     {
@@ -54,6 +53,16 @@ class ObjectSizeEditor : public PropertyEditor
     void display_2d_editor() override;
 
   private:
+    /// Drag the right or bottom side.
+    /// Axis should be 0 for X (Width) and 1 for Y (Height)
+    void drag_positive_direction_2d(const Rectangle& object_rect, int axis, glm::ivec2 node_hovered,
+                                    glm::vec2& new_size);
+
+    /// Drag the left or top side.
+    /// Axis should be 0 for X (Width) and 1 for Y (Height)
+    void drag_negative_direction_2d(const Rectangle& object_rect, int axis, glm::ivec2 node_hovered,
+                                    glm::vec2& new_position, glm::vec2& new_size);
+
     void update_object(int current_floor, ActionManager& actions, bool store_action);
     // Fields modified by the editor
     glm::vec2 position_;
