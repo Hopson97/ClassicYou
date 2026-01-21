@@ -17,13 +17,6 @@ class EditorLevel;
 class PropertyEditor
 {
   public:
-    const ObjectId object_id;
-
-    PropertyEditor(ObjectId object_id)
-        : object_id(object_id)
-    {
-    }
-
     virtual bool handle_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                               const LevelTextures& drawing_pad_texture_map) = 0;
     virtual void display_2d_editor() = 0;
@@ -46,7 +39,7 @@ class ObjectSizeEditor : public PropertyEditor
     };
 
   public:
-    ObjectSizeEditor(LevelObject object, glm::vec2 position, glm::vec2 size);
+    ObjectSizeEditor(glm::vec2 position, glm::vec2 size, int object_floor);
 
     bool handle_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                       const LevelTextures& drawing_pad_texture_map) override;
@@ -63,10 +56,14 @@ class ObjectSizeEditor : public PropertyEditor
     void drag_negative_direction_2d(const Rectangle& object_rect, int axis, glm::ivec2 node_hovered,
                                     glm::vec2& new_position, glm::vec2& new_size);
 
-    void update_object(int current_floor, ActionManager& actions, bool store_action);
+    void update_object(const LevelObject& object, int current_floor, ActionManager& actions,
+                       bool store_action);
     // Fields modified by the editor
     glm::vec2 position_;
     glm::vec2 size_;
+
+    // The floor of the object to prevent resize when on a different floor to it
+    int object_floor_ = 0;
 
     // Direction the edges are being pulled in
     int pull_direction_;
@@ -74,7 +71,10 @@ class ObjectSizeEditor : public PropertyEditor
 
     glm::ivec2 start_drag_position_;
 
-    LevelObject object_;
+    Mesh2DWorld left_line_preview_;
+    Mesh2DWorld right_line_preview_;
+    Mesh2DWorld top_line_preview_;
+    Mesh2DWorld bottom_line_preview_;
 };
 
 // struct HeightOffsetEditor : public PropertyEditor

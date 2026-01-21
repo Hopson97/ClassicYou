@@ -9,6 +9,7 @@
 #include "../Editor/EditConstants.h"
 #include "../Editor/EditorGUI.h"
 #include "../Editor/LevelFileIO.h"
+#include "../Editor/LevelObjects/LevelObjectConcepts.h"
 #include "../Graphics/OpenGL/GLUtils.h"
 #include "../Util/ImGuiExtras.h"
 #include "../Util/Keyboard.h"
@@ -245,6 +246,30 @@ bool ScreenEditGame::on_init()
     // Set up the default tool
     tool_ = std::make_unique<CreateWallTool>(drawing_pad_texture_map_);
 
+    // Set up callback from when selection is changed
+    editor_state_.selection.on_selection_changed.push_back(
+        [&](LevelObject* object, bool multiple_selected)
+        {
+            if (multiple_selected)
+            {
+                property_updater_.editors.clear();
+            }
+            else
+            {
+                create_property_editors(object);
+
+                if (editor_settings_.jump_to_selection_floor)
+                {
+                    int old_floor = editor_state_.current_floor;
+                    if (auto floor = level_.get_object_floor(object->object_id))
+                    {
+                        editor_state_.current_floor = *floor;
+                    }
+                    offset_camera_to_floor(old_floor);
+                }
+            }
+        });
+
     return true;
 }
 
@@ -285,9 +310,16 @@ void ScreenEditGame::on_event(const sf::Event& event)
     auto move_finished = object_move_handler_.handle_move_events(
         event, editor_state_, tool_ ? tool_->get_tool_type() : ToolType::CreateWall);
 
-    // Prevent unintentionally creating "false walls" when an object has been moved
     if (move_finished)
     {
+        // When the object has been modified externally, the property editors are now invalid so
+        // must be recreated
+        if (editor_state_.selection.single_object_is_selected())
+        {
+            create_property_editors(editor_state_.selection.p_active_object);
+        }
+
+        // Prevent unintentionally creating "false walls" when an object has been moved
         tool_->cancel_events();
     }
 
@@ -516,12 +548,16 @@ void ScreenEditGame::on_render(bool show_debug)
                          editor_state_.current_floor, object_move_handler_.get_move_offset());
 
         // Render the tool preview
-        if (tool_ && tool_->get_tool_type() == ToolType::UpdateWall ||
-            !ImGui::GetIO().WantCaptureMouse)
+        if (tool_ &&
+            (tool_->get_tool_type() == ToolType::UpdateWall || !ImGui::GetIO().WantCaptureMouse))
         {
             if (!object_move_handler_.is_moving_objects())
             {
                 tool_->render_preview_2d(drawing_pad_shader_);
+                for (auto& prop_updater : property_updater_.editors)
+                {
+                    prop_updater->display_2d_editor();
+                }
             }
         }
 
@@ -722,7 +758,6 @@ void ScreenEditGame::on_render(bool show_debug)
 
 void ScreenEditGame::select_object(LevelObject* object)
 {
-    property_updater_.editors.clear();
 
     // Multi-select when shift is pressed
     if (is_shift_down_)
@@ -734,16 +769,6 @@ void ScreenEditGame::select_object(LevelObject* object)
     {
         editor_state_.selection.set_selection(object);
 
-        if (editor_settings_.jump_to_selection_floor)
-        {
-            int old_floor = editor_state_.current_floor;
-            if (auto floor = level_.get_object_floor(object->object_id))
-            {
-                editor_state_.current_floor = *floor;
-            }
-            offset_camera_to_floor(old_floor);
-        }
-
         // Editing a wall requires a special tool to enable resizing, so after a object
         // it switches between tools
         if (auto wall = std::get_if<WallObject>(&object->object_type))
@@ -752,27 +777,27 @@ void ScreenEditGame::select_object(LevelObject* object)
             tool_ =
                 std::make_unique<UpdateWallTool>(*object, *wall, *floor, drawing_pad_texture_map_);
         }
-        else if (auto polygon = std::get_if<PolygonPlatformObject>(&object->object_type))
-        {
-            auto floor = level_.get_object_floor(object->object_id);
-            tool_ = std::make_unique<UpdatePolygonTool>(*object, *polygon, *floor,
-                                                        drawing_pad_texture_map_);
-        }
-        else if (auto platform = std::get_if<PlatformObject>(&object->object_type))
-        {
-            property_updater_.editors.push_back(std::make_unique<ObjectSizeEditor>(
-                *object, platform->parameters.position, platform->properties.size));
-        }
-        else if (auto ramp = std::get_if<RampObject>(&object->object_type))
-        {
-            property_updater_.editors.push_back(std::make_unique<ObjectSizeEditor>(
-                *object, ramp->parameters.position, ramp->properties.size));
-        }
         else
         {
             tool_ = std::make_unique<CreateWallTool>(drawing_pad_texture_map_);
         }
     }
+}
+
+void ScreenEditGame::create_property_editors(LevelObject* object)
+{
+    property_updater_.editors.clear();
+
+    std::visit(
+        [&](auto& obj)
+        {
+            if constexpr (ResizableObject<decltype(obj)>)
+            {
+                property_updater_.editors.push_back(std::make_unique<ObjectSizeEditor>(
+                    obj.parameters.position, obj.properties.size, editor_state_.current_floor));
+            }
+        },
+        object->object_type);
 }
 
 void ScreenEditGame::exit_editor()

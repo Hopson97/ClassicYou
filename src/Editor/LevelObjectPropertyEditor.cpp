@@ -50,11 +50,11 @@ namespace
     }
 } // namespace
 
-ObjectSizeEditor::ObjectSizeEditor(LevelObject object, glm::vec2 position, glm::vec2 size)
-    : PropertyEditor(object.object_id)
-    , position_{position}
+ObjectSizeEditor::ObjectSizeEditor(glm::vec2 position, glm::vec2 size, int object_floor)
+    : position_{position}
     , size_{size}
-    , object_(object)
+    , object_floor_{object_floor}
+
 {
 }
 
@@ -62,6 +62,11 @@ bool ObjectSizeEditor::handle_event(const sf::Event& event, EditorState& state,
                                     ActionManager& actions,
                                     const LevelTextures& drawing_pad_texture_map)
 {
+    if (object_floor_ != state.current_floor)
+    {
+        return false;
+    }
+
     auto rect = to_world_rectangle(position_, size_);
 
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
@@ -89,9 +94,9 @@ bool ObjectSizeEditor::handle_event(const sf::Event& event, EditorState& state,
             for (auto& [line, direction, min_select_distance] : line_to_direction_map)
             {
                 if (distance_to_line(state.world_position_hovered, line) < min_select_distance)
-            {
+                {
                     pull_direction_ |= static_cast<int>(direction);
-            }
+                }
             }
         }
 
@@ -121,7 +126,8 @@ bool ObjectSizeEditor::handle_event(const sf::Event& event, EditorState& state,
             {
                 size_ = new_size;
                 position_ = new_position;
-                update_object(state.current_floor, actions, false);
+                update_object(*state.selection.p_active_object, state.current_floor, actions,
+                              false);
             }
         }
     }
@@ -131,7 +137,7 @@ bool ObjectSizeEditor::handle_event(const sf::Event& event, EditorState& state,
             active_dragging_)
         {
             active_dragging_ = false;
-            update_object(state.current_floor, actions, true);
+            update_object(*state.selection.p_active_object, state.current_floor, actions, true);
             return true;
         }
     }
@@ -172,9 +178,10 @@ void ObjectSizeEditor::drag_negative_direction_2d(const Rectangle& object_rect, 
     }
 }
 
-void ObjectSizeEditor::update_object(int current_floor, ActionManager& actions, bool store_action)
+void ObjectSizeEditor::update_object(const LevelObject& object, int current_floor,
+                                     ActionManager& actions, bool store_action)
 {
-    auto new_object = object_;
+    auto new_object = object;
     if (auto platform = std::get_if<PlatformObject>(&new_object.object_type))
     {
         platform->properties.size = size_;
@@ -186,6 +193,6 @@ void ObjectSizeEditor::update_object(int current_floor, ActionManager& actions, 
         ramp->parameters.position = position_;
     }
 
-    actions.push_action(std::make_unique<UpdateObjectAction>(object_, new_object, current_floor),
+    actions.push_action(std::make_unique<UpdateObjectAction>(object, new_object, current_floor),
                         store_action);
 }

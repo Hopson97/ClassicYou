@@ -10,6 +10,12 @@ struct LevelObject;
 /// Stores the currently selected objects in the editor, along with their floors.
 struct Selection
 {
+    /// Callback for handling objects being created, where the second arg is True if there are
+    /// multiple selections
+    using SelectionAddedToCallback = std::move_only_function<void(LevelObject*, bool)>;
+
+    std::vector<SelectionAddedToCallback> on_selection_changed;
+
     /// List of object IDs that are currently selected.
     std::vector<ObjectId> objects;
 
@@ -30,6 +36,9 @@ struct Selection
 
     bool single_object_is_selected() const;
     bool has_selection() const;
+
+  private:
+    void notify_callbacks(LevelObject* object);
 };
 
 /// @brief The state of the editor input, such as the currently hovered node, the selected object
@@ -46,7 +55,7 @@ struct EditorState
     /// The currently hovered node/tile in the editor.
     glm::ivec2 node_hovered{0};
 
-    // The "world pixel" currently hovered in the 2D view
+    /// The "world pixel" currently hovered in the 2D view
     glm::vec2 world_position_hovered{0};
 
     /// The current floor number that the editor is working on.
