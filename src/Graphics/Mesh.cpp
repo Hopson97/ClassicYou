@@ -332,10 +332,17 @@ Mesh3D generate_grid_mesh(int width, int height)
     return mesh;
 }
 
-Mesh2DWorld generate_line_mesh(glm::vec2 from, glm::vec2 to, glm::u8vec4 colour)
+void generate_line_mesh(Mesh2DWorld& mesh, const Line& line, glm::u8vec4 colour)
+{
+    mesh.vertices.clear();
+    mesh.indices.clear();
+    add_line_to_mesh(mesh, line, colour);
+}
+
+Mesh2DWorld generate_line_mesh(const Line& line, glm::u8vec4 colour)
 {
     Mesh2DWorld mesh;
-    add_line_to_mesh(mesh, from, to, colour);
+    add_line_to_mesh(mesh, line, colour);
     return mesh;
 }
 
@@ -440,11 +447,29 @@ Mesh2DWorld generate_2d_outline_quad_mesh(glm::vec2 position, glm::vec2 size)
 {
     glm::u8vec4 colour = {255, 255, 255, 255};
     Mesh2DWorld mesh;
-    add_line_to_mesh(mesh, {position.x, position.y}, {position.x + size.x, position.y}, colour);
-    add_line_to_mesh(mesh, {position.x + size.x, position.y},
-                     {position.x + size.x, position.y + size.y}, colour);
-    add_line_to_mesh(mesh, {position.x + size.x, position.y + size.y},
-                     {position.x, position.y + size.y}, colour);
-    add_line_to_mesh(mesh, {position.x, position.y + size.y}, {position.x, position.y}, colour);
+    add_line_to_mesh(mesh,
+                     {
+                         {position.x, position.y},
+                         {position.x + size.x, position.y},
+                     },
+                     colour);
+    add_line_to_mesh(mesh,
+                     {
+                         {position.x + size.x, position.y},
+                         {position.x + size.x, position.y + size.y},
+                     },
+                     colour);
+    add_line_to_mesh(mesh,
+                     {
+                         {position.x + size.x, position.y + size.y},
+                         {position.x, position.y + size.y},
+                     },
+                     colour);
+    add_line_to_mesh(mesh,
+                     {
+                         {position.x, position.y + size.y},
+                         {position.x, position.y},
+                     },
+                     colour);
     return mesh;
 }

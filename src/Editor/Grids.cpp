@@ -70,26 +70,32 @@ bool Grid2D::init()
     // Create the "sub" grid
     for (int x = 0; x <= WORLD_SIZE - 1; x++)
     {
-        add_line_to_mesh(grid_mesh_.sub_grid, {TILE_SIZE * x + HALF_TILE_SIZE, 0},
-                         {TILE_SIZE * x + HALF_TILE_SIZE, TILE_SIZE * WORLD_SIZE}, SUB_GRID_COLOUR);
+        add_line_to_mesh(grid_mesh_.sub_grid,
+                         {{TILE_SIZE * x + HALF_TILE_SIZE, 0},
+                          {TILE_SIZE * x + HALF_TILE_SIZE, TILE_SIZE * WORLD_SIZE}},
+                         SUB_GRID_COLOUR);
     }
     for (int y = 0; y <= WORLD_SIZE - 1; y++)
     {
-        add_line_to_mesh(grid_mesh_.sub_grid, {0, TILE_SIZE * y + HALF_TILE_SIZE},
-                         {TILE_SIZE * WORLD_SIZE, TILE_SIZE * y + HALF_TILE_SIZE}, SUB_GRID_COLOUR);
+        add_line_to_mesh(grid_mesh_.sub_grid,
+                         {{0, TILE_SIZE * y + HALF_TILE_SIZE},
+                          {TILE_SIZE * WORLD_SIZE, TILE_SIZE * y + HALF_TILE_SIZE}},
+                         SUB_GRID_COLOUR);
     }
 
     // Create the main grid
     for (int x = 0; x <= WORLD_SIZE; x++)
     {
-        add_line_to_mesh(grid_mesh_.main_grid, {TILE_SIZE * x, 0},
-                         {TILE_SIZE * x, TILE_SIZE * WORLD_SIZE}, MAIN_GRID_COLOUR);
+        add_line_to_mesh(grid_mesh_.main_grid,
+                         {{TILE_SIZE * x, 0}, {TILE_SIZE * x, TILE_SIZE * WORLD_SIZE}},
+                         MAIN_GRID_COLOUR);
     }
 
     for (int y = 0; y <= WORLD_SIZE; y++)
     {
-        add_line_to_mesh(grid_mesh_.main_grid, {0, TILE_SIZE * y},
-                         {TILE_SIZE * WORLD_SIZE, TILE_SIZE * y}, MAIN_GRID_COLOUR);
+        add_line_to_mesh(grid_mesh_.main_grid,
+                         {{0, TILE_SIZE * y}, {TILE_SIZE * WORLD_SIZE, TILE_SIZE * y}},
+                         MAIN_GRID_COLOUR);
     }
     grid_mesh_.sub_grid.buffer();
     grid_mesh_.main_grid.buffer();

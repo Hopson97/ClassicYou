@@ -250,7 +250,7 @@ Mesh2DWorld object_to_outline_2d(const PolygonPlatformObject& poly)
 
             auto colour = is_outline ? OL_COLOUR : HOLE_COLOUR;
 
-            add_line_to_mesh(mesh, p1 + position, p2 + position, colour);
+            add_line_to_mesh(mesh, {p1 + position, p2 + position}, colour);
         }
         is_outline = false;
     }

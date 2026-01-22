@@ -54,8 +54,8 @@ ObjectSizeEditor::ObjectSizeEditor(glm::vec2 position, glm::vec2 size, int objec
     : position_{position}
     , size_{size}
     , object_floor_{object_floor}
-
 {
+    update_previews();
 }
 
 bool ObjectSizeEditor::handle_event(const sf::Event& event, EditorState& state,
@@ -128,6 +128,8 @@ bool ObjectSizeEditor::handle_event(const sf::Event& event, EditorState& state,
                 position_ = new_position;
                 update_object(*state.selection.p_active_object, state.current_floor, actions,
                               false);
+                update_previews();
+
             }
         }
     }
@@ -145,8 +147,27 @@ bool ObjectSizeEditor::handle_event(const sf::Event& event, EditorState& state,
     return false;
 }
 
-void ObjectSizeEditor::display_2d_editor()
+void ObjectSizeEditor::render_preview_2d(gl::Shader& scene_shader_2d)
 {
+    auto draw_line_preview = [&](Mesh2DWorld& mesh, PullDirection big_if_direction)
+    {
+        if ((pull_direction_ & big_if_direction) == big_if_direction)
+        {
+            mesh.bind().draw_elements(gl::PrimitiveType::Lines);
+        }
+    };
+
+    glLineWidth(3);
+
+    scene_shader_2d.set_uniform("model_matrix", create_model_matrix({}));
+    scene_shader_2d.set_uniform("use_texture", false);
+    scene_shader_2d.set_uniform("is_selected", false);
+    scene_shader_2d.set_uniform("on_floor_below", false);
+
+    draw_line_preview(top_line_preview_, PullDirection::Up);
+    draw_line_preview(right_line_preview_, PullDirection::Right);
+    draw_line_preview(left_line_preview_, PullDirection::Left);
+    draw_line_preview(bottom_line_preview_, PullDirection::Down);
 }
 
 void ObjectSizeEditor::drag_positive_direction_2d(const Rectangle& object_rect, int axis,
@@ -195,4 +216,19 @@ void ObjectSizeEditor::update_object(const LevelObject& object, int current_floo
 
     actions.push_action(std::make_unique<UpdateObjectAction>(object, new_object, current_floor),
                         store_action);
+}
+
+void ObjectSizeEditor::update_previews()
+{
+    auto lines = create_line_to_direction_map(to_world_rectangle(position_, size_));
+
+    generate_line_mesh(top_line_preview_, lines[0].line, glm::u8vec4{255, 0, 255, 255});
+    generate_line_mesh(right_line_preview_, lines[1].line, glm::u8vec4{255, 0, 255, 255});
+    generate_line_mesh(left_line_preview_, lines[2].line, glm::u8vec4{255, 0, 255, 255});
+    generate_line_mesh(bottom_line_preview_, lines[3].line, glm::u8vec4{255, 0, 255, 255});
+
+    top_line_preview_.update();
+    right_line_preview_.update();
+    left_line_preview_.update();
+    bottom_line_preview_.update();
 }

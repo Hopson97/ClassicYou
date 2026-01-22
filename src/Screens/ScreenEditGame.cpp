@@ -556,7 +556,7 @@ void ScreenEditGame::on_render(bool show_debug)
                 tool_->render_preview_2d(drawing_pad_shader_);
                 for (auto& prop_updater : property_updater_.editors)
                 {
-                    prop_updater->display_2d_editor();
+                    prop_updater->render_preview_2d(drawing_pad_shader_);
                 }
             }
         }
@@ -776,6 +776,12 @@ void ScreenEditGame::select_object(LevelObject* object)
             auto floor = level_.get_object_floor(object->object_id);
             tool_ =
                 std::make_unique<UpdateWallTool>(*object, *wall, *floor, drawing_pad_texture_map_);
+        }
+        else if (auto polygon = std::get_if<PolygonPlatformObject>(&object->object_type))
+        {
+            auto floor = level_.get_object_floor(object->object_id);
+            tool_ = std::make_unique<UpdatePolygonTool>(*object, *polygon, *floor,
+                                                        drawing_pad_texture_map_);
         }
         else
         {
