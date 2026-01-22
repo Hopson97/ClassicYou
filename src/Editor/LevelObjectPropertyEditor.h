@@ -19,8 +19,7 @@ class PropertyEditor
   public:
     virtual bool handle_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                               const LevelTextures& drawing_pad_texture_map) = 0;
-    virtual void display_2d_editor() = 0;
-
+    virtual void render_preview_2d(gl::Shader& scene_shader_2d) = 0;
     // virtual bool display_gui() = 0;
 };
 
@@ -43,7 +42,7 @@ class ObjectSizeEditor : public PropertyEditor
 
     bool handle_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                       const LevelTextures& drawing_pad_texture_map) override;
-    void display_2d_editor() override;
+    void render_preview_2d(gl::Shader& scene_shader_2d) override;
 
   private:
     /// Drag the right or bottom side.
@@ -58,6 +57,9 @@ class ObjectSizeEditor : public PropertyEditor
 
     void update_object(const LevelObject& object, int current_floor, ActionManager& actions,
                        bool store_action);
+
+    void update_previews();
+
     // Fields modified by the editor
     glm::vec2 position_;
     glm::vec2 size_;
@@ -71,6 +73,7 @@ class ObjectSizeEditor : public PropertyEditor
 
     glm::ivec2 start_drag_position_;
 
+    // Preview for each side of the given shape to show which side is being re-sized
     Mesh2DWorld left_line_preview_;
     Mesh2DWorld right_line_preview_;
     Mesh2DWorld top_line_preview_;

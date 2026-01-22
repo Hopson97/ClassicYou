@@ -7,6 +7,7 @@
 
 #include "../Editor/EditConstants.h"
 #include "../Editor/LevelObjects/LevelObjectTypes.h"
+#include "../Util/Maths.h"
 #include "OpenGL/GLUtils.h"
 #include "OpenGL/VertexArrayObject.h"
 
@@ -81,9 +82,16 @@ template <typename Vertex>
 class Mesh
 {
   public:
+    /// Buffer the mesh
     bool buffer();
+
+    /// Update the mesh if it is already buffered, otherwise creates a new buffer
     bool update();
+
+    /// Binf the mesh ready for drawing
     const Mesh& bind() const;
+
+    /// Does glDrawElements. Fails if the indices are empty
     void draw_elements(gl::PrimitiveType primitive = gl::PrimitiveType::Triangles) const;
 
     gl::VertexArrayObject& vao()
@@ -208,16 +216,17 @@ using Mesh2D = Mesh<Vertex2D>;
 [[nodiscard]] Mesh3D generate_grid_mesh(int width, int height);
 
 template <typename MeshType>
-void add_line_to_mesh(MeshType& mesh, glm::vec2 from, glm::vec2 to, glm::u8vec4 colour)
+void add_line_to_mesh(MeshType& mesh, const Line& line, glm::u8vec4 colour)
 {
-    mesh.vertices.push_back({.position = from, .colour = colour});
-    mesh.vertices.push_back({.position = to, .colour = colour});
+    mesh.vertices.push_back({.position = line.start, .colour = colour});
+    mesh.vertices.push_back({.position = line.end, .colour = colour});
 
     mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
     mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
 }
 
-[[nodiscard]] Mesh2DWorld generate_line_mesh(glm::vec2 from, glm::vec2 to, glm::u8vec4 colour);
+[[nodiscard]] void generate_line_mesh(Mesh2DWorld& mesh, const Line& line, glm::u8vec4 colour);
+[[nodiscard]] Mesh2DWorld generate_line_mesh(const Line& line, glm::u8vec4 colour);
 [[nodiscard]] Mesh2DWorld generate_2d_quad_mesh(glm::vec2 position, glm::vec2 size,
                                                 float base_texture, float world_texture = 0,
                                                 glm::u8vec4 colour = Colour::WHITE,

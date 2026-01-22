@@ -135,8 +135,7 @@ std::pair<Mesh2DWorld, gl::PrimitiveType>
 object_to_geometry_2d(const WallObject& wall,
                       [[maybe_unused]] const LevelTextures& drawing_pad_texture_map)
 {
-    return {generate_line_mesh(wall.parameters.line.start, wall.parameters.line.end,
-                               {255, 255, 255, 255}),
+    return {generate_line_mesh(wall.parameters.line, {255, 255, 255, 255}),
             gl::PrimitiveType::Lines};
 }
 
