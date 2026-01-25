@@ -256,8 +256,6 @@ bool ScreenEditGame::on_init()
             }
             else
             {
-                create_property_editors(object);
-
                 if (editor_settings_.jump_to_selection_floor)
                 {
                     int old_floor = editor_state_.current_floor;
@@ -267,6 +265,9 @@ bool ScreenEditGame::on_init()
                     }
                     offset_camera_to_floor(old_floor);
                 }
+
+                // Must be done after the floor has changed to ensure the floor number is synced
+                create_property_editors(object);
             }
         });
 
@@ -325,7 +326,6 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
     // Certain events cause issues if the current tool is UpdateWall (such as rendering the 2D
     // preview of deleting walls) so this prevents that.
-    bool try_set_tool_to_wall = false;
 
     camera_controller_3d_.handle_event(event);
 
@@ -353,7 +353,8 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
                     action_manager_.push_action(
                         std::make_unique<DeleteObjectAction>(objects, floors));
-                    try_set_tool_to_wall = true;
+                    try_set_tool_to_create_wall();
+                    property_updater_.editors.clear();
                 }
                 break;
 
@@ -361,8 +362,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
             case sf::Keyboard::Key::Z:
                 if (key->control)
                 {
-                    action_manager_.undo_action();
-                    try_set_tool_to_wall = true;
+                    undo();
                 }
                 break;
 
@@ -370,8 +370,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
             case sf::Keyboard::Key::Y:
                 if (key->control)
                 {
-                    action_manager_.redo_action();
-                    try_set_tool_to_wall = true;
+                    redo();
                 }
                 break;
 
@@ -397,6 +396,9 @@ void ScreenEditGame::on_event(const sf::Event& event)
                     action_manager_.push_action(
                         std::make_unique<BulkUpdateObjectAction>(cached, objects));
                     try_update_object_tools();
+
+                    // Ensure property editors are using the new rotation for their UIs
+                    create_property_editors(editor_state_.selection.p_active_object);
                 }
                 break;
 
@@ -483,11 +485,6 @@ void ScreenEditGame::on_event(const sf::Event& event)
             // TODO: Find a way to move the selection rather than just set to wall
             tool_ = std::make_unique<CreateWallTool>(drawing_pad_texture_map_);
         }
-    }
-
-    if (try_set_tool_to_wall)
-    {
-        try_set_tool_to_create_wall();
     }
 }
 
@@ -792,6 +789,10 @@ void ScreenEditGame::select_object(LevelObject* object)
 
 void ScreenEditGame::create_property_editors(LevelObject* object)
 {
+    if (!editor_state_.selection.single_object_is_selected())
+    {
+        return;
+    }
     property_updater_.editors.clear();
 
     std::visit(
@@ -800,7 +801,8 @@ void ScreenEditGame::create_property_editors(LevelObject* object)
             if constexpr (ResizableObject<decltype(obj)>)
             {
                 property_updater_.editors.push_back(std::make_unique<ObjectSizeEditor>(
-                    obj.parameters.position, obj.properties.size, editor_state_.current_floor));
+                    *object, obj.parameters.position, obj.properties.size,
+                    editor_state_.current_floor));
             }
         },
         object->object_type);
@@ -1105,8 +1107,8 @@ void ScreenEditGame::display_menu_bar_gui()
 
         if (ImGui::BeginMenu("Edit"))
         {
-            if (ImGui::MenuItem("Undo (CTRL + Z)")) { action_manager_.undo_action(); }
-            if (ImGui::MenuItem("Redo (CTRL + Y)")) { action_manager_.redo_action(); }
+            if (ImGui::MenuItem("Undo (CTRL + Z)")) { undo(); }
+            if (ImGui::MenuItem("Redo (CTRL + Y)")) { redo(); }
 
             if (ImGui::MenuItem("Copy (CTRL + C)")) 
             { 
@@ -1194,6 +1196,20 @@ void ScreenEditGame::display_debug_gui()
     camera_2d_.gui("2D Camera Options");
 
     // clang-format on
+}
+
+void ScreenEditGame::undo()
+{
+    action_manager_.undo_action();
+    try_set_tool_to_create_wall();
+    create_property_editors(editor_state_.selection.p_active_object);
+}
+
+void ScreenEditGame::redo()
+{
+    action_manager_.redo_action();
+    try_set_tool_to_create_wall();
+    create_property_editors(editor_state_.selection.p_active_object);
 }
 
 // ----------------------------------------

@@ -27,33 +27,35 @@ namespace
             {
                 {.start = rect.position, .end = {rect.position.x + rect.size.x, rect.position.y}},
                 ObjectSizeEditor::PullDirection::Up,
-                rect.size.y < TILE_SIZE ? MIN_SELECT_DISTANCE_SMALL : MIN_SELECT_DISTANCE_LARGE,
+                rect.size.y <= TILE_SIZE ? MIN_SELECT_DISTANCE_SMALL : MIN_SELECT_DISTANCE_LARGE,
             },
             {
                 {.start = {rect.position.x + rect.size.x, rect.position.y},
                  .end = {rect.position.x + rect.size.x, rect.position.y + rect.size.y}},
                 ObjectSizeEditor::PullDirection::Right,
-                rect.size.x < TILE_SIZE ? MIN_SELECT_DISTANCE_SMALL : MIN_SELECT_DISTANCE_LARGE,
+                rect.size.x <= TILE_SIZE ? MIN_SELECT_DISTANCE_SMALL : MIN_SELECT_DISTANCE_LARGE,
             },
             {
                 {.start = rect.position, .end = {rect.position.x, rect.position.y + rect.size.y}},
                 ObjectSizeEditor::PullDirection::Left,
-                rect.size.x < TILE_SIZE ? MIN_SELECT_DISTANCE_SMALL : MIN_SELECT_DISTANCE_LARGE,
+                rect.size.x <= TILE_SIZE ? MIN_SELECT_DISTANCE_SMALL : MIN_SELECT_DISTANCE_LARGE,
             },
             {
                 {.start = {rect.position.x, rect.position.y + rect.size.y},
                  .end = {rect.position.x + rect.size.x, rect.position.y + rect.size.y}},
                 ObjectSizeEditor::PullDirection::Down,
-                rect.size.y < TILE_SIZE ? MIN_SELECT_DISTANCE_SMALL : MIN_SELECT_DISTANCE_LARGE,
+                rect.size.y <= TILE_SIZE ? MIN_SELECT_DISTANCE_SMALL : MIN_SELECT_DISTANCE_LARGE,
             },
         }};
     }
 } // namespace
 
-ObjectSizeEditor::ObjectSizeEditor(glm::vec2 position, glm::vec2 size, int object_floor)
+ObjectSizeEditor::ObjectSizeEditor(const LevelObject& object, glm::vec2 position, glm::vec2 size,
+                                   int object_floor)
     : position_{position}
     , size_{size}
     , object_floor_{object_floor}
+    , cached_object_(object)
 {
     update_previews();
 }
@@ -129,7 +131,6 @@ bool ObjectSizeEditor::handle_event(const sf::Event& event, EditorState& state,
                 update_object(*state.selection.p_active_object, state.current_floor, actions,
                               false);
                 update_previews();
-
             }
         }
     }
@@ -214,8 +215,14 @@ void ObjectSizeEditor::update_object(const LevelObject& object, int current_floo
         ramp->parameters.position = position_;
     }
 
-    actions.push_action(std::make_unique<UpdateObjectAction>(object, new_object, current_floor),
-                        store_action);
+    actions.push_action(
+        std::make_unique<UpdateObjectAction>(cached_object_, new_object, current_floor),
+        store_action);
+
+    if (store_action)
+    {
+        cached_object_ = new_object;
+    }
 }
 
 void ObjectSizeEditor::update_previews()

@@ -38,7 +38,8 @@ class ObjectSizeEditor : public PropertyEditor
     };
 
   public:
-    ObjectSizeEditor(glm::vec2 position, glm::vec2 size, int object_floor);
+    ObjectSizeEditor(const LevelObject& object, glm::vec2 position, glm::vec2 size,
+                     int object_floor);
 
     bool handle_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                       const LevelTextures& drawing_pad_texture_map) override;
@@ -78,6 +79,10 @@ class ObjectSizeEditor : public PropertyEditor
     Mesh2DWorld right_line_preview_;
     Mesh2DWorld top_line_preview_;
     Mesh2DWorld bottom_line_preview_;
+
+    /// The object before any state changes to ensure history can be restored to the cached object
+    /// state for "undo".
+    LevelObject cached_object_;
 };
 
 // struct HeightOffsetEditor : public PropertyEditor
