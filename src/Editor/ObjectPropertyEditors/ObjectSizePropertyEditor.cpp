@@ -58,6 +58,9 @@ ObjectSizePropertyEditor::ObjectSizePropertyEditor(const LevelObject& object, gl
     , cached_object_(object)
 {
     update_previews();
+
+    selection_cube_3d_ = generate_cube_mesh({0.25, 0.25, 0.25});
+    selection_cube_3d_.buffer();
 }
 
 bool ObjectSizePropertyEditor::handle_event(const sf::Event& event, EditorState& state,
@@ -170,6 +173,49 @@ void ObjectSizePropertyEditor::render_preview_2d(gl::Shader& scene_shader_2d)
     draw_line_preview(left_line_preview_, PullDirection::Left);
     draw_line_preview(bottom_line_preview_, PullDirection::Down);
 }
+
+void ObjectSizePropertyEditor::render_preview_3d(gl::Shader& scene_shader_3d)
+{
+    scene_shader_3d.set_uniform("use_texture", false);
+
+    scene_shader_3d.set_uniform("model_matrix",
+                                create_model_matrix({{
+                                    position_.x / TILE_SIZE_F + size_.x / 2.0f - 0.125f,
+                                    object_floor_ * FLOOR_HEIGHT,
+                                    position_.y / TILE_SIZE_F,
+                                }}));
+    selection_cube_3d_.bind().draw_elements();
+}
+
+void ObjectSizePropertyEditor::render_to_picker(const MousePickingState& picker_state,
+                                                gl::Shader& picker_shader)
+{
+    if (picker_state.button != sf::Mouse::Button::Left)
+    {
+        return;
+    }
+
+    // Render the grabbable boxes
+    picker_shader.set_uniform("model_matrix",
+                              create_model_matrix({{
+                                  position_.x / TILE_SIZE_F + size_.x / 2.0f - 0.125f,
+                                  object_floor_ * FLOOR_HEIGHT,
+                                  position_.y / TILE_SIZE_F,
+                              }}));
+    picker_shader.set_uniform("object_id", static_cast<int>(PullDirection::Up));
+
+    selection_cube_3d_.bind().draw_elements();
+
+    // TODO: Render 3 more, wrap in function to not repeat the 3d render
+
+    // Check which one was picked
+    GLint picked_id = 0;
+    glReadPixels(picker_state.point.x, picker_state.point.y, 1, 1, GL_RED_INTEGER, GL_INT,
+                 &picked_id);
+
+    std::println("Object Size Property Editor picked-> {}", picked_id);
+}
+
 
 void ObjectSizePropertyEditor::drag_positive_direction_2d(const Rectangle& object_rect, int axis,
                                                           glm::ivec2 node_hovered,
