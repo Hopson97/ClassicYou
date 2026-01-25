@@ -7,8 +7,8 @@
 #include "../Editor/EditorState.h"
 #include "../Editor/Grids.h"
 #include "../Editor/LevelFileIO.h"
-#include "../Editor/LevelObjectPropertyEditor.h"
 #include "../Editor/LevelTextures.h"
+#include "../Editor/ObjectPropertyEditors/LevelObjectPropertyEditor.h"
 #include "../Editor/Tools/Tool.h"
 #include "../Graphics/Camera.h"
 #include "../Graphics/CameraController.h"
@@ -184,5 +184,5 @@ class ScreenEditGame final : public Screen
 
     MessagesManager messages_manager_;
 
-    LevelObjectPropertyEditor property_updater_;
+    LevelObjectPropertyEditors property_updater_;
 };
