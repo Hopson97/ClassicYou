@@ -215,6 +215,11 @@
     <None Include="assets\shaders\Grid\SceneGridVertex.glsl" />
     <None Include="assets\shaders\Grid\SceneGridFragment.glsl" />
     <None Include="assets\shaders\Grid\Grid2DVertex.glsl" />
+    <None Include="assets\shaders\Normals\NormalVisualiserFragment.glsl" />
+    <None Include="assets\shaders\Normals\NormalVisualiserGeometry.glsl" />
+    <None Include="assets\shaders\Normals\NormalVisualiserVertex.glsl" />
+    <None Include="assets\shaders\Scene\PickerFragment.glsl" />
+    <None Include="assets\shaders\Scene\PickerVertex.glsl" />
     <None Include="assets\shaders\Scene\Scene2DFragment.glsl" />
     <None Include="assets\shaders\Scene\Scene2DVertex.glsl" />
     <None Include="assets\shaders\Scene\SceneFragment.glsl" />

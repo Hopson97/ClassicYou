@@ -453,7 +453,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
                 try_set_tool_to_create_wall();
             }
         }
-        else if (mouse->button == sf::Mouse::Button::Right && clicked_3d)
+        else if (clicked_3d)
         {
             int x = sf::Mouse::getPosition(window()).x;
 
@@ -470,8 +470,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
             int max_x = editor_settings_.show_2d_view ? window_size.x / 2 : window_size.x;
             if (x >= 0 && x < max_x && y >= 0 && y < window_size.y)
             {
-                mouse_picker_point_ = {x, y};
-                try_pick_3d_ = true;
+                mouse_picking_state_.enable(mouse->button, {x, y});
             }
         }
     }
@@ -656,6 +655,10 @@ void ScreenEditGame::on_render(bool show_debug)
     if (!object_move_handler_.is_moving_objects())
     {
         tool_->render_preview();
+        for (auto& editor : property_updater_)
+        {
+            editor->render_preview_3d(world_geometry_shader_);
+        }
     }
 
     // Ensure GUI etc are rendered using fill
@@ -675,7 +678,7 @@ void ScreenEditGame::on_render(bool show_debug)
     //======================================
     //      3D Mouse Picking Objects
     // =====================================
-    if (try_pick_3d_)
+    if (mouse_picking_state_.enabled)
     {
         picker_fbo_.bind(gl::FramebufferTarget::Framebuffer, false);
         picker_shader_.bind();
@@ -688,29 +691,40 @@ void ScreenEditGame::on_render(bool show_debug)
         glViewport(0, 0, window_size.x / (editor_settings_.show_2d_view ? 2 : 1), window_size.y);
 
         // Render the scene to texture's single channel texture containing object IDs
-        level_.render_to_picker(picker_shader_, editor_state_.current_floor);
-
-        // The pixel's value on the image maps to a LevelObject's id value
-        GLint picked_object_id = 0;
-        glReadPixels(mouse_picker_point_.x, mouse_picker_point_.y, 1, 1, GL_RED_INTEGER, GL_INT,
-                     &picked_object_id);
-
-        // If the pixel was non-empty, then try to select the corrsponding object
-        if (picked_object_id > -1)
+        if (mouse_picking_state_.button == sf::Mouse::Button::Right)
         {
-            if (auto object = level_.get_object(picked_object_id))
+            level_.render_to_picker(picker_shader_);
+
+            // The pixel's value on the image maps to a LevelObject's id value
+            GLint picked_object_id = 0;
+            glReadPixels(mouse_picking_state_.point.x, mouse_picking_state_.point.y, 1, 1,
+                         GL_RED_INTEGER, GL_INT, &picked_object_id);
+
+            // If the pixel was non-empty, then try to select the corrsponding object
+            if (picked_object_id > -1)
             {
-                select_object(object);
+                if (auto object = level_.get_object(picked_object_id))
+                {
+                    select_object(object);
+                }
+            }
+            else
+            {
+                editor_state_.selection.clear_selection();
+                try_set_tool_to_create_wall();
             }
         }
-        else
+        for (auto& editor : property_updater_)
         {
-            editor_state_.selection.clear_selection();
-            try_set_tool_to_create_wall();
+            glClear(GL_DEPTH_BUFFER_BIT);
+            glClearNamedFramebufferiv(picker_fbo_.id, GL_COLOR, 0, &clear_value);
+            editor->render_to_picker(mouse_picking_state_, picker_shader_);
         }
+
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
-    try_pick_3d_ = false;
+    mouse_picking_state_.enabled = false;
 
     //=============================
     //     Render the ImGUI

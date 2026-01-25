@@ -171,13 +171,9 @@ class ScreenEditGame final : public Screen
     gl::Framebuffer picker_fbo_;
     gl::Shader picker_shader_;
 
-    // Must be set to false each frame - set to true when right-clicking the 3D view
-    bool try_pick_3d_ = false;
+    MousePickingState mouse_picking_state_;
 
-    // The location where mouse picking was attempted in the 3d view
-    sf::Vector2i mouse_picker_point_;
-
-    // Used for checking if shift is pressed during rendering
+    // Used for checking if shift is pressed when picking objects
     bool is_shift_down_ = false;
 
     LevelFileSelectGUI level_file_selector_;

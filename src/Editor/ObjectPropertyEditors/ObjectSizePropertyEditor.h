@@ -30,6 +30,9 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
     bool handle_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                       const LevelTextures& drawing_pad_texture_map) override;
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
+    void render_preview_3d(gl::Shader& scene_shader_3d) override;
+
+   void render_to_picker(const MousePickingState& picker_state, gl::Shader& picker_shader) override;
 
   private:
     /// Drag the right or bottom side.
@@ -65,6 +68,8 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
     Mesh2DWorld right_line_preview_;
     Mesh2DWorld top_line_preview_;
     Mesh2DWorld bottom_line_preview_;
+
+    Mesh3D selection_cube_3d_;
 
     /// The object before any state changes to ensure history can be restored to the cached object
     /// state for "undo".

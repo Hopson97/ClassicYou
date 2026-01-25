@@ -8,9 +8,11 @@
 #include "../../Graphics/Mesh.h"
 
 class LevelTextures;
-struct EditorState;
 class ActionManager;
 class EditorLevel;
+
+struct EditorState;
+struct MousePickingState;
 
 class LevelObjectPropertyEditor
 {
@@ -20,6 +22,10 @@ class LevelObjectPropertyEditor
     virtual bool handle_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                               const LevelTextures& drawing_pad_texture_map) = 0;
     virtual void render_preview_2d(gl::Shader& scene_shader_2d) = 0;
+    virtual void render_preview_3d(gl::Shader& scene_shader_3d) = 0;
+
+    virtual void render_to_picker(const MousePickingState& picker_state,
+                                  gl::Shader& picker_shader) = 0;
 };
 
 using LevelObjectPropertyEditors = std::vector<std::unique_ptr<LevelObjectPropertyEditor>>;

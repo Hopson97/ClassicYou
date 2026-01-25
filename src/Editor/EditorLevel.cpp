@@ -276,8 +276,9 @@ void EditorLevel::render_2d(gl::Shader& scene_shader_2d,
     render_group(p_active);
 }
 
-void EditorLevel::render_to_picker(gl::Shader& picker_shader, int current_floor)
+void EditorLevel::render_to_picker(gl::Shader& picker_shader)
 {
+    picker_shader.set_uniform("model_matrix", create_model_matrix({}));
     for (auto& floor : floors_manager_.floors)
     {
         for (auto& object : floor.meshes)
