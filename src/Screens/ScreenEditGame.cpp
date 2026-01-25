@@ -10,6 +10,7 @@
 #include "../Editor/EditorGUI.h"
 #include "../Editor/LevelFileIO.h"
 #include "../Editor/LevelObjects/LevelObjectConcepts.h"
+#include "../Editor/ObjectPropertyEditors/ObjectSizePropertyEditor.h"
 #include "../Graphics/OpenGL/GLUtils.h"
 #include "../Util/ImGuiExtras.h"
 #include "../Util/Keyboard.h"
@@ -252,7 +253,7 @@ bool ScreenEditGame::on_init()
         {
             if (multiple_selected)
             {
-                property_updater_.editors.clear();
+                property_updater_.clear();
             }
             else
             {
@@ -286,7 +287,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
     if (editor_state_.selection.single_object_is_selected())
     {
-        for (auto& prop_updater : property_updater_.editors)
+        for (auto& prop_updater : property_updater_)
         {
             if (prop_updater->handle_event(event, editor_state_, action_manager_,
                                            drawing_pad_texture_map_))
@@ -354,7 +355,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
                     action_manager_.push_action(
                         std::make_unique<DeleteObjectAction>(objects, floors));
                     try_set_tool_to_create_wall();
-                    property_updater_.editors.clear();
+                    property_updater_.clear();
                 }
                 break;
 
@@ -551,7 +552,7 @@ void ScreenEditGame::on_render(bool show_debug)
             if (!object_move_handler_.is_moving_objects())
             {
                 tool_->render_preview_2d(drawing_pad_shader_);
-                for (auto& prop_updater : property_updater_.editors)
+                for (auto& prop_updater : property_updater_)
                 {
                     prop_updater->render_preview_2d(drawing_pad_shader_);
                 }
@@ -793,14 +794,14 @@ void ScreenEditGame::create_property_editors(LevelObject* object)
     {
         return;
     }
-    property_updater_.editors.clear();
+    property_updater_.clear();
 
     std::visit(
         [&](auto& obj)
         {
             if constexpr (ResizableObject<decltype(obj)>)
             {
-                property_updater_.editors.push_back(std::make_unique<ObjectSizeEditor>(
+                property_updater_.push_back(std::make_unique<ObjectSizePropertyEditor>(
                     *object, obj.parameters.position, obj.properties.size,
                     editor_state_.current_floor));
             }

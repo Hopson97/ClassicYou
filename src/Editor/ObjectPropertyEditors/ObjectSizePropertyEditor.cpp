@@ -1,10 +1,10 @@
-#include "LevelObjectPropertyEditor.h"
+#include "ObjectSizePropertyEditor.h"
 
 #include <imgui.h>
 
-#include "Actions.h"
-#include "EditorState.h"
-#include "LevelObjects/LevelObjectHelpers.h"
+#include "../Actions.h"
+#include "../EditorState.h"
+#include "../LevelObjects/LevelObjectHelpers.h"
 
 namespace
 {
@@ -14,7 +14,7 @@ namespace
     struct LineToPullDirectionMapping
     {
         const Line line;
-        const ObjectSizeEditor::PullDirection pull_direction;
+        const ObjectSizePropertyEditor::PullDirection pull_direction;
         const float min_select_dist = MIN_SELECT_DISTANCE_LARGE;
     };
 
@@ -26,32 +26,32 @@ namespace
         return std::array<struct LineToPullDirectionMapping, 4>{{
             {
                 {.start = rect.position, .end = {rect.position.x + rect.size.x, rect.position.y}},
-                ObjectSizeEditor::PullDirection::Up,
+                ObjectSizePropertyEditor::PullDirection::Up,
                 rect.size.y <= TILE_SIZE ? MIN_SELECT_DISTANCE_SMALL : MIN_SELECT_DISTANCE_LARGE,
             },
             {
                 {.start = {rect.position.x + rect.size.x, rect.position.y},
                  .end = {rect.position.x + rect.size.x, rect.position.y + rect.size.y}},
-                ObjectSizeEditor::PullDirection::Right,
+                ObjectSizePropertyEditor::PullDirection::Right,
                 rect.size.x <= TILE_SIZE ? MIN_SELECT_DISTANCE_SMALL : MIN_SELECT_DISTANCE_LARGE,
             },
             {
                 {.start = rect.position, .end = {rect.position.x, rect.position.y + rect.size.y}},
-                ObjectSizeEditor::PullDirection::Left,
+                ObjectSizePropertyEditor::PullDirection::Left,
                 rect.size.x <= TILE_SIZE ? MIN_SELECT_DISTANCE_SMALL : MIN_SELECT_DISTANCE_LARGE,
             },
             {
                 {.start = {rect.position.x, rect.position.y + rect.size.y},
                  .end = {rect.position.x + rect.size.x, rect.position.y + rect.size.y}},
-                ObjectSizeEditor::PullDirection::Down,
+                ObjectSizePropertyEditor::PullDirection::Down,
                 rect.size.y <= TILE_SIZE ? MIN_SELECT_DISTANCE_SMALL : MIN_SELECT_DISTANCE_LARGE,
             },
         }};
     }
 } // namespace
 
-ObjectSizeEditor::ObjectSizeEditor(const LevelObject& object, glm::vec2 position, glm::vec2 size,
-                                   int object_floor)
+ObjectSizePropertyEditor::ObjectSizePropertyEditor(const LevelObject& object, glm::vec2 position,
+                                                   glm::vec2 size, int object_floor)
     : position_{position}
     , size_{size}
     , object_floor_{object_floor}
@@ -60,9 +60,9 @@ ObjectSizeEditor::ObjectSizeEditor(const LevelObject& object, glm::vec2 position
     update_previews();
 }
 
-bool ObjectSizeEditor::handle_event(const sf::Event& event, EditorState& state,
-                                    ActionManager& actions,
-                                    const LevelTextures& drawing_pad_texture_map)
+bool ObjectSizePropertyEditor::handle_event(const sf::Event& event, EditorState& state,
+                                            ActionManager& actions,
+                                            const LevelTextures& drawing_pad_texture_map)
 {
     if (object_floor_ != state.current_floor)
     {
@@ -148,7 +148,7 @@ bool ObjectSizeEditor::handle_event(const sf::Event& event, EditorState& state,
     return false;
 }
 
-void ObjectSizeEditor::render_preview_2d(gl::Shader& scene_shader_2d)
+void ObjectSizePropertyEditor::render_preview_2d(gl::Shader& scene_shader_2d)
 {
     auto draw_line_preview = [&](Mesh2DWorld& mesh, PullDirection big_if_direction)
     {
@@ -171,8 +171,9 @@ void ObjectSizeEditor::render_preview_2d(gl::Shader& scene_shader_2d)
     draw_line_preview(bottom_line_preview_, PullDirection::Down);
 }
 
-void ObjectSizeEditor::drag_positive_direction_2d(const Rectangle& object_rect, int axis,
-                                                  glm::ivec2 node_hovered, glm::vec2& new_size)
+void ObjectSizePropertyEditor::drag_positive_direction_2d(const Rectangle& object_rect, int axis,
+                                                          glm::ivec2 node_hovered,
+                                                          glm::vec2& new_size)
 {
     auto delta = (node_hovered[axis] - object_rect.position[axis]) / TILE_SIZE_F;
     auto snapped_delta = std::round(delta * 2.0f) / 2.0f;
@@ -183,9 +184,10 @@ void ObjectSizeEditor::drag_positive_direction_2d(const Rectangle& object_rect, 
     }
 }
 
-void ObjectSizeEditor::drag_negative_direction_2d(const Rectangle& object_rect, int axis,
-                                                  glm::ivec2 node_hovered, glm::vec2& new_position,
-                                                  glm::vec2& new_size)
+void ObjectSizePropertyEditor::drag_negative_direction_2d(const Rectangle& object_rect, int axis,
+                                                          glm::ivec2 node_hovered,
+                                                          glm::vec2& new_position,
+                                                          glm::vec2& new_size)
 {
     auto delta = (object_rect.position[axis] - node_hovered[axis]) / TILE_SIZE_F;
     auto snapped_delta = std::round(delta * 2.0f) / 2.0f;
@@ -200,8 +202,8 @@ void ObjectSizeEditor::drag_negative_direction_2d(const Rectangle& object_rect, 
     }
 }
 
-void ObjectSizeEditor::update_object(const LevelObject& object, int current_floor,
-                                     ActionManager& actions, bool store_action)
+void ObjectSizePropertyEditor::update_object(const LevelObject& object, int current_floor,
+                                             ActionManager& actions, bool store_action)
 {
     auto new_object = object;
     if (auto platform = std::get_if<PlatformObject>(&new_object.object_type))
@@ -225,7 +227,7 @@ void ObjectSizeEditor::update_object(const LevelObject& object, int current_floo
     }
 }
 
-void ObjectSizeEditor::update_previews()
+void ObjectSizePropertyEditor::update_previews()
 {
     auto lines = create_line_to_direction_map(to_world_rectangle(position_, size_));
 

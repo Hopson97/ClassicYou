@@ -1,30 +1,16 @@
 #pragma once
 
-#include "EditConstants.h"
-#include <SFML/Window/Event.hpp>
+#include "LevelObjectPropertyEditor.h"
+
 #include <glm/glm.hpp>
 
-#include "../Graphics/Mesh.h"
-#include "../Util/Maths.h"
-#include "EditorGUI.h"
-#include "LevelObjects/LevelObject.h"
-
-class LevelTextures;
-struct EditorState;
-class ActionManager;
-class EditorLevel;
-
-class PropertyEditor
-{
-  public:
-    virtual bool handle_event(const sf::Event& event, EditorState& state, ActionManager& actions,
-                              const LevelTextures& drawing_pad_texture_map) = 0;
-    virtual void render_preview_2d(gl::Shader& scene_shader_2d) = 0;
-    // virtual bool display_gui() = 0;
-};
+#include "../../Util/Maths.h"
+#include "../EditConstants.h"
+#include "../EditorGUI.h"
+#include "../LevelObjects/LevelObject.h"
 
 /// Class for updating the size of certain objects via the world views
-class ObjectSizeEditor : public PropertyEditor
+class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
 {
   public:
     /// The "face" being dragged. For corners this can be two faces
@@ -38,8 +24,8 @@ class ObjectSizeEditor : public PropertyEditor
     };
 
   public:
-    ObjectSizeEditor(const LevelObject& object, glm::vec2 position, glm::vec2 size,
-                     int object_floor);
+    ObjectSizePropertyEditor(const LevelObject& object, glm::vec2 position, glm::vec2 size,
+                             int object_floor);
 
     bool handle_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                       const LevelTextures& drawing_pad_texture_map) override;
@@ -83,23 +69,4 @@ class ObjectSizeEditor : public PropertyEditor
     /// The object before any state changes to ensure history can be restored to the cached object
     /// state for "undo".
     LevelObject cached_object_;
-};
-
-// struct HeightOffsetEditor : public PropertyEditor
-//{
-//     const glm::vec2* p_position = nullptr;
-//     float* p_offset = nullptr;
-//
-//     HeightOffsetEditor(ObjectId object_id, const glm::vec2& position, float offset)
-//         : PropertyEditor(object_id)
-//     {
-//     }
-//
-//     bool display_gui() override;
-// };
-//
-
-struct LevelObjectPropertyEditor
-{
-    std::vector<std::unique_ptr<PropertyEditor>> editors;
 };
