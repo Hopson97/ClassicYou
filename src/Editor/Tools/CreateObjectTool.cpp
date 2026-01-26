@@ -20,12 +20,13 @@ CreateObjectTool::CreateObjectTool(ObjectTypeName object_type)
 }
 
 bool CreateObjectTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
-                                const LevelTextures& drawing_pad_texture_map)
+                                const LevelTextures& drawing_pad_texture_map, bool mouse_in_2d_view)
 {
     tile_ = state.node_hovered;
     if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
-        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
+        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left &&
+            mouse_in_2d_view)
         {
             update_previews(state, drawing_pad_texture_map);
             actions.push_action(std::make_unique<AddObjectAction>(object_, state.current_floor));
@@ -66,7 +67,8 @@ void CreateObjectTool::update_previews(const EditorState& state,
         case ObjectTypeName::Platform:
             object_.object_type = PlatformObject{
                 .properties = state.platform_default,
-                .parameters = {.position = tile_},
+                .parameters = {.position =
+                                   tile_ - state.platform_default.size * TILE_SIZE_F / 2.0f},
             };
             break;
         case ObjectTypeName::PolygonPlatform:
@@ -79,14 +81,14 @@ void CreateObjectTool::update_previews(const EditorState& state,
         case ObjectTypeName::Pillar:
             object_.object_type = PillarObject{
                 .properties = state.pillar_default,
-                .parameters = {.position = tile_},
+                .parameters = {.position = tile_ - state.pillar_default.size * TILE_SIZE_F / 2.0f},
             };
             break;
 
         case ObjectTypeName::Ramp:
             object_.object_type = RampObject{
                 .properties = state.ramp_default,
-                .parameters = {.position = tile_},
+                .parameters = {.position = tile_ - state.ramp_default.size * TILE_SIZE_F / 2.0f},
             };
             break;
 

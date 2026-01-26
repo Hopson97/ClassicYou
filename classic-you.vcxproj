@@ -248,6 +248,7 @@
     <ClInclude Include="src\Editor\EditorEventHandlers.h" />
     <ClInclude Include="src\Editor\EditorGUI.h" />
     <ClInclude Include="src\Editor\EditorLevel.h" />
+    <ClInclude Include="src\Editor\EditorSettings.h" />
     <ClInclude Include="src\Editor\EditorState.h" />
     <ClInclude Include="src\Editor\LevelFileIO.h" />
     <ClInclude Include="src\Editor\ObjectPropertyEditors\LevelObjectPropertyEditor.h" />

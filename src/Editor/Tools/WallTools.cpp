@@ -43,12 +43,13 @@ CreateWallTool::CreateWallTool(const LevelTextures& drawing_pad_texture_map)
 }
 
 bool CreateWallTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
-                              const LevelTextures& drawing_pad_texture_map)
+                              const LevelTextures& drawing_pad_texture_map, bool mouse_in_2d_view)
 {
     selected_node_ = state.node_hovered;
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {
-        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
+        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left &&
+            mouse_in_2d_view)
         {
 
             active_dragging_ = true;
@@ -64,9 +65,10 @@ bool CreateWallTool::on_event(const sf::Event& event, EditorState& state, Action
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
-        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
+
+        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left &&
+            active_dragging_ && mouse_in_2d_view)
         {
-            active_dragging_ = false;
             if (glm::length(wall_line_.start - wall_line_.end) > 0.25f)
             {
                 actions.push_action(std::make_unique<AddObjectAction>(
@@ -81,6 +83,7 @@ bool CreateWallTool::on_event(const sf::Event& event, EditorState& state, Action
                 state.selection.clear_selection();
             }
         }
+        active_dragging_ = false;
     }
     return false;
 }
@@ -154,7 +157,8 @@ UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall, int wall_fl
 }
 
 bool UpdateWallTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
-                              const LevelTextures& drawing_pad_texture_map)
+                              const LevelTextures& drawing_pad_texture_map,
+                              [[maybe_unused]] bool mouse_in_2d_view)
 {
     state_floor_ = state.current_floor;
     // Walls should only be edited on the same floor
