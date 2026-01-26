@@ -4,6 +4,7 @@
 #include "../Editor/EditConstants.h"
 #include "../Editor/EditorEventHandlers.h"
 #include "../Editor/EditorLevel.h"
+#include "../Editor/EditorSettings.h"
 #include "../Editor/EditorState.h"
 #include "../Editor/Grids.h"
 #include "../Editor/LevelFileIO.h"
@@ -36,32 +37,6 @@ class ScreenEditGame final : public Screen
     void on_update(const Keyboard& keyboard, sf::Time dt) override;
     void on_fixed_update(sf::Time dt) override;
     void on_render(bool show_debug) override;
-
-  private:
-    struct EditorSettings
-    {
-        bool show_grid = true;
-        bool show_2d_view = true;
-        bool always_center_2d_to_3d_view = true;
-
-        bool show_history = false;
-
-        bool show_textures_in_2d_view = true;
-        float texture_mix = 0.75;
-
-        bool jump_to_selection_floor = true;
-
-        bool show_messages_log = true;
-
-        bool render_as_wireframe = false;
-        bool render_vertex_normals = false;
-        bool render_main_light = false;
-        bool show_level_settings = false;
-
-        void save() const;
-        void load();
-        void set_to_default();
-    } editor_settings_;
 
   private:
     /// Sets or adds the given object to the selection (Such as when right clicking an object).
@@ -113,6 +88,10 @@ class ScreenEditGame final : public Screen
     void undo();
     void redo();
 
+    bool mouse_in_2d_view() const;
+
+    void enable_mouse_picking(MousePickingState::Action action, sf::Mouse::Button button);
+
   private:
     Camera camera_3d_;
     Camera camera_2d_;
@@ -121,6 +100,8 @@ class ScreenEditGame final : public Screen
     gl::Shader scene_shader_;
     gl::Shader drawing_pad_shader_;
     gl::Shader world_geometry_shader_;
+
+    sf::Vector2i mouse_position_;
 
     /// Shader for viewing the normals for debugging light issues etc
     gl::Shader world_normal_shader_;
@@ -142,6 +123,8 @@ class ScreenEditGame final : public Screen
 
     /// State of the editor such as the currently selected object and defaults
     EditorState editor_state_;
+
+    EditorSettings editor_settings_;
 
     /// Wrapper around the selectable texture list
     LevelTextures level_texture_map_;

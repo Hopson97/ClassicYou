@@ -72,11 +72,6 @@ bool ScreenManager::empty() const
     return screen_stack_.empty();
 }
 
-sf::Window& ScreenManager::get_window()
-{
-    return window_;
-}
-
 void ScreenManager::restore()
 {
     if (!screen_stack_.empty())
@@ -88,9 +83,4 @@ void ScreenManager::restore()
 Screen::Screen(ScreenManager& screen_manager)
     : p_screen_manager_(&screen_manager)
 {
-}
-
-sf::Window& Screen::window()
-{
-    return p_screen_manager_->get_window();
 }

@@ -53,6 +53,7 @@ void Selection::clear_selection()
 {
     objects.clear();
     p_active_object = nullptr;
+    notify_callbacks(nullptr);
 }
 
 bool Selection::single_object_is_selected() const

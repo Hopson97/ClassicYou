@@ -47,7 +47,14 @@ struct Selection
 /// State about mouse picking
 struct MousePickingState
 {
-    /// True if the 3D view was clicked - must be set to false each frame
+    enum class Action
+    {
+        None,
+        ButtonPressed,
+        ButtonReleased
+    } action = Action::None;
+
+    /// True if the 3D view was clicked
     bool enabled = false;
 
     /// The mouse button that may be "picking"
@@ -56,9 +63,16 @@ struct MousePickingState
     /// Pixel within the widnwo that was clicked
     sf::Vector2i point;
 
-    void enable(sf::Mouse::Button button, sf::Vector2i point)
+    void reset()
+    {
+        enabled = false;
+        Action::None;
+    }
+
+    void enable(Action action, sf::Mouse::Button button, sf::Vector2i point)
     {
         this->enabled = true;
+        this->action = action;
         this->button = button;
         this->point = point;
     }
