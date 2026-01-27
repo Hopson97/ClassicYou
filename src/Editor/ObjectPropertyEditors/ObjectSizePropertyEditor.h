@@ -34,23 +34,26 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
     void render_preview_3d(gl::Shader& scene_shader_3d) override;
 
-   void render_to_picker(const MousePickingState& picker_state, gl::Shader& picker_shader) override;
+    void render_to_picker(const MousePickingState& picker_state,
+                          gl::Shader& picker_shader) override;
 
   private:
     /// Drag the right or bottom side.
     /// Axis should be 0 for X (Width) and 1 for Y (Height)
-    void drag_positive_direction_2d(const Rectangle& object_rect, int axis, glm::ivec2 node_hovered,
-                                    glm::vec2& new_size);
+    void drag_positive_direction(const Rectangle& object_rect, int axis, glm::vec2 node_hovered,
+                                 glm::vec2& new_size);
 
     /// Drag the left or top side.
     /// Axis should be 0 for X (Width) and 1 for Y (Height)
-    void drag_negative_direction_2d(const Rectangle& object_rect, int axis, glm::ivec2 node_hovered,
-                                    glm::vec2& new_position, glm::vec2& new_size);
+    void drag_negative_direction(const Rectangle& object_rect, int axis, glm::vec2 node_hovered,
+                                 glm::vec2& new_position, glm::vec2& new_size);
 
     void update_object(const LevelObject& object, int current_floor, ActionManager& actions,
                        bool store_action);
 
     void update_previews();
+
+    bool size_within_bounds(float size) const;
 
     // Fields modified by the editor
     glm::vec2 position_;
@@ -61,7 +64,11 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
 
     // Direction the edges are being pulled in
     int pull_direction_;
+
+    /// True if the size is being modified in the 2D view
     bool active_dragging_ = false;
+
+    /// True if the size is being modified in the 3D view
     bool active_dragging_3d_ = false;
 
     glm::ivec2 start_drag_position_;
@@ -73,6 +80,9 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
     Mesh2DWorld bottom_line_preview_;
 
     Mesh3D selection_cube_3d_;
+
+    float min_size_ = 0.5f;
+    float max_size_ = 100.0f;
 
     /// The object before any state changes to ensure history can be restored to the cached object
     /// state for "undo".
