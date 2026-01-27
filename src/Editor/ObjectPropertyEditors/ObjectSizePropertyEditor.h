@@ -28,7 +28,9 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
                              int object_floor);
 
     bool handle_event(const sf::Event& event, EditorState& state, ActionManager& actions,
-                      const LevelTextures& drawing_pad_texture_map) override;
+                      const LevelTextures& drawing_pad_texture_map,
+                      const Camera& camera_3d) override;
+
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
     void render_preview_3d(gl::Shader& scene_shader_3d) override;
 
@@ -60,6 +62,7 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
     // Direction the edges are being pulled in
     int pull_direction_;
     bool active_dragging_ = false;
+    bool active_dragging_3d_ = false;
 
     glm::ivec2 start_drag_position_;
 

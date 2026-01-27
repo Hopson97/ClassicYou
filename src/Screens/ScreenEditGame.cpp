@@ -58,20 +58,20 @@ namespace
 
 ScreenEditGame::ScreenEditGame(ScreenManager& screens)
     : Screen(screens)
-    , camera_3d_(CameraConfig{
+    , camera_3d_{CameraConfig{
           .type = CameraType::Perspective,
           .viewport_size = {window().getSize().x / 2, window().getSize().y},
           .near = 0.1f,
           .far = 1000.0f,
           .fov = 90.0f,
-      })
+      }}
     , camera_2d_(CameraConfig{
           .type = CameraType::OrthographicScreen,
           .viewport_size = {window().getSize().x / 2, window().getSize().y},
           .near = 0.5f,
           .far = 1000.0f,
-      })
-      , camera_keybinds_2d_{
+      }) 
+    , camera_keybinds_2d_{
           .forward = sf::Keyboard::Key::Down,
           .left = sf::Keyboard::Key::Left,
           .right = sf::Keyboard::Key::Right,
@@ -103,6 +103,7 @@ bool ScreenEditGame::on_init()
 {
     // Start with loading settings
     editor_settings_.load();
+    setup_camera_3d();
 
     // -----------------------
     // ==== Load textures ====
@@ -294,7 +295,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
         for (auto& prop_updater : property_updater_)
         {
             if (prop_updater->handle_event(event, editor_state_, action_manager_,
-                                           drawing_pad_texture_map_))
+                                           drawing_pad_texture_map_, camera_3d_))
             {
                 return;
             }
@@ -327,9 +328,6 @@ void ScreenEditGame::on_event(const sf::Event& event)
         // Prevent unintentionally creating "false walls" when an object has been moved
         tool_->cancel_events();
     }
-
-    // Certain events cause issues if the current tool is UpdateWall (such as rendering the 2D
-    // preview of deleting walls) so this prevents that.
 
     camera_controller_3d_.handle_event(event);
 
@@ -512,7 +510,8 @@ void ScreenEditGame::on_render(bool show_debug)
     {
         gl::enable(gl::Capability::Blend);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glViewport(0, 0, window().getSize().x / 2, window().getSize().y);
+        camera_2d_.set_viewport({0, 0}, {window().getSize().x / 2, window().getSize().y});
+        camera_2d_.use_viewport();
 
         gl::disable(gl::Capability::DepthTest);
         gl::disable(gl::Capability::CullFace);
@@ -566,20 +565,14 @@ void ScreenEditGame::on_render(bool show_debug)
                 {8, 8, 0}));
 
         arrow_mesh_.bind().draw_elements();
-
-        // When showing the 2D view, the 3D view is half width
-        glViewport(window().getSize().x / 2, 0, window().getSize().x / 2, window().getSize().y);
         gl::disable(gl::Capability::Blend);
-    }
-    else
-    {
-        // Render the 3D view as full width
-        glViewport(0, 0, window().getSize().x, window().getSize().y);
     }
 
     //=============================================
     //      Render the 3D View
     // ============================================
+    camera_3d_.use_viewport();
+
     auto& main_light = level_.get_light_settings();
     scene_shader_.bind();
     scene_shader_.set_uniform("main_light_position", main_light.position);
@@ -763,7 +756,6 @@ void ScreenEditGame::on_render(bool show_debug)
 
 void ScreenEditGame::select_object(LevelObject* object)
 {
-
     // Multi-select when shift is pressed
     if (is_shift_down_)
     {
@@ -1056,6 +1048,7 @@ void ScreenEditGame::display_editor_gui()
         {
             editor_settings_.set_to_default();
             messages_manager_.add_message("Settings reset to default.");
+            setup_camera_3d();
         }
         if (ImGui::Button("Reset Level Light/Colour Settings"))
         {
@@ -1141,11 +1134,7 @@ void ScreenEditGame::display_menu_bar_gui()
             if (!editor_settings_.show_textures_in_2d_view) ImGui::EndDisabled();
 
             ImGui::Checkbox("Show Grid?", &editor_settings_.show_grid);
-            if (ImGui::Checkbox("Show 2D View? (Full Screen 3D)", &editor_settings_.show_2d_view))
-            {
-                auto factor = editor_settings_.show_2d_view ? 2 : 1;
-                camera_3d_.set_viewport_size({window().getSize().x / factor, window().getSize().y});
-            }
+            if (ImGui::Checkbox("Show 2D View? (Full Screen 3D)", &editor_settings_.show_2d_view)) { setup_camera_3d(); }
             ImGui::Checkbox("Render As Wireframe", &editor_settings_.render_as_wireframe);
             ImGui::Checkbox("Display Normals", &editor_settings_.render_vertex_normals);
             ImGui::Checkbox("Display Main Light", &editor_settings_.render_main_light);
@@ -1246,4 +1235,11 @@ void ScreenEditGame::enable_mouse_picking(MousePickingState::Action action,
     {
         mouse_picking_state_.enable(action, button, {x, y});
     }
+}
+
+void ScreenEditGame::setup_camera_3d()
+{
+    auto factor = editor_settings_.show_2d_view ? 2 : 1;
+    camera_3d_.set_viewport({editor_settings_.show_2d_view ? window().getSize().x / 2 : 0, 0},
+                                 {window().getSize().x / factor, window().getSize().y});
 }

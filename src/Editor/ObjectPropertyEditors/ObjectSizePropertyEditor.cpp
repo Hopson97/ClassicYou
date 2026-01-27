@@ -2,6 +2,7 @@
 
 #include <imgui.h>
 
+#include "../../Graphics/Camera.h"
 #include "../Actions.h"
 #include "../EditorState.h"
 #include "../LevelObjects/LevelObjectHelpers.h"
@@ -65,7 +66,8 @@ ObjectSizePropertyEditor::ObjectSizePropertyEditor(const LevelObject& object, gl
 
 bool ObjectSizePropertyEditor::handle_event(const sf::Event& event, EditorState& state,
                                             ActionManager& actions,
-                                            const LevelTextures& drawing_pad_texture_map)
+                                            const LevelTextures& drawing_pad_texture_map,
+                                            const Camera& camera_3d)
 {
     if (object_floor_ != state.current_floor)
     {
@@ -190,7 +192,8 @@ void ObjectSizePropertyEditor::render_preview_3d(gl::Shader& scene_shader_3d)
 void ObjectSizePropertyEditor::render_to_picker(const MousePickingState& picker_state,
                                                 gl::Shader& picker_shader)
 {
-    if (picker_state.button != sf::Mouse::Button::Left)
+    if (picker_state.button != sf::Mouse::Button::Left ||
+        picker_state.action != MousePickingState::Action::ButtonPressed)
     {
         return;
     }
@@ -214,6 +217,12 @@ void ObjectSizePropertyEditor::render_to_picker(const MousePickingState& picker_
                  &picked_id);
 
     std::println("Object Size Property Editor picked-> {}", picked_id);
+
+    if (picked_id > -1)
+    {
+        active_dragging_3d_ = true;
+        pull_direction_ = static_cast<PullDirection>(picked_id);
+    }
 }
 
 

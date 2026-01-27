@@ -58,7 +58,7 @@ struct MousePickingState
     bool enabled = false;
 
     /// The mouse button that may be "picking"
-    sf::Mouse::Button button;
+    sf::Mouse::Button button{};
 
     /// Pixel within the widnwo that was clicked
     sf::Vector2i point;
