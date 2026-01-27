@@ -92,6 +92,9 @@ class ScreenEditGame final : public Screen
 
     void enable_mouse_picking(MousePickingState::Action action, sf::Mouse::Button button);
 
+    /// Ensure the 3D view is set up to be half width or full width
+    void setup_camera_3d();
+
   private:
     Camera camera_3d_;
     Camera camera_2d_;

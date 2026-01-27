@@ -86,11 +86,21 @@ void Camera::set_type(CameraType type)
     set_projection();
 }
 
-void Camera::set_viewport_size(glm::vec2 viewport_size)
+void Camera::set_viewport(glm::vec2 viewport_position, glm::vec2 viewport_size)
 {
     config_.viewport_size = viewport_size;
+    config_.viewport_position = viewport_position;
     aspect_ = config_.viewport_size.x / config_.viewport_size.y;
     set_projection();
+}
+
+void Camera::use_viewport()
+{
+    auto x = static_cast<GLint>(config_.viewport_position.x);
+    auto y = static_cast<GLint>(config_.viewport_position.y);
+    auto w = static_cast<GLint>(config_.viewport_size.x);
+    auto h = static_cast<GLint>(config_.viewport_size.y);
+    glViewport(x, y, w, h);
 }
 
 const CameraConfig& Camera::get_config() const
