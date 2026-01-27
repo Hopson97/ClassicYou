@@ -80,7 +80,7 @@ bool ObjectSizePropertyEditor::handle_event(const sf::Event& event, EditorState&
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
-            if (!active_dragging_ && pull_direction_ != PullDirection::None)
+            if (!active_dragging_ && !active_dragging_3d_ && pull_direction_ != PullDirection::None)
             {
                 start_drag_position_ = state.node_hovered;
                 active_dragging_ = true;
@@ -107,53 +107,22 @@ bool ObjectSizePropertyEditor::handle_event(const sf::Event& event, EditorState&
             }
         }
 
-        if (active_dragging_)
-        {
-            glm::vec2 new_size = size_;
-            glm::vec2 new_position = position_;
-            if ((pull_direction_ & PullDirection::Right) == PullDirection::Right)
-            {
-                drag_positive_direction(rect, 0, state.node_hovered, new_size);
-            }
-            else if ((pull_direction_ & PullDirection::Left) == PullDirection::Left)
-            {
-                drag_negative_direction(rect, 0, state.node_hovered, new_position, new_size);
-            }
-
-            if ((pull_direction_ & PullDirection::Down) == PullDirection::Down)
-            {
-                drag_positive_direction(rect, 1, state.node_hovered, new_size);
-            }
-            else if ((pull_direction_ & PullDirection::Up) == PullDirection::Up)
-            {
-                drag_negative_direction(rect, 1, state.node_hovered, new_position, new_size);
-            }
-
-            if (new_size != size_ || new_position != position_)
-            {
-                size_ = new_size;
-                position_ = new_position;
-                update_object(*state.selection.p_active_object, state.current_floor, actions,
-                              false);
-                update_previews();
-            }
-        }
-
-        if (active_dragging_3d_)
+        if (active_dragging_ || active_dragging_3d_)
         {
             glm::vec2 new_size = size_;
             glm::vec2 new_position = position_;
 
-            auto intersect = camera_3d.find_mouse_floor_intersect(
-                {mouse->position.x, mouse->position.y}, state.current_floor * FLOOR_HEIGHT);
-
-            glm::vec2 intersect_2d{intersect.x, intersect.z};
-            intersect_2d *= TILE_SIZE_F;
-
-            if ((pull_direction_ & PullDirection::Up) == PullDirection::Up)
+            glm::vec2 mouse_point = state.node_hovered;
+            if (active_dragging_3d_)
             {
-                drag_negative_direction(rect, 1, intersect_2d, new_position, new_size);
+                auto intersect = camera_3d.find_mouse_floor_intersect(
+                    {mouse->position.x, mouse->position.y}, state.current_floor * FLOOR_HEIGHT);
+
+                mouse_point = glm::vec2{intersect.x, intersect.z} * TILE_SIZE_F;
             }
+
+            try_resize(rect, mouse_point, new_position,
+                       new_size);
 
             if (new_size != size_ || new_position != position_)
             {
@@ -169,18 +138,14 @@ bool ObjectSizePropertyEditor::handle_event(const sf::Event& event, EditorState&
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
-            if (active_dragging_)
+            if ((active_dragging_ || active_dragging_3d_) && save_update_)
             {
+                active_dragging_3d_ = false;
                 active_dragging_ = false;
                 update_object(*state.selection.p_active_object, state.current_floor, actions, true);
                 return true;
             }
-            else if (active_dragging_3d_)
-            {
-                active_dragging_3d_ = false;
-                update_object(*state.selection.p_active_object, state.current_floor, actions, true);
-                return true;
-            }
+            save_update_ = false;
         }
     }
 
@@ -214,12 +179,30 @@ void ObjectSizePropertyEditor::render_preview_3d(gl::Shader& scene_shader_3d)
 {
     scene_shader_3d.set_uniform("use_texture", false);
 
+    // Top of the object
     scene_shader_3d.set_uniform("model_matrix",
                                 create_model_matrix({{
                                     position_.x / TILE_SIZE_F + size_.x / 2.0f - 0.125f,
                                     object_floor_ * FLOOR_HEIGHT,
-                                    position_.y / TILE_SIZE_F,
+                                    position_.y / TILE_SIZE_F - 0.25f,
                                 }}));
+    selection_cube_3d_.bind().draw_elements();
+
+    // Left of the object
+    scene_shader_3d.set_uniform("model_matrix",
+                                create_model_matrix({{
+                                    position_.x / TILE_SIZE_F - 0.25f,
+                                    object_floor_ * FLOOR_HEIGHT,
+                                    position_.y / TILE_SIZE_F + size_.y / 2.0f - 0.125f,
+                                }}));
+    selection_cube_3d_.bind().draw_elements();
+
+    // Top-left of the object
+    scene_shader_3d.set_uniform("model_matrix", create_model_matrix({{
+                                                    position_.x / TILE_SIZE_F - 0.25f,
+                                                    object_floor_ * FLOOR_HEIGHT,
+                                                    position_.y / TILE_SIZE_F - 0.25f,
+                                                }}));
     selection_cube_3d_.bind().draw_elements();
 }
 
@@ -231,19 +214,38 @@ void ObjectSizePropertyEditor::render_to_picker(const MousePickingState& picker_
     {
         return;
     }
-
-    // Render the grabbable boxes
+    
+    // Top of the object
     picker_shader.set_uniform("model_matrix",
                               create_model_matrix({{
                                   position_.x / TILE_SIZE_F + size_.x / 2.0f - 0.125f,
                                   object_floor_ * FLOOR_HEIGHT,
-                                  position_.y / TILE_SIZE_F,
+                                  position_.y / TILE_SIZE_F - 0.25f,
                               }}));
     picker_shader.set_uniform("object_id", static_cast<int>(PullDirection::Up));
-
     selection_cube_3d_.bind().draw_elements();
 
-    // TODO: Render 3 more, wrap in function to not repeat the 3d render
+    // Left of the object
+    picker_shader.set_uniform("model_matrix",
+                              create_model_matrix({{
+                                  position_.x / TILE_SIZE_F - 0.25f,
+                                  object_floor_ * FLOOR_HEIGHT,
+                                  position_.y / TILE_SIZE_F + size_.y / 2.0f - 0.125f,
+                              }}));
+    picker_shader.set_uniform("object_id", static_cast<int>(PullDirection::Left));
+    selection_cube_3d_.bind().draw_elements();
+
+    // Top-left of the object
+    picker_shader.set_uniform("model_matrix", create_model_matrix({{
+                                                  position_.x / TILE_SIZE_F - 0.25f,
+                                                  object_floor_ * FLOOR_HEIGHT,
+                                                  position_.y / TILE_SIZE_F - 0.25f,
+                                              }}));
+    picker_shader.set_uniform("object_id",
+                              static_cast<int>(PullDirection::Left | PullDirection::Up));
+    selection_cube_3d_.bind().draw_elements();
+
+    // TODO: Create an array that maps the offset of each box to their pull direction
 
     // Check which one was picked
     GLint picked_id = 0;
@@ -256,6 +258,29 @@ void ObjectSizePropertyEditor::render_to_picker(const MousePickingState& picker_
     {
         active_dragging_3d_ = true;
         pull_direction_ = static_cast<PullDirection>(picked_id);
+    }
+}
+
+void ObjectSizePropertyEditor::try_resize(const Rectangle& rect, glm::vec2 intersect,
+                                          glm::vec2& new_position, glm::vec2& new_size)
+{
+
+    if ((pull_direction_ & PullDirection::Right) == PullDirection::Right)
+    {
+        drag_positive_direction(rect, 0, intersect, new_size);
+    }
+    else if ((pull_direction_ & PullDirection::Left) == PullDirection::Left)
+    {
+        drag_negative_direction(rect, 0, intersect, new_position, new_size);
+    }
+
+    if ((pull_direction_ & PullDirection::Down) == PullDirection::Down)
+    {
+        drag_positive_direction(rect, 1, intersect, new_size);
+    }
+    else if ((pull_direction_ & PullDirection::Up) == PullDirection::Up)
+    {
+        drag_negative_direction(rect, 1, intersect, new_position, new_size);
     }
 }
 
@@ -312,6 +337,7 @@ void ObjectSizePropertyEditor::update_object(const LevelObject& object, int curr
     {
         cached_object_ = new_object;
     }
+    save_update_ = true;
 }
 
 void ObjectSizePropertyEditor::update_previews()
