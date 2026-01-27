@@ -38,14 +38,17 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
                           gl::Shader& picker_shader) override;
 
   private:
+    void try_resize(const Rectangle& object_rect, glm::vec2 intersect,
+                    glm::vec2& new_position, glm::vec2& new_size);
+
     /// Drag the right or bottom side.
     /// Axis should be 0 for X (Width) and 1 for Y (Height)
-    void drag_positive_direction(const Rectangle& object_rect, int axis, glm::vec2 node_hovered,
+    void drag_positive_direction(const Rectangle& object_rect, int axis, glm::vec2 intersect,
                                  glm::vec2& new_size);
 
     /// Drag the left or top side.
     /// Axis should be 0 for X (Width) and 1 for Y (Height)
-    void drag_negative_direction(const Rectangle& object_rect, int axis, glm::vec2 node_hovered,
+    void drag_negative_direction(const Rectangle& object_rect, int axis, glm::vec2 intersect,
                                  glm::vec2& new_position, glm::vec2& new_size);
 
     void update_object(const LevelObject& object, int current_floor, ActionManager& actions,
@@ -87,4 +90,8 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
     /// The object before any state changes to ensure history can be restored to the cached object
     /// state for "undo".
     LevelObject cached_object_;
+
+    /// True if when the mouse is released, the update should be stored to the history. This
+    /// prevents non-updates from being saved.
+    bool save_update_ = false;
 };
