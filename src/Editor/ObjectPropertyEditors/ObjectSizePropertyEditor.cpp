@@ -88,9 +88,9 @@ bool ObjectSizePropertyEditor::handle_event(const sf::Event& event, EditorState&
             }
         }
     }
-    else if (event.is<sf::Event::MouseMoved>())
+    else if (auto mouse = event.getIf<sf::Event::MouseMoved>())
     {
-        if (!active_dragging_)
+        if (!active_dragging_ && !active_dragging_3d_)
         {
             pull_direction_ = PullDirection::None;
 
@@ -113,20 +113,46 @@ bool ObjectSizePropertyEditor::handle_event(const sf::Event& event, EditorState&
             glm::vec2 new_position = position_;
             if ((pull_direction_ & PullDirection::Right) == PullDirection::Right)
             {
-                drag_positive_direction_2d(rect, 0, state.node_hovered, new_size);
+                drag_positive_direction(rect, 0, state.node_hovered, new_size);
             }
             else if ((pull_direction_ & PullDirection::Left) == PullDirection::Left)
             {
-                drag_negative_direction_2d(rect, 0, state.node_hovered, new_position, new_size);
+                drag_negative_direction(rect, 0, state.node_hovered, new_position, new_size);
             }
 
             if ((pull_direction_ & PullDirection::Down) == PullDirection::Down)
             {
-                drag_positive_direction_2d(rect, 1, state.node_hovered, new_size);
+                drag_positive_direction(rect, 1, state.node_hovered, new_size);
             }
             else if ((pull_direction_ & PullDirection::Up) == PullDirection::Up)
             {
-                drag_negative_direction_2d(rect, 1, state.node_hovered, new_position, new_size);
+                drag_negative_direction(rect, 1, state.node_hovered, new_position, new_size);
+            }
+
+            if (new_size != size_ || new_position != position_)
+            {
+                size_ = new_size;
+                position_ = new_position;
+                update_object(*state.selection.p_active_object, state.current_floor, actions,
+                              false);
+                update_previews();
+            }
+        }
+
+        if (active_dragging_3d_)
+        {
+            glm::vec2 new_size = size_;
+            glm::vec2 new_position = position_;
+
+            auto intersect = camera_3d.find_mouse_floor_intersect(
+                {mouse->position.x, mouse->position.y}, state.current_floor * FLOOR_HEIGHT);
+
+            glm::vec2 intersect_2d{intersect.x, intersect.z};
+            intersect_2d *= TILE_SIZE_F;
+
+            if ((pull_direction_ & PullDirection::Up) == PullDirection::Up)
+            {
+                drag_negative_direction(rect, 1, intersect_2d, new_position, new_size);
             }
 
             if (new_size != size_ || new_position != position_)
@@ -141,12 +167,20 @@ bool ObjectSizePropertyEditor::handle_event(const sf::Event& event, EditorState&
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
-        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left &&
-            active_dragging_)
+        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
-            active_dragging_ = false;
-            update_object(*state.selection.p_active_object, state.current_floor, actions, true);
-            return true;
+            if (active_dragging_)
+            {
+                active_dragging_ = false;
+                update_object(*state.selection.p_active_object, state.current_floor, actions, true);
+                return true;
+            }
+            else if (active_dragging_3d_)
+            {
+                active_dragging_3d_ = false;
+                update_object(*state.selection.p_active_object, state.current_floor, actions, true);
+                return true;
+            }
         }
     }
 
@@ -225,24 +259,21 @@ void ObjectSizePropertyEditor::render_to_picker(const MousePickingState& picker_
     }
 }
 
-
-void ObjectSizePropertyEditor::drag_positive_direction_2d(const Rectangle& object_rect, int axis,
-                                                          glm::ivec2 node_hovered,
-                                                          glm::vec2& new_size)
+void ObjectSizePropertyEditor::drag_positive_direction(const Rectangle& object_rect, int axis,
+                                                       glm::vec2 node_hovered, glm::vec2& new_size)
 {
     auto delta = (node_hovered[axis] - object_rect.position[axis]) / TILE_SIZE_F;
     auto snapped_delta = std::round(delta * 2.0f) / 2.0f;
 
-    if (snapped_delta >= 0.5 && snapped_delta != size_[axis])
+    if (size_within_bounds(snapped_delta) && snapped_delta != size_[axis])
     {
         new_size[axis] = snapped_delta;
     }
 }
 
-void ObjectSizePropertyEditor::drag_negative_direction_2d(const Rectangle& object_rect, int axis,
-                                                          glm::ivec2 node_hovered,
-                                                          glm::vec2& new_position,
-                                                          glm::vec2& new_size)
+void ObjectSizePropertyEditor::drag_negative_direction(const Rectangle& object_rect, int axis,
+                                                       glm::vec2 node_hovered,
+                                                       glm::vec2& new_position, glm::vec2& new_size)
 {
     auto delta = (object_rect.position[axis] - node_hovered[axis]) / TILE_SIZE_F;
     auto snapped_delta = std::round(delta * 2.0f) / 2.0f;
@@ -250,7 +281,8 @@ void ObjectSizePropertyEditor::drag_negative_direction_2d(const Rectangle& objec
     auto next_position = position_[axis] - snapped_delta * TILE_SIZE_F;
     auto next_size = (size_[axis] + snapped_delta);
 
-    if (next_size >= 0.5 && next_size != size_[axis] && next_position != position_[axis])
+    if (size_within_bounds(next_size) && next_size != size_[axis] &&
+        next_position != position_[axis])
     {
         new_position[axis] = next_position;
         new_size[axis] = next_size;
@@ -295,4 +327,9 @@ void ObjectSizePropertyEditor::update_previews()
     right_line_preview_.update();
     left_line_preview_.update();
     bottom_line_preview_.update();
+}
+
+bool ObjectSizePropertyEditor::size_within_bounds(float size) const
+{
+    return size >= 0.5 && size <= max_size_;
 }

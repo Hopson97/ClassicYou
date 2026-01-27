@@ -7,8 +7,8 @@
 #include "OpenGL/VertexArrayObject.h"
 
 Camera::Camera(const CameraConfig& config)
-    : aspect_{config.viewport_size.x / config.viewport_size.y}
-    , config_(config)
+    : aspect_{static_cast<float>(config.viewport_size.x / config.viewport_size.y)}
+    , config_{config}
 {
     set_projection();
 }
@@ -106,6 +106,46 @@ void Camera::use_viewport()
 const CameraConfig& Camera::get_config() const
 {
     return config_;
+}
+
+glm::vec3 Camera::find_mouse_floor_intersect(glm::vec2 mouse_click, float floor_y) const
+{
+    // See https://antongerdelan.net/opengl/raycasting.html for a detailed explanation
+    
+    // The mouse position must be localised to the current viewport
+    mouse_click.x = mouse_click.x - config_.viewport_position.x;
+    mouse_click.y = mouse_click.y - config_.viewport_position.y;
+
+    glm::vec2 ndc = {(2.0f * mouse_click.x) / config_.viewport_size.x - 1.0f,
+                     1.0f - (2.0f * mouse_click.y) / config_.viewport_size.y};
+
+    glm::vec4 clip_space = {ndc.x, ndc.y, 1.0f, 1.0f};
+    glm::vec4 world_space = glm::inverse(projection_matrix_ * view_matrix_) * clip_space;
+
+    // Where the ray begins and ends, must divide by W to get the 3D world coords
+    glm::vec3 ray_origin = transform.position;
+    glm::vec3 ray_end = glm::vec3(world_space) / world_space.w;
+
+    // Points from the origin to the end of the ray
+    glm::vec3 ray_dir = glm::normalize(ray_end - ray_origin);
+
+    // When the Y is is near 0, it means it is parallel to the floor and won't intersect
+    if (std::abs(ray_dir.y) < 0.0001f)
+    {
+        return ray_origin;
+    }
+
+    // Plane intersection
+    float t = (floor_y - ray_origin.y) / ray_dir.y;
+
+    // Ensure t is not behind the camera
+    if (t < 0.0f)
+    {
+        return ray_origin;
+    }
+
+    // Scale the ray by the distance 't' and add to the origin position
+    return ray_origin + ray_dir * t;
 }
 
 void Camera::set_projection()
