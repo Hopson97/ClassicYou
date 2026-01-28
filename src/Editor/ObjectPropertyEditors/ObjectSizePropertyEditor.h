@@ -58,6 +58,8 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
 
     bool size_within_bounds(float size) const;
 
+    void generate_3d_offsets();
+
     // Fields modified by the editor
     glm::vec2 position_;
     glm::vec2 size_;
@@ -94,4 +96,12 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
     /// True if when the mouse is released, the update should be stored to the history. This
     /// prevents non-updates from being saved.
     bool save_update_ = false;
+
+    struct Offset3D
+    {
+        float x;
+        float z;
+        int pull_direction;
+    };
+    std::array<Offset3D, 8> selector_3d_offsets_;
 };
