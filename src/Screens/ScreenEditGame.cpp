@@ -420,10 +420,12 @@ void ScreenEditGame::on_event(const sf::Event& event)
     else if (auto mouse = event.getIf<sf::Event::MouseMoved>())
     {
         mouse_position_ = mouse->position;
-        editor_state_.node_hovered =
-            map_pixel_to_tile({mouse_position_.x, mouse_position_.y}, camera_2d_);
         editor_state_.world_position_hovered =
             map_pixel_to_world({mouse_position_.x, mouse_position_.y}, camera_2d_);
+
+        editor_state_.node_hovered =
+            is_shift_down_ ? glm::ivec2{editor_state_.world_position_hovered}
+                           : map_pixel_to_tile({mouse_position_.x, mouse_position_.y}, camera_2d_);
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {
@@ -1241,5 +1243,5 @@ void ScreenEditGame::setup_camera_3d()
 {
     auto factor = editor_settings_.show_2d_view ? 2 : 1;
     camera_3d_.set_viewport({editor_settings_.show_2d_view ? window().getSize().x / 2 : 0, 0},
-                                 {window().getSize().x / factor, window().getSize().y});
+                            {window().getSize().x / factor, window().getSize().y});
 }

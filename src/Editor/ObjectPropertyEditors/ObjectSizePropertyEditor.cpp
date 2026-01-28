@@ -49,6 +49,8 @@ namespace
             },
         }};
     }
+    constexpr float CUBE_SIZE = 0.25;
+    constexpr float HALF_CUBE = CUBE_SIZE / 2.0f;
 } // namespace
 
 ObjectSizePropertyEditor::ObjectSizePropertyEditor(const LevelObject& object, glm::vec2 position,
@@ -60,8 +62,10 @@ ObjectSizePropertyEditor::ObjectSizePropertyEditor(const LevelObject& object, gl
 {
     update_previews();
 
-    selection_cube_3d_ = generate_cube_mesh({0.25, 0.25, 0.25});
+    selection_cube_3d_ = generate_cube_mesh({CUBE_SIZE, CUBE_SIZE, CUBE_SIZE});
     selection_cube_3d_.buffer();
+
+    generate_3d_offsets();
 }
 
 bool ObjectSizePropertyEditor::handle_event(const sf::Event& event, EditorState& state,
@@ -121,8 +125,7 @@ bool ObjectSizePropertyEditor::handle_event(const sf::Event& event, EditorState&
                 mouse_point = glm::vec2{intersect.x, intersect.z} * TILE_SIZE_F;
             }
 
-            try_resize(rect, mouse_point, new_position,
-                       new_size);
+            try_resize(rect, mouse_point, new_position, new_size);
 
             if (new_size != size_ || new_position != position_)
             {
@@ -136,6 +139,7 @@ bool ObjectSizePropertyEditor::handle_event(const sf::Event& event, EditorState&
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
+        pull_direction_ = PullDirection::None;
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
             if ((active_dragging_ || active_dragging_3d_) && save_update_)
@@ -154,9 +158,9 @@ bool ObjectSizePropertyEditor::handle_event(const sf::Event& event, EditorState&
 
 void ObjectSizePropertyEditor::render_preview_2d(gl::Shader& scene_shader_2d)
 {
-    auto draw_line_preview = [&](Mesh2DWorld& mesh, PullDirection big_if_direction)
+    auto draw_line_preview = [&](Mesh2DWorld& mesh, PullDirection direction)
     {
-        if ((pull_direction_ & big_if_direction) == big_if_direction)
+        if ((pull_direction_ & direction) == direction)
         {
             mesh.bind().draw_elements(gl::PrimitiveType::Lines);
         }
@@ -178,32 +182,25 @@ void ObjectSizePropertyEditor::render_preview_2d(gl::Shader& scene_shader_2d)
 void ObjectSizePropertyEditor::render_preview_3d(gl::Shader& scene_shader_3d)
 {
     scene_shader_3d.set_uniform("use_texture", false);
+    scene_shader_3d.set_uniform("use_colour", true);
 
-    // Top of the object
-    scene_shader_3d.set_uniform("model_matrix",
-                                create_model_matrix({{
-                                    position_.x / TILE_SIZE_F + size_.x / 2.0f - 0.125f,
-                                    object_floor_ * FLOOR_HEIGHT,
-                                    position_.y / TILE_SIZE_F - 0.25f,
-                                }}));
-    selection_cube_3d_.bind().draw_elements();
+    selection_cube_3d_.bind();
+    for (auto& offset : selector_3d_offsets_)
+    {
 
-    // Left of the object
-    scene_shader_3d.set_uniform("model_matrix",
-                                create_model_matrix({{
-                                    position_.x / TILE_SIZE_F - 0.25f,
-                                    object_floor_ * FLOOR_HEIGHT,
-                                    position_.y / TILE_SIZE_F + size_.y / 2.0f - 0.125f,
-                                }}));
-    selection_cube_3d_.bind().draw_elements();
+        scene_shader_3d.set_uniform(
+            "colour_multiplier", (pull_direction_ & offset.pull_direction) == offset.pull_direction
+                                     ? glm::vec4{1, 0, 0, 1}
+                                     : glm::vec4{1, 1, 1, 1});
 
-    // Top-left of the object
-    scene_shader_3d.set_uniform("model_matrix", create_model_matrix({{
-                                                    position_.x / TILE_SIZE_F - 0.25f,
-                                                    object_floor_ * FLOOR_HEIGHT,
-                                                    position_.y / TILE_SIZE_F - 0.25f,
-                                                }}));
-    selection_cube_3d_.bind().draw_elements();
+        scene_shader_3d.set_uniform("model_matrix", create_model_matrix({{
+                                                        position_.x / TILE_SIZE_F + offset.x,
+                                                        object_floor_ * FLOOR_HEIGHT,
+                                                        position_.y / TILE_SIZE_F + offset.z,
+                                                    }}));
+        selection_cube_3d_.draw_elements();
+    }
+    scene_shader_3d.set_uniform("use_colour", false);
 }
 
 void ObjectSizePropertyEditor::render_to_picker(const MousePickingState& picker_state,
@@ -214,38 +211,17 @@ void ObjectSizePropertyEditor::render_to_picker(const MousePickingState& picker_
     {
         return;
     }
-    
-    // Top of the object
-    picker_shader.set_uniform("model_matrix",
-                              create_model_matrix({{
-                                  position_.x / TILE_SIZE_F + size_.x / 2.0f - 0.125f,
-                                  object_floor_ * FLOOR_HEIGHT,
-                                  position_.y / TILE_SIZE_F - 0.25f,
-                              }}));
-    picker_shader.set_uniform("object_id", static_cast<int>(PullDirection::Up));
-    selection_cube_3d_.bind().draw_elements();
-
-    // Left of the object
-    picker_shader.set_uniform("model_matrix",
-                              create_model_matrix({{
-                                  position_.x / TILE_SIZE_F - 0.25f,
-                                  object_floor_ * FLOOR_HEIGHT,
-                                  position_.y / TILE_SIZE_F + size_.y / 2.0f - 0.125f,
-                              }}));
-    picker_shader.set_uniform("object_id", static_cast<int>(PullDirection::Left));
-    selection_cube_3d_.bind().draw_elements();
-
-    // Top-left of the object
-    picker_shader.set_uniform("model_matrix", create_model_matrix({{
-                                                  position_.x / TILE_SIZE_F - 0.25f,
-                                                  object_floor_ * FLOOR_HEIGHT,
-                                                  position_.y / TILE_SIZE_F - 0.25f,
-                                              }}));
-    picker_shader.set_uniform("object_id",
-                              static_cast<int>(PullDirection::Left | PullDirection::Up));
-    selection_cube_3d_.bind().draw_elements();
-
-    // TODO: Create an array that maps the offset of each box to their pull direction
+    selection_cube_3d_.bind();
+    for (auto& offset : selector_3d_offsets_)
+    {
+        picker_shader.set_uniform("object_id", offset.pull_direction);
+        picker_shader.set_uniform("model_matrix", create_model_matrix({{
+                                                      position_.x / TILE_SIZE_F + offset.x,
+                                                      object_floor_ * FLOOR_HEIGHT,
+                                                      position_.y / TILE_SIZE_F + offset.z,
+                                                  }}));
+        selection_cube_3d_.draw_elements();
+    }
 
     // Check which one was picked
     GLint picked_id = 0;
@@ -332,6 +308,7 @@ void ObjectSizePropertyEditor::update_object(const LevelObject& object, int curr
     actions.push_action(
         std::make_unique<UpdateObjectAction>(cached_object_, new_object, current_floor),
         store_action);
+    generate_3d_offsets();
 
     if (store_action)
     {
@@ -358,4 +335,50 @@ void ObjectSizePropertyEditor::update_previews()
 bool ObjectSizePropertyEditor::size_within_bounds(float size) const
 {
     return size >= 0.5 && size <= max_size_;
+}
+
+void ObjectSizePropertyEditor::generate_3d_offsets()
+{
+    selector_3d_offsets_ = {
+        Offset3D{
+            .x = size_.x / 2.0f - HALF_CUBE,
+            .z = -CUBE_SIZE,
+            .pull_direction = PullDirection::Up,
+        },
+        {
+            .x = -CUBE_SIZE,
+            .z = size_.y / 2.0f - HALF_CUBE,
+            .pull_direction = PullDirection::Left,
+        },
+        {
+            .x = size_.x / 2.0f - HALF_CUBE,
+            .z = size_.y,
+            .pull_direction = PullDirection::Down,
+        },
+        {
+            .x = size_.x,
+            .z = size_.y / 2.0f - HALF_CUBE,
+            .pull_direction = PullDirection::Right,
+        },
+        {
+            .x = -CUBE_SIZE,
+            .z = -CUBE_SIZE,
+            .pull_direction = PullDirection::Up | PullDirection::Left,
+        },
+        {
+            .x = size_.x,
+            .z = -CUBE_SIZE,
+            .pull_direction = PullDirection::Up | PullDirection::Right,
+        },
+        {
+            .x = -CUBE_SIZE,
+            .z = size_.y,
+            .pull_direction = PullDirection::Down | PullDirection::Left,
+        },
+        {
+            .x = size_.x,
+            .z = size_.y,
+            .pull_direction = PullDirection::Down | PullDirection::Right,
+        },
+    };
 }

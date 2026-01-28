@@ -65,12 +65,18 @@ void CreateObjectTool::update_previews(const EditorState& state,
     switch (object_type_)
     {
         case ObjectTypeName::Platform:
+        {
+            // Ensure half tiles are not offset by quater tile increments by "nudging" it 0.5 (Also
+            // done for ramps)
+            auto size = state.platform_default.size;
+            size = {size.x + (std::abs(std::fmod(size.x, 1.0)) == 0.5 ? 0.5 : 0),
+                    size.y + (std::abs(std::fmod(size.y, 1.0)) == 0.5 ? 0.5 : 0)};
             object_.object_type = PlatformObject{
                 .properties = state.platform_default,
-                .parameters = {.position =
-                                   tile_ - state.platform_default.size * TILE_SIZE_F / 2.0f},
+                .parameters = {.position = tile_ - size * HALF_TILE_SIZE_F},
             };
             break;
+        }
         case ObjectTypeName::PolygonPlatform:
             object_.object_type = PolygonPlatformObject{
                 .properties = state.polygon_platform_default,
@@ -81,16 +87,22 @@ void CreateObjectTool::update_previews(const EditorState& state,
         case ObjectTypeName::Pillar:
             object_.object_type = PillarObject{
                 .properties = state.pillar_default,
-                .parameters = {.position = tile_ - state.pillar_default.size * TILE_SIZE_F / 2.0f},
+                .parameters = {.position = tile_},
             };
             break;
 
         case ObjectTypeName::Ramp:
+        {
+            auto size = state.ramp_default.size;
+            size = {size.x + (std::abs(std::fmod(size.x, 1.0)) == 0.5 ? 0.5 : 0),
+                    size.y + (std::abs(std::fmod(size.y, 1.0)) == 0.5 ? 0.5 : 0)};
             object_.object_type = RampObject{
                 .properties = state.ramp_default,
-                .parameters = {.position = tile_ - state.ramp_default.size * TILE_SIZE_F / 2.0f},
+                .parameters = {.position = tile_ - size * HALF_TILE_SIZE_F},
             };
             break;
+        }
+        break;
 
         default:
             std::println("Missing implementation for CreateObjectTool for {}",
