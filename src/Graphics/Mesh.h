@@ -88,6 +88,9 @@ class Mesh
     /// Update the mesh if it is already buffered, otherwise creates a new buffer
     bool update();
 
+    // Clears the vertices and indices array
+    void clear();
+
     /// Binf the mesh ready for drawing
     const Mesh& bind() const;
 
@@ -167,6 +170,13 @@ bool Mesh<Vertex>::update()
     ebo_.buffer_sub_data(0, indices);
     vbo_.buffer_sub_data(0, vertices);
     return true;
+}
+
+template <typename Vertex>
+void Mesh<Vertex>::clear()
+{
+    vertices.clear();
+    indices.clear();
 }
 
 template <typename Vertex>
