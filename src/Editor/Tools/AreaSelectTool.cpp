@@ -4,6 +4,7 @@
 
 #include <imgui.h>
 
+#include "../../Graphics/MeshGeneration.h"
 #include "../../Graphics/OpenGL/GLUtils.h"
 #include "../../Graphics/OpenGL/Shader.h"
 #include "../Actions.h"

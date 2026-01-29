@@ -1080,6 +1080,7 @@ void ScreenEditGame::display_editor_gui()
                 // was before.
                 // This ensures that the wall props stay correct
                 try_update_object_tools();
+                create_property_editors(editor_state_.selection.p_active_object);
             }
         }
         ImGui::End();

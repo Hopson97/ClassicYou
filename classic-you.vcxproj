@@ -200,7 +200,7 @@
     <ClCompile Include="src\Graphics\OpenGL\VertexArrayObject.cpp" />
     <ClCompile Include="src\GUI.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\Graphics\Mesh.cpp" />
+    <ClCompile Include="src\Graphics\MeshGeneration.cpp" />
     <ClCompile Include="src\Util\Util.cpp" />
     <ClCompile Include="src\Util\Profiler.cpp" />
   </ItemGroup>
@@ -269,6 +269,7 @@
     <ClInclude Include="src\Graphics\CameraController.h" />
     <ClInclude Include="src\Graphics\Camera.h" />
     <ClInclude Include="src\Editor\Grids.h" />
+    <ClInclude Include="src\Graphics\MeshGeneration.h" />
     <ClInclude Include="src\Graphics\ShadowMap.h" />
     <ClInclude Include="src\Graphics\Model.h" />
     <ClInclude Include="src\Graphics\OpenGL\BufferObject.h" />

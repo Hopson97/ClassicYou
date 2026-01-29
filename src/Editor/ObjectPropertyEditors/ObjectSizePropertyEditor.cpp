@@ -6,6 +6,7 @@
 #include "../Actions.h"
 #include "../EditorState.h"
 #include "../LevelObjects/LevelObjectHelpers.h"
+#include "../../Graphics/MeshGeneration.h"
 
 namespace
 {
@@ -88,6 +89,7 @@ bool ObjectSizePropertyEditor::handle_event(const sf::Event& event, EditorState&
             {
                 start_drag_position_ = state.node_hovered;
                 active_dragging_ = true;
+                update_previews();
                 return true;
             }
         }
@@ -144,13 +146,15 @@ bool ObjectSizePropertyEditor::handle_event(const sf::Event& event, EditorState&
         {
             if ((active_dragging_ || active_dragging_3d_) && save_update_)
             {
+                update_object(*state.selection.p_active_object, state.current_floor, actions, true);
                 active_dragging_3d_ = false;
                 active_dragging_ = false;
-                update_object(*state.selection.p_active_object, state.current_floor, actions, true);
                 return true;
             }
             save_update_ = false;
         }
+        active_dragging_3d_ = false;
+        active_dragging_ = false;
     }
 
     return false;
@@ -181,6 +185,7 @@ void ObjectSizePropertyEditor::render_preview_2d(gl::Shader& scene_shader_2d)
 
 void ObjectSizePropertyEditor::render_preview_3d(gl::Shader& scene_shader_3d)
 {
+    gl::disable(gl::Capability::DepthTest);
     scene_shader_3d.set_uniform("use_texture", false);
     scene_shader_3d.set_uniform("use_colour", true);
 
@@ -193,14 +198,28 @@ void ObjectSizePropertyEditor::render_preview_3d(gl::Shader& scene_shader_3d)
                                      ? glm::vec4{1, 0, 0, 1}
                                      : glm::vec4{1, 1, 1, 1});
 
-        scene_shader_3d.set_uniform("model_matrix", create_model_matrix({{
-                                                        position_.x / TILE_SIZE_F + offset.x,
-                                                        object_floor_ * FLOOR_HEIGHT,
-                                                        position_.y / TILE_SIZE_F + offset.z,
-                                                    }}));
+        scene_shader_3d.set_uniform("model_matrix",
+                                    create_model_matrix({{
+                                        position_.x / TILE_SIZE_F + offset.x,
+                                        object_floor_ * FLOOR_HEIGHT + FLOOR_HEIGHT / 2,
+                                        position_.y / TILE_SIZE_F + offset.z,
+                                    }}));
         selection_cube_3d_.draw_elements();
     }
     scene_shader_3d.set_uniform("use_colour", false);
+    scene_shader_3d.set_uniform("model_matrix", create_model_matrix({}));
+
+    if (active_dragging_3d_)
+    {
+        if (selection_line_x_.indices.size() > 0)
+        {
+            selection_line_x_.bind().draw_elements(gl::PrimitiveType::Lines);
+        }
+        if (selection_line_z_.indices.size() > 0)
+        {
+            selection_line_z_.bind().draw_elements(gl::PrimitiveType::Lines);
+        }
+    }
 }
 
 void ObjectSizePropertyEditor::render_to_picker(const MousePickingState& picker_state,
@@ -215,11 +234,12 @@ void ObjectSizePropertyEditor::render_to_picker(const MousePickingState& picker_
     for (auto& offset : selector_3d_offsets_)
     {
         picker_shader.set_uniform("object_id", offset.pull_direction);
-        picker_shader.set_uniform("model_matrix", create_model_matrix({{
-                                                      position_.x / TILE_SIZE_F + offset.x,
-                                                      object_floor_ * FLOOR_HEIGHT,
-                                                      position_.y / TILE_SIZE_F + offset.z,
-                                                  }}));
+        picker_shader.set_uniform("model_matrix",
+                                  create_model_matrix({{
+                                      position_.x / TILE_SIZE_F + offset.x,
+                                      object_floor_ * FLOOR_HEIGHT + FLOOR_HEIGHT / 2,
+                                      position_.y / TILE_SIZE_F + offset.z,
+                                  }}));
         selection_cube_3d_.draw_elements();
     }
 
@@ -228,19 +248,17 @@ void ObjectSizePropertyEditor::render_to_picker(const MousePickingState& picker_
     glReadPixels(picker_state.point.x, picker_state.point.y, 1, 1, GL_RED_INTEGER, GL_INT,
                  &picked_id);
 
-    std::println("Object Size Property Editor picked-> {}", picked_id);
-
     if (picked_id > -1)
     {
         active_dragging_3d_ = true;
         pull_direction_ = static_cast<PullDirection>(picked_id);
+        update_previews();
     }
 }
 
 void ObjectSizePropertyEditor::try_resize(const Rectangle& rect, glm::vec2 intersect,
                                           glm::vec2& new_position, glm::vec2& new_size)
 {
-
     if ((pull_direction_ & PullDirection::Right) == PullDirection::Right)
     {
         drag_positive_direction(rect, 0, intersect, new_size);
@@ -330,6 +348,51 @@ void ObjectSizePropertyEditor::update_previews()
     right_line_preview_.update();
     left_line_preview_.update();
     bottom_line_preview_.update();
+
+    selection_line_x_.vertices.clear();
+    selection_line_x_.indices.clear();
+
+    selection_line_z_.vertices.clear();
+    selection_line_z_.indices.clear();
+
+    auto create_line =
+        [&](Mesh3D& mesh, PullDirection direction, const glm::vec3& axis, glm::u8vec4 colour)
+    {
+        for (const auto& offset : selector_3d_offsets_)
+        {
+            if (direction == offset.pull_direction)
+            {
+                glm::vec3 start{
+                    position_.x / TILE_SIZE_F + offset.x + HALF_CUBE,
+                    object_floor_ * FLOOR_HEIGHT,
+                    position_.y / TILE_SIZE_F + offset.z + HALF_CUBE,
+                };
+                auto end = start + glm::vec3{250, 0, 250} * axis;
+
+                add_line_to_mesh(mesh, start, end, colour);
+            }
+        }
+    };
+
+    if ((pull_direction_ & PullDirection::Right) == PullDirection::Right)
+    {
+        create_line(selection_line_x_, PullDirection::Right, {1, 0, 0}, Colour::RED);
+    }
+    else if ((pull_direction_ & PullDirection::Left) == PullDirection::Left)
+    {
+        create_line(selection_line_x_, PullDirection::Left, {-1, 0, 0}, Colour::RED);
+    }
+
+    if ((pull_direction_ & PullDirection::Down) == PullDirection::Down)
+    {
+        create_line(selection_line_z_, PullDirection::Down, {0, 0, 1}, Colour::GREEN);
+    }
+    else if ((pull_direction_ & PullDirection::Up) == PullDirection::Up)
+    {
+        create_line(selection_line_z_, PullDirection::Up, {0, 0, -1}, Colour::GREEN);
+    }
+    selection_line_x_.update();
+    selection_line_z_.update();
 }
 
 bool ObjectSizePropertyEditor::size_within_bounds(float size) const
@@ -339,45 +402,47 @@ bool ObjectSizePropertyEditor::size_within_bounds(float size) const
 
 void ObjectSizePropertyEditor::generate_3d_offsets()
 {
+    // The offset prevents clipping the selector with neighbour walls
+    float OFFSET = 0.025f;
     selector_3d_offsets_ = {
         Offset3D{
             .x = size_.x / 2.0f - HALF_CUBE,
-            .z = -CUBE_SIZE,
+            .z = -CUBE_SIZE - OFFSET,
             .pull_direction = PullDirection::Up,
         },
         {
-            .x = -CUBE_SIZE,
+            .x = -CUBE_SIZE - OFFSET,
             .z = size_.y / 2.0f - HALF_CUBE,
             .pull_direction = PullDirection::Left,
         },
         {
             .x = size_.x / 2.0f - HALF_CUBE,
-            .z = size_.y,
+            .z = size_.y + OFFSET,
             .pull_direction = PullDirection::Down,
         },
         {
-            .x = size_.x,
+            .x = size_.x + OFFSET,
             .z = size_.y / 2.0f - HALF_CUBE,
             .pull_direction = PullDirection::Right,
         },
         {
-            .x = -CUBE_SIZE,
-            .z = -CUBE_SIZE,
+            .x = -CUBE_SIZE - OFFSET,
+            .z = -CUBE_SIZE - OFFSET,
             .pull_direction = PullDirection::Up | PullDirection::Left,
         },
         {
-            .x = size_.x,
-            .z = -CUBE_SIZE,
+            .x = size_.x + OFFSET,
+            .z = -CUBE_SIZE + OFFSET,
             .pull_direction = PullDirection::Up | PullDirection::Right,
         },
         {
-            .x = -CUBE_SIZE,
-            .z = size_.y,
+            .x = -CUBE_SIZE - OFFSET,
+            .z = size_.y + OFFSET,
             .pull_direction = PullDirection::Down | PullDirection::Left,
         },
         {
-            .x = size_.x,
-            .z = size_.y,
+            .x = size_.x + OFFSET,
+            .z = size_.y + OFFSET,
             .pull_direction = PullDirection::Down | PullDirection::Right,
         },
     };
