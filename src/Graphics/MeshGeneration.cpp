@@ -198,6 +198,63 @@ Mesh3D generate_cube_mesh(const glm::vec3& size, bool repeat_texture, glm::u8vec
     return mesh;
 }
 
+Mesh3D generate_pyramid_mesh(const glm::vec3& size, glm::u8vec4 colour_a, glm::u8vec4 colour_b)
+{
+    Mesh3D mesh;
+
+    float w = size.x; // Length/Height of the pyramid
+    float h = size.y; // Total width
+    float d = size.z; // Total depth
+
+    float hw = w / 2.0f;
+    float hh = h / 2.0f;
+    float hd = d / 2.0f;
+
+    // clang-format off
+    mesh.vertices = {
+        // First face is the base
+        {{-hw, -hh, -hd}, {0.0f, 1.0f}, LEFT, colour_b}, 
+        {{-hw, -hh,  hd}, {1.0f, 1.0f}, LEFT, colour_b},
+        {{-hw,  hh,  hd}, {1.0f, 0.0f}, LEFT, colour_b}, 
+        {{-hw,  hh, -hd}, {0.0f, 0.0f}, LEFT, colour_b},
+
+        {{-hw, -hh,  hd}, {0.0f, 1.0f}, FORWARD, colour_b},
+        {{ hw,   0,   0}, {0.5f, 0.5f}, FORWARD, colour_b},
+        {{ hw,   0,   0}, {0.5f, 0.5f}, FORWARD, colour_b}, 
+        {{-hw,  hh,  hd}, {0.0f, 0.0f}, FORWARD, colour_b},
+                                
+        {{-hw,  hh, -hd}, {0.0f, 0.0f}, BACKWARD, colour_b}, 
+        {{ hw,   0,   0}, {0.5f, 0.5f}, BACKWARD, colour_b},
+        {{ hw,   0,   0}, {0.5f, 0.5f}, BACKWARD, colour_b}, 
+        {{-hw, -hh, -hd}, {0.0f, 1.0f}, BACKWARD, colour_b},
+                               
+        {{-hw,  hh,  hd}, {1.0f, 1.0f}, UP, colour_a},
+        {{ hw,   0,   0}, {0.5f, 0.5f}, UP, colour_a},      
+        {{ hw,   0,   0}, {0.5f, 0.5f}, UP, colour_a},      
+        {{-hw,  hh, -hd}, {0.0f, 0.0f}, UP, colour_a},    
+                              
+        {{-hw, -hh, -hd}, {0.0f, 0.0f}, DOWN, colour_a}, 
+        {{ hw,   0,   0}, {0.5f, 0.5f}, DOWN, colour_a},
+        {{ hw,   0,   0}, {0.5f, 0.5f}, DOWN, colour_a},    
+        {{-hw, -hh,  hd}, {1.0f, 1.0f}, DOWN, colour_a},    
+    };
+    // clang-format on
+
+    int index = 0;
+    for (int i = 0; i < 5; i++)
+    {
+        mesh.indices.push_back(index);
+        mesh.indices.push_back(index + 1);
+        mesh.indices.push_back(index + 2);
+        mesh.indices.push_back(index + 2);
+        mesh.indices.push_back(index + 3);
+        mesh.indices.push_back(index);
+        index += 4;
+    }
+
+    return mesh;
+}
+
 Mesh3D generate_centered_cube_mesh(const glm::vec3& dimensions)
 {
     Mesh3D mesh;
