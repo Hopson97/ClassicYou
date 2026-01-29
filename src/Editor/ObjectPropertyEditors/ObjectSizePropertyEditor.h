@@ -60,12 +60,15 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
 
     void generate_3d_offsets();
 
+
+
     // Fields modified by the editor
     glm::vec2 position_;
     glm::vec2 size_;
 
     // The floor of the object to prevent resize when on a different floor to it
     int object_floor_ = 0;
+    int state_floor_ = 0;
 
     // Direction the edges are being pulled in
     int pull_direction_;
@@ -101,8 +104,9 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
 
     struct Offset3D
     {
-        float x;
-        float z;
+        float x = 0.0f;
+        float z = 0.0f;
+        float angle = 0.0f;
         int pull_direction;
     };
     std::array<Offset3D, 8> selector_3d_offsets_;

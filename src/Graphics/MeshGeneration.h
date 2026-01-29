@@ -10,6 +10,9 @@
 
 [[nodiscard]] Mesh3D generate_cube_mesh(const glm::vec3& size, bool repeat_texture = false,
                                         glm::u8vec4 colour = Colour::WHITE);
+[[nodiscard]] Mesh3D generate_pyramid_mesh(const glm::vec3& size,
+                                           glm::u8vec4 colour_a = Colour::WHITE,
+                                           glm::u8vec4 colour_b = Colour::WHITE);
 
 [[nodiscard]] Mesh3D generate_centered_cube_mesh(const glm::vec3& size);
 [[nodiscard]] Mesh3D generate_terrain_mesh(int size, int edgeVertices);
