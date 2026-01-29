@@ -62,11 +62,6 @@ ObjectSizePropertyEditor::ObjectSizePropertyEditor(const LevelObject& object, gl
     , cached_object_(object)
 {
     update_previews();
-
-    selection_cube_3d_ = generate_pyramid_mesh({CUBE_SIZE * 1.5, CUBE_SIZE, CUBE_SIZE},
-                                               Colour::WHITE, {128, 128, 128, 255});
-    selection_cube_3d_.buffer();
-
     generate_3d_offsets();
 }
 
@@ -98,6 +93,8 @@ bool ObjectSizePropertyEditor::handle_event(const sf::Event& event, EditorState&
     }
     else if (auto mouse = event.getIf<sf::Event::MouseMoved>())
     {
+        // If the mouse moves over one of the egdes in the 2D view, this enables it to be
+        // highlighted
         if (!active_dragging_ && !active_dragging_3d_)
         {
             pull_direction_ = PullDirection::None;
@@ -120,11 +117,12 @@ bool ObjectSizePropertyEditor::handle_event(const sf::Event& event, EditorState&
             glm::vec2 new_size = size_;
             glm::vec2 new_position = position_;
 
+            // 3D picking for dragging edges - TODO the drag Y should be based on the edge, especially for ramps.
             glm::vec2 mouse_point = state.node_hovered;
             if (active_dragging_3d_)
             {
                 auto intersect = camera_3d.find_mouse_floor_intersect(
-                    {mouse->position.x, mouse->position.y}, state.current_floor * FLOOR_HEIGHT);
+                    {mouse->position.x, mouse->position.y}, base_y_);
 
                 mouse_point = glm::vec2{intersect.x, intersect.z} * TILE_SIZE_F;
             }
@@ -193,6 +191,9 @@ void ObjectSizePropertyEditor::render_preview_3d(gl::Shader& scene_shader_3d)
     }
     scene_shader_3d.set_uniform("use_texture", false);
     scene_shader_3d.set_uniform("use_colour", true);
+    scene_shader_3d.set_uniform("model_matrix", create_model_matrix({}));
+    scene_shader_3d.set_uniform("colour_multiplier", glm::vec4{1.0f, 1.0f, 1.0f, 1.0f});
+    /*
 
     selection_cube_3d_.bind();
     for (auto& offset : selector_3d_offsets_)
@@ -211,18 +212,24 @@ void ObjectSizePropertyEditor::render_preview_3d(gl::Shader& scene_shader_3d)
                             }));
         selection_cube_3d_.draw_elements();
     }
-    scene_shader_3d.set_uniform("use_colour", false);
-    scene_shader_3d.set_uniform("model_matrix", create_model_matrix({}));
 
+    */
+    glLineWidth(5);
+
+    top_line_preview_3d_.bind().draw_elements(gl::PrimitiveType::Lines);
+
+    scene_shader_3d.set_uniform("use_colour", false);
+
+    glLineWidth(3);
     if (active_dragging_3d_)
     {
-        if (selection_line_x_.indices.size() > 0)
+        if (axis_line_x.indices.size() > 0)
         {
-            selection_line_x_.bind().draw_elements(gl::PrimitiveType::Lines);
+            axis_line_x.bind().draw_elements(gl::PrimitiveType::Lines);
         }
-        if (selection_line_z_.indices.size() > 0)
+        if (axis_line_z.indices.size() > 0)
         {
-            selection_line_z_.bind().draw_elements(gl::PrimitiveType::Lines);
+            axis_line_z.bind().draw_elements(gl::PrimitiveType::Lines);
         }
     }
 }
@@ -240,6 +247,14 @@ void ObjectSizePropertyEditor::render_to_picker(const MousePickingState& picker_
     {
         return;
     }
+
+    picker_shader.set_uniform("model_matrix", create_model_matrix({}));
+    glLineWidth(10);
+
+    picker_shader.set_uniform("object_id", PullDirection::Up);
+    top_line_preview_3d_.bind().draw_elements(gl::PrimitiveType::Lines);
+
+    /*
     selection_cube_3d_.bind();
     for (auto& offset : selector_3d_offsets_)
     {
@@ -251,7 +266,7 @@ void ObjectSizePropertyEditor::render_to_picker(const MousePickingState& picker_
                                 {0, offset.angle, 0},
                             }));
         selection_cube_3d_.draw_elements();
-    }
+    }*/
 
     // Check which one was picked
     GLint picked_id = 0;
@@ -337,7 +352,6 @@ void ObjectSizePropertyEditor::update_object(const LevelObject& object, int curr
         std::make_unique<UpdateObjectAction>(cached_object_, new_object, current_floor),
         store_action);
     generate_3d_offsets();
-
     if (store_action)
     {
         cached_object_ = new_object;
@@ -359,14 +373,11 @@ void ObjectSizePropertyEditor::update_previews()
     left_line_preview_.update();
     bottom_line_preview_.update();
 
-    selection_line_x_.vertices.clear();
-    selection_line_x_.indices.clear();
+    axis_line_x.clear();
+    axis_line_z.clear();
 
-    selection_line_z_.vertices.clear();
-    selection_line_z_.indices.clear();
-
-    auto create_line =
-        [&](Mesh3D& mesh, PullDirection direction, const glm::vec3& axis, glm::u8vec4 colour)
+    auto create_axis_line = [&](Mesh3D& mesh, PullDirection direction, const glm::vec3& axis,
+                                glm::u8vec4 colour, float y)
     {
         for (const auto& offset : selector_3d_offsets_)
         {
@@ -374,7 +385,7 @@ void ObjectSizePropertyEditor::update_previews()
             {
                 glm::vec3 start{
                     position_.x / TILE_SIZE_F + offset.x,
-                    object_floor_ * FLOOR_HEIGHT,
+                    y,
                     position_.y / TILE_SIZE_F + offset.z,
                 };
                 auto end = start + glm::vec3{250, 0, 250} * axis;
@@ -384,25 +395,60 @@ void ObjectSizePropertyEditor::update_previews()
         }
     };
 
-    if ((pull_direction_ & PullDirection::Right) == PullDirection::Right)
+    auto create_axis_lines = [&](float y)
     {
-        create_line(selection_line_x_, PullDirection::Right, {1, 0, 0}, Colour::RED);
-    }
-    else if ((pull_direction_ & PullDirection::Left) == PullDirection::Left)
-    {
-        create_line(selection_line_x_, PullDirection::Left, {-1, 0, 0}, Colour::RED);
-    }
+        if ((pull_direction_ & PullDirection::Right) == PullDirection::Right)
+        {
+            create_axis_line(axis_line_x, PullDirection::Right, {1, 0, 0}, Colour::RED, y);
+        }
+        else if ((pull_direction_ & PullDirection::Left) == PullDirection::Left)
+        {
+            create_axis_line(axis_line_x, PullDirection::Left, {-1, 0, 0}, Colour::RED, y);
+        }
 
-    if ((pull_direction_ & PullDirection::Down) == PullDirection::Down)
+        if ((pull_direction_ & PullDirection::Down) == PullDirection::Down)
+        {
+            create_axis_line(axis_line_z, PullDirection::Down, {0, 0, 1}, Colour::GREEN, y);
+        }
+        else if ((pull_direction_ & PullDirection::Up) == PullDirection::Up)
+        {
+            create_axis_line(axis_line_z, PullDirection::Up, {0, 0, -1}, Colour::GREEN, y);
+        }
+    };
+
+    axis_line_x.update();
+    axis_line_z.update();
+    top_line_preview_3d_.clear();
+    left_line_preview_3d_.clear();
+    right_line_preview_3d_.clear();
+    bottom_line_preview_3d_.clear();
+
+    if (auto platform = std::get_if<PlatformObject>(&cached_object_.object_type))
     {
-        create_line(selection_line_z_, PullDirection::Down, {0, 0, 1}, Colour::GREEN);
+        float y = object_floor_ * FLOOR_HEIGHT + platform->properties.base * 2.0f;
+        glm::vec3 start{
+            position_.x / TILE_SIZE_F,
+            y,
+            position_.y / TILE_SIZE_F,
+        };
+        auto end = start + glm::vec3{size_.x, 0, 0};
+
+        add_line_to_mesh(top_line_preview_3d_, start, end, Colour::GREEN);
+
+        create_axis_lines(y);
+        base_y_ = y;
     }
-    else if ((pull_direction_ & PullDirection::Up) == PullDirection::Up)
+    else if (auto ramp = std::get_if<RampObject>(&cached_object_.object_type))
     {
-        create_line(selection_line_z_, PullDirection::Up, {0, 0, -1}, Colour::GREEN);
+        ramp->properties.size = size_;
+        ramp->parameters.position = position_;
     }
-    selection_line_x_.update();
-    selection_line_z_.update();
+    axis_line_x.update();
+    axis_line_z.update();
+    top_line_preview_3d_.update();
+    left_line_preview_3d_.update();
+    right_line_preview_3d_.update();
+    bottom_line_preview_3d_.update();
 }
 
 bool ObjectSizePropertyEditor::size_within_bounds(float size) const
