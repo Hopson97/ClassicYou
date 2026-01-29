@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Graphics/MeshGeneration.h"
 #include "../Graphics/Mesh.h"
 #include "../Graphics/OpenGL/Shader.h"
 

@@ -2,6 +2,7 @@
 
 #include "Mesh.h"
 #include "OpenGL/Texture.h"
+#include "MeshGeneration.h"
 
 class Skybox
 {

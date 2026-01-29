@@ -3,6 +3,7 @@
 #include <glm/gtx/rotate_vector.hpp>
 #include <magic_enum/magic_enum.hpp>
 
+#include "../../Graphics/MeshGeneration.h"
 #include "../LevelFileIO.h"
 #include "../LevelTextures.h"
 #include "LevelObjectHelpers.h"

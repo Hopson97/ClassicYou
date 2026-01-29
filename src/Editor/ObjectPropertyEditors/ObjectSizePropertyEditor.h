@@ -85,6 +85,8 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
     Mesh2DWorld bottom_line_preview_;
 
     Mesh3D selection_cube_3d_;
+    Mesh3D selection_line_x_;
+    Mesh3D selection_line_z_;
 
     float min_size_ = 0.5f;
     float max_size_ = 100.0f;

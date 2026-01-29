@@ -2,6 +2,7 @@
 
 #include <magic_enum/magic_enum.hpp>
 
+#include "../../Graphics/MeshGeneration.h"
 #include "../../Util/Maths.h"
 #include "../LevelFileIO.h"
 #include "../LevelTextures.h"

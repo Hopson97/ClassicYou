@@ -1,8 +1,6 @@
-#include "Mesh.h"
+#include "MeshGeneration.h"
 
 #include <numeric>
-
-#include <SFML/Graphics/Image.hpp>
 
 #include "../Editor/EditConstants.h"
 #include "../Editor/LevelObjects/LevelObjectTypes.h"
@@ -304,29 +302,30 @@ Mesh3D generate_terrain_mesh(int size, int edgeVertices)
     return mesh;
 }
 
+void add_line_to_mesh(Mesh3D& mesh, const glm::vec3& begin, const glm::vec3& end, glm::vec4 colour)
+{
+    mesh.vertices.push_back({.position = begin, .colour = colour});
+    mesh.vertices.push_back({.position = end, .colour = colour});
+
+    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
+    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
+}
+
 Mesh3D generate_grid_mesh(int width, int height)
 {
     Mesh3D mesh;
-    auto create_line = [&](const glm::vec3& begin, const glm::vec3& end, glm::vec4 colour)
-    {
-        mesh.vertices.push_back({.position = begin});
-        mesh.vertices.push_back({.position = end});
-
-        mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
-        mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
-    };
 
     // Tiny offset prevents platforms/floors clipping with the grid
     auto y = -0.01f;
 
     for (int x = -width / 2; x <= width / 2; x++)
     {
-        create_line({x, y, -width / 2}, {x, y, width / 2}, SUB_GRID_COLOUR);
+        add_line_to_mesh(mesh, {x, y, -width / 2}, {x, y, width / 2}, Colour::WHITE);
     }
 
     for (int z = -height / 2; z <= height / 2; z++)
     {
-        create_line({-height / 2, y, z}, {height / 2, y, z}, SUB_GRID_COLOUR);
+        add_line_to_mesh(mesh, {-height / 2, y, z}, {height / 2, y, z}, Colour::WHITE);
     }
 
     return mesh;

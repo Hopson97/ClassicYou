@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Graphics/MeshGeneration.h"
 #include "../Graphics/Camera.h"
 #include "../Graphics/CameraController.h"
 #include "../Graphics/Mesh.h"
@@ -50,5 +51,4 @@ class ScreenPlaying final : public Screen
 
     bool rotation_locked_ = false;
     Settings settings_;
-
 };
