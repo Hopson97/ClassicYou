@@ -14,6 +14,11 @@ namespace
     constexpr auto MIN_SELECT_DISTANCE_SMALL = HALF_TILE_SIZE_F / 4 - 1;
     constexpr auto MIN_SELECT_DISTANCE_LARGE = HALF_TILE_SIZE_F / 2;
 
+    constexpr int TOP_LEFT_INDEX = 0;
+    constexpr int BOTTOM_LEFT_INDEX = 1;
+    constexpr int BOTTOM_RIGHT_INDEX = 2;
+    constexpr int TOP_RIGHT_INDEX = 3;
+
     struct LineToPullDirectionMapping
     {
         const Line line;
@@ -209,35 +214,37 @@ void ObjectSizePropertyEditor::render_preview_3d(gl::Shader& scene_shader_3d)
     scene_shader_3d.set_uniform("use_texture", false);
     scene_shader_3d.set_uniform("use_colour", true);
     scene_shader_3d.set_uniform("colour_multiplier", glm::vec4{1.0f, 1.0f, 1.0f, 1.0f});
-
+    /*
     cube_corner_preview_3d_.bind();
     for (auto& offset : corner_offsets_)
     {
-        scene_shader_3d.set_uniform("model_matrix", create_model_matrix({
-                                                        {position_.x / TILE_SIZE_F + offset.x,
-                                                         object_floor_ * FLOOR_HEIGHT + offset.height,
-                                                         position_.y / TILE_SIZE_F + offset.z},
-                                                    }));
+        scene_shader_3d.set_uniform(
+            "model_matrix",
+            create_model_matrix({
+                {position_.x / TILE_SIZE_F + offset.x, object_floor_ * FLOOR_HEIGHT + offset.height,
+                 position_.y / TILE_SIZE_F + offset.z},
+            }));
         cube_corner_preview_3d_.draw_elements();
     }
     scene_shader_3d.set_uniform("model_matrix", create_model_matrix({}));
+    */
 
     glLineWidth(5);
 
-    // if ((pull_direction_ & PullDirection::Right) == PullDirection::Right)
+    if ((pull_direction_ & PullDirection::Right) == PullDirection::Right)
     {
         right_line_preview_3d_.bind().draw_elements(gl::PrimitiveType::Lines);
     }
-    // else if ((pull_direction_ & PullDirection::Left) == PullDirection::Left)
+    else if ((pull_direction_ & PullDirection::Left) == PullDirection::Left)
     {
         left_line_preview_3d_.bind().draw_elements(gl::PrimitiveType::Lines);
     }
 
-    // if ((pull_direction_ & PullDirection::Down) == PullDirection::Down)
+    if ((pull_direction_ & PullDirection::Down) == PullDirection::Down)
     {
         bottom_line_preview_3d_.bind().draw_elements(gl::PrimitiveType::Lines);
     }
-    // else if ((pull_direction_ & PullDirection::Up) == PullDirection::Up)
+    else if ((pull_direction_ & PullDirection::Up) == PullDirection::Up)
     {
         top_line_preview_3d_.bind().draw_elements(gl::PrimitiveType::Lines);
     }
@@ -267,6 +274,8 @@ void ObjectSizePropertyEditor::render_to_picker_mouse_over(const MousePickingSta
     }
 
     picker_shader.set_uniform("model_matrix", create_model_matrix({}));
+
+    // A thicker line is used to ensure easier selection
     glLineWidth(15);
 
     picker_shader.set_uniform("object_id", PullDirection::Up);
@@ -303,7 +312,7 @@ void ObjectSizePropertyEditor::render_to_picker_mouse_over(const MousePickingSta
     {
         mouseover_edge_3d_ = true;
         pull_direction_ = static_cast<PullDirection>(picked_id);
-        base_y_ = y;
+        base_y_ = pull_direction_to_height_[pull_direction_];
 
         update_previews();
     }
@@ -487,6 +496,8 @@ void ObjectSizePropertyEditor::update_previews()
     left_line_preview_3d_.update();
     right_line_preview_3d_.update();
     bottom_line_preview_3d_.update();
+
+    calculate_pull_direction_to_height_mapping();
 }
 
 bool ObjectSizePropertyEditor::size_within_bounds(float size) const
@@ -560,4 +571,22 @@ void ObjectSizePropertyEditor::generate_3d_offsets()
             .pull_direction = PullDirection::Up,
         },
     };
+}
+
+void ObjectSizePropertyEditor::calculate_pull_direction_to_height_mapping()
+{
+    auto get_mid_point = [&](int a, int b)
+    { return (corner_offsets_[a].height + corner_offsets_[b].height) / 2.0f; };
+
+    // clang-format off
+    pull_direction_to_height_[PullDirection::Up]        = get_mid_point(TOP_LEFT_INDEX, TOP_RIGHT_INDEX);
+    pull_direction_to_height_[PullDirection::Left]      = get_mid_point(TOP_LEFT_INDEX, BOTTOM_LEFT_INDEX);
+    pull_direction_to_height_[PullDirection::Right]     = get_mid_point(BOTTOM_RIGHT_INDEX, TOP_RIGHT_INDEX);
+    pull_direction_to_height_[PullDirection::Down]      = get_mid_point(BOTTOM_LEFT_INDEX, BOTTOM_RIGHT_INDEX);
+
+    pull_direction_to_height_[PullDirection::Up     | PullDirection::Left]  = corner_offsets_[TOP_LEFT_INDEX].height;
+    pull_direction_to_height_[PullDirection::Down   | PullDirection::Left]  = corner_offsets_[BOTTOM_LEFT_INDEX].height;
+    pull_direction_to_height_[PullDirection::Down   | PullDirection::Right] = corner_offsets_[BOTTOM_RIGHT_INDEX].height;
+    pull_direction_to_height_[PullDirection::Up     | PullDirection::Right] = corner_offsets_[TOP_RIGHT_INDEX].height;
+    // clang-format on
 }

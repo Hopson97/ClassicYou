@@ -35,7 +35,7 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
     void render_preview_3d(gl::Shader& scene_shader_3d) override;
 
     void render_to_picker_mouse_over(const MousePickingState& picker_state,
-                          gl::Shader& picker_shader) override;
+                                     gl::Shader& picker_shader) override;
 
   private:
     void try_resize(const Rectangle& object_rect, glm::vec2 intersect, glm::vec2& new_position,
@@ -59,6 +59,8 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
     bool size_within_bounds(float size) const;
 
     void generate_3d_offsets();
+
+    void calculate_pull_direction_to_height_mapping();
 
     // Fields modified by the editor
     glm::vec2 position_;
@@ -121,6 +123,10 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
     };
     std::array<Offset3D, 4> axis_offsets_;
     std::array<Offset3D, 4> corner_offsets_;
+
+    /// This is used such that when the line is being dragged, the mouse/floor intersect uses the
+    /// correct offset when calculting where the ray intersects. Same applies for the corners.
+    std::unordered_map<int, float> pull_direction_to_height_;
 
     /// The base of the object where the mouse should intersect the ground plane for dragging
     /// objects
