@@ -29,6 +29,7 @@ void add_line_to_mesh(MeshType& mesh, const Line& line, glm::u8vec4 colour)
 }
 
 void generate_line_mesh(Mesh2DWorld& mesh, const Line& line, glm::u8vec4 colour);
+void generate_line_mesh(Mesh3D& mesh, const Line3D& line, glm::vec4 colour);
 
 [[nodiscard]] Mesh2DWorld generate_line_mesh(const Line& line, glm::u8vec4 colour);
 [[nodiscard]] Mesh2DWorld generate_2d_quad_mesh(glm::vec2 position, glm::vec2 size,
@@ -47,8 +48,6 @@ void generate_line_mesh(Mesh2DWorld& mesh, const Line& line, glm::u8vec4 colour)
                                                    Direction direction = Direction::Forward);
 
 [[nodiscard]] Mesh2DWorld generate_2d_outline_quad_mesh(glm::vec2 position, glm::vec2 size);
-
-void add_line_to_mesh(Mesh3D& mesh, const glm::vec3& begin, const glm::vec3& end, glm::vec4 colour);
 
 template <typename T>
 struct NamedQuadVertices

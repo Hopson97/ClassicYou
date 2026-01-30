@@ -90,7 +90,8 @@ class ScreenEditGame final : public Screen
 
     bool mouse_in_2d_view() const;
 
-    void enable_mouse_picking(MousePickingState::Action action, sf::Mouse::Button button);
+    void enable_mouse_picking(MousePickingState& state, MousePickingState::Action action,
+                              sf::Mouse::Button button, sf::Vector2i mouse_point);
 
     /// Ensure the 3D view is set up to be half width or full width
     void setup_camera_3d();
@@ -157,7 +158,8 @@ class ScreenEditGame final : public Screen
     gl::Framebuffer picker_fbo_;
     gl::Shader picker_shader_;
 
-    MousePickingState mouse_picking_state_;
+    MousePickingState mouse_picking_click_state_;
+    MousePickingState mouse_picking_move_state_;
 
     // Used for checking if shift is pressed when picking objects
     bool is_shift_down_ = false;

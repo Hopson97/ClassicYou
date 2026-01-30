@@ -34,7 +34,7 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
     void render_preview_3d(gl::Shader& scene_shader_3d) override;
 
-    void render_to_picker(const MousePickingState& picker_state,
+    void render_to_picker_mouse_over(const MousePickingState& picker_state,
                           gl::Shader& picker_shader) override;
 
   private:
@@ -59,7 +59,6 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
     bool size_within_bounds(float size) const;
 
     void generate_3d_offsets();
-    void update_3d_previews();
 
     // Fields modified by the editor
     glm::vec2 position_;
@@ -77,6 +76,7 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
 
     /// True if the size is being modified in the 3D view
     bool active_dragging_3d_ = false;
+    bool mouseover_edge_3d_ = false;
 
     glm::ivec2 start_drag_position_;
 
@@ -90,6 +90,7 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
     Mesh3D right_line_preview_3d_;
     Mesh3D top_line_preview_3d_;
     Mesh3D bottom_line_preview_3d_;
+    Mesh3D cube_corner_preview_3d_;
 
     Mesh3D axis_line_x;
     Mesh3D axis_line_z;
@@ -112,7 +113,8 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
         float angle = 0.0f;
         int pull_direction = 0;
     };
-    std::array<Offset3D, 8> selector_3d_offsets_;
+    std::array<Offset3D, 4> axis_offsets_;
+    std::array<Offset3D, 4> corner_offsets_;
 
     /// The base of the object where the mouse should intersect the ground plane for dragging
     /// objects

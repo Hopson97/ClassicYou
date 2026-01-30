@@ -426,10 +426,14 @@ void ScreenEditGame::on_event(const sf::Event& event)
         editor_state_.node_hovered =
             is_shift_down_ ? glm::ivec2{editor_state_.world_position_hovered}
                            : map_pixel_to_tile({mouse_position_.x, mouse_position_.y}, camera_2d_);
+
+        enable_mouse_picking(mouse_picking_move_state_, MousePickingState::Action::ButtonPressed,
+                             sf::Mouse::Button::Middle, mouse->position);
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {
-        enable_mouse_picking(MousePickingState::Action::ButtonPressed, mouse->button);
+        enable_mouse_picking(mouse_picking_click_state_, MousePickingState::Action::ButtonPressed,
+                             mouse->button, mouse->position);
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
@@ -463,7 +467,9 @@ void ScreenEditGame::on_event(const sf::Event& event)
         }
         else if (clicked_3d)
         {
-            enable_mouse_picking(MousePickingState::Action::ButtonReleased, mouse->button);
+            enable_mouse_picking(mouse_picking_click_state_,
+                                 MousePickingState::Action::ButtonReleased, mouse->button,
+                                 mouse->position);
         }
     }
 
@@ -665,7 +671,7 @@ void ScreenEditGame::on_render(bool show_debug)
     //======================================
     //      3D Mouse Picking Objects
     // =====================================
-    if (mouse_picking_state_.enabled)
+    if (mouse_picking_click_state_.enabled || mouse_picking_move_state_.enabled)
     {
         picker_fbo_.bind(gl::FramebufferTarget::Framebuffer, false);
         picker_shader_.bind();
@@ -677,42 +683,57 @@ void ScreenEditGame::on_render(bool show_debug)
         auto window_size = window().getSize();
         glViewport(0, 0, window_size.x / (editor_settings_.show_2d_view ? 2 : 1), window_size.y);
 
-        // Render the scene to texture's single channel texture containing object IDs
-        if (mouse_picking_state_.button == sf::Mouse::Button::Right &&
-            mouse_picking_state_.action == MousePickingState::Action::ButtonReleased)
+        if (mouse_picking_click_state_.enabled)
         {
-            level_.render_to_picker(picker_shader_);
-
-            // The pixel's value on the image maps to a LevelObject's id value
-            GLint picked_object_id = 0;
-            glReadPixels(mouse_picking_state_.point.x, mouse_picking_state_.point.y, 1, 1,
-                         GL_RED_INTEGER, GL_INT, &picked_object_id);
-
-            // If the pixel was non-empty, then try to select the corrsponding object
-            if (picked_object_id > -1)
+            // Render the scene to texture's single channel texture containing object IDs
+            if (mouse_picking_click_state_.button == sf::Mouse::Button::Right &&
+                mouse_picking_click_state_.action == MousePickingState::Action::ButtonReleased)
             {
-                if (auto object = level_.get_object(picked_object_id))
+                level_.render_to_picker(picker_shader_);
+
+                // The pixel's value on the image maps to a LevelObject's id value
+                GLint picked_object_id = 0;
+                glReadPixels(mouse_picking_click_state_.point.x, mouse_picking_click_state_.point.y,
+                             1, 1, GL_RED_INTEGER, GL_INT, &picked_object_id);
+
+                // If the pixel was non-empty, then try to select the corrsponding object
+                if (picked_object_id > -1)
                 {
-                    select_object(object);
+                    if (auto object = level_.get_object(picked_object_id))
+                    {
+                        select_object(object);
+                    }
+                }
+                else
+                {
+                    editor_state_.selection.clear_selection();
+                    try_set_tool_to_create_wall();
                 }
             }
-            else
+
+            for (auto& editor : property_updater_)
             {
-                editor_state_.selection.clear_selection();
-                try_set_tool_to_create_wall();
+                glClear(GL_DEPTH_BUFFER_BIT);
+                glClearNamedFramebufferiv(picker_fbo_.id, GL_COLOR, 0, &clear_value);
+                editor->render_to_picker(mouse_picking_click_state_, picker_shader_);
             }
         }
 
-        for (auto& editor : property_updater_)
+        if (mouse_picking_move_state_.enabled)
         {
-            glClear(GL_DEPTH_BUFFER_BIT);
-            glClearNamedFramebufferiv(picker_fbo_.id, GL_COLOR, 0, &clear_value);
-            editor->render_to_picker(mouse_picking_state_, picker_shader_);
+            for (auto& editor : property_updater_)
+            {
+                glClear(GL_DEPTH_BUFFER_BIT);
+                glClearNamedFramebufferiv(picker_fbo_.id, GL_COLOR, 0, &clear_value);
+                editor->render_to_picker_mouse_over(mouse_picking_move_state_, picker_shader_);
+            }
         }
+
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
-    mouse_picking_state_.reset();
+    mouse_picking_move_state_.reset();
+    mouse_picking_click_state_.reset();
 
     //=============================
     //     Render the ImGUI
@@ -1217,11 +1238,12 @@ bool ScreenEditGame::mouse_in_2d_view() const
     return mouse_position_.x < window().getSize().x / 2 && editor_settings_.show_2d_view;
 }
 
-void ScreenEditGame::enable_mouse_picking(MousePickingState::Action action,
-                                          sf::Mouse::Button button)
+void ScreenEditGame::enable_mouse_picking(MousePickingState& state,
+                                          MousePickingState::Action action,
+                                          sf::Mouse::Button button, sf::Vector2i mouse_point)
 {
     auto window_size = window().getSize();
-    int x = sf::Mouse::getPosition(window()).x;
+    int x = mouse_point.x;
 
     // When the 2D view is showing, the 3D view is half the screen
     if (editor_settings_.show_2d_view)
@@ -1231,12 +1253,12 @@ void ScreenEditGame::enable_mouse_picking(MousePickingState::Action action,
 
     // The Y view must be inverted as the mouse click origin is th window top-left, but the
     // OpenGL texture origin is the bottom left
-    int y = window_size.y - sf::Mouse::getPosition(window()).y - 1;
+    int y = window_size.y - mouse_point.y - 1;
 
     int max_x = editor_settings_.show_2d_view ? window_size.x / 2 : window_size.x;
     if (x >= 0 && x < max_x && y >= 0 && y < window_size.y)
     {
-        mouse_picking_state_.enable(action, button, {x, y});
+        state.enable(action, button, {x, y});
     }
 }
 
