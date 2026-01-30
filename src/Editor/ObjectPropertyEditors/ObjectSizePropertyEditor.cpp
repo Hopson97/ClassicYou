@@ -7,6 +7,7 @@
 #include "../Actions.h"
 #include "../EditorState.h"
 #include "../LevelObjects/LevelObjectHelpers.h"
+#include "../LevelObjects/Ramp.h"
 
 namespace
 {
@@ -71,7 +72,6 @@ ObjectSizePropertyEditor::ObjectSizePropertyEditor(const LevelObject& object, gl
     , cached_object_(object)
 {
     update_previews();
-    generate_3d_offsets();
     cube_corner_preview_3d_ = generate_centered_cube_mesh(glm::vec3{CUBE_SIZE});
     cube_corner_preview_3d_.update();
 }
@@ -209,35 +209,35 @@ void ObjectSizePropertyEditor::render_preview_3d(gl::Shader& scene_shader_3d)
     scene_shader_3d.set_uniform("use_texture", false);
     scene_shader_3d.set_uniform("use_colour", true);
     scene_shader_3d.set_uniform("colour_multiplier", glm::vec4{1.0f, 1.0f, 1.0f, 1.0f});
-    /*
+
     cube_corner_preview_3d_.bind();
     for (auto& offset : corner_offsets_)
     {
         scene_shader_3d.set_uniform("model_matrix", create_model_matrix({
                                                         {position_.x / TILE_SIZE_F + offset.x,
-                                                         object_floor_ * FLOOR_HEIGHT + base_y_,
+                                                         object_floor_ * FLOOR_HEIGHT + offset.height,
                                                          position_.y / TILE_SIZE_F + offset.z},
                                                     }));
         cube_corner_preview_3d_.draw_elements();
     }
     scene_shader_3d.set_uniform("model_matrix", create_model_matrix({}));
-    */
+
     glLineWidth(5);
 
-    if ((pull_direction_ & PullDirection::Right) == PullDirection::Right)
+    // if ((pull_direction_ & PullDirection::Right) == PullDirection::Right)
     {
         right_line_preview_3d_.bind().draw_elements(gl::PrimitiveType::Lines);
     }
-    else if ((pull_direction_ & PullDirection::Left) == PullDirection::Left)
+    // else if ((pull_direction_ & PullDirection::Left) == PullDirection::Left)
     {
         left_line_preview_3d_.bind().draw_elements(gl::PrimitiveType::Lines);
     }
 
-    if ((pull_direction_ & PullDirection::Down) == PullDirection::Down)
+    // if ((pull_direction_ & PullDirection::Down) == PullDirection::Down)
     {
         bottom_line_preview_3d_.bind().draw_elements(gl::PrimitiveType::Lines);
     }
-    else if ((pull_direction_ & PullDirection::Up) == PullDirection::Up)
+    // else if ((pull_direction_ & PullDirection::Up) == PullDirection::Up)
     {
         top_line_preview_3d_.bind().draw_elements(gl::PrimitiveType::Lines);
     }
@@ -287,7 +287,7 @@ void ObjectSizePropertyEditor::render_to_picker_mouse_over(const MousePickingSta
         picker_shader.set_uniform("object_id", offset.pull_direction);
         picker_shader.set_uniform("model_matrix", create_model_matrix({
                                                       {position_.x / TILE_SIZE_F + offset.x,
-                                                       object_floor_ * FLOOR_HEIGHT + base_y_,
+                                                       object_floor_ * FLOOR_HEIGHT + offset.height,
                                                        position_.y / TILE_SIZE_F + offset.z},
                                                   }));
         cube_corner_preview_3d_.draw_elements();
@@ -301,9 +301,10 @@ void ObjectSizePropertyEditor::render_to_picker_mouse_over(const MousePickingSta
     mouseover_edge_3d_ = false;
     if (picked_id > -1)
     {
-        std::println("picked_id {}", picked_id);
         mouseover_edge_3d_ = true;
         pull_direction_ = static_cast<PullDirection>(picked_id);
+        base_y_ = y;
+
         update_previews();
     }
 }
@@ -378,7 +379,6 @@ void ObjectSizePropertyEditor::update_object(const LevelObject& object, int curr
     actions.push_action(
         std::make_unique<UpdateObjectAction>(cached_object_, new_object, current_floor),
         store_action);
-    generate_3d_offsets();
     if (store_action)
     {
         cached_object_ = new_object;
@@ -388,6 +388,8 @@ void ObjectSizePropertyEditor::update_object(const LevelObject& object, int curr
 
 void ObjectSizePropertyEditor::update_previews()
 {
+    generate_3d_offsets();
+
     auto create_axis_lines = [&](float y)
     {
         auto create_axis_line = [&](Mesh3D& mesh, PullDirection direction, const glm::vec3& axis,
@@ -428,9 +430,6 @@ void ObjectSizePropertyEditor::update_previews()
         }
     };
 
-    axis_line_x.update();
-    axis_line_z.update();
-
     auto lines = create_line_to_direction_map(to_world_rectangle(position_, size_));
 
     generate_line_mesh(top_line_preview_, lines[0].line, glm::u8vec4{255, 0, 255, 255});
@@ -453,12 +452,34 @@ void ObjectSizePropertyEditor::update_previews()
         generate_line_mesh(bottom_line_preview_3d_, to_line_3d(lines[3].line, y), Colour::MAGENTA);
 
         create_axis_lines(y);
-        base_y_ = y;
+
+        for (auto& corner : corner_offsets_)
+        {
+            corner.height = y;
+        }
     }
     else if (auto ramp = std::get_if<RampObject>(&cached_object_.object_type))
     {
-        ramp->properties.size = size_;
-        ramp->parameters.position = position_;
+        // As the cached object only gets updated upon mouse release, a temp ramp must be created
+        auto live_ramp = *ramp;
+        live_ramp.properties.size = size_;
+        live_ramp.parameters.position = position_;
+
+        float y = object_floor_ * FLOOR_HEIGHT + live_ramp.properties.start_height * 2.0f;
+
+        auto [top_left, bottom_left, bottom_right, top_right] =
+            calculate_ramp_vertex_positions(live_ramp, object_floor_);
+
+        corner_offsets_[0].height = top_left.y;
+        corner_offsets_[1].height = bottom_left.y;
+        corner_offsets_[2].height = bottom_right.y;
+        corner_offsets_[3].height = top_right.y;
+
+        generate_line_mesh(top_line_preview_3d_, {top_left, top_right}, Colour::MAGENTA);
+        generate_line_mesh(right_line_preview_3d_, {top_right, bottom_right}, Colour::MAGENTA);
+        generate_line_mesh(left_line_preview_3d_, {top_left, bottom_left}, Colour::MAGENTA);
+        generate_line_mesh(bottom_line_preview_3d_, {bottom_left, bottom_right}, Colour::MAGENTA);
+        create_axis_lines(y);
     }
     axis_line_x.update();
     axis_line_z.update();
@@ -487,11 +508,12 @@ void ObjectSizePropertyEditor::generate_3d_offsets()
 
     corner_offsets_ = {
         Offset3D{
-            .x = right_edge - HALF_CUBE,
-            .z = bottom_edge - HALF_CUBE,
-            .angle = -45.0f,
-            .pull_direction = PullDirection::Down | PullDirection::Right,
+            .x = left_edge + HALF_CUBE,
+            .z = top_edge + HALF_CUBE,
+            .angle = -225.0f,
+            .pull_direction = PullDirection::Up | PullDirection::Left,
         },
+
         {
             .x = left_edge + HALF_CUBE,
             .z = bottom_edge - HALF_CUBE,
@@ -499,10 +521,10 @@ void ObjectSizePropertyEditor::generate_3d_offsets()
             .pull_direction = PullDirection::Down | PullDirection::Left,
         },
         {
-            .x = left_edge + HALF_CUBE,
-            .z = top_edge + HALF_CUBE,
-            .angle = -225.0f,
-            .pull_direction = PullDirection::Up | PullDirection::Left,
+            .x = right_edge - HALF_CUBE,
+            .z = bottom_edge - HALF_CUBE,
+            .angle = -45.0f,
+            .pull_direction = PullDirection::Down | PullDirection::Right,
         },
         {
             .x = right_edge - HALF_CUBE,

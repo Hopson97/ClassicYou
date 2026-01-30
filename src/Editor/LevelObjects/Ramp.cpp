@@ -204,10 +204,6 @@ namespace
 {
     struct RampMeshParams
     {
-        glm::vec3 pos;
-        glm::vec2 size;
-
-        // Textures and colour
         GLfloat texture_top;
         GLfloat texture_bottom;
         glm::u8vec4 colour_top;
@@ -225,6 +221,9 @@ namespace
         float b = 0.0f;
         float c = 0.0f;
         float d = 0.0f;
+
+        float start_height = 0.0f;
+        float end_height = 0.0f;
     };
 
     auto generate_vertex_positions(const RampCornerHeights& heights, float x, float z, float width,
@@ -238,6 +237,36 @@ namespace
             glm::vec3{x + width, heights.d, z}
         );
         // clang-format on
+    }
+
+    RampVertexPositions generate_ramp_vertex_positions(const RampCornerHeights& heights, float x,
+                                                       float z, float width, float depth)
+
+    {
+        return {
+            {x, heights.a, z},
+            {x, heights.b, z + depth},
+            {x + width, heights.c, z + depth},
+            {x + width, heights.d, z},
+        };
+    }
+
+    RampCornerHeights calculate_base_ramp_corner_heights(const RampObject& ramp, int floor_number)
+    {
+        // Direction is assumed left by default for height start/end
+        const auto& props = ramp.properties;
+        auto hs = props.start_height * FLOOR_HEIGHT;
+        auto he = props.end_height * FLOOR_HEIGHT;
+        hs += floor_number * FLOOR_HEIGHT;
+        he += floor_number * FLOOR_HEIGHT;
+        return RampCornerHeights{
+            .a = hs,
+            .b = hs,
+            .c = he,
+            .d = he,
+            .start_height = hs,
+            .end_height = he,
+        };
     }
 
     // To prevent stretching the UVs, ramp texture coords must be mapped using planar
@@ -273,38 +302,11 @@ namespace
         return std::make_tuple(uv_a, uv_b, uv_c);
     }
 
-    LevelObjectsMesh3D generate_flat_ramp_mesh(const RampMeshParams& p, RampCornerHeights& heights,
-                                               Direction direction, RampStyle style,
-                                               float start_height, float end_height)
+    LevelObjectsMesh3D generate_flat_ramp_mesh(const RampObject& ramp, int floor_number,
+                                               const RampMeshParams& p, Direction direction,
+                                               RampStyle style)
     {
-        switch (direction)
-        {
-            case Direction::Left:
-                std::swap(heights.a, heights.c);
-                std::swap(heights.b, heights.d);
-                break;
-
-            case Direction::Forward:
-                heights.a = end_height;
-                heights.b = start_height;
-                heights.c = start_height;
-                heights.d = end_height;
-                break;
-
-            case Direction::Back:
-                heights.a = start_height;
-                heights.b = end_height;
-                heights.c = end_height;
-                heights.d = start_height;
-                break;
-
-            default:
-                break;
-        }
-
-        // The 4 corners positions and texture coords
-        auto [a, b, c, d] =
-            generate_vertex_positions(heights, p.pos.x, p.pos.z, p.size.x, p.size.y);
+        auto [a, b, c, d] = calculate_ramp_vertex_positions(ramp, floor_number);
         auto [uv_a, uv_b, uv_c, uv_d] = generate_ramp_texture_coords(a, b, c, d);
 
         // Normal is the cross product between the directions of 3 points on the "plane"
@@ -352,36 +354,11 @@ namespace
         return mesh;
     }
 
-    LevelObjectsMesh3D generate_corner_ramp_mesh(const RampMeshParams& p,
-                                                 RampCornerHeights& heights, Direction direction,
-                                                 RampStyle style, float start_height,
-                                                 float end_height)
+    LevelObjectsMesh3D generate_corner_ramp_mesh(const RampObject& ramp, int floor_number,
+                                                 const RampMeshParams& p, Direction direction,
+                                                 RampStyle style)
     {
-        bool corner = style == RampStyle::Corner;
-        // For corners, one point is higher than the rest (vice versa for inverted ramp), aka
-        // 'prominent_corner'
-        heights.a = corner ? start_height : end_height;
-        heights.b = corner ? start_height : end_height;
-        heights.c = corner ? start_height : end_height;
-        heights.d = corner ? start_height : end_height;
-        float* prominent_corner = [&]()
-        {
-            // clang-format off
-            switch (direction)
-            {
-                case Direction::Left:    return &heights.a;
-                case Direction::Right:   return &heights.b;
-                case Direction::Back:    return &heights.c;
-                case Direction::Forward: return &heights.d;
-            }
-            // clang-format on
-        }();
-        *prominent_corner = corner ? end_height : start_height;
-
-        // The 4 corners
-        auto [a, b, c, d] =
-            generate_vertex_positions(heights, p.pos.x, p.pos.z, p.size.x, p.size.y);
-
+        auto [a, b, c, d] = calculate_ramp_vertex_positions(ramp, floor_number);
         LevelObjectsMesh3D mesh;
 
         // For the lighting to be correct for corners, the two faces of the corner must be their own
@@ -469,18 +446,7 @@ LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
     const auto& params = ramp.parameters;
     const auto& props = ramp.properties;
 
-    // Direction is assumed left by default for height start/end
-    auto hs = props.start_height * FLOOR_HEIGHT;
-    auto he = props.end_height * FLOOR_HEIGHT;
-    hs += floor_number * FLOOR_HEIGHT;
-    he += floor_number * FLOOR_HEIGHT;
-
     RampMeshParams ramp_mesh_params{
-        // Position and size
-        .pos = glm::vec3{params.position.x, 0, params.position.y} / TILE_SIZE_F,
-        .size = props.size,
-
-        // Textures and colour
         .texture_top = static_cast<GLfloat>(props.texture_top.id),
         .texture_bottom = static_cast<GLfloat>(props.texture_bottom.id),
 
@@ -488,21 +454,83 @@ LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
         .colour_bottom = props.texture_bottom.colour,
     };
 
-    RampCornerHeights corner_heights = {
-        .a = hs,
-        .b = hs,
-        .c = he,
-        .d = he,
-    };
-
     if (props.style == RampStyle::InvertedCorner || props.style == RampStyle::Corner)
     {
-        return generate_corner_ramp_mesh(ramp_mesh_params, corner_heights, props.direction,
-                                         props.style, hs, he);
+        return generate_corner_ramp_mesh(ramp, floor_number, ramp_mesh_params, props.direction,
+                                         props.style);
     }
     else
     {
-        return generate_flat_ramp_mesh(ramp_mesh_params, corner_heights, props.direction,
-                                       props.style, hs, he);
+        return generate_flat_ramp_mesh(ramp, floor_number, ramp_mesh_params, props.direction,
+                                       props.style);
     }
+}
+
+// =======================================
+//      Helper Functions
+// =======================================
+RampVertexPositions calculate_ramp_vertex_positions(const RampObject& ramp, int floor_number)
+{
+    const auto& props = ramp.properties;
+    const auto& params = ramp.parameters;
+    const auto direction = props.direction;
+    const auto style = props.style;
+
+    RampCornerHeights heights = calculate_base_ramp_corner_heights(ramp, floor_number);
+
+    auto pos = glm::vec3{params.position.x, 0, params.position.y} / TILE_SIZE_F;
+    auto size = props.size;
+
+    if (style == RampStyle::InvertedCorner || style == RampStyle::Corner)
+    {
+        bool corner = style == RampStyle::Corner;
+        // For corners, one point is higher than the rest (vice versa for inverted ramp), aka
+        // 'prominent_corner'
+        heights.a = corner ? heights.start_height : heights.end_height;
+        heights.b = corner ? heights.start_height : heights.end_height;
+        heights.c = corner ? heights.start_height : heights.end_height;
+        heights.d = corner ? heights.start_height : heights.end_height;
+        float* prominent_corner = [&]()
+        {
+            // clang-format off
+            switch (direction)
+            {
+                case Direction::Left:    return &heights.a;
+                case Direction::Right:   return &heights.b;
+                case Direction::Back:    return &heights.c;
+                case Direction::Forward: return &heights.d;
+            }
+            // clang-format on
+        }();
+        *prominent_corner = corner ? heights.end_height : heights.start_height;
+    }
+    else
+    {
+        switch (direction)
+        {
+            case Direction::Left:
+                std::swap(heights.a, heights.c);
+                std::swap(heights.b, heights.d);
+                break;
+
+            case Direction::Forward:
+                heights.a = heights.end_height;
+                heights.b = heights.start_height;
+                heights.c = heights.start_height;
+                heights.d = heights.end_height;
+                break;
+
+            case Direction::Back:
+                heights.a = heights.start_height;
+                heights.b = heights.end_height;
+                heights.c = heights.end_height;
+                heights.d = heights.start_height;
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    return generate_ramp_vertex_positions(heights, pos.x, pos.z, size.x, size.y);
 }

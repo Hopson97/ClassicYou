@@ -92,6 +92,11 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
     Mesh3D bottom_line_preview_3d_;
     Mesh3D cube_corner_preview_3d_;
 
+    float top_left_height_ = 0;
+    float bottom_left_height_ = 0;
+    float top_right_height_ = 0;
+    float bottom_right_height_ = 0;
+
     Mesh3D axis_line_x;
     Mesh3D axis_line_z;
 
@@ -112,6 +117,7 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
         float z = 0.0f;
         float angle = 0.0f;
         int pull_direction = 0;
+        float height = 0;
     };
     std::array<Offset3D, 4> axis_offsets_;
     std::array<Offset3D, 4> corner_offsets_;
