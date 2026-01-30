@@ -51,7 +51,8 @@ struct MousePickingState
     {
         None,
         ButtonPressed,
-        ButtonReleased
+        ButtonReleased,
+        Moved
     } action = Action::None;
 
     /// True if the 3D view was clicked

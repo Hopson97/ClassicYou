@@ -177,6 +177,7 @@ void Mesh<Vertex>::clear()
 {
     vertices.clear();
     indices.clear();
+    indices_ = 0;
 }
 
 template <typename Vertex>

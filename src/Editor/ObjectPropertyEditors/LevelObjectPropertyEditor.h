@@ -21,12 +21,19 @@ class LevelObjectPropertyEditor
     virtual ~LevelObjectPropertyEditor() = default;
 
     virtual bool handle_event(const sf::Event& event, EditorState& state, ActionManager& actions,
-                              const LevelTextures& drawing_pad_texture_map, const Camera& camera_3d) = 0;
+                              const LevelTextures& drawing_pad_texture_map,
+                              const Camera& camera_3d) = 0;
     virtual void render_preview_2d(gl::Shader& scene_shader_2d) = 0;
     virtual void render_preview_3d(gl::Shader& scene_shader_3d) = 0;
 
-    virtual void render_to_picker(const MousePickingState& picker_state,
-                                  gl::Shader& picker_shader) = 0;
+    virtual void render_to_picker(const MousePickingState& picker_state, gl::Shader& picker_shader)
+    {
+    }
+
+    virtual void render_to_picker_mouse_over(const MousePickingState& picker_state,
+                                             gl::Shader& picker_shader)
+    {
+    }
 };
 
 using LevelObjectPropertyEditors = std::vector<std::unique_ptr<LevelObjectPropertyEditor>>;

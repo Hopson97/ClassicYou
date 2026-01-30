@@ -259,9 +259,11 @@ Mesh3D generate_centered_cube_mesh(const glm::vec3& dimensions)
 {
     Mesh3D mesh;
 
-    float w = dimensions.x;
-    float h = dimensions.y;
-    float d = dimensions.z;
+    float w = dimensions.x / 2.0f;
+    float h = dimensions.y / 2.0f;
+    float d = dimensions.z / 2.0f;
+
+
 
     // clang-format off
     mesh.vertices = {
@@ -361,11 +363,7 @@ Mesh3D generate_terrain_mesh(int size, int edgeVertices)
 
 void add_line_to_mesh(Mesh3D& mesh, const glm::vec3& begin, const glm::vec3& end, glm::vec4 colour)
 {
-    mesh.vertices.push_back({.position = begin, .colour = colour});
-    mesh.vertices.push_back({.position = end, .colour = colour});
 
-    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
-    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
 }
 
 Mesh3D generate_grid_mesh(int width, int height)
@@ -390,9 +388,19 @@ Mesh3D generate_grid_mesh(int width, int height)
 
 void generate_line_mesh(Mesh2DWorld& mesh, const Line& line, glm::u8vec4 colour)
 {
-    mesh.vertices.clear();
-    mesh.indices.clear();
+    mesh.clear();
     add_line_to_mesh(mesh, line, colour);
+}
+
+void generate_line_mesh(Mesh3D& mesh, const Line3D& line, glm::vec4 colour)
+{
+    mesh.clear();
+
+    mesh.vertices.push_back({.position = line.start, .colour = colour});
+    mesh.vertices.push_back({.position = line.end, .colour = colour});
+
+    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
+    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
 }
 
 Mesh2DWorld generate_line_mesh(const Line& line, glm::u8vec4 colour)
