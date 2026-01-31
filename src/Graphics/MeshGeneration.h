@@ -18,6 +18,9 @@
 [[nodiscard]] Mesh3D generate_terrain_mesh(int size, int edgeVertices);
 [[nodiscard]] Mesh3D generate_grid_mesh(int width, int height);
 
+
+void add_line_to_mesh_3d(Mesh3D& mesh, const Line3D& line, glm::vec4 colour);
+
 template <typename MeshType>
 void add_line_to_mesh(MeshType& mesh, const Line& line, glm::u8vec4 colour)
 {

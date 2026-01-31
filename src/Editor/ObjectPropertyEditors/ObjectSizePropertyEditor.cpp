@@ -205,7 +205,8 @@ void ObjectSizePropertyEditor::render_preview_2d(gl::Shader& scene_shader_2d)
     draw_line_preview(bottom_line_preview_, PullDirection::Down);
 }
 
-void ObjectSizePropertyEditor::render_preview_3d(gl::Shader& scene_shader_3d)
+void ObjectSizePropertyEditor::render_preview_3d(gl::Shader& scene_shader_3d,
+                                                 bool always_show_gizmos)
 {
     if (state_floor_ != object_floor_)
     {
@@ -214,37 +215,38 @@ void ObjectSizePropertyEditor::render_preview_3d(gl::Shader& scene_shader_3d)
     scene_shader_3d.set_uniform("use_texture", false);
     scene_shader_3d.set_uniform("use_colour", true);
     scene_shader_3d.set_uniform("colour_multiplier", glm::vec4{1.0f, 1.0f, 1.0f, 1.0f});
-    /*
-    cube_corner_preview_3d_.bind();
-    for (auto& offset : corner_offsets_)
+
+    if (always_show_gizmos)
     {
-        scene_shader_3d.set_uniform(
-            "model_matrix",
-            create_model_matrix({
-                {position_.x / TILE_SIZE_F + offset.x, object_floor_ * FLOOR_HEIGHT + offset.height,
-                 position_.y / TILE_SIZE_F + offset.z},
-            }));
-        cube_corner_preview_3d_.draw_elements();
+        cube_corner_preview_3d_.bind();
+        for (auto& offset : corner_offsets_)
+        {
+            scene_shader_3d.set_uniform("model_matrix", create_model_matrix({{
+                                                            position_.x / TILE_SIZE_F + offset.x,
+                                                            offset.height,
+                                                            position_.y / TILE_SIZE_F + offset.z,
+                                                        }}));
+            cube_corner_preview_3d_.draw_elements();
+        }
+        scene_shader_3d.set_uniform("model_matrix", create_model_matrix({}));
     }
-    scene_shader_3d.set_uniform("model_matrix", create_model_matrix({}));
-    */
 
     glLineWidth(5);
 
-    if ((pull_direction_ & PullDirection::Right) == PullDirection::Right)
+    if (always_show_gizmos || (pull_direction_ & PullDirection::Right) == PullDirection::Right)
     {
         right_line_preview_3d_.bind().draw_elements(gl::PrimitiveType::Lines);
     }
-    else if ((pull_direction_ & PullDirection::Left) == PullDirection::Left)
+    if (always_show_gizmos || (pull_direction_ & PullDirection::Left) == PullDirection::Left)
     {
         left_line_preview_3d_.bind().draw_elements(gl::PrimitiveType::Lines);
     }
 
-    if ((pull_direction_ & PullDirection::Down) == PullDirection::Down)
+    if (always_show_gizmos || (pull_direction_ & PullDirection::Down) == PullDirection::Down)
     {
         bottom_line_preview_3d_.bind().draw_elements(gl::PrimitiveType::Lines);
     }
-    else if ((pull_direction_ & PullDirection::Up) == PullDirection::Up)
+    if (always_show_gizmos || (pull_direction_ & PullDirection::Up) == PullDirection::Up)
     {
         top_line_preview_3d_.bind().draw_elements(gl::PrimitiveType::Lines);
     }
@@ -294,11 +296,11 @@ void ObjectSizePropertyEditor::render_to_picker_mouse_over(const MousePickingSta
     for (auto& offset : corner_offsets_)
     {
         picker_shader.set_uniform("object_id", offset.pull_direction);
-        picker_shader.set_uniform("model_matrix", create_model_matrix({
-                                                      {position_.x / TILE_SIZE_F + offset.x,
-                                                       object_floor_ * FLOOR_HEIGHT + offset.height,
-                                                       position_.y / TILE_SIZE_F + offset.z},
-                                                  }));
+        picker_shader.set_uniform("model_matrix", create_model_matrix({{
+                                                      position_.x / TILE_SIZE_F + offset.x,
+                                                      offset.height,
+                                                      position_.y / TILE_SIZE_F + offset.z,
+                                                  }}));
         cube_corner_preview_3d_.draw_elements();
     }
 
@@ -388,6 +390,7 @@ void ObjectSizePropertyEditor::update_object(const LevelObject& object, int curr
     actions.push_action(
         std::make_unique<UpdateObjectAction>(cached_object_, new_object, current_floor),
         store_action);
+
     if (store_action)
     {
         cached_object_ = new_object;

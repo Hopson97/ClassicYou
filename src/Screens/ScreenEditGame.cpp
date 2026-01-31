@@ -314,7 +314,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
     // True when objects are moved - prevents placing objects where objects are moved to
     auto move_finished = object_move_handler_.handle_move_events(
-        event, editor_state_, tool_ ? tool_->get_tool_type() : ToolType::CreateWall);
+        event, editor_state_, tool_ ? tool_->get_tool_type() : ToolType::CreateWall, camera_3d_);
 
     if (move_finished)
     {
@@ -386,7 +386,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
             // Rotate
             case sf::Keyboard::Key::R:
-                if (editor_state_.selection.has_selection())
+                if (editor_state_.selection.has_selection() && mouse_in_2d_view())
                 {
                     auto [objects, _] =
                         level_.copy_objects_and_floors(editor_state_.selection.objects);
@@ -650,7 +650,8 @@ void ScreenEditGame::on_render(bool show_debug)
         tool_->render_preview();
         for (auto& editor : property_updater_)
         {
-            editor->render_preview_3d(world_geometry_shader_);
+            editor->render_preview_3d(world_geometry_shader_,
+                                      editor_settings_.always_show_3d_gizmos);
         }
     }
 
@@ -710,12 +711,19 @@ void ScreenEditGame::on_render(bool show_debug)
                     try_set_tool_to_create_wall();
                 }
             }
-
-            for (auto& editor : property_updater_)
+            if (!object_move_handler_.is_moving_objects())
             {
+                for (auto& editor : property_updater_)
+                {
+                    glClear(GL_DEPTH_BUFFER_BIT);
+                    glClearNamedFramebufferiv(picker_fbo_.id, GL_COLOR, 0, &clear_value);
+                    editor->render_to_picker(mouse_picking_click_state_, picker_shader_);
+                }
+
                 glClear(GL_DEPTH_BUFFER_BIT);
                 glClearNamedFramebufferiv(picker_fbo_.id, GL_COLOR, 0, &clear_value);
-                editor->render_to_picker(mouse_picking_click_state_, picker_shader_);
+                object_move_handler_.try_start_move_mouse_picker(
+                    mouse_picking_click_state_, picker_shader_, level_, editor_state_, camera_3d_);
             }
         }
 
@@ -728,7 +736,6 @@ void ScreenEditGame::on_render(bool show_debug)
                 editor->render_to_picker_mouse_over(mouse_picking_move_state_, picker_shader_);
             }
         }
-
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
@@ -1163,6 +1170,7 @@ void ScreenEditGame::display_menu_bar_gui()
             ImGui::Checkbox("Display Normals", &editor_settings_.render_vertex_normals);
             ImGui::Checkbox("Display Main Light", &editor_settings_.render_main_light);
             ImGui::Checkbox("Show Level Settings", &editor_settings_.show_level_settings);
+            ImGui::Checkbox("Always Show 3D Gizmos", &editor_settings_.always_show_3d_gizmos);
             ImGui::EndMenu();
         }
 
@@ -1249,6 +1257,7 @@ void ScreenEditGame::enable_mouse_picking(MousePickingState& state,
     if (editor_settings_.show_2d_view)
     {
         x -= window_size.x / 2;
+        // mouse_point.x -= window_size.x / 2;
     }
 
     // The Y view must be inverted as the mouse click origin is th window top-left, but the
@@ -1258,7 +1267,7 @@ void ScreenEditGame::enable_mouse_picking(MousePickingState& state,
     int max_x = editor_settings_.show_2d_view ? window_size.x / 2 : window_size.x;
     if (x >= 0 && x < max_x && y >= 0 && y < window_size.y)
     {
-        state.enable(action, button, {x, y});
+        state.enable(action, button, {x, y}, mouse_point);
     }
 }
 

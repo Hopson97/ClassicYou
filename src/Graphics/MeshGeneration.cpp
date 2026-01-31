@@ -361,9 +361,13 @@ Mesh3D generate_terrain_mesh(int size, int edgeVertices)
     return mesh;
 }
 
-void add_line_to_mesh(Mesh3D& mesh, const glm::vec3& begin, const glm::vec3& end, glm::vec4 colour)
+void add_line_to_mesh_3d(Mesh3D& mesh, const Line3D& line, glm::vec4 colour)
 {
+    mesh.vertices.push_back({.position = line.start, .colour = colour});
+    mesh.vertices.push_back({.position = line.end, .colour = colour});
 
+    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
+    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
 }
 
 Mesh3D generate_grid_mesh(int width, int height)
@@ -375,12 +379,12 @@ Mesh3D generate_grid_mesh(int width, int height)
 
     for (int x = -width / 2; x <= width / 2; x++)
     {
-        add_line_to_mesh(mesh, {x, y, -width / 2}, {x, y, width / 2}, Colour::WHITE);
+        add_line_to_mesh_3d(mesh, Line3D{{x, y, -width / 2}, {x, y, width / 2}}, Colour::WHITE);
     }
 
     for (int z = -height / 2; z <= height / 2; z++)
     {
-        add_line_to_mesh(mesh, {-height / 2, y, z}, {height / 2, y, z}, Colour::WHITE);
+        add_line_to_mesh_3d(mesh, Line3D{{-height / 2, y, z}, {height / 2, y, z}}, Colour::WHITE);
     }
 
     return mesh;
