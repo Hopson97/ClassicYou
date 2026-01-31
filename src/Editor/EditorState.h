@@ -63,6 +63,7 @@ struct MousePickingState
 
     /// Pixel within the widnwo that was clicked
     sf::Vector2i point;
+    sf::Vector2i unscaled_point;
 
     void reset()
     {
@@ -70,12 +71,14 @@ struct MousePickingState
         Action::None;
     }
 
-    void enable(Action action, sf::Mouse::Button button, sf::Vector2i point)
+    void enable(Action action, sf::Mouse::Button button, sf::Vector2i point,
+                sf::Vector2i unscaled_point)
     {
         this->enabled = true;
         this->action = action;
         this->button = button;
         this->point = point;
+        this->unscaled_point = unscaled_point;
     }
 };
 

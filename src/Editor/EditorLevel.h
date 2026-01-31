@@ -62,7 +62,8 @@ class EditorLevel
                    int current_floor, const glm::vec2& selected_offset);
 
     // Render the scene to the picker texture, using the object ID as the single-colour channel
-    void render_to_picker(gl::Shader& picker_shader);
+    void render_to_picker(gl::Shader& picker_shader) const;
+    void render_subset_to_picker(gl::Shader& picker_shader, const std::vector<ObjectId>& objects) const;
 
     /// Try to select a level object at the given tile position. Returns nullptr if no object is
     /// found.

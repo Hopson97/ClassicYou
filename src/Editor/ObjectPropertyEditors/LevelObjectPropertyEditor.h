@@ -15,6 +15,7 @@ class Camera;
 struct EditorState;
 struct MousePickingState;
 
+/// Base class for propety editors enabling using gizos to edit objects in the 2D and 3D views
 class LevelObjectPropertyEditor
 {
   public:
@@ -24,7 +25,7 @@ class LevelObjectPropertyEditor
                               const LevelTextures& drawing_pad_texture_map,
                               const Camera& camera_3d) = 0;
     virtual void render_preview_2d(gl::Shader& scene_shader_2d) = 0;
-    virtual void render_preview_3d(gl::Shader& scene_shader_3d) = 0;
+    virtual void render_preview_3d(gl::Shader& scene_shader_3d, bool always_show_gizmos) = 0;
 
     virtual void render_to_picker(const MousePickingState& picker_state, gl::Shader& picker_shader)
     {

@@ -276,7 +276,7 @@ void EditorLevel::render_2d(gl::Shader& scene_shader_2d,
     render_group(p_active);
 }
 
-void EditorLevel::render_to_picker(gl::Shader& picker_shader)
+void EditorLevel::render_to_picker(gl::Shader& picker_shader) const
 {
     picker_shader.set_uniform("model_matrix", create_model_matrix({}));
     for (auto& floor : floors_manager_.floors)
@@ -287,6 +287,27 @@ void EditorLevel::render_to_picker(gl::Shader& picker_shader)
             {
                 continue;
             }
+
+            picker_shader.set_uniform("object_id", object.id);
+            object.mesh.bind().draw_elements();
+        }
+    }
+}
+
+void EditorLevel::render_subset_to_picker(gl::Shader& picker_shader,
+                                          const std::vector<ObjectId>& objects) const
+{
+    picker_shader.set_uniform("model_matrix", create_model_matrix({}));
+    for (auto& floor : floors_manager_.floors)
+    {
+        for (auto& object : floor.meshes)
+        {
+            if (!object.mesh.has_buffered() || std::ranges::find(objects, object.id) == objects.end())
+            {
+                continue;
+            }
+
+            if (object.id)
 
             picker_shader.set_uniform("object_id", object.id);
             object.mesh.bind().draw_elements();

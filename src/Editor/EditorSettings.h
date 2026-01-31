@@ -24,6 +24,8 @@ struct EditorSettings
     bool render_main_light = false;
     bool show_level_settings = false;
 
+    bool always_show_3d_gizmos = false;
+
     void save() const
     {
         nlohmann::json output = {
@@ -40,6 +42,7 @@ struct EditorSettings
             {"render_vertex_normals", render_vertex_normals},
             {"render_main_light", render_main_light},
             {"show_level_settings", show_level_settings},
+            {"always_show_3d_gizmos", always_show_3d_gizmos},
         };
 
         std::ofstream settings_file("settings.json");
@@ -67,6 +70,7 @@ struct EditorSettings
             render_vertex_normals           = input.value("render_vertex_normals", render_vertex_normals);
             render_main_light               = input.value("render_main_light", render_main_light);
             show_level_settings             = input.value("show_level_settings", show_level_settings);
+            always_show_3d_gizmos             = input.value("show_level_settings", always_show_3d_gizmos);
             // clang-format on
         }
     }
