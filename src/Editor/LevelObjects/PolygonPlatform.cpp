@@ -1,11 +1,12 @@
 #include "PolygonPlatform.h"
 
+#include <earcut/earcut.hpp>
+
+#include "../../Graphics/MeshGeneration.h"
 #include "../../Util/Maths.h"
 #include "../../Util/Util.h"
 #include "../LevelFileIO.h"
 #include "../LevelTextures.h"
-
-#include <earcut/earcut.hpp>
 
 bool operator==(const PolygonPlatformProps& lhs, const PolygonPlatformProps& rhs)
 {

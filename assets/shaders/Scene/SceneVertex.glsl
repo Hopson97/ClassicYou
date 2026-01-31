@@ -19,8 +19,6 @@ layout(std430, binding = 0) readonly buffer Matrices
     mat4 view;
 } matrices;
 
-
-
 uniform mat4 model_matrix;
 
 void main() 

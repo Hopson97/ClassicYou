@@ -76,3 +76,15 @@ object_to_geometry_2d<RampObject>(const RampObject& ramp,
 template <>
 [[nodiscard]] LevelObjectsMesh3D object_to_geometry<RampObject>(const RampObject& ramp,
                                                                 int floor_number);
+
+// =======================================
+//      Helper Functions
+// =======================================
+struct RampVertexPositions
+{
+    glm::vec3 top_left;
+    glm::vec3 bottom_left;
+    glm::vec3 bottom_right;
+    glm::vec3 top_right;
+};
+RampVertexPositions calculate_ramp_vertex_positions(const RampObject& ramp, int floor_number);

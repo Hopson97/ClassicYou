@@ -15,6 +15,7 @@ struct CameraConfig
 
     // Shared
     glm::vec2 viewport_size;
+    glm::vec2 viewport_position{0};
     float near = 1.0f;
     float far = 100.0f;
 
@@ -25,7 +26,7 @@ struct CameraConfig
     float orthographic_scale = 1.0f;
 };
 
-struct Camera
+class Camera
 {
   public:
     Transform transform;
@@ -51,9 +52,13 @@ struct Camera
 
     void set_type(CameraType type);
 
-    void set_viewport_size(glm::vec2 viewport_size);
+    void set_viewport(glm::vec2 viewport_position, glm::vec2 viewport_size);
+    void use_viewport();
 
     const CameraConfig& get_config() const;
+
+    glm::vec3 find_mouse_floor_intersect(glm::vec2 mouse_click, float floor_y) const;
+    
 
   private:
     void set_projection();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Graphics/MeshGeneration.h"
 #include "../Graphics/Camera.h"
 #include "../Graphics/CameraController.h"
 #include "../Graphics/Mesh.h"
@@ -34,10 +35,10 @@ class ScreenPlaying final : public Screen
 
     void render_scene(gl::Shader& shader);
 
+    Camera camera_;
     CameraControllerOptions3D camera_options_;
     CameraController3D camera_controller_;
     CameraKeybinds camera_keybinds_;
-    Camera camera_;
 
     gl::Texture2D grass_material_;
 
@@ -50,5 +51,4 @@ class ScreenPlaying final : public Screen
 
     bool rotation_locked_ = false;
     Settings settings_;
-
 };

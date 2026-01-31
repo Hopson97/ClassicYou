@@ -4,6 +4,7 @@
 
 #include <imgui.h>
 
+#include "../../Graphics/MeshGeneration.h"
 #include "../../Graphics/OpenGL/GLUtils.h"
 #include "../../Graphics/OpenGL/Shader.h"
 #include "../Actions.h"
@@ -17,7 +18,7 @@ AreaSelectTool::AreaSelectTool(EditorLevel& level)
 }
 
 bool AreaSelectTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
-                              const LevelTextures& drawing_pad_texture_map)
+                              const LevelTextures& drawing_pad_texture_map, [[maybe_unused]] bool mouse_in_2d_view)
 {
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {

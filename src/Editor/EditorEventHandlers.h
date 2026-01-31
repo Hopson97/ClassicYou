@@ -12,6 +12,8 @@ class ActionManager;
 struct EditorState;
 class MessagesManager;
 struct Selection;
+struct MousePickingState;
+class Camera;
 
 /// Handles moving selected objects in the editor.
 class ObjectMoveHandler
@@ -20,15 +22,22 @@ class ObjectMoveHandler
     ObjectMoveHandler(EditorLevel& level, ActionManager& action_manager);
 
     /// Handles events related to moving objects. Returns true if an object was moved and placed.
-    bool handle_move_events(const sf::Event& event, const EditorState& state,
-                            ToolType current_tool);
+    bool handle_move_events(const sf::Event& event, const EditorState& state, ToolType current_tool,
+                            const Camera& camera_3d);
 
     glm::vec2 get_move_offset() const;
     bool is_moving_objects() const;
 
+    bool try_start_move_mouse_picker(const MousePickingState& picker_state,
+                                     gl::Shader& picker_shader, const EditorLevel& level,
+                                     const EditorState& state, const Camera& camera_3d);
+
   private:
+    void start_move(const Selection& selection);
+
     /// If the currently selected object being dragged?
     bool moving_object_ = false;
+    bool moving_object_3d_ = false;
 
     /// When moving an object, this is how much the selection has been offset from the
     /// "select_position"

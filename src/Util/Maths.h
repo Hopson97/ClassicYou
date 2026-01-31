@@ -45,6 +45,12 @@ struct Line
     [[nodiscard]] Rectangle to_bounds() const;
 };
 
+struct Line3D
+{
+    glm::vec3 start{0};
+    glm::vec3 end{0};
+};
+
 [[nodiscard]] glm::mat4 create_model_matrix(const Transform& transform);
 [[nodiscard]] glm::mat4 create_model_matrix_orbit(const Transform& transform,
                                                   const glm::vec3& origin);

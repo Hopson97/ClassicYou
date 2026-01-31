@@ -4,7 +4,7 @@
 #include <SFML/Window/Window.hpp>
 #include <glm/glm.hpp>
 
-struct Camera;
+class Camera;
 class Keyboard;
 
 /// Keybinds for controlling the camera.

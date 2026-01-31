@@ -6,7 +6,7 @@
 
 bool InfiniteGrid::init()
 {
-    grid_mesh_.buffer();
+    grid_mesh_.update();
 
     // Load the shader for the infinite grid
     if (!grid_shader_.load_stage("assets/shaders/Grid/Grid3DVertex.glsl", gl::ShaderType::Vertex) ||

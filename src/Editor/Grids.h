@@ -1,9 +1,10 @@
 #pragma once
 
+#include "../Graphics/MeshGeneration.h"
 #include "../Graphics/Mesh.h"
 #include "../Graphics/OpenGL/Shader.h"
 
-struct Camera;
+class Camera;
 
 /// For the infinite grid in the editor.
 class InfiniteGrid

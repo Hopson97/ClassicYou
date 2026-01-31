@@ -39,7 +39,11 @@ class ScreenManager final
 
     bool empty() const;
 
-    sf::Window& get_window();
+    template <typename Self>
+    auto& get_window(this Self&& self)
+    {
+        return self.window_;
+    }
 
   private:
     void restore();
@@ -64,7 +68,11 @@ class Screen
     virtual void on_render(bool show_debug) = 0;
 
   protected:
-    sf::Window& window();
+    template <typename Self>
+    auto& window(this Self&& self)
+    {
+        return self.p_screen_manager_->get_window();
+    }
 
   protected:
     ScreenManager* p_screen_manager_ = nullptr;

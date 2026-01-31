@@ -2,6 +2,9 @@
 
 #include <unordered_set>
 
+#include <SFML/Window/Mouse.hpp>
+#include <glm/glm.hpp>
+
 #include "EditConstants.h"
 #include "LevelObjects/ObjectTypes.h"
 
@@ -39,6 +42,44 @@ struct Selection
 
   private:
     void notify_callbacks(LevelObject* object);
+};
+
+/// State about mouse picking
+struct MousePickingState
+{
+    enum class Action
+    {
+        None,
+        ButtonPressed,
+        ButtonReleased,
+        Moved
+    } action = Action::None;
+
+    /// True if the 3D view was clicked
+    bool enabled = false;
+
+    /// The mouse button that may be "picking"
+    sf::Mouse::Button button{};
+
+    /// Pixel within the widnwo that was clicked
+    sf::Vector2i point;
+    sf::Vector2i unscaled_point;
+
+    void reset()
+    {
+        enabled = false;
+        Action::None;
+    }
+
+    void enable(Action action, sf::Mouse::Button button, sf::Vector2i point,
+                sf::Vector2i unscaled_point)
+    {
+        this->enabled = true;
+        this->action = action;
+        this->button = button;
+        this->point = point;
+        this->unscaled_point = unscaled_point;
+    }
 };
 
 /// @brief The state of the editor input, such as the currently hovered node, the selected object

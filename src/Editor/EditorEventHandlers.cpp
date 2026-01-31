@@ -2,6 +2,7 @@
 
 #include <imgui.h>
 
+#include "../Graphics/Camera.h"
 #include "../Util/ImGuiExtras.h"
 #include "Actions.h"
 #include "EditorLevel.h"
@@ -16,7 +17,7 @@ ObjectMoveHandler::ObjectMoveHandler(EditorLevel& level, ActionManager& action_m
 }
 
 bool ObjectMoveHandler::handle_move_events(const sf::Event& event, const EditorState& state,
-                                           ToolType current_tool)
+                                           ToolType current_tool, const Camera& camera_3d)
 {
     // When dragging an object and the final placement is decided, this is set to true. This is to
     // prevent calls to the tool event fuctions, which can cause objects to unintentionally placed
@@ -60,21 +61,31 @@ bool ObjectMoveHandler::handle_move_events(const sf::Event& event, const EditorS
                 move_start_tile_ = state.node_hovered;
                 moving_object_ = true;
 
-                moving_object_cache_.clear();
-                moving_objects_.clear();
-                moving_objects_ = p_level_->get_objects(state.selection.objects);
-                for (auto object : moving_objects_)
-                {
-                    moving_object_cache_.push_back(*object);
-                }
+                start_move(state.selection);
             }
         }
     }
-    else if (event.getIf<sf::Event::MouseMoved>())
+    else if (auto mouse = event.getIf<sf::Event::MouseMoved>())
     {
-        if (state.selection.has_selection() && moving_object_)
+        if (state.selection.has_selection())
         {
-            move_offset_ = state.node_hovered - move_start_tile_;
+            if (moving_object_)
+            {
+                move_offset_ = state.node_hovered - move_start_tile_;
+            }
+            else if (moving_object_3d_)
+            {
+                move_offset_ = state.node_hovered - move_start_tile_;
+                auto intersect = camera_3d.find_mouse_floor_intersect(
+                    {mouse->position.x, mouse->position.y}, state.current_floor * FLOOR_HEIGHT);
+
+                glm::ivec2 scaled_intersect{intersect.x * TILE_SIZE_F, intersect.z * TILE_SIZE_F};
+                glm::vec2 snapped(
+                    std::round(scaled_intersect.x / HALF_TILE_SIZE_F) * HALF_TILE_SIZE_F,
+                    std::round(scaled_intersect.y / HALF_TILE_SIZE_F) * HALF_TILE_SIZE_F);
+
+                move_offset_ = glm::ivec2{snapped} - move_start_tile_;
+            }
         }
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
@@ -82,7 +93,7 @@ bool ObjectMoveHandler::handle_move_events(const sf::Event& event, const EditorS
         // Handle left button release
         if (mouse->button == sf::Mouse::Button::Left)
         {
-            if (moving_object_)
+            if (moving_object_ || moving_object_3d_)
             {
                 std::vector<LevelObject> new_objects;
                 new_objects.reserve(moving_objects_.size());
@@ -94,7 +105,7 @@ bool ObjectMoveHandler::handle_move_events(const sf::Event& event, const EditorS
 
                 for (auto& new_object : new_objects)
                 {
-                    new_object.move(state.node_hovered - move_start_tile_);
+                    new_object.move(move_offset_);
                 }
 
                 move_offset_ = glm::vec2{0};
@@ -107,6 +118,7 @@ bool ObjectMoveHandler::handle_move_events(const sf::Event& event, const EditorS
             }
 
             moving_object_ = false;
+            moving_object_3d_ = false;
         }
     }
     return finish_move;
@@ -119,7 +131,51 @@ glm::vec2 ObjectMoveHandler::get_move_offset() const
 
 bool ObjectMoveHandler::is_moving_objects() const
 {
-    return moving_object_;
+    return moving_object_ || moving_object_3d_;
+}
+
+bool ObjectMoveHandler::try_start_move_mouse_picker(const MousePickingState& picker_state,
+                                                    gl::Shader& picker_shader,
+                                                    const EditorLevel& level,
+                                                    const EditorState& state,
+                                                    const Camera& camera_3d)
+{
+    if (moving_object_3d_ || picker_state.button != sf::Mouse::Button::Left ||
+        picker_state.action != MousePickingState::Action::ButtonPressed)
+    {
+        return false;
+    }
+
+    level.render_subset_to_picker(picker_shader, state.selection.objects);
+
+    GLint picked_id = 0;
+    glReadPixels(picker_state.point.x, picker_state.point.y, 1, 1, GL_RED_INTEGER, GL_INT,
+                 &picked_id);
+    if (picked_id > -1)
+    {
+        moving_object_3d_ = true;
+        auto intersect = camera_3d.find_mouse_floor_intersect(
+            {picker_state.unscaled_point.x, picker_state.unscaled_point.y},
+            state.current_floor * FLOOR_HEIGHT);
+        move_start_tile_ = {
+            std::round((intersect.x * TILE_SIZE_F) / HALF_TILE_SIZE_F) * HALF_TILE_SIZE_F,
+            std::round((intersect.z * TILE_SIZE_F) / HALF_TILE_SIZE_F) * HALF_TILE_SIZE_F};
+
+        start_move(state.selection);
+        return true;
+    }
+    return false;
+}
+
+void ObjectMoveHandler::start_move(const Selection& selection)
+{
+    moving_object_cache_.clear();
+    moving_objects_.clear();
+    moving_objects_ = p_level_->get_objects(selection.objects);
+    for (auto object : moving_objects_)
+    {
+        moving_object_cache_.push_back(*object);
+    }
 }
 
 void CopyPasteHandler::handle_event(const sf::Event& event, const Selection& selection,

@@ -1,8 +1,6 @@
-#include "Mesh.h"
+#include "MeshGeneration.h"
 
 #include <numeric>
-
-#include <SFML/Graphics/Image.hpp>
 
 #include "../Editor/EditConstants.h"
 #include "../Editor/LevelObjects/LevelObjectTypes.h"
@@ -200,13 +198,72 @@ Mesh3D generate_cube_mesh(const glm::vec3& size, bool repeat_texture, glm::u8vec
     return mesh;
 }
 
+Mesh3D generate_pyramid_mesh(const glm::vec3& size, glm::u8vec4 colour_a, glm::u8vec4 colour_b)
+{
+    Mesh3D mesh;
+
+    float w = size.x; // Length/Height of the pyramid
+    float h = size.y; // Total width
+    float d = size.z; // Total depth
+
+    float hw = w / 2.0f;
+    float hh = h / 2.0f;
+    float hd = d / 2.0f;
+
+    // clang-format off
+    mesh.vertices = {
+        // First face is the base
+        {{-hw, -hh, -hd}, {0.0f, 1.0f}, LEFT, colour_b}, 
+        {{-hw, -hh,  hd}, {1.0f, 1.0f}, LEFT, colour_b},
+        {{-hw,  hh,  hd}, {1.0f, 0.0f}, LEFT, colour_b}, 
+        {{-hw,  hh, -hd}, {0.0f, 0.0f}, LEFT, colour_b},
+
+        {{-hw, -hh,  hd}, {0.0f, 1.0f}, FORWARD, colour_b},
+        {{ hw,   0,   0}, {0.5f, 0.5f}, FORWARD, colour_b},
+        {{ hw,   0,   0}, {0.5f, 0.5f}, FORWARD, colour_b}, 
+        {{-hw,  hh,  hd}, {0.0f, 0.0f}, FORWARD, colour_b},
+                                
+        {{-hw,  hh, -hd}, {0.0f, 0.0f}, BACKWARD, colour_b}, 
+        {{ hw,   0,   0}, {0.5f, 0.5f}, BACKWARD, colour_b},
+        {{ hw,   0,   0}, {0.5f, 0.5f}, BACKWARD, colour_b}, 
+        {{-hw, -hh, -hd}, {0.0f, 1.0f}, BACKWARD, colour_b},
+                               
+        {{-hw,  hh,  hd}, {1.0f, 1.0f}, UP, colour_a},
+        {{ hw,   0,   0}, {0.5f, 0.5f}, UP, colour_a},      
+        {{ hw,   0,   0}, {0.5f, 0.5f}, UP, colour_a},      
+        {{-hw,  hh, -hd}, {0.0f, 0.0f}, UP, colour_a},    
+                              
+        {{-hw, -hh, -hd}, {0.0f, 0.0f}, DOWN, colour_a}, 
+        {{ hw,   0,   0}, {0.5f, 0.5f}, DOWN, colour_a},
+        {{ hw,   0,   0}, {0.5f, 0.5f}, DOWN, colour_a},    
+        {{-hw, -hh,  hd}, {1.0f, 1.0f}, DOWN, colour_a},    
+    };
+    // clang-format on
+
+    int index = 0;
+    for (int i = 0; i < 5; i++)
+    {
+        mesh.indices.push_back(index);
+        mesh.indices.push_back(index + 1);
+        mesh.indices.push_back(index + 2);
+        mesh.indices.push_back(index + 2);
+        mesh.indices.push_back(index + 3);
+        mesh.indices.push_back(index);
+        index += 4;
+    }
+
+    return mesh;
+}
+
 Mesh3D generate_centered_cube_mesh(const glm::vec3& dimensions)
 {
     Mesh3D mesh;
 
-    float w = dimensions.x;
-    float h = dimensions.y;
-    float d = dimensions.z;
+    float w = dimensions.x / 2.0f;
+    float h = dimensions.y / 2.0f;
+    float d = dimensions.z / 2.0f;
+
+
 
     // clang-format off
     mesh.vertices = {
@@ -304,29 +361,30 @@ Mesh3D generate_terrain_mesh(int size, int edgeVertices)
     return mesh;
 }
 
+void add_line_to_mesh_3d(Mesh3D& mesh, const Line3D& line, glm::vec4 colour)
+{
+    mesh.vertices.push_back({.position = line.start, .colour = colour});
+    mesh.vertices.push_back({.position = line.end, .colour = colour});
+
+    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
+    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
+}
+
 Mesh3D generate_grid_mesh(int width, int height)
 {
     Mesh3D mesh;
-    auto create_line = [&](const glm::vec3& begin, const glm::vec3& end, glm::vec4 colour)
-    {
-        mesh.vertices.push_back({.position = begin});
-        mesh.vertices.push_back({.position = end});
-
-        mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
-        mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
-    };
 
     // Tiny offset prevents platforms/floors clipping with the grid
     auto y = -0.01f;
 
     for (int x = -width / 2; x <= width / 2; x++)
     {
-        create_line({x, y, -width / 2}, {x, y, width / 2}, SUB_GRID_COLOUR);
+        add_line_to_mesh_3d(mesh, Line3D{{x, y, -width / 2}, {x, y, width / 2}}, Colour::WHITE);
     }
 
     for (int z = -height / 2; z <= height / 2; z++)
     {
-        create_line({-height / 2, y, z}, {height / 2, y, z}, SUB_GRID_COLOUR);
+        add_line_to_mesh_3d(mesh, Line3D{{-height / 2, y, z}, {height / 2, y, z}}, Colour::WHITE);
     }
 
     return mesh;
@@ -334,9 +392,19 @@ Mesh3D generate_grid_mesh(int width, int height)
 
 void generate_line_mesh(Mesh2DWorld& mesh, const Line& line, glm::u8vec4 colour)
 {
-    mesh.vertices.clear();
-    mesh.indices.clear();
+    mesh.clear();
     add_line_to_mesh(mesh, line, colour);
+}
+
+void generate_line_mesh(Mesh3D& mesh, const Line3D& line, glm::vec4 colour)
+{
+    mesh.clear();
+
+    mesh.vertices.push_back({.position = line.start, .colour = colour});
+    mesh.vertices.push_back({.position = line.end, .colour = colour});
+
+    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
+    mesh.indices.push_back(static_cast<GLuint>(mesh.indices.size()));
 }
 
 Mesh2DWorld generate_line_mesh(const Line& line, glm::u8vec4 colour)

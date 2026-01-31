@@ -11,6 +11,8 @@ in VS_OUT {
 
 uniform SAMPLER_TYPE diffuse;
 uniform bool use_texture;
+uniform bool use_colour;
+uniform vec4 colour_multiplier;
 
 uniform bool selected;
 
@@ -37,6 +39,11 @@ void main()
     }
 
     out_colour *= vec4(main_light_colour, 1.0) * main_light_brightness;
+
+    if (use_colour) 
+    {
+        out_colour *= colour_multiplier;
+    }
 
     if (out_colour.a < 0.1) 
     {

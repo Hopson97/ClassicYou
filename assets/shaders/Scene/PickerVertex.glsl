@@ -8,7 +8,9 @@ layout(std430, binding = 0) readonly buffer Matrices
     mat4 view;
 } matrices;
 
+uniform mat4 model_matrix;
+
 void main() 
 {
-    gl_Position = matrices.projection * matrices.view * vec4(in_position, 1.0);
+    gl_Position = matrices.projection * matrices.view * model_matrix * vec4(in_position, 1.0);
 }
