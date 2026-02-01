@@ -10,7 +10,6 @@
 #include "../EditorLevel.h"
 #include "../EditorState.h"
 #include "../LevelTextures.h"
-#include <glm/gtx/string_cast.hpp>
 
 namespace
 {
@@ -75,7 +74,8 @@ bool UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
             // next frame
             if (active_dragging_)
             {
-                target_new_position_ = state.node_hovered - glm::ivec2{polygon_.parameters.position};
+                target_new_position_ =
+                    state.node_hovered - glm::ivec2{polygon_.parameters.position};
                 update_previews(PolygonUpdateAction::MovePoint, state);
                 return true;
             }
@@ -241,7 +241,6 @@ void UpdatePolygonTool::update_previews(PolygonUpdateAction action, const Editor
         state.current_floor * FLOOR_HEIGHT + polygon_.properties.base * 2.0f,
         state.node_hovered.y / TILE_SIZE_F,
     };
-    std::println("start {}", glm::to_string(selection_cube_start));
     selection_mesh_ = generate_cube_mesh_level(selection_cube_start, {0.1f, 1.0f, 0.1f}, 16);
     selection_mesh_.update();
 }

@@ -171,21 +171,22 @@ object_to_geometry_2d(const PlatformObject& platform, const LevelTextures& drawi
     auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Platform"));
     glm::vec2 size = props.size * TILE_SIZE_F;
 
+    auto texture_top_f = static_cast<float>(props.texture_top.id);
     switch (props.style)
     {
         case PlatformStyle::Triangle:
-            return {generate_2d_triangle_mesh(params.position, size, texture, props.texture_top.id,
+            return {generate_2d_triangle_mesh(params.position, size, texture, texture_top_f,
                                               props.texture_top.colour, props.direction),
                     gl::PrimitiveType::Triangles};
 
         case PlatformStyle::Diamond:
-            return {generate_2d_diamond_mesh(params.position, size, texture, props.texture_top.id,
+            return {generate_2d_diamond_mesh(params.position, size, texture, texture_top_f,
                                              props.texture_top.colour, Direction::Forward),
                     gl::PrimitiveType::Triangles};
 
         // Default to quad
         default:
-            return {generate_2d_quad_mesh(params.position, size, texture, props.texture_top.id,
+            return {generate_2d_quad_mesh(params.position, size, texture, texture_top_f,
                                           props.texture_top.colour, Direction::Forward),
                     gl::PrimitiveType::Triangles};
     }

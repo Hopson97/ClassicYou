@@ -440,7 +440,6 @@ void ScreenEditGame::on_event(const sf::Event& event)
         {
             return;
         }
-        auto window_size = sf::Vector2i{window().getSize()};
         auto clicked_2d = mouse_in_2d_view();
         auto clicked_3d = !clicked_2d || !editor_settings_.show_2d_view;
 
@@ -1232,14 +1231,14 @@ void ScreenEditGame::redo()
 
 bool ScreenEditGame::mouse_in_2d_view() const
 {
-    return mouse_position_.x < window().getSize().x / 2 && editor_settings_.show_2d_view;
+    return mouse_position_.x < static_cast<int>(window().getSize().x) / 2 && editor_settings_.show_2d_view;
 }
 
 void ScreenEditGame::enable_mouse_picking(MousePickingState& state,
                                           MousePickingState::Action action,
                                           sf::Mouse::Button button, sf::Vector2i mouse_point)
 {
-    auto window_size = window().getSize();
+    auto window_size = sf::Vector2i{window().getSize()};
     int x = mouse_point.x;
 
     // When the 2D view is showing, the 3D view is half the screen

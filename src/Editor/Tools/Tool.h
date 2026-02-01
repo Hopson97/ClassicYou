@@ -48,6 +48,9 @@ class ITool
     virtual void cancel_events() {};
 };
 
+/**
+ * Tool for creating new walls in the level.
+ */
 class CreateWallTool : public ITool
 {
   public:
@@ -66,15 +69,28 @@ class CreateWallTool : public ITool
     void update_previews(const EditorState& state, const LevelTextures& drawing_pad_texture_map);
 
   private:
-    LevelObjectsMesh3D wall_preview_;
+    /// Shows the current position in the 3D view where the mouse is
     LevelObjectsMesh3D selection_mesh_;
+
+    /// The preview of the wall being created in the 3D View
     Mesh2DWorld wall_preview_2d_;
-    Mesh2DWorld selection_node_;
+
+    /// The preview of the wall being created in the 2D View
+    LevelObjectsMesh3D wall_preview_;
+
+    /// Shows the node being selected in the 2D view
+    Mesh2DWorld vertex_selector_mesh_;
+
+    /// The line that describes the wall being created
     Line wall_line_;
+
     bool active_dragging_ = false;
     glm::vec2 selected_node_{0};
 };
 
+/**
+ * Tool for updating the start and end positions of an exsisting wall.
+ */
 class UpdateWallTool : public ITool
 {
   public:
@@ -91,20 +107,30 @@ class UpdateWallTool : public ITool
     void update_previews(const EditorState& state, const LevelTextures& drawing_pad_texture_map);
 
   private:
+    /// The preview of the wall being edited in the 3D View
     LevelObjectsMesh3D wall_preview_;
-    Mesh2DWorld vertex_selector_mesh_;
+    /// The preview of the wall being edited in the 2D View
     Mesh2DWorld wall_preview_2d_;
+
+    /// Mesh for the selection circle at either end of the wall
+    Mesh2DWorld vertex_selector_mesh_;
+
+    /// The object being updated
     LevelObject object_;
+
+    /// The wall being updated, used for creating the previews
     WallObject wall_;
 
     /// Used to ensure walls can only be resized on the current floor as the editor
     const int wall_floor_;
     int state_floor_ = 0;
 
+    /// The line that describes the wall updated created
     Line wall_line_;
 
     bool active_dragging_ = false;
 
+    /// The target point in the wall being selected
     enum class DragTarget
     {
         None,
@@ -113,6 +139,9 @@ class UpdateWallTool : public ITool
     } target_ = DragTarget::None;
 };
 
+/**
+ * Tool for creating new objects in the level
+ */
 class CreateObjectTool : public ITool
 {
   public:
@@ -129,14 +158,27 @@ class CreateObjectTool : public ITool
     void update_previews(const EditorState& state, const LevelTextures& drawing_pad_texture_map);
 
   private:
+    /// The type of object being created, used to create the preview
     const ObjectTypeName object_type_;
+
+    /// The object that will be created
     LevelObject object_;
+
+    /// The 3D preview of the object that will be created
     LevelObjectsMesh3D object_preview_;
+
+    /// The 2D preview of the object that will be created
     Mesh2DWorld object_preview_2d_;
+
+    /// When rendering the object in the 2D view, this is used to tell OpenGL what primative type to
+    /// use
     gl::PrimitiveType preview_2d_primitive_ = gl::PrimitiveType::Triangles;
-    glm::vec2 tile_{0.0f};
 };
 
+/**
+ * Tool for selecting a large number of objects across multiple floors, for the purpose of moving,
+ * copying, rotating etc
+ */
 class AreaSelectTool : public ITool
 {
   public:
@@ -163,9 +205,20 @@ class AreaSelectTool : public ITool
 
     // The line refers to the start corner and end corner
     Line selection_area_;
+
+    /// Cube shows the area that will be selected in the 3D view
     LevelObjectsMesh3D selection_cube_;
+
+    /// Quad shows the area being selected in the 2D view
     Mesh2DWorld selection_quad_;
+
+    /// Shows the current position in the 3D view where the mouse is
+    LevelObjectsMesh3D selection_mesh_;
+
+    /// The start position of the area being selected
     glm::vec3 selection_cube_start_{0};
+
+    /// The end position of the area being selected
     glm::vec3 selection_cube_size_{0};
 
     /// The floors selected - Default is the current floor but this can be extended with Q and E for
@@ -175,6 +228,10 @@ class AreaSelectTool : public ITool
     int min_floor_ = 0;
 };
 
+/**
+ * Tool for updating polygon objects, such as adding, moving, and deleting
+ * verticies.
+ */
 class UpdatePolygonTool : public ITool
 {
     enum class PolygonUpdateAction
@@ -185,7 +242,7 @@ class UpdatePolygonTool : public ITool
     };
 
   public:
-    UpdatePolygonTool(LevelObject object, PolygonPlatformObject& wall, int wall_floor,
+    UpdatePolygonTool(LevelObject object, PolygonPlatformObject& polygon, int floor,
                       const LevelTextures& drawing_pad_texture_map);
     bool on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                   const LevelTextures& drawing_pad_texture_map, bool mouse_in_2d_view) override;
@@ -212,24 +269,39 @@ class UpdatePolygonTool : public ITool
     {
         glm::vec2 world_point{0};
         glm::ivec2 node_point{0};
-        size_t index;
-        bool is_selected_;
+        size_t index = 0;
+        bool is_selected_ = false;
     } line_;
 
+    /// The preview of the "new" polygon being created, shown in the 3D view
     LevelObjectsMesh3D polygon_preview_;
+
+    /// The preview of the "new" polygon being created, shown in the 2D view
     Mesh2DWorld polygon_preview_2d_;
+
+    /// The "circle" mesh shown in the 2D view when a mouse is near the polygon's edges or vertices
     Mesh2DWorld vertex_selector_mesh_;
+
+    /// The object that is currently being edited
     LevelObject object_;
+
+    /// The polygon that is currently being edited, used to create preview geometry
     PolygonPlatformObject polygon_;
+
+    /// Shows the current position in the 3D view where the mouse is
     LevelObjectsMesh3D selection_mesh_;
 
     /// Used to ensure polygons can only be resized on the current floor as the editor
     const int floor_;
     int state_floor_ = 0;
 
+    /// The world position hovered by the mouse in the 2D view
     glm::vec2 state_world_position_hovered_{0};
 
+    /// The index within the polygon's geometry array that is being selected
     std::optional<size_t> target_index_;
+
+    /// The position that the vertex at the "target_index_" is being dragged to
     glm::vec2 target_new_position_{0};
 
     bool active_dragging_ = false;

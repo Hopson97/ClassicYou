@@ -185,18 +185,19 @@ object_to_geometry_2d(const RampObject& ramp, const LevelTextures& drawing_pad_t
     auto& params = ramp.parameters;
     auto& props = ramp.properties;
     auto texture = static_cast<float>(*drawing_pad_texture_map.get_texture("Ramp"));
+    auto texture_top_f = static_cast<float>(props.texture_top.id);
 
     if (is_tri_ramp(props.style))
     {
         glm::vec2 size = props.size * TILE_SIZE_F;
-        return {generate_2d_triangle_mesh(params.position, size, texture, props.texture_top.id,
+        return {generate_2d_triangle_mesh(params.position, size, texture, texture_top_f,
                                           props.texture_top.colour,
                                           to_actual_tri_ramp_direction(props.style)),
                 gl::PrimitiveType::Triangles};
     }
 
     return {generate_2d_quad_mesh(ramp.parameters.position, props.size * TILE_SIZE_F, texture,
-                                  props.texture_top.id, props.texture_top.colour, props.direction),
+                                  texture_top_f, props.texture_top.colour, props.direction),
             gl::PrimitiveType::Triangles};
 }
 
@@ -225,19 +226,6 @@ namespace
         float start_height = 0.0f;
         float end_height = 0.0f;
     };
-
-    auto generate_vertex_positions(const RampCornerHeights& heights, float x, float z, float width,
-                                   float depth)
-    {
-        // clang-format off
-        return std::make_tuple(
-            glm::vec3{x, heights.a, z},
-            glm::vec3{x, heights.b, z + depth},
-            glm::vec3{x + width, heights.c, z + depth},
-            glm::vec3{x + width, heights.d, z}
-        );
-        // clang-format on
-    }
 
     RampVertexPositions generate_ramp_vertex_positions(const RampCornerHeights& heights, float x,
                                                        float z, float width, float depth)
@@ -443,7 +431,6 @@ template <>
 LevelObjectsMesh3D object_to_geometry(const RampObject& ramp, int floor_number)
 {
     LevelObjectsMesh3D mesh;
-    const auto& params = ramp.parameters;
     const auto& props = ramp.properties;
 
     RampMeshParams ramp_mesh_params{
@@ -490,7 +477,7 @@ RampVertexPositions calculate_ramp_vertex_positions(const RampObject& ramp, int 
         heights.b = corner ? heights.start_height : heights.end_height;
         heights.c = corner ? heights.start_height : heights.end_height;
         heights.d = corner ? heights.start_height : heights.end_height;
-        float* prominent_corner = [&]()
+        float* prominent_corner = [&]() -> float*
         {
             // clang-format off
             switch (direction)
@@ -500,8 +487,10 @@ RampVertexPositions calculate_ramp_vertex_positions(const RampObject& ramp, int 
                 case Direction::Back:    return &heights.c;
                 case Direction::Forward: return &heights.d;
             }
+            return nullptr;
             // clang-format on
         }();
+        assert(prominent_corner);
         *prominent_corner = corner ? heights.end_height : heights.start_height;
     }
     else
