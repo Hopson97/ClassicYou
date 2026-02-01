@@ -375,14 +375,26 @@ Mesh3D generate_grid_mesh(int width, int height)
     // Tiny offset prevents platforms/floors clipping with the grid
     auto y = -0.01f;
 
+    // Create the main grid
     for (int x = -width / 2; x <= width / 2; x++)
     {
         add_line_to_mesh_3d(mesh, Line3D{{x, y, -width / 2}, {x, y, width / 2}}, Colour::WHITE);
     }
-
     for (int z = -height / 2; z <= height / 2; z++)
     {
         add_line_to_mesh_3d(mesh, Line3D{{-height / 2, y, z}, {height / 2, y, z}}, Colour::WHITE);
+    }
+
+    // Create the half grid
+    for (int x = -width / 2; x <= width / 2; x++)
+    {
+        add_line_to_mesh_3d(mesh, Line3D{{x + 0.5f, y, -width / 2}, {x + 0.5f, y, width / 2}},
+                            Colour::GREY);
+    }
+    for (int z = -height / 2; z <= height / 2; z++)
+    {
+        add_line_to_mesh_3d(mesh, Line3D{{-height / 2, y, z + 0.5f}, {height / 2, y, z + 0.5f}},
+                            Colour::GREY);
     }
 
     return mesh;

@@ -52,8 +52,12 @@ void main()
     float grid_size_lod0 = grid_size * pow(10.0, floor(lod));
     float grid_size_lod1 = grid_size_lod0 * 10.0;
     float grid_size_lod2 = grid_size_lod1 * 10.0;
+    float grid_size_half = grid_size_lod0 * 0.5;
 
     dudv *= 4.0;
+
+    vec2 mod_half = mod(fs_in.world_position.xz, grid_size_half) / dudv;
+    float lodHalf = max2(vec2(1.0) - abs(satv(mod_half) * 2.0 - vec2(1.0)));
 
     vec2 mod_div_dudv = mod(fs_in.world_position.xz, grid_size_lod0) / dudv;
     float lod0a = max2(vec2(1.0) - abs(satv(mod_div_dudv) * 2.0 - vec2(1.0)));
@@ -65,17 +69,18 @@ void main()
     float lod2a = max2(vec2(1.0) - abs(satv(mod_div_dudv) * 2.0 - vec2(1.0)));
 
     float lod_fade = fract(lod);
+    out_colour = WHITE;
+
     if (lod2a > 0.0) {
-        out_colour = WHITE;
-        out_colour.a *= lod2a;
+        out_colour.a = lod2a;
+    } else if (lod1a > 0.0) {
+        out_colour.a = lod1a;
+    } else if (lod0a > 0.0) {
+        out_colour.a = lod0a * (1.0 - lod_fade);
+    } else if (lodHalf > 0.0) {
+        out_colour.a = (lodHalf * 0.25) * (1.0 - lod_fade); 
     } else {
-        if (lod1a > 0.0) {
-            out_colour = WHITE;
-	        out_colour.a *= lod1a;
-        } else {
-            out_colour = WHITE;
-	        out_colour.a *= (lod0a * (1.0 - lod_fade));
-        }
+        out_colour.a = 0.0;
     }
 
     if (out_colour.a < 0.01)
