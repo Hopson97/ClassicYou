@@ -2,6 +2,7 @@
 
 #include <print>
 
+#include <glm/gtx/string_cast.hpp>
 #include <imgui.h>
 
 #include "../../Graphics/MeshGeneration.h"
@@ -18,7 +19,8 @@ AreaSelectTool::AreaSelectTool(EditorLevel& level)
 }
 
 bool AreaSelectTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
-                              const LevelTextures& drawing_pad_texture_map, [[maybe_unused]] bool mouse_in_2d_view)
+                              const LevelTextures& drawing_pad_texture_map,
+                              [[maybe_unused]] bool mouse_in_2d_view)
 {
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {
@@ -153,9 +155,9 @@ void AreaSelectTool::update_previews()
         std::swap(start.y, end.y);
     }
 
-    glm::ivec3 cube_start{start.x / TILE_SIZE, min_floor_ * FLOOR_HEIGHT, start.y / TILE_SIZE};
-    glm::ivec3 cube_end{end.x / TILE_SIZE, max_floor_ * FLOOR_HEIGHT + FLOOR_HEIGHT + 0.01,
-                        end.y / TILE_SIZE};
+    glm::vec3 cube_start{start.x / TILE_SIZE_F, min_floor_ * FLOOR_HEIGHT, start.y / TILE_SIZE_F};
+    glm::vec3 cube_end{end.x / TILE_SIZE_F, max_floor_ * FLOOR_HEIGHT + FLOOR_HEIGHT + 0.01,
+                       end.y / TILE_SIZE_F};
 
     auto size = cube_end - selection_cube_start_;
 
@@ -167,6 +169,8 @@ void AreaSelectTool::update_previews()
         // 16 is the id for a "blank" texture
         selection_cube_ = generate_cube_mesh_level(selection_cube_start_, selection_cube_size_, 16,
                                                    {255, 255, 255, 150});
+        std::println("{} size: {}", glm::to_string(selection_cube_start_),
+                     glm::to_string(selection_cube_size_));
 
         selection_cube_.update();
     }

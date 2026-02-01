@@ -10,6 +10,7 @@
 #include "../EditorLevel.h"
 #include "../EditorState.h"
 #include "../LevelTextures.h"
+#include <glm/gtx/string_cast.hpp>
 
 namespace
 {
@@ -41,7 +42,6 @@ bool UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
 {
     state_floor_ = state.current_floor;
     state_world_position_hovered_ = state.world_position_hovered;
-    state_node_hovered_ = state.node_hovered;
     if (state.current_floor != floor_)
     {
         return false;
@@ -75,9 +75,8 @@ bool UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
             // next frame
             if (active_dragging_)
             {
-                target_new_position_ =
-                    state_node_hovered_ - glm::ivec2{polygon_.parameters.position};
-                update_previews(PolygonUpdateAction::MovePoint);
+                target_new_position_ = state.node_hovered - glm::ivec2{polygon_.parameters.position};
+                update_previews(PolygonUpdateAction::MovePoint, state);
                 return true;
             }
         }
@@ -104,19 +103,19 @@ bool UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
                 {
                     line_ = {
                         .world_point = closest_point_on_line(state_world_position_hovered_, line),
-                        .node_point = glm::vec2{state_node_hovered_} - polygon_position,
+                        .node_point = glm::vec2{state.node_hovered} - polygon_position,
                         .index = i,
                         .is_selected_ = true,
                     };
                     break;
                 }
             }
+            update_previews(PolygonUpdateAction::None, state);
         }
-
-        if (active_dragging_)
+        else
         {
-            target_new_position_ = state_node_hovered_ - glm::ivec2{polygon_.parameters.position};
-            update_previews(PolygonUpdateAction::MovePoint);
+            target_new_position_ = state.node_hovered - glm::ivec2{polygon_.parameters.position};
+            update_previews(PolygonUpdateAction::MovePoint, state);
         }
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
@@ -127,7 +126,7 @@ bool UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
             delete_holes_outside_polygon();
             update_polygon(state.current_floor, actions, PolygonUpdateAction::MovePoint);
             active_dragging_ = false;
-            update_previews(PolygonUpdateAction::AddOrDeletePoint);
+            update_previews(PolygonUpdateAction::AddOrDeletePoint, state);
         }
     }
     else if (auto key = event.getIf<sf::Event::KeyReleased>())
@@ -142,7 +141,7 @@ bool UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
                 delete_holes_outside_polygon();
                 update_polygon(state.current_floor, actions, PolygonUpdateAction::AddOrDeletePoint);
                 active_dragging_ = false;
-                update_previews(PolygonUpdateAction::AddOrDeletePoint);
+                update_previews(PolygonUpdateAction::AddOrDeletePoint, state);
                 return true;
             }
         }
@@ -161,6 +160,11 @@ void UpdatePolygonTool::render_preview()
         polygon_preview_.bind().draw_elements();
 
         gl::disable(gl::Capability::PolygonOffsetFill);
+    }
+
+    if (selection_mesh_.has_buffered())
+    {
+        selection_mesh_.bind().draw_elements();
     }
 }
 
@@ -213,7 +217,7 @@ void UpdatePolygonTool::render_preview_2d(gl::Shader& scene_shader_2d)
     }
 }
 
-void UpdatePolygonTool::update_previews(PolygonUpdateAction action)
+void UpdatePolygonTool::update_previews(PolygonUpdateAction action, const EditorState& state)
 {
     // If not moving a vertex, this can cause OOB error if points have been removed, or cause
     // the outline geometry to be incorrect
@@ -221,11 +225,25 @@ void UpdatePolygonTool::update_previews(PolygonUpdateAction action)
     {
         polygon_.properties.geometry[0][*target_index_] = target_new_position_;
     }
-    polygon_preview_2d_ = object_to_outline_2d(polygon_);
-    polygon_preview_2d_.update();
 
-    polygon_preview_ = object_to_geometry(polygon_, state_floor_);
-    polygon_preview_.update();
+    if (active_dragging_)
+    {
+
+        polygon_preview_2d_ = object_to_outline_2d(polygon_);
+        polygon_preview_2d_.update();
+
+        polygon_preview_ = object_to_geometry(polygon_, state_floor_);
+        polygon_preview_.update();
+    }
+
+    glm::vec3 selection_cube_start{
+        state.node_hovered.x / TILE_SIZE_F,
+        state.current_floor * FLOOR_HEIGHT + polygon_.properties.base * 2.0f,
+        state.node_hovered.y / TILE_SIZE_F,
+    };
+    std::println("start {}", glm::to_string(selection_cube_start));
+    selection_mesh_ = generate_cube_mesh_level(selection_cube_start, {0.1f, 1.0f, 0.1f}, 16);
+    selection_mesh_.update();
 }
 
 void UpdatePolygonTool::update_polygon(int current_floor, ActionManager& actions,

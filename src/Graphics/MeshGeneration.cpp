@@ -202,9 +202,9 @@ Mesh3D generate_pyramid_mesh(const glm::vec3& size, glm::u8vec4 colour_a, glm::u
 {
     Mesh3D mesh;
 
-    float w = size.x; // Length/Height of the pyramid
-    float h = size.y; // Total width
-    float d = size.z; // Total depth
+    float w = size.x;
+    float h = size.y;
+    float d = size.z;
 
     float hw = w / 2.0f;
     float hh = h / 2.0f;
@@ -262,8 +262,6 @@ Mesh3D generate_centered_cube_mesh(const glm::vec3& dimensions)
     float w = dimensions.x / 2.0f;
     float h = dimensions.y / 2.0f;
     float d = dimensions.z / 2.0f;
-
-
 
     // clang-format off
     mesh.vertices = {

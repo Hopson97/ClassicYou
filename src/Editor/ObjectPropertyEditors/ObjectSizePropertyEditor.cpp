@@ -213,8 +213,6 @@ void ObjectSizePropertyEditor::render_preview_3d(gl::Shader& scene_shader_3d,
         return;
     }
     scene_shader_3d.set_uniform("use_texture", false);
-    scene_shader_3d.set_uniform("use_colour", true);
-    scene_shader_3d.set_uniform("colour_multiplier", glm::vec4{1.0f, 1.0f, 1.0f, 1.0f});
 
     if (always_show_gizmos)
     {
@@ -250,8 +248,6 @@ void ObjectSizePropertyEditor::render_preview_3d(gl::Shader& scene_shader_3d,
     {
         top_line_preview_3d_.bind().draw_elements(gl::PrimitiveType::Lines);
     }
-
-    scene_shader_3d.set_uniform("use_colour", false);
 
     glLineWidth(3);
     if (active_dragging_3d_)
