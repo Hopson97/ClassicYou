@@ -6,7 +6,7 @@
 #include "../../Graphics/MeshGeneration.h"
 #include "../Actions.h"
 #include "../EditorState.h"
-#include "../LevelObjects/LevelObjectHelpers.h"
+#include "../EditorUtils.h"
 #include "../LevelObjects/Ramp.h"
 
 namespace

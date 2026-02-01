@@ -6,6 +6,7 @@
 #include "../Util/ImGuiExtras.h"
 #include "Actions.h"
 #include "EditorLevel.h"
+#include "EditorUtils.h"
 
 // =======================================
 //          ObjectMoveHandler
@@ -76,15 +77,10 @@ bool ObjectMoveHandler::handle_move_events(const sf::Event& event, const EditorS
             else if (moving_object_3d_)
             {
                 move_offset_ = state.node_hovered - move_start_tile_;
-                auto intersect = camera_3d.find_mouse_floor_intersect(
-                    {mouse->position.x, mouse->position.y}, state.current_floor * FLOOR_HEIGHT);
 
-                glm::ivec2 scaled_intersect{intersect.x * TILE_SIZE_F, intersect.z * TILE_SIZE_F};
-                glm::vec2 snapped(
-                    std::round(scaled_intersect.x / HALF_TILE_SIZE_F) * HALF_TILE_SIZE_F,
-                    std::round(scaled_intersect.y / HALF_TILE_SIZE_F) * HALF_TILE_SIZE_F);
-
-                move_offset_ = glm::ivec2{snapped} - move_start_tile_;
+                auto intersect = get_mouse_floor_snapped_intersect(camera_3d, mouse->position,
+                                                                   state.current_floor);
+                move_offset_ = glm::ivec2{intersect} - move_start_tile_;
             }
         }
     }
