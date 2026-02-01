@@ -28,24 +28,10 @@ bool ObjectMoveHandler::handle_move_events(const sf::Event& event, const EditorS
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
-            // To avoid moving a wall that was just placed when placing an adjacent wall, this
-            // checks if the last object was indeed a wall. If it is, then it cannot be moved.
-            if (state.selection.objects.size() == 1 && current_tool == ToolType::CreateWall)
+            // Prevent moving walls just placed down
+            if (last_object_was_created_wall(state, current_tool))
             {
-                auto object = p_level_->get_object(state.selection.objects[0]);
-                if (!object)
-                {
-                    return finish_move;
-                }
-
-                // Return early to prevent unintentioanl repositioning.
-                if (std::get_if<WallObject>(&object->object_type))
-                {
-                    if (object->object_id == p_level_->last_placed_id())
-                    {
-                        return finish_move;
-                    }
-                }
+                return finish_move;
             }
 
             // Check if any of the selected objects were clicked - if they were then it means
@@ -133,9 +119,15 @@ bool ObjectMoveHandler::is_moving_objects() const
 bool ObjectMoveHandler::try_start_move_mouse_picker(const MousePickingState& picker_state,
                                                     gl::Shader& picker_shader,
                                                     const EditorLevel& level,
-                                                    const EditorState& state,
+                                                    const EditorState& state, ToolType current_tool,
                                                     const Camera& camera_3d)
 {
+    // Prevent moving walls just placed down
+    if (last_object_was_created_wall(state, current_tool))
+    {
+        return false;
+    }
+
     if (moving_object_3d_ || picker_state.button != sf::Mouse::Button::Left ||
         picker_state.action != MousePickingState::Action::ButtonPressed)
     {
@@ -171,6 +163,30 @@ void ObjectMoveHandler::start_move(const Selection& selection)
     for (auto object : moving_objects_)
     {
         moving_object_cache_.push_back(*object);
+    }
+}
+
+bool ObjectMoveHandler::last_object_was_created_wall(const EditorState& state,
+                                                     ToolType current_tool) const
+{
+    // To avoid moving a wall that was just placed when placing an adjacent wall, this
+    // checks if the last object was a wall. If it is, then it cannot be moved.
+    if (state.selection.objects.size() == 1 && current_tool == ToolType::CreateWall)
+    {
+        auto object = p_level_->get_object(state.selection.objects[0]);
+        if (!object)
+        {
+            return true;
+        }
+
+        // Return early to prevent unintentioanl repositioning.
+        if (std::get_if<WallObject>(&object->object_type))
+        {
+            if (object->object_id == p_level_->last_placed_id())
+            {
+                return true;
+            }
+        }
     }
 }
 

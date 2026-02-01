@@ -30,10 +30,13 @@ class ObjectMoveHandler
 
     bool try_start_move_mouse_picker(const MousePickingState& picker_state,
                                      gl::Shader& picker_shader, const EditorLevel& level,
-                                     const EditorState& state, const Camera& camera_3d);
+                                     const EditorState& state, ToolType current_tool,
+                                     const Camera& camera_3d);
 
   private:
     void start_move(const Selection& selection);
+
+    bool last_object_was_created_wall(const EditorState& state, ToolType current_tool) const;
 
     /// If the currently selected object being dragged?
     bool moving_object_ = false;

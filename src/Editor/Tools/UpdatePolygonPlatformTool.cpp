@@ -37,6 +37,7 @@ UpdatePolygonTool::UpdatePolygonTool(LevelObject object, PolygonPlatformObject& 
 
 bool UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                                  const LevelTextures& drawing_pad_texture_map,
+                                 [[maybe_unused]] const Camera& camera_3d, 
                                  [[maybe_unused]] bool mouse_in_2d_view)
 {
     state_floor_ = state.current_floor;
