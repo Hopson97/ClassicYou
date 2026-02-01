@@ -67,11 +67,12 @@ class CreateWallTool : public ITool
 
   private:
     LevelObjectsMesh3D wall_preview_;
+    LevelObjectsMesh3D selection_mesh_;
     Mesh2DWorld wall_preview_2d_;
     Mesh2DWorld selection_node_;
     Line wall_line_;
-    glm::vec2 selected_node_{0};
     bool active_dragging_ = false;
+    glm::vec2 selected_node_{0};
 };
 
 class UpdateWallTool : public ITool
@@ -164,8 +165,8 @@ class AreaSelectTool : public ITool
     Line selection_area_;
     LevelObjectsMesh3D selection_cube_;
     Mesh2DWorld selection_quad_;
-    glm::ivec3 selection_cube_start_{0};
-    glm::ivec3 selection_cube_size_{0};
+    glm::vec3 selection_cube_start_{0};
+    glm::vec3 selection_cube_size_{0};
 
     /// The floors selected - Default is the current floor but this can be extended with Q and E for
     /// lower and upper
@@ -178,6 +179,7 @@ class UpdatePolygonTool : public ITool
 {
     enum class PolygonUpdateAction
     {
+        None,
         MovePoint,
         AddOrDeletePoint
     };
@@ -193,7 +195,7 @@ class UpdatePolygonTool : public ITool
     ToolType get_tool_type() const override;
 
   private:
-    void update_previews(PolygonUpdateAction action);
+    void update_previews(PolygonUpdateAction action, const EditorState& state);
     void update_polygon(int current_floor, ActionManager& actions, PolygonUpdateAction action);
 
     /// Deletes holes that are partially or fully outside of the outer region of the polygon.
@@ -219,13 +221,13 @@ class UpdatePolygonTool : public ITool
     Mesh2DWorld vertex_selector_mesh_;
     LevelObject object_;
     PolygonPlatformObject polygon_;
+    LevelObjectsMesh3D selection_mesh_;
 
     /// Used to ensure polygons can only be resized on the current floor as the editor
     const int floor_;
     int state_floor_ = 0;
 
     glm::vec2 state_world_position_hovered_{0};
-    glm::ivec2 state_node_hovered_{0};
 
     std::optional<size_t> target_index_;
     glm::vec2 target_new_position_{0};

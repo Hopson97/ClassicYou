@@ -103,6 +103,8 @@ class ScreenEditGame final : public Screen
     gl::BufferObject matrices_ssbo_;
     gl::Shader scene_shader_;
     gl::Shader drawing_pad_shader_;
+
+    // Used for rendering the level geometry
     gl::Shader world_geometry_shader_;
 
     sf::Vector2i mouse_position_;
@@ -117,7 +119,6 @@ class ScreenEditGame final : public Screen
     CameraController3D camera_controller_3d_;
     CameraController2D camera_controller_2d_;
 
-    Mesh3D selection_mesh_ = generate_cube_mesh({0.1, 1.0f, 0.1});
     Mesh3D sun_mesh_ = generate_cube_mesh({3.0f, 3.0f, 3.0f});
     Mesh2DWorld arrow_mesh_;
 

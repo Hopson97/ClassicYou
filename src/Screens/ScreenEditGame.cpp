@@ -141,7 +141,6 @@ bool ScreenEditGame::on_init()
     arrow_mesh_ = generate_2d_quad_mesh({0, 0}, {16, 16},
                                         (float)*drawing_pad_texture_map_.get_texture("Arrow"));
     arrow_mesh_.buffer();
-    selection_mesh_.buffer();
     sun_mesh_.buffer();
 
     // ----------------------------
@@ -600,16 +599,6 @@ void ScreenEditGame::on_render(bool show_debug)
                                                  : gl::PolygonMode::Fill);
 
     scene_shader_.set_uniform("use_texture", false);
-    if (tool_ && tool_->get_tool_type() != ToolType::CreateObject)
-    {
-        scene_shader_.set_uniform(
-            "model_matrix",
-            create_model_matrix({.position = {editor_state_.node_hovered.x / HALF_TILE_SIZE_F,
-                                              editor_state_.current_floor * FLOOR_HEIGHT,
-                                              editor_state_.node_hovered.y / HALF_TILE_SIZE_F}}));
-        selection_mesh_.bind().draw_elements();
-    }
-
     if (editor_settings_.render_main_light)
     {
         // Draw main light source position - the cube is 3x3x3 so offset by 1.5

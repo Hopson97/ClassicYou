@@ -2,14 +2,15 @@
 
 #include <imgui.h>
 
-#include "../../Graphics/OpenGL/GLUtils.h"
 #include "../../Graphics/MeshGeneration.h"
+#include "../../Graphics/OpenGL/GLUtils.h"
 #include "../../Graphics/OpenGL/Shader.h"
 #include "../Actions.h"
 #include "../EditConstants.h"
 #include "../EditorLevel.h"
 #include "../EditorState.h"
 #include "../LevelTextures.h"
+#include <glm/gtx/string_cast.hpp>
 
 namespace
 {
@@ -47,6 +48,7 @@ bool CreateWallTool::on_event(const sf::Event& event, EditorState& state, Action
                               const LevelTextures& drawing_pad_texture_map, bool mouse_in_2d_view)
 {
     selected_node_ = state.node_hovered;
+
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left &&
@@ -95,6 +97,11 @@ void CreateWallTool::render_preview()
     {
         wall_preview_.bind().draw_elements();
     }
+
+    if (selection_mesh_.has_buffered())
+    {
+        selection_mesh_.bind().draw_elements();
+    }
 }
 
 void CreateWallTool::render_preview_2d(gl::Shader& scene_shader_2d)
@@ -111,7 +118,6 @@ void CreateWallTool::render_preview_2d(gl::Shader& scene_shader_2d)
         "model_matrix",
         create_model_matrix(
             {.position = glm::vec3{selected_node_, 0} - glm::vec3(WALL_NODE_ICON_SIZE / 2.0f, 0)}));
-
     selection_node_.bind().draw_elements();
 }
 
@@ -138,6 +144,15 @@ void CreateWallTool::update_previews(const EditorState& state,
 
     wall_preview_2d_ = object_to_geometry_2d(wall, drawing_pad_texture_map).first;
     wall_preview_2d_.update();
+
+    auto selection_cube_start =
+        glm::vec3{state.node_hovered.x / TILE_SIZE_F,
+                  state.wall_default.start_base_height * 2 + state.current_floor * FLOOR_HEIGHT,
+                  state.node_hovered.y / TILE_SIZE_F};
+
+    selection_mesh_ = generate_cube_mesh_level(selection_cube_start,
+                                               {0.1, state.wall_default.end_height * 2, 0.1}, 16);
+    selection_mesh_.update();
 }
 
 // =======================================
