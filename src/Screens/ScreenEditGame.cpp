@@ -305,7 +305,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
     {
         // Certain tool events prevent further event processing
         if (tool_->on_event(event, editor_state_, action_manager_, drawing_pad_texture_map_,
-                            mouse_in_2d_view()))
+                            camera_3d_, mouse_in_2d_view()))
         {
             return;
         }
@@ -711,7 +711,8 @@ void ScreenEditGame::on_render(bool show_debug)
                 glClear(GL_DEPTH_BUFFER_BIT);
                 glClearNamedFramebufferiv(picker_fbo_.id, GL_COLOR, 0, &clear_value);
                 object_move_handler_.try_start_move_mouse_picker(
-                    mouse_picking_click_state_, picker_shader_, level_, editor_state_, camera_3d_);
+                    mouse_picking_click_state_, picker_shader_, level_, editor_state_,
+                    tool_ ? tool_->get_tool_type() : ToolType::CreateWall, camera_3d_);
             }
         }
 
@@ -1231,7 +1232,8 @@ void ScreenEditGame::redo()
 
 bool ScreenEditGame::mouse_in_2d_view() const
 {
-    return mouse_position_.x < static_cast<int>(window().getSize().x) / 2 && editor_settings_.show_2d_view;
+    return mouse_position_.x < static_cast<int>(window().getSize().x) / 2 &&
+           editor_settings_.show_2d_view;
 }
 
 void ScreenEditGame::enable_mouse_picking(MousePickingState& state,

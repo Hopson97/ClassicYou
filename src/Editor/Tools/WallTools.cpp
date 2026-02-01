@@ -2,6 +2,7 @@
 
 #include <imgui.h>
 
+#include "../../Graphics/Camera.h"
 #include "../../Graphics/MeshGeneration.h"
 #include "../../Graphics/OpenGL/GLUtils.h"
 #include "../../Graphics/OpenGL/Shader.h"
@@ -9,6 +10,7 @@
 #include "../EditConstants.h"
 #include "../EditorLevel.h"
 #include "../EditorState.h"
+#include "../EditorUtils.h"
 #include "../LevelTextures.h"
 
 namespace
@@ -44,32 +46,44 @@ CreateWallTool::CreateWallTool(const LevelTextures& drawing_pad_texture_map)
 }
 
 bool CreateWallTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
-                              const LevelTextures& drawing_pad_texture_map, bool mouse_in_2d_view)
+                              const LevelTextures& drawing_pad_texture_map, const Camera& camera_3d,
+                              bool mouse_in_2d_view)
 {
-    selected_node_ = state.node_hovered;
-
     if (auto mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {
-        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left &&
-            mouse_in_2d_view)
+        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
-
-            active_dragging_ = true;
-            wall_line_.start = state.node_hovered;
-            wall_line_.end = state.node_hovered;
+            if (mouse_in_2d_view)
+            {
+                wall_line_.start = state.node_hovered;
+                wall_line_.end = state.node_hovered;
+                active_dragging_ = true;
+            }
+            else
+            {
+                wall_line_.start = get_mouse_floor_snapped_intersect(camera_3d, mouse->position,
+                                                                     state.current_floor);
+                wall_line_.end = wall_line_.start;
+                active_dragging_3d_ = true;
+            }
             update_previews(state, drawing_pad_texture_map);
         }
     }
-    else if (event.is<sf::Event::MouseMoved>())
+    else if (auto mouse = event.getIf<sf::Event::MouseMoved>())
     {
-        wall_line_.end = state.node_hovered;
+
+        selected_node_ = mouse_in_2d_view ? glm::vec2{state.node_hovered}
+                                          : get_mouse_floor_snapped_intersect(
+                                                camera_3d, mouse->position, state.current_floor);
+
+        wall_line_.end = selected_node_;
         update_previews(state, drawing_pad_texture_map);
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
 
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left &&
-            active_dragging_ && mouse_in_2d_view)
+            (active_dragging_ || active_dragging_3d_))
         {
             if (glm::length(wall_line_.start - wall_line_.end) > 0.25f)
             {
@@ -86,13 +100,14 @@ bool CreateWallTool::on_event(const sf::Event& event, EditorState& state, Action
             }
         }
         active_dragging_ = false;
+        active_dragging_3d_ = false;
     }
     return false;
 }
 
 void CreateWallTool::render_preview()
 {
-    if (active_dragging_ && wall_preview_.has_buffered())
+    if ((active_dragging_ || active_dragging_3d_) && wall_preview_.has_buffered())
     {
         wall_preview_.bind().draw_elements();
     }
@@ -105,7 +120,7 @@ void CreateWallTool::render_preview()
 
 void CreateWallTool::render_preview_2d(gl::Shader& scene_shader_2d)
 {
-    render_wall(active_dragging_, wall_preview_2d_, scene_shader_2d);
+    render_wall(active_dragging_ || active_dragging_3d_, wall_preview_2d_, scene_shader_2d);
 
     scene_shader_2d.set_uniform("use_texture", true);
     scene_shader_2d.set_uniform("is_selected", false);
@@ -115,8 +130,8 @@ void CreateWallTool::render_preview_2d(gl::Shader& scene_shader_2d)
 
     scene_shader_2d.set_uniform(
         "model_matrix",
-        create_model_matrix({.position = glm::vec3{selected_node_, 0} -
-                                         glm::vec3(WALL_NODE_ICON_SIZE / 2.0f, 0)}));
+        create_model_matrix(
+            {.position = glm::vec3{selected_node_, 0} - glm::vec3(WALL_NODE_ICON_SIZE / 2.0f, 0)}));
     vertex_selector_mesh_.bind().draw_elements();
 }
 
@@ -128,6 +143,7 @@ ToolType CreateWallTool::get_tool_type() const
 void CreateWallTool::cancel_events()
 {
     active_dragging_ = false;
+    active_dragging_3d_ = false;
 }
 
 void CreateWallTool::update_previews(const EditorState& state,
@@ -145,9 +161,9 @@ void CreateWallTool::update_previews(const EditorState& state,
     wall_preview_2d_.update();
 
     auto selection_cube_start =
-        glm::vec3{state.node_hovered.x / TILE_SIZE_F,
+        glm::vec3{selected_node_.x / TILE_SIZE_F,
                   state.wall_default.start_base_height * 2 + state.current_floor * FLOOR_HEIGHT,
-                  state.node_hovered.y / TILE_SIZE_F};
+                  selected_node_.y / TILE_SIZE_F};
 
     selection_mesh_ = generate_cube_mesh_level(selection_cube_start,
                                                {0.1, state.wall_default.end_height * 2, 0.1}, 16);
@@ -173,6 +189,7 @@ UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall, int wall_fl
 
 bool UpdateWallTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                               const LevelTextures& drawing_pad_texture_map,
+                              [[maybe_unused]] const Camera& camera_3d,
                               [[maybe_unused]] bool mouse_in_2d_view)
 {
     state_floor_ = state.current_floor;

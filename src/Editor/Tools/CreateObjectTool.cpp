@@ -20,7 +20,8 @@ CreateObjectTool::CreateObjectTool(ObjectTypeName object_type)
 }
 
 bool CreateObjectTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
-                                const LevelTextures& drawing_pad_texture_map, bool mouse_in_2d_view)
+                                const LevelTextures& drawing_pad_texture_map,
+                                [[maybe_unused]] const Camera& camera_3d, bool mouse_in_2d_view)
 {
     if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
