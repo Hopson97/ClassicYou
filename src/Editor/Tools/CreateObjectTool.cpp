@@ -22,7 +22,6 @@ CreateObjectTool::CreateObjectTool(ObjectTypeName object_type)
 bool CreateObjectTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                                 const LevelTextures& drawing_pad_texture_map, bool mouse_in_2d_view)
 {
-    tile_ = state.node_hovered;
     if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left &&
@@ -62,6 +61,8 @@ void CreateObjectTool::render_preview_2d(gl::Shader& scene_shader_2d)
 void CreateObjectTool::update_previews(const EditorState& state,
                                        const LevelTextures& drawing_pad_texture_map)
 {
+    glm::vec2 tile{state.node_hovered};
+
     switch (object_type_)
     {
         case ObjectTypeName::Platform:
@@ -73,21 +74,21 @@ void CreateObjectTool::update_previews(const EditorState& state,
                     size.y + (std::abs(std::fmod(size.y, 1.0)) == 0.5 ? 0.5 : 0)};
             object_.object_type = PlatformObject{
                 .properties = state.platform_default,
-                .parameters = {.position = tile_ - size * HALF_TILE_SIZE_F},
+                .parameters = {.position = tile - size * HALF_TILE_SIZE_F},
             };
             break;
         }
         case ObjectTypeName::PolygonPlatform:
             object_.object_type = PolygonPlatformObject{
                 .properties = state.polygon_platform_default,
-                .parameters = {.position = tile_},
+                .parameters = {.position = tile},
             };
             break;
 
         case ObjectTypeName::Pillar:
             object_.object_type = PillarObject{
                 .properties = state.pillar_default,
-                .parameters = {.position = tile_},
+                .parameters = {.position = tile},
             };
             break;
 
@@ -98,7 +99,7 @@ void CreateObjectTool::update_previews(const EditorState& state,
                     size.y + (std::abs(std::fmod(size.y, 1.0)) == 0.5 ? 0.5 : 0)};
             object_.object_type = RampObject{
                 .properties = state.ramp_default,
-                .parameters = {.position = tile_ - size * HALF_TILE_SIZE_F},
+                .parameters = {.position = tile - size * HALF_TILE_SIZE_F},
             };
             break;
         }

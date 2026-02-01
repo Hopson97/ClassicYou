@@ -2,7 +2,6 @@
 
 #include <print>
 
-#include <glm/gtx/string_cast.hpp>
 #include <imgui.h>
 
 #include "../../Graphics/MeshGeneration.h"
@@ -43,6 +42,14 @@ bool AreaSelectTool::on_event(const sf::Event& event, EditorState& state, Action
             selection_area_.end = state.node_hovered;
             update_previews();
         }
+
+        glm::vec3 selection_cube_start{
+            state.node_hovered.x / TILE_SIZE_F,
+            state.current_floor * FLOOR_HEIGHT,
+            state.node_hovered.y / TILE_SIZE_F,
+        };
+        selection_mesh_ = generate_cube_mesh_level(selection_cube_start, {0.1f, 1.0f, 0.1f}, 16);
+        selection_mesh_.update();
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
@@ -83,6 +90,11 @@ void AreaSelectTool::render_preview()
         selection_cube_.bind().draw_elements();
 
         gl::disable(gl::Capability::Blend);
+    }
+
+    if (selection_mesh_.has_buffered())
+    {
+        selection_mesh_.bind().draw_elements();
     }
 }
 
@@ -137,8 +149,8 @@ void AreaSelectTool::select(EditorState& state)
 
 void AreaSelectTool::update_previews()
 {
-    auto start = glm::ivec2{selection_area_.start};
-    auto end = glm::ivec2{selection_area_.end};
+    auto start = glm::vec2{selection_area_.start};
+    auto end = glm::vec2{selection_area_.end};
     if (glm::length2(glm::vec2{end - start}) < HALF_TILE_SIZE_F * HALF_TILE_SIZE_F)
     {
         render_preview_mesh_ = false;
@@ -159,19 +171,14 @@ void AreaSelectTool::update_previews()
     glm::vec3 cube_end{end.x / TILE_SIZE_F, max_floor_ * FLOOR_HEIGHT + FLOOR_HEIGHT + 0.01,
                        end.y / TILE_SIZE_F};
 
-    auto size = cube_end - selection_cube_start_;
-
-    if (cube_start != selection_cube_start_ || size != selection_cube_size_)
+    glm::vec3 current_size = cube_end - cube_start;
+    if (cube_start != selection_cube_start_ || current_size != selection_cube_size_)
     {
         selection_cube_start_ = cube_start;
-        selection_cube_size_ = size;
+        selection_cube_size_ = current_size;
 
-        // 16 is the id for a "blank" texture
         selection_cube_ = generate_cube_mesh_level(selection_cube_start_, selection_cube_size_, 16,
                                                    {255, 255, 255, 150});
-        std::println("{} size: {}", glm::to_string(selection_cube_start_),
-                     glm::to_string(selection_cube_size_));
-
         selection_cube_.update();
     }
 

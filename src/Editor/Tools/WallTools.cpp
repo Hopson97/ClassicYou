@@ -10,7 +10,6 @@
 #include "../EditorLevel.h"
 #include "../EditorState.h"
 #include "../LevelTextures.h"
-#include <glm/gtx/string_cast.hpp>
 
 namespace
 {
@@ -38,10 +37,10 @@ namespace
 // =======================================
 CreateWallTool::CreateWallTool(const LevelTextures& drawing_pad_texture_map)
 {
-    selection_node_ = generate_2d_quad_mesh(
+    vertex_selector_mesh_ = generate_2d_quad_mesh(
         {0, 0}, WALL_NODE_ICON_SIZE,
         static_cast<float>(*drawing_pad_texture_map.get_texture("Selection")));
-    selection_node_.buffer();
+    vertex_selector_mesh_.buffer();
 }
 
 bool CreateWallTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
@@ -116,9 +115,9 @@ void CreateWallTool::render_preview_2d(gl::Shader& scene_shader_2d)
 
     scene_shader_2d.set_uniform(
         "model_matrix",
-        create_model_matrix(
-            {.position = glm::vec3{selected_node_, 0} - glm::vec3(WALL_NODE_ICON_SIZE / 2.0f, 0)}));
-    selection_node_.bind().draw_elements();
+        create_model_matrix({.position = glm::vec3{selected_node_, 0} -
+                                         glm::vec3(WALL_NODE_ICON_SIZE / 2.0f, 0)}));
+    vertex_selector_mesh_.bind().draw_elements();
 }
 
 ToolType CreateWallTool::get_tool_type() const
