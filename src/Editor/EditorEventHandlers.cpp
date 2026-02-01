@@ -188,6 +188,7 @@ bool ObjectMoveHandler::last_object_was_created_wall(const EditorState& state,
             }
         }
     }
+    return false;
 }
 
 void CopyPasteHandler::handle_event(const sf::Event& event, const Selection& selection,

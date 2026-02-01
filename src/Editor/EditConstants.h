@@ -31,6 +31,7 @@ static constexpr glm::vec3 DEFAULT_CLEAR_COLOUR{0.0f, 35.0f / 255.0f, 70.0f / 25
 namespace Colour
 {
     static constexpr auto WHITE = glm::u8vec4{255};
+    static constexpr auto GREY = glm::u8vec4{128, 128, 128, 255};
     static constexpr auto RED = glm::u8vec4{255, 0, 0, 255};
     static constexpr auto GREEN = glm::u8vec4{0, 255, 0, 255};
     static constexpr auto BLUE = glm::u8vec4{0, 0, 255, 255};
