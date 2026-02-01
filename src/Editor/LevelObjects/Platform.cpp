@@ -5,7 +5,7 @@
 #include "../../Graphics/MeshGeneration.h"
 #include "../LevelFileIO.h"
 #include "../LevelTextures.h"
-#include "LevelObjectHelpers.h"
+#include "../EditorUtils.h"
 
 bool operator==(const PlatformProps& lhs, const PlatformProps& rhs)
 {

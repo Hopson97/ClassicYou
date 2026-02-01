@@ -160,6 +160,7 @@
     <ClCompile Include="deps\imgui_sfml\imgui-SFML.cpp" />
     <ClCompile Include="deps\imgui_sfml\imgui_impl_opengl3.cpp" />
     <ClCompile Include="src\Editor\Actions.cpp" />
+    <ClCompile Include="src\Editor\EditorUtils.cpp" />
     <ClCompile Include="src\Editor\ObjectPropertyEditors\ObjectSizePropertyEditor.cpp" />
     <ClCompile Include="src\Editor\Tools\AreaSelectTool.cpp" />
     <ClCompile Include="src\Editor\Tools\CreateObjectTool.cpp" />
@@ -254,7 +255,7 @@
     <ClInclude Include="src\Editor\ObjectPropertyEditors\LevelObjectPropertyEditor.h" />
     <ClInclude Include="src\Editor\LevelObjects\LevelObjectBase.h" />
     <ClInclude Include="src\Editor\LevelObjects\LevelObjectConcepts.h" />
-    <ClInclude Include="src\Editor\LevelObjects\LevelObjectHelpers.h" />
+    <ClInclude Include="src\Editor\EditorUtils.h" />
     <ClInclude Include="src\Editor\LevelObjects\Ramp.h" />
     <ClInclude Include="src\Editor\LevelTextures.h" />
     <ClInclude Include="src\Editor\LevelObjects\LevelObjectTypes.h" />

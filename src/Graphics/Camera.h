@@ -58,7 +58,6 @@ class Camera
     const CameraConfig& get_config() const;
 
     glm::vec3 find_mouse_floor_intersect(glm::vec2 mouse_click, float floor_y) const;
-    
 
   private:
     void set_projection();
