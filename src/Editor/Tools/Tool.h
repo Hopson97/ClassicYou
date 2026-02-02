@@ -39,8 +39,7 @@ class ITool
     [[nodiscard]] virtual bool on_event(const sf::Event& event, EditorState& state,
                                         ActionManager& actions,
                                         const LevelTextures& drawing_pad_texture_map,
-                                        const Camera& camera_3d, 
-                                        bool mouse_in_2d_view) = 0;
+                                        const Camera& camera_3d, bool mouse_in_2d_view) = 0;
     virtual void render_preview() = 0;
     virtual void render_preview_2d(gl::Shader& scene_shader_2d) {};
 
@@ -59,8 +58,8 @@ class CreateWallTool : public ITool
     CreateWallTool(const LevelTextures& drawing_pad_texture_map);
 
     bool on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
-                  const LevelTextures& drawing_pad_texture_map,
-                  const Camera& camera_3d, bool mouse_in_2d_view) override;
+                  const LevelTextures& drawing_pad_texture_map, const Camera& camera_3d,
+                  bool mouse_in_2d_view) override;
     void render_preview() override;
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
 
@@ -89,7 +88,7 @@ class CreateWallTool : public ITool
 
     bool active_dragging_ = false;
     bool active_dragging_3d_ = false;
-    glm::vec2 selected_node_{0};
+    glm::vec2 tile_hovered_{0};
 };
 
 /**
@@ -179,6 +178,8 @@ class CreateObjectTool : public ITool
     /// When rendering the object in the 2D view, this is used to tell OpenGL what primative type to
     /// use
     gl::PrimitiveType preview_2d_primitive_ = gl::PrimitiveType::Triangles;
+
+    glm::vec2 tile_hovered_{0};
 };
 
 /**

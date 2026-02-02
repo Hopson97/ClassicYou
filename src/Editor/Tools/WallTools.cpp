@@ -72,11 +72,11 @@ bool CreateWallTool::on_event(const sf::Event& event, EditorState& state, Action
     else if (auto mouse = event.getIf<sf::Event::MouseMoved>())
     {
 
-        selected_node_ = mouse_in_2d_view ? glm::vec2{state.node_hovered}
-                                          : get_mouse_floor_snapped_intersect(
-                                                camera_3d, mouse->position, state.current_floor);
+        tile_hovered_ = mouse_in_2d_view ? glm::vec2{state.node_hovered}
+                                         : get_mouse_floor_snapped_intersect(
+                                               camera_3d, mouse->position, state.current_floor);
 
-        wall_line_.end = selected_node_;
+        wall_line_.end = tile_hovered_;
         update_previews(state, drawing_pad_texture_map);
     }
     else if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
@@ -131,7 +131,7 @@ void CreateWallTool::render_preview_2d(gl::Shader& scene_shader_2d)
     scene_shader_2d.set_uniform(
         "model_matrix",
         create_model_matrix(
-            {.position = glm::vec3{selected_node_, 0} - glm::vec3(WALL_NODE_ICON_SIZE / 2.0f, 0)}));
+            {.position = glm::vec3{tile_hovered_, 0} - glm::vec3(WALL_NODE_ICON_SIZE / 2.0f, 0)}));
     vertex_selector_mesh_.bind().draw_elements();
 }
 
@@ -161,9 +161,9 @@ void CreateWallTool::update_previews(const EditorState& state,
     wall_preview_2d_.update();
 
     auto selection_cube_start =
-        glm::vec3{selected_node_.x / TILE_SIZE_F,
+        glm::vec3{tile_hovered_.x / TILE_SIZE_F,
                   state.wall_default.start_base_height * 2 + state.current_floor * FLOOR_HEIGHT,
-                  selected_node_.y / TILE_SIZE_F};
+                  tile_hovered_.y / TILE_SIZE_F};
 
     selection_mesh_ = generate_cube_mesh_level(selection_cube_start,
                                                {0.1, state.wall_default.end_height * 2, 0.1}, 16);
