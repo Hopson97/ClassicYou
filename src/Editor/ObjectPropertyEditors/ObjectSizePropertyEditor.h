@@ -37,6 +37,8 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
     void render_to_picker_mouse_over(const MousePickingState& picker_state,
                                      gl::Shader& picker_shader) override;
 
+    bool hide_normal_previews() const override;
+
   private:
     /// Try to resize the object when the mouse is being moved. It only resizes at half-tile
     /// intervals

@@ -169,5 +169,5 @@ class ScreenEditGame final : public Screen
 
     MessagesManager messages_manager_;
 
-    LevelObjectPropertyEditors property_updater_;
+    LevelObjectPropertyEditors property_editors_;
 };
