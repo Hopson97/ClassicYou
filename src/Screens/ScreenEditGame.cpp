@@ -253,7 +253,7 @@ bool ScreenEditGame::on_init()
         {
             if (multiple_selected)
             {
-                property_updater_.clear();
+                property_editors_.clear();
             }
             else if (object)
             {
@@ -272,7 +272,7 @@ bool ScreenEditGame::on_init()
             }
             else
             {
-                property_updater_.clear();
+                property_editors_.clear();
             }
         });
 
@@ -291,7 +291,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
 
     if (editor_state_.selection.single_object_is_selected())
     {
-        for (auto& prop_updater : property_updater_)
+        for (auto& prop_updater : property_editors_)
         {
             if (prop_updater->handle_event(event, editor_state_, action_manager_,
                                            drawing_pad_texture_map_, camera_3d_))
@@ -355,7 +355,7 @@ void ScreenEditGame::on_event(const sf::Event& event)
                     action_manager_.push_action(
                         std::make_unique<DeleteObjectAction>(objects, floors));
                     try_set_tool_to_create_wall();
-                    property_updater_.clear();
+                    property_editors_.clear();
                 }
                 break;
 
@@ -509,6 +509,9 @@ void ScreenEditGame::on_fixed_update([[maybe_unused]] sf::Time dt)
 
 void ScreenEditGame::on_render(bool show_debug)
 {
+    bool show_tool_previews = !std::ranges::any_of(property_editors_, [](const auto& editor)
+                                                   { return editor->hide_normal_previews(); });
+
     //=============================================
     //          Render the 2D View
     //=============================================
@@ -543,15 +546,17 @@ void ScreenEditGame::on_render(bool show_debug)
 
         // Render the tool preview
         if (tool_ &&
-            (tool_->get_tool_type() == ToolType::UpdateWall || !ImGui::GetIO().WantCaptureMouse))
+            (tool_->get_tool_type() == ToolType::UpdateWall || !ImGui::GetIO().WantCaptureMouse) &&
+            !object_move_handler_.is_moving_objects())
         {
-            if (!object_move_handler_.is_moving_objects())
+            if (show_tool_previews)
             {
                 tool_->render_preview_2d(drawing_pad_shader_);
-                for (auto& prop_updater : property_updater_)
-                {
-                    prop_updater->render_preview_2d(drawing_pad_shader_);
-                }
+            }
+
+            for (auto& prop_updater : property_editors_)
+            {
+                prop_updater->render_preview_2d(drawing_pad_shader_);
             }
         }
 
@@ -635,8 +640,12 @@ void ScreenEditGame::on_render(bool show_debug)
     // Draw the current tool preview
     if (!object_move_handler_.is_moving_objects())
     {
-        tool_->render_preview();
-        for (auto& editor : property_updater_)
+        if (show_tool_previews)
+        {
+            tool_->render_preview();
+        }
+
+        for (auto& editor : property_editors_)
         {
             editor->render_preview_3d(world_geometry_shader_,
                                       editor_settings_.always_show_3d_gizmos);
@@ -701,7 +710,7 @@ void ScreenEditGame::on_render(bool show_debug)
             }
             if (!object_move_handler_.is_moving_objects())
             {
-                for (auto& editor : property_updater_)
+                for (auto& editor : property_editors_)
                 {
                     glClear(GL_DEPTH_BUFFER_BIT);
                     glClearNamedFramebufferiv(picker_fbo_.id, GL_COLOR, 0, &clear_value);
@@ -718,7 +727,7 @@ void ScreenEditGame::on_render(bool show_debug)
 
         if (mouse_picking_move_state_.enabled)
         {
-            for (auto& editor : property_updater_)
+            for (auto& editor : property_editors_)
             {
                 glClear(GL_DEPTH_BUFFER_BIT);
                 glClearNamedFramebufferiv(picker_fbo_.id, GL_COLOR, 0, &clear_value);
@@ -812,14 +821,14 @@ void ScreenEditGame::create_property_editors(LevelObject* object)
     {
         return;
     }
-    property_updater_.clear();
+    property_editors_.clear();
 
     std::visit(
         [&](auto& obj)
         {
             if constexpr (ResizableObject<decltype(obj)>)
             {
-                property_updater_.push_back(std::make_unique<ObjectSizePropertyEditor>(
+                property_editors_.push_back(std::make_unique<ObjectSizePropertyEditor>(
                     *object, obj.parameters.position, obj.properties.size,
                     editor_state_.current_floor));
             }

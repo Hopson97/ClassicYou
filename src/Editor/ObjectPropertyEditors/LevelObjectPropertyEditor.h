@@ -35,6 +35,11 @@ class LevelObjectPropertyEditor
                                              gl::Shader& picker_shader)
     {
     }
+
+    virtual bool hide_normal_previews() const
+    {
+        return false;
+    }
 };
 
 using LevelObjectPropertyEditors = std::vector<std::unique_ptr<LevelObjectPropertyEditor>>;

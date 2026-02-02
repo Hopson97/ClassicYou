@@ -316,6 +316,11 @@ void ObjectSizePropertyEditor::render_to_picker_mouse_over(const MousePickingSta
     }
 }
 
+bool ObjectSizePropertyEditor::hide_normal_previews() const
+{
+    return pull_direction_ != PullDirection::None;
+}
+
 void ObjectSizePropertyEditor::try_resize(const Rectangle& rect, glm::vec2 intersect,
                                           glm::vec2& new_position, glm::vec2& new_size)
 {
