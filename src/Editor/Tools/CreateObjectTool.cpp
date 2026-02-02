@@ -11,6 +11,7 @@
 #include "../EditConstants.h"
 #include "../EditorLevel.h"
 #include "../EditorState.h"
+#include "../EditorUtils.h"
 #include "../LevelTextures.h"
 
 CreateObjectTool::CreateObjectTool(ObjectTypeName object_type)
@@ -25,15 +26,17 @@ bool CreateObjectTool::on_event(const sf::Event& event, EditorState& state, Acti
 {
     if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>())
     {
-        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left &&
-            mouse_in_2d_view)
+        if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
             update_previews(state, drawing_pad_texture_map);
             actions.push_action(std::make_unique<AddObjectAction>(object_, state.current_floor));
         }
     }
-    else if (event.is<sf::Event::MouseMoved>())
+    else if (auto mouse = event.getIf<sf::Event::MouseMoved>())
     {
+        tile_hovered_ = mouse_in_2d_view ? glm::vec2{state.node_hovered}
+                                         : get_mouse_floor_snapped_intersect(
+                                               camera_3d, mouse->position, state.current_floor);
         update_previews(state, drawing_pad_texture_map);
     }
     return false;
@@ -62,8 +65,6 @@ void CreateObjectTool::render_preview_2d(gl::Shader& scene_shader_2d)
 void CreateObjectTool::update_previews(const EditorState& state,
                                        const LevelTextures& drawing_pad_texture_map)
 {
-    glm::vec2 tile{state.node_hovered};
-
     switch (object_type_)
     {
         case ObjectTypeName::Platform:
@@ -75,21 +76,21 @@ void CreateObjectTool::update_previews(const EditorState& state,
                     size.y + (std::abs(std::fmod(size.y, 1.0)) == 0.5 ? 0.5 : 0)};
             object_.object_type = PlatformObject{
                 .properties = state.platform_default,
-                .parameters = {.position = tile - size * HALF_TILE_SIZE_F},
+                .parameters = {.position = tile_hovered_ - size * HALF_TILE_SIZE_F},
             };
             break;
         }
         case ObjectTypeName::PolygonPlatform:
             object_.object_type = PolygonPlatformObject{
                 .properties = state.polygon_platform_default,
-                .parameters = {.position = tile},
+                .parameters = {.position = tile_hovered_},
             };
             break;
 
         case ObjectTypeName::Pillar:
             object_.object_type = PillarObject{
                 .properties = state.pillar_default,
-                .parameters = {.position = tile},
+                .parameters = {.position = tile_hovered_},
             };
             break;
 
@@ -100,7 +101,7 @@ void CreateObjectTool::update_previews(const EditorState& state,
                     size.y + (std::abs(std::fmod(size.y, 1.0)) == 0.5 ? 0.5 : 0)};
             object_.object_type = RampObject{
                 .properties = state.ramp_default,
-                .parameters = {.position = tile - size * HALF_TILE_SIZE_F},
+                .parameters = {.position = tile_hovered_ - size * HALF_TILE_SIZE_F},
             };
             break;
         }
