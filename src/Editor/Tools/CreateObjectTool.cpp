@@ -42,7 +42,7 @@ bool CreateObjectTool::on_event(const sf::Event& event, EditorState& state, Acti
     return false;
 }
 
-void CreateObjectTool::render_preview()
+void CreateObjectTool::render_preview([[maybe_unused]] bool always_show_gizmos)
 {
     if (object_preview_.has_buffered())
     {

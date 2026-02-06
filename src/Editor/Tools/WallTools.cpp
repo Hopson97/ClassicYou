@@ -71,7 +71,6 @@ bool CreateWallTool::on_event(const sf::Event& event, EditorState& state, Action
     }
     else if (auto mouse = event.getIf<sf::Event::MouseMoved>())
     {
-
         tile_hovered_ = mouse_in_2d_view ? glm::vec2{state.node_hovered}
                                          : get_mouse_floor_snapped_intersect(
                                                camera_3d, mouse->position, state.current_floor);
@@ -105,7 +104,7 @@ bool CreateWallTool::on_event(const sf::Event& event, EditorState& state, Action
     return false;
 }
 
-void CreateWallTool::render_preview()
+void CreateWallTool::render_preview([[maybe_unused]] bool always_show_gizmos)
 {
     if ((active_dragging_ || active_dragging_3d_) && wall_preview_.has_buffered())
     {
@@ -185,12 +184,13 @@ UpdateWallTool::UpdateWallTool(LevelObject object, WallObject& wall, int wall_fl
     vertex_selector_mesh_.buffer();
 
     wall_line_ = wall.parameters.line;
+
+    update_3d_previews(wall);
 }
 
 bool UpdateWallTool::on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
-                              const LevelTextures& drawing_pad_texture_map,
-                              [[maybe_unused]] const Camera& camera_3d,
-                              [[maybe_unused]] bool mouse_in_2d_view)
+                              const LevelTextures& drawing_pad_texture_map, const Camera& camera_3d,
+                              bool mouse_in_2d_view)
 {
     state_floor_ = state.current_floor;
     // Walls should only be edited on the same floor
@@ -203,13 +203,10 @@ bool UpdateWallTool::on_event(const sf::Event& event, EditorState& state, Action
     {
         if (!ImGui::GetIO().WantCaptureMouse && mouse->button == sf::Mouse::Button::Left)
         {
-            if (target_ != DragTarget::None)
+            if (drag_target_ != DragTarget::None)
             {
                 active_dragging_ = true;
-            }
 
-            if (active_dragging_)
-            {
                 wall_line_.start = wall_.parameters.line.start;
                 wall_line_.end = wall_.parameters.line.end;
 
@@ -218,33 +215,41 @@ bool UpdateWallTool::on_event(const sf::Event& event, EditorState& state, Action
             }
         }
     }
-    else if (event.is<sf::Event::MouseMoved>())
+    else if (auto mouse = event.getIf<sf::Event::MouseMoved>())
     {
+
         if (!active_dragging_)
         {
-            target_ = DragTarget::None;
-            if (glm::distance(state.world_position_hovered, wall_.parameters.line.start) <
-                MIN_SELECT_DISTANCE)
+            if (!mouse_over_edge_3d_)
             {
-                target_ = DragTarget::Start;
+                drag_target_ = DragTarget::None;
             }
-            else if (glm::distance(state.world_position_hovered, wall_.parameters.line.end) <
-                     MIN_SELECT_DISTANCE)
+
+            auto tile_hovered = state.world_position_hovered;
+            if (glm::distance(tile_hovered, wall_.parameters.line.start) < MIN_SELECT_DISTANCE)
             {
-                target_ = DragTarget::End;
+                drag_target_ = DragTarget::Start;
+            }
+            else if (glm::distance(tile_hovered, wall_.parameters.line.end) < MIN_SELECT_DISTANCE)
+            {
+                drag_target_ = DragTarget::End;
             }
         }
 
         if (active_dragging_)
         {
-            switch (target_)
+            auto tile_hovered = mouse_in_2d_view
+                                    ? glm::vec2{state.node_hovered}
+                                    : get_mouse_floor_snapped_intersect(camera_3d, mouse->position,
+                                                                        state.current_floor);
+            switch (drag_target_)
             {
                 case UpdateWallTool::DragTarget::Start:
-                    wall_line_.start = state.node_hovered;
+                    wall_line_.start = tile_hovered;
                     break;
 
                 case UpdateWallTool::DragTarget::End:
-                    wall_line_.end = state.node_hovered;
+                    wall_line_.end = tile_hovered;
                     break;
                 default:
                     break;
@@ -273,7 +278,7 @@ bool UpdateWallTool::on_event(const sf::Event& event, EditorState& state, Action
     return false;
 }
 
-void UpdateWallTool::render_preview()
+void UpdateWallTool::render_preview(bool always_show_gizmos)
 {
     if (wall_preview_.has_buffered() && active_dragging_)
     {
@@ -285,6 +290,23 @@ void UpdateWallTool::render_preview()
 
         gl::disable(gl::Capability::PolygonOffsetFill);
     }
+
+    auto render_wall_line = [&](Mesh3D& mesh, DragTarget required_target)
+    {
+        if (mesh.has_buffered())
+        {
+            if (drag_target_ == required_target || always_show_gizmos)
+            {
+                glLineWidth(drag_target_ == required_target ? 5 : 3);
+
+                mesh.bind().draw_elements(gl::PrimitiveType::Lines);
+            }
+        }
+    };
+    render_wall_line(wall_begin_preview_3d_, DragTarget::Start);
+    render_wall_line(wall_end_preview_3d_, DragTarget::End);
+
+    glLineWidth(2);
 }
 
 void UpdateWallTool::render_preview_2d(gl::Shader& scene_shader_2d)
@@ -312,14 +334,47 @@ void UpdateWallTool::render_preview_2d(gl::Shader& scene_shader_2d)
         glm::vec3 start{wall_line_.start - MIN_SELECT_DISTANCE, 0};
         glm::vec3 end{wall_line_.end - MIN_SELECT_DISTANCE, 0};
 
-        draw_selection_point(wall_line_.start, target_ == DragTarget::Start ? 1.5f : 1.0f);
-        draw_selection_point(wall_line_.end, target_ == DragTarget::End ? 1.5f : 1.0f);
+        draw_selection_point(wall_line_.start, drag_target_ == DragTarget::Start ? 1.5f : 1.0f);
+        draw_selection_point(wall_line_.end, drag_target_ == DragTarget::End ? 1.5f : 1.0f);
     }
 }
 
 ToolType UpdateWallTool::get_tool_type() const
 {
     return ToolType::UpdateWall;
+}
+
+void UpdateWallTool::render_to_picker_mouse_over(const MousePickingState& picker_state,
+                                                 gl::Shader& picker_shader)
+{
+    if ((state_floor_ != wall_floor_) || active_dragging_)
+    {
+        return;
+    }
+
+    picker_shader.set_uniform("model_matrix", create_model_matrix({}));
+
+    // A thicker line is used to ensure easier selection
+    glLineWidth(15);
+
+    picker_shader.set_uniform("object_id", (int)DragTarget::Start);
+    wall_begin_preview_3d_.bind().draw_elements(gl::PrimitiveType::Lines);
+
+    picker_shader.set_uniform("object_id", (int)DragTarget::End);
+    wall_end_preview_3d_.bind().draw_elements(gl::PrimitiveType::Lines);
+
+    // Check which one was picked
+    GLint picked_id = 0;
+    glReadPixels(picker_state.point.x, picker_state.point.y, 1, 1, GL_RED_INTEGER, GL_INT,
+                 &picked_id);
+
+    mouse_over_edge_3d_ = false;
+    if (picked_id > -1)
+    {
+        mouse_over_edge_3d_ = true;
+        drag_target_ = static_cast<DragTarget>(picked_id);
+    }
+    glLineWidth(2);
 }
 
 void UpdateWallTool::update_previews(const EditorState& state,
@@ -329,10 +384,21 @@ void UpdateWallTool::update_previews(const EditorState& state,
         .properties = wall_.properties,
         .parameters = {Line{.start = wall_line_.start, .end = wall_line_.end}},
     };
+    update_3d_previews(wall);
 
     wall_preview_ = object_to_geometry(wall, state.current_floor);
     wall_preview_.update();
 
     wall_preview_2d_ = object_to_geometry_2d(wall, drawing_pad_texture_map).first;
     wall_preview_2d_.update();
+}
+
+void UpdateWallTool::update_3d_previews(const WallObject& wall)
+{
+
+    auto [begin, top] = wall_to_lines(wall, wall_floor_);
+    generate_line_mesh(wall_begin_preview_3d_, {begin.start, top.start}, Colour::MAGENTA);
+    generate_line_mesh(wall_end_preview_3d_, {begin.end, top.end}, Colour::MAGENTA);
+    wall_begin_preview_3d_.update();
+    wall_end_preview_3d_.update();
 }

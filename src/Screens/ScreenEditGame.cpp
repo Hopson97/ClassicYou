@@ -642,7 +642,7 @@ void ScreenEditGame::on_render(bool show_debug)
     {
         if (show_tool_previews)
         {
-            tool_->render_preview();
+            tool_->render_preview(editor_settings_.always_show_3d_gizmos);
         }
 
         for (auto& editor : property_editors_)
@@ -732,6 +732,13 @@ void ScreenEditGame::on_render(bool show_debug)
                 glClear(GL_DEPTH_BUFFER_BIT);
                 glClearNamedFramebufferiv(picker_fbo_.id, GL_COLOR, 0, &clear_value);
                 editor->render_to_picker_mouse_over(mouse_picking_move_state_, picker_shader_);
+            }
+
+            if (tool_)
+            {
+                glClear(GL_DEPTH_BUFFER_BIT);
+                glClearNamedFramebufferiv(picker_fbo_.id, GL_COLOR, 0, &clear_value);
+                tool_->render_to_picker_mouse_over(mouse_picking_move_state_, picker_shader_);
             }
         }
 

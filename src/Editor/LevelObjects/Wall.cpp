@@ -143,31 +143,16 @@ object_to_geometry_2d(const WallObject& wall,
 template <>
 LevelObjectsMesh3D object_to_geometry(const WallObject& wall, int floor_number)
 {
-    const auto& params = wall.parameters;
     const auto& props = wall.properties;
-    // Begin
-    auto b = glm::vec3{params.line.start.x, 0, params.line.start.y} / TILE_SIZE_F;
 
-    // End
-    auto e = glm::vec3{params.line.end.x, 0, params.line.end.y} / TILE_SIZE_F;
+    // The begin and top lines of the wall
+    auto [b, t] = wall_to_lines(wall, floor_number);
 
-    // Offset x, y
+    // Offset x, y - 0 (for now, can be used to add thickness to the wall)
     auto ox = 0.0f;
     auto oz = 0.0f;
 
-    auto obs = props.start_base_height * FLOOR_HEIGHT;
-    // auto hs = std::min(obs + props.start_height * FLOOR_HEIGHT, FLOOR_HEIGHT);
-    auto hs = obs + props.start_height * FLOOR_HEIGHT;
-    obs += floor_number * FLOOR_HEIGHT;
-    hs += floor_number * FLOOR_HEIGHT;
-
-    auto obe = props.end_base_height * FLOOR_HEIGHT;
-    // auto he = std::min(obe + props.end_height * FLOOR_HEIGHT, FLOOR_HEIGHT);
-    auto he = obe + props.end_height * FLOOR_HEIGHT;
-    obe += floor_number * FLOOR_HEIGHT;
-    he += floor_number * FLOOR_HEIGHT;
-
-    const auto length = glm::length(b - e);
+    const auto length = glm::length(b.start - b.end);
 
     GLfloat texture_back = static_cast<float>(props.texture_back.id);
     GLfloat texture_front = static_cast<float>(props.texture_front.id);
@@ -176,22 +161,22 @@ LevelObjectsMesh3D object_to_geometry(const WallObject& wall, int floor_number)
 
     LevelObjectsMesh3D mesh;
 
-    auto front_normal = glm::cross(glm::normalize(e - b), {0, 1, 0});
-    auto back_normal = glm::cross(glm::normalize(b - e), {0, 1, 0});
+    auto front_normal = glm::cross(glm::normalize(b.end - b.start), {0, 1, 0});
+    auto back_normal = glm::cross(glm::normalize(b.start - b.end), {0, 1, 0});
 
     // clang-format off
     mesh.vertices = {
         // Back
-        {{b.x + ox, obs, b.z + oz}, {0.0f,   hs,  texture_back},  back_normal, colour_back},
-        {{b.x + ox, hs,  b.z + oz}, {0.0f,   obs, texture_back},  back_normal, colour_back},
-        {{e.x + ox, he,  e.z + oz}, {length, obe, texture_back},  back_normal, colour_back},
-        {{e.x + ox, obe, e.z + oz}, {length, he,  texture_back},  back_normal, colour_back}, 
+        {{b.start.x + ox, b.start.y, b.start.z + oz}, {0.0f,   t.start.y,  texture_back},  back_normal, colour_back},
+        {{b.start.x + ox, t.start.y,  b.start.z + oz}, {0.0f,   b.start.y, texture_back},  back_normal, colour_back},
+        {{b.end.x + ox, t.end.y,  b.end.z + oz}, {length, b.end.y, texture_back},  back_normal, colour_back},
+        {{b.end.x + ox, b.end.y, b.end.z + oz}, {length, t.end.y,  texture_back},  back_normal, colour_back}, 
 
         // Front 
-        {{b.x - ox, obs, b.z - oz}, {0.0f,   hs,  texture_front}, front_normal, colour_front},
-        {{b.x - ox, hs,  b.z - oz}, {0.0f,   obs, texture_front}, front_normal, colour_front},
-        {{e.x - ox, he,  e.z - oz}, {length, obe, texture_front}, front_normal, colour_front},
-        {{e.x - ox, obe, e.z - oz}, {length, he,  texture_front}, front_normal, colour_front},
+        {{b.start.x - ox, b.start.y, b.start.z - oz}, {0.0f,   t.start.y,  texture_front}, front_normal, colour_front},
+        {{b.start.x - ox, t.start.y,  b.start.z - oz}, {0.0f,   b.start.y, texture_front}, front_normal, colour_front},
+        {{b.end.x - ox, t.end.y,  b.end.z - oz}, {length, b.end.y, texture_front}, front_normal, colour_front},
+        {{b.end.x - ox, b.end.y, b.end.z - oz}, {length, t.end.y,  texture_front}, front_normal, colour_front},
     };
     // clang-format on
 
@@ -224,4 +209,34 @@ LevelObjectsMesh3D object_to_geometry(const WallObject& wall, int floor_number)
     }
 
     return mesh;
+}
+
+WallLines wall_to_lines(const WallObject& wall, int floor)
+{
+    const auto& params = wall.parameters;
+    const auto& props = wall.properties;
+
+    // The bottom "line" of the wall
+    glm::vec3 start_base{
+        params.line.start.x / TILE_SIZE_F,
+        props.start_base_height * FLOOR_HEIGHT + floor * FLOOR_HEIGHT,
+        params.line.start.y / TILE_SIZE_F,
+    };
+    glm::vec3 end_base{
+        params.line.end.x / TILE_SIZE_F,
+        props.end_base_height * FLOOR_HEIGHT + floor * FLOOR_HEIGHT,
+        params.line.end.y / TILE_SIZE_F,
+    };
+
+    // The top "line" of the wall
+    glm::vec3 start_top = start_base;
+    glm::vec3 end_top = end_base;
+
+    start_top.y = start_base.y + props.start_height * FLOOR_HEIGHT;
+    end_top.y = end_top.y + props.start_height * FLOOR_HEIGHT;
+
+    return {
+        .base = {start_base, end_base},
+        .top = {start_top, end_top},
+    };
 }

@@ -80,7 +80,7 @@ bool AreaSelectTool::on_event(const sf::Event& event, EditorState& state, Action
     return false;
 }
 
-void AreaSelectTool::render_preview()
+void AreaSelectTool::render_preview([[maybe_unused]] bool always_show_gizmos)
 {
     if (selection_quad_.has_buffered() && render_preview_mesh_)
     {
