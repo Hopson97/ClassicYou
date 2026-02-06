@@ -75,3 +75,14 @@ object_to_geometry_2d<WallObject>(const WallObject& wall,
 template <>
 [[nodiscard]] LevelObjectsMesh3D object_to_geometry<WallObject>(const WallObject& wall,
                                                                 int floor_number);
+
+// =======================================
+//      Helper Functions
+// =======================================
+struct WallLines
+{
+    Line3D base;
+    Line3D top;
+};
+
+WallLines wall_to_lines(const WallObject& wall, int floor);

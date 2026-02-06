@@ -11,6 +11,7 @@
 class LevelTextures;
 struct EditorState;
 class ActionManager;
+struct MousePickingState;
 class EditorLevel;
 class Camera;
 
@@ -40,8 +41,11 @@ class ITool
                                         ActionManager& actions,
                                         const LevelTextures& drawing_pad_texture_map,
                                         const Camera& camera_3d, bool mouse_in_2d_view) = 0;
-    virtual void render_preview() = 0;
+    virtual void render_preview(bool always_show_gizmos) = 0;
     virtual void render_preview_2d(gl::Shader& scene_shader_2d) {};
+
+    virtual void render_to_picker_mouse_over(const MousePickingState& picker_state,
+                                             gl::Shader& picker_shader) {};
 
     [[nodiscard]] virtual ToolType get_tool_type() const = 0;
 
@@ -60,7 +64,7 @@ class CreateWallTool : public ITool
     bool on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                   const LevelTextures& drawing_pad_texture_map, const Camera& camera_3d,
                   bool mouse_in_2d_view) override;
-    void render_preview() override;
+    void render_preview(bool always_show_gizmos) override;
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
 
     ToolType get_tool_type() const override;
@@ -92,7 +96,7 @@ class CreateWallTool : public ITool
 };
 
 /**
- * Tool for updating the start and end positions of an exsisting wall.
+ * Tool for updating the start and end positions of an existing wall.
  */
 class UpdateWallTool : public ITool
 {
@@ -102,13 +106,18 @@ class UpdateWallTool : public ITool
     bool on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                   const LevelTextures& drawing_pad_texture_map, const Camera& camera_3d,
                   bool mouse_in_2d_view) override;
-    void render_preview() override;
+    void render_preview(bool always_show_gizmos) override;
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
 
     ToolType get_tool_type() const override;
 
+    void render_to_picker_mouse_over(const MousePickingState& picker_state,
+                                     gl::Shader& picker_shader) override;
+
   private:
     void update_previews(const EditorState& state, const LevelTextures& drawing_pad_texture_map);
+
+    void update_3d_previews(const WallObject& wall);
 
   private:
     /// The preview of the wall being edited in the 3D View
@@ -134,13 +143,20 @@ class UpdateWallTool : public ITool
 
     bool active_dragging_ = false;
 
+    Mesh3D wall_begin_preview_3d_;
+    Mesh3D wall_end_preview_3d_;
+
     /// The target point in the wall being selected
     enum class DragTarget
     {
         None,
         Start,
         End
-    } target_ = DragTarget::None;
+    };
+
+    DragTarget drag_target_ = DragTarget::None;
+
+    bool mouse_over_edge_3d_ = false;
 };
 
 /**
@@ -154,7 +170,7 @@ class CreateObjectTool : public ITool
     bool on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                   const LevelTextures& drawing_pad_texture_map, const Camera& camera_3d,
                   bool mouse_in_2d_view) override;
-    void render_preview() override;
+    void render_preview(bool always_show_gizmos) override;
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
 
     ToolType get_tool_type() const override;
@@ -175,7 +191,7 @@ class CreateObjectTool : public ITool
     /// The 2D preview of the object that will be created
     Mesh2DWorld object_preview_2d_;
 
-    /// When rendering the object in the 2D view, this is used to tell OpenGL what primative type to
+    /// When rendering the object in the 2D view, this is used to tell OpenGL what primitive type to
     /// use
     gl::PrimitiveType preview_2d_primitive_ = gl::PrimitiveType::Triangles;
 
@@ -194,7 +210,7 @@ class AreaSelectTool : public ITool
     bool on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                   const LevelTextures& drawing_pad_texture_map, const Camera& camera_3d,
                   bool mouse_in_2d_view) override;
-    void render_preview() override;
+    void render_preview(bool always_show_gizmos) override;
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
 
     ToolType get_tool_type() const override;
@@ -238,7 +254,7 @@ class AreaSelectTool : public ITool
 
 /**
  * Tool for updating polygon objects, such as adding, moving, and deleting
- * verticies.
+ * vertices.
  */
 class UpdatePolygonTool : public ITool
 {
@@ -255,7 +271,7 @@ class UpdatePolygonTool : public ITool
     bool on_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                   const LevelTextures& drawing_pad_texture_map, const Camera& camera_3d,
                   bool mouse_in_2d_view) override;
-    void render_preview() override;
+    void render_preview(bool always_show_gizmos) override;
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
 
     ToolType get_tool_type() const override;

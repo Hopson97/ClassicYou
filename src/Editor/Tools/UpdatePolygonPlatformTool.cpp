@@ -150,7 +150,7 @@ bool UpdatePolygonTool::on_event(const sf::Event& event, EditorState& state, Act
     return false;
 }
 
-void UpdatePolygonTool::render_preview()
+void UpdatePolygonTool::render_preview([[maybe_unused]] bool always_show_gizmos)
 {
     if (polygon_preview_.has_buffered() && active_dragging_)
     {
