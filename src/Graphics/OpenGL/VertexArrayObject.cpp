@@ -2,6 +2,23 @@
 
 namespace gl
 {
+    constexpr void vertex_array_attrib_format(GLuint vao, GLuint attribute_index, GLint size,
+                                              Type type, bool normalise, GLuint relative_offset)
+    {
+        if (!normalise &&
+            (type == Type::Int || type == Type::UnsignedInt || type == Type::Short ||
+             type == Type::UnsignedShort || type == Type::Byte || type == Type::UnsignedByte))
+        {
+            glVertexArrayAttribIFormat(vao, attribute_index, size, static_cast<GLenum>(type),
+                                       relative_offset);
+        }
+        else
+        {
+            glVertexArrayAttribFormat(vao, attribute_index, size, static_cast<GLenum>(type),
+                                      normalise ? GL_TRUE : GL_FALSE, relative_offset);
+        }
+    }
+
     VertexArrayObject& VertexArrayObject::operator=(VertexArrayObject&& other) noexcept
     {
         destroy();
@@ -56,15 +73,16 @@ namespace gl
     }
 
     VertexArrayObject::AttributeBuilder&
-    VertexArrayObject::AttributeBuilder::add_instance_attribute(GLint size, GLenum type,
+    VertexArrayObject::AttributeBuilder::add_instance_attribute(GLint size, Type type,
                                                                 GLuint offset, GLuint divisor,
                                                                 int count, bool normalise)
     {
+
         for (int i = 0; i < count /*4*/; i++)
         {
             glEnableVertexArrayAttrib(vao_, *p_attribs_);
-            glVertexArrayAttribFormat(vao_, *p_attribs_, size, type, normalise ? GL_TRUE : GL_FALSE,
-                                      offset * i);
+            vertex_array_attrib_format(vao_, *p_attribs_, size, type,
+                                       normalise ? GL_TRUE : GL_FALSE, offset * i);
             glVertexArrayAttribBinding(vao_, *p_attribs_, vbo_binding_index_);
             *p_attribs_ += 1;
         }
@@ -73,12 +91,12 @@ namespace gl
     }
 
     VertexArrayObject::AttributeBuilder&
-    VertexArrayObject::AttributeBuilder::add_attribute(GLint size, GLenum type, GLuint offset,
+    VertexArrayObject::AttributeBuilder::add_attribute(GLint size, Type type, GLuint offset,
                                                        bool normalise)
     {
         glEnableVertexArrayAttrib(vao_, *p_attribs_);
-        glVertexArrayAttribFormat(vao_, *p_attribs_, size, type, normalise ? GL_TRUE : GL_FALSE,
-                                  offset);
+        vertex_array_attrib_format(vao_, *p_attribs_, size, type, normalise ? GL_TRUE : GL_FALSE,
+                                   offset);
         glVertexArrayAttribBinding(vao_, *p_attribs_, vbo_binding_index_);
         *p_attribs_ += 1;
         return *this;

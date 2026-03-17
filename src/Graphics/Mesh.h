@@ -36,10 +36,10 @@ struct Vertex3D
     static constexpr void build_attribs(gl::VertexArrayObject& vao, gl::BufferObject& vbo)
     {
         vao.add_vertex_buffer(vbo, sizeof(Vertex3D))
-            .add_attribute(3, GL_FLOAT, offsetof(Vertex3D, position))
-            .add_attribute(T::length(), GL_FLOAT, offsetof(Vertex3D, texture_coord))
-            .add_attribute(3, GL_FLOAT, offsetof(Vertex3D, normal))
-            .add_attribute(4, GL_UNSIGNED_BYTE, offsetof(Vertex3D, colour), true);
+            .add_attribute(3, gl::Type::Float, offsetof(Vertex3D, position))
+            .add_attribute(T::length(), gl::Type::Float, offsetof(Vertex3D, texture_coord))
+            .add_attribute(3, gl::Type::Float, offsetof(Vertex3D, normal))
+            .add_attribute(4, gl::Type::UnsignedByte, offsetof(Vertex3D, colour), true);
     }
 };
 
@@ -56,10 +56,10 @@ struct Vertex2DWorld
     static void build_attribs(gl::VertexArrayObject& vao, gl::BufferObject& vbo)
     {
         vao.add_vertex_buffer(vbo, sizeof(Vertex2DWorld))
-            .add_attribute(2, GL_FLOAT, offsetof(Vertex2DWorld, position))
-            .add_attribute(3, GL_FLOAT, offsetof(Vertex2DWorld, texture_coord))
-            .add_attribute(3, GL_FLOAT, offsetof(Vertex2DWorld, world_texture_coord))
-            .add_attribute(4, GL_UNSIGNED_BYTE, offsetof(Vertex2DWorld, colour), true);
+            .add_attribute(2, gl::Type::Float, offsetof(Vertex2DWorld, position))
+            .add_attribute(3, gl::Type::Float, offsetof(Vertex2DWorld, texture_coord))
+            .add_attribute(3, gl::Type::Float, offsetof(Vertex2DWorld, world_texture_coord))
+            .add_attribute(4, gl::Type::UnsignedByte, offsetof(Vertex2DWorld, colour), true);
     }
 };
 
@@ -72,9 +72,9 @@ struct Vertex2D
     static void build_attribs(gl::VertexArrayObject& vao, gl::BufferObject& vbo)
     {
         vao.add_vertex_buffer(vbo, sizeof(Vertex2D))
-            .add_attribute(2, GL_FLOAT, offsetof(Vertex2D, position))
-            .add_attribute(2, GL_FLOAT, offsetof(Vertex2D, texture_coord))
-            .add_attribute(4, GL_UNSIGNED_BYTE, offsetof(Vertex2D, colour), true);
+            .add_attribute(2, gl::Type::Float, offsetof(Vertex2D, position))
+            .add_attribute(2, gl::Type::Float, offsetof(Vertex2D, texture_coord))
+            .add_attribute(4, gl::Type::UnsignedByte, offsetof(Vertex2D, colour), true);
     }
 };
 

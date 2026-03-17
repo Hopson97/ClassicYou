@@ -5,6 +5,7 @@
 
 #include "BufferObject.h"
 #include "GLResource.h"
+#include "GLUtils.h"
 
 namespace gl
 {
@@ -17,10 +18,11 @@ namespace gl
           public:
             AttributeBuilder(GLuint& id, GLuint& attribs, GLuint vbo_binding_index);
 
-            AttributeBuilder& add_instance_attribute(GLint size, GLenum type, GLuint offset,
-                                                     GLuint divisor, int count, bool normalise = false);
+            AttributeBuilder& add_instance_attribute(GLint size, Type type, GLuint offset,
+                                                     GLuint divisor, int count,
+                                                     bool normalise = false);
 
-            AttributeBuilder& add_attribute(GLint size, GLenum type, GLuint offset,
+            AttributeBuilder& add_attribute(GLint size, Type type, GLuint offset,
                                             bool normalise = false);
 
           private:
