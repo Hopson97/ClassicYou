@@ -11,7 +11,7 @@
 bool operator==(const PolygonPlatformProps& lhs, const PolygonPlatformProps& rhs)
 {
     return lhs.texture_top == rhs.texture_top && lhs.texture_bottom == rhs.texture_bottom &&
-           lhs.visible == rhs.visible && lhs.base == rhs.base;
+           lhs.visible == rhs.visible && lhs.base_height == rhs.base_height;
 }
 
 bool operator!=(const PolygonPlatformProps& lhs, const PolygonPlatformProps& rhs)
@@ -45,10 +45,10 @@ std::string object_to_string(const PolygonPlatformObject& poly)
     }
 
     return std::format(
-        "Props:\n Texture Top: {}\n Texture Bottom: {}\n Base: {:.2f}\n Visible: {}\n"
+        "Props:\n Texture Top: {}\n Texture Bottom: {}\n Base Height: {:.2f}\n Visible: {}\n"
         "Points: {}\nHoles: {}"
         "Parameters:\n Position: ({:.2f}, {:.2f})",
-        props.texture_top.id, props.texture_bottom.id, props.base, props.visible ? "true" : "false",
+        props.texture_top.id, props.texture_bottom.id, props.base_height, props.visible ? "true" : "false",
         points_string, holes_string, params.position.x, params.position.y);
 }
 
@@ -128,7 +128,7 @@ SerialiseResponse object_serialise(const PolygonPlatformObject& poly, LevelFileI
 
     level_file_io.serialise_texture(json_props, props.texture_top);
     level_file_io.serialise_texture(json_props, props.texture_bottom);
-    json_props.push_back(props.base);
+    json_props.push_back(props.base_height);
     json_props.push_back(props.visible);
     return {{json_params, json_props}, "polygon_platform"};
 }
@@ -183,7 +183,7 @@ bool object_deserialise(PolygonPlatformObject& poly, const nlohmann::json& json,
     // Rwad the rest of the props
     props.texture_top = level_file_io.deserialise_texture(jprops[2]);
     props.texture_bottom = level_file_io.deserialise_texture(jprops[3]);
-    props.base = jprops[4];
+    props.base_height = jprops[4];
     props.visible = jprops[5];
 
     return true;
@@ -269,7 +269,7 @@ LevelObjectsMesh3D object_to_geometry(const PolygonPlatformObject& poly, int flo
         return LevelObjectsMesh3D{};
     }
 
-    auto ob = props.base * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT;
+    auto ob = props.base_height * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT;
 
     auto texture_bottom = static_cast<float>(props.texture_bottom.id);
     auto texture_top = static_cast<float>(props.texture_top.id);

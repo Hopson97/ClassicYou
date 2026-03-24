@@ -23,7 +23,7 @@ struct PlatformProps
     TextureProp texture_top;
     TextureProp texture_bottom;
     glm::vec2 size{2.0f};
-    float base = 0.0f;
+    float base_height = 0.0f;
 
     PlatformStyle style = PlatformStyle::Quad;
     Direction direction = Direction::Right;

@@ -457,7 +457,7 @@ void ObjectSizePropertyEditor::update_previews()
 
     if (auto platform = std::get_if<PlatformObject>(&cached_object_.object_type))
     {
-        float y = object_floor_ * FLOOR_HEIGHT + platform->properties.base * 2.0f;
+        float y = object_floor_ * FLOOR_HEIGHT + platform->properties.base_height * 2.0f;
 
         generate_line_mesh(top_line_preview_3d_, to_line_3d(lines[0].line, y), Colour::MAGENTA);
         generate_line_mesh(right_line_preview_3d_, to_line_3d(lines[1].line, y), Colour::MAGENTA);

@@ -27,7 +27,7 @@ struct PolygonPlatformProps
 
     TextureProp texture_top;
     TextureProp texture_bottom;
-    float base = 0;
+    float base_height = 0;
     bool visible = true;
 };
 

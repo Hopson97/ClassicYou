@@ -282,7 +282,7 @@ platform_gui(const LevelTextures& textures, const PlatformObject& platform, Edit
     slider(result, "Depth", new_props.size.y, 0.5f, 20.0f, 0.5f);
 
     // Multiplied by "FLOOR_HEIGHT" when mesh is created
-    slider(result, "Base Height", new_props.base, 0.0f, 0.9f, 0.1f);
+    slider(result, "Base Height", new_props.base_height, 0.0f, 0.9f, 0.1f);
 
     enum_gui<PlatformStyle>(result, "Style", new_props.style);
 
@@ -333,7 +333,7 @@ polygon_platform_gui(const LevelTextures& textures, const PolygonPlatformObject&
     {
 
         // Multiplied by 2 when mesh is created
-        slider(result, "Base Height", new_props.base, 0.0f, 0.9f, 0.1f);
+        slider(result, "Base Height", new_props.base_height, 0.0f, 0.9f, 0.1f);
         texture_gui_tabs(result, "Textures_platform", textures,
                          {.name = "Top Texture",
                           .current = poly.properties.texture_top,

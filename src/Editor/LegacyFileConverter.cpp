@@ -215,7 +215,7 @@ void from_json(const nlohmann::json& json, PolygonPlatformObject& poly)
         extract_vec2(points[3][0], points[3][1]), extract_vec2(points[2][0], points[2][1]),
         extract_vec2(points[1][0], points[1][1]), extract_vec2(points[0][0], points[0][1])};
 
-    poly.properties.base = 0;
+    poly.properties.base_height = 0;
     poly.properties.texture_bottom = map_texture(props[1]);
     poly.properties.texture_top = map_texture(props[0][0]);
 
@@ -333,7 +333,7 @@ namespace
 
             if (props.size() > 2)
             {
-                platform_props.base = PLATFORM_HEIGHTS[(int)props[height_index] - 1] / 4.0f;
+                platform_props.base_height = PLATFORM_HEIGHTS[(int)props[height_index] - 1] / 4.0f;
             }
         }
         else

@@ -10,7 +10,7 @@
 bool operator==(const PlatformProps& lhs, const PlatformProps& rhs)
 {
     return lhs.texture_top == rhs.texture_top && lhs.texture_bottom == rhs.texture_bottom &&
-           lhs.size == rhs.size && lhs.base == rhs.base && lhs.style == rhs.style &&
+           lhs.size == rhs.size && lhs.base_height == rhs.base_height && lhs.style == rhs.style &&
            lhs.direction == rhs.direction;
 }
 
@@ -29,7 +29,7 @@ std::string object_to_string(const PlatformObject& platform)
                        "{:.2f}\n Base: {:.2f}\n Style: {}\n"
                        "Parameters:\n Position: ({:.2f}, {:.2f})",
                        props.texture_top.id, props.texture_bottom.id, props.size.x, props.size.y,
-                       props.base, magic_enum::enum_name(props.style), params.position.x,
+                       props.base_height, magic_enum::enum_name(props.style), params.position.x,
                        params.position.y);
 }
 
@@ -125,7 +125,7 @@ SerialiseResponse object_serialise(const PlatformObject& platform, LevelFileIO& 
     nlohmann::json json_props = {};
     level_file_io.serialise_texture(json_props, props.texture_top);
     level_file_io.serialise_texture(json_props, props.texture_bottom);
-    json_props.insert(json_props.end(), {props.size.x, props.size.y, props.base, (int)props.style,
+    json_props.insert(json_props.end(), {props.size.x, props.size.y, props.base_height, (int)props.style,
                                          (int)props.direction});
 
     return {{json_params, json_props}, "platform"};
@@ -155,7 +155,7 @@ bool object_deserialise(PlatformObject& platform, const nlohmann::json& json,
     props.texture_bottom = level_file_io.deserialise_texture(jprops[1]);
     props.size.x = jprops[2];
     props.size.y = jprops[3];
-    props.base = jprops[4];
+    props.base_height = jprops[4];
     props.style = (PlatformStyle)(jprops[5]);
     props.direction = (Direction)(jprops[6]);
 
@@ -309,7 +309,7 @@ LevelObjectsMesh3D object_to_geometry(const PlatformObject& platform, int floor_
 
     // Offset platform heights by a hair to prevent Z-fighting with PolygonPlatforms which can go
     // underneath
-    float ob = props.base * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT + 0.00025f;
+    float ob = props.base_height * FLOOR_HEIGHT + floor_number * FLOOR_HEIGHT + 0.00025f;
     LevelObjectsMesh3D mesh;
     mesh.vertices = [&]()
     {

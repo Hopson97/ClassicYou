@@ -239,7 +239,7 @@ void UpdatePolygonTool::update_previews(PolygonUpdateAction action, const Editor
 
     glm::vec3 selection_cube_start{
         state.node_hovered.x / TILE_SIZE_F,
-        state.current_floor * FLOOR_HEIGHT + polygon_.properties.base * 2.0f,
+        state.current_floor * FLOOR_HEIGHT + polygon_.properties.base_height * 2.0f,
         state.node_hovered.y / TILE_SIZE_F,
     };
     selection_mesh_ = generate_cube_mesh_level(selection_cube_start, {0.1f, 1.0f, 0.1f}, 16);
