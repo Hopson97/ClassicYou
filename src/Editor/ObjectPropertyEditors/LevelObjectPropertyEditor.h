@@ -23,7 +23,7 @@ class LevelObjectPropertyEditor
 
     virtual bool handle_event(const sf::Event& event, EditorState& state, ActionManager& actions,
                               const LevelTextures& drawing_pad_texture_map,
-                              const Camera& camera_3d) = 0;
+                              const Camera& camera_3d, bool mouse_in_2d_view) = 0;
     virtual void render_preview_2d(gl::Shader& scene_shader_2d) = 0;
     virtual void render_preview_3d(gl::Shader& scene_shader_3d, bool always_show_gizmos) = 0;
 
@@ -41,5 +41,3 @@ class LevelObjectPropertyEditor
         return false;
     }
 };
-
-using LevelObjectPropertyEditors = std::vector<std::unique_ptr<LevelObjectPropertyEditor>>;

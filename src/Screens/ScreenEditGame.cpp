@@ -10,6 +10,7 @@
 #include "../Editor/EditorGUI.h"
 #include "../Editor/LevelFileIO.h"
 #include "../Editor/LevelObjects/LevelObjectConcepts.h"
+#include "../Editor/ObjectPropertyEditors/ObjectBaseHeightEditor.h"
 #include "../Editor/ObjectPropertyEditors/ObjectSizePropertyEditor.h"
 #include "../Graphics/OpenGL/GLUtils.h"
 #include "../Util/ImGuiExtras.h"
@@ -294,7 +295,8 @@ void ScreenEditGame::on_event(const sf::Event& event)
         for (auto& prop_updater : property_editors_)
         {
             if (prop_updater->handle_event(event, editor_state_, action_manager_,
-                                           drawing_pad_texture_map_, camera_3d_))
+                                           drawing_pad_texture_map_, camera_3d_,
+                                           mouse_in_2d_view()))
             {
                 return;
             }
@@ -838,6 +840,11 @@ void ScreenEditGame::create_property_editors(LevelObject* object)
                 property_editors_.push_back(std::make_unique<ObjectSizePropertyEditor>(
                     *object, obj.parameters.position, obj.properties.size,
                     editor_state_.current_floor));
+            }
+            if constexpr (BaseHeightAdjustable<decltype(obj)>)
+            {
+                property_editors_.push_back(std::make_unique<ObjectBaseHeightEditor>(
+                    *object, obj.properties.base_height, editor_state_.current_floor));
             }
         },
         object->object_type);

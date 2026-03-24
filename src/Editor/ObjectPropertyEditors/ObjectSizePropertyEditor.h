@@ -28,8 +28,8 @@ class ObjectSizePropertyEditor : public LevelObjectPropertyEditor
                              int object_floor);
 
     bool handle_event(const sf::Event& event, EditorState& state, ActionManager& actions,
-                      const LevelTextures& drawing_pad_texture_map,
-                      const Camera& camera_3d) override;
+                      const LevelTextures& drawing_pad_texture_map, const Camera& camera_3d,
+                      bool mouse_in_2d_view) override;
 
     void render_preview_2d(gl::Shader& scene_shader_2d) override;
     void render_preview_3d(gl::Shader& scene_shader_3d, bool always_show_gizmos) override;

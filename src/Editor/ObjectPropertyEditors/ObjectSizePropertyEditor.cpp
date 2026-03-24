@@ -84,7 +84,8 @@ ObjectSizePropertyEditor::ObjectSizePropertyEditor(const LevelObject& object, gl
 bool ObjectSizePropertyEditor::handle_event(const sf::Event& event, EditorState& state,
                                             ActionManager& actions,
                                             const LevelTextures& drawing_pad_texture_map,
-                                            const Camera& camera_3d)
+                                            const Camera& camera_3d,
+                                            [[maybe_unsed]] bool mouse_in_2d_view)
 {
     if (object_floor_ != state.current_floor)
     {

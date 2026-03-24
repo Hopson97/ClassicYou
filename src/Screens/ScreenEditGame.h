@@ -169,5 +169,5 @@ class ScreenEditGame final : public Screen
 
     MessagesManager messages_manager_;
 
-    LevelObjectPropertyEditors property_editors_;
+    std::vector<std::unique_ptr<LevelObjectPropertyEditor>> property_editors_;
 };
